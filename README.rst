@@ -8,7 +8,7 @@ Usage
 
     import llspy as LLS
 
-    path_to_folder = '/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_basic_samp/'
+    path_to_folder = '~/lls_experiment_folder/'
 
     # main LLSdirectory class to organize data and functions processing a typical experiment
     Experiment = LLS.LLSdir(path_to_folder)
