@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 
 from llspy import util
-from llspy.image import camera
+from llspy import camera
 from llspy.cudabinwrapper import CUDAbin
 
 import os
@@ -29,9 +29,6 @@ except ImportError:
 	warnings.warn("Warning: joblib module not found... parallel processing disabled")
 	hasjoblib = False
 
-from llspy.config import config
-
-default_otfs = config.user_settings['otfs']
 
 # ############### Patterns and regex constants ####################
 
@@ -296,6 +293,12 @@ class LLSdir(object):
 		self.count_tiffs()
 		self.get_volume_shape()
 
+	def has_been_processed(self):
+		return len([s for s in self.path.glob('*ProcessingLog.txt')])
+
+	def raw_is_compressed(self):
+		return len([s for s in self.path.glob('*.bz2')])
+
 	def get_all_tiffs(self):
 		'''a list of every tiff file in the top level folder (all raw tiffs)'''
 		all_tiffs = sorted(self.path.glob('*.tif'))
@@ -381,12 +384,17 @@ class LLSdir(object):
 			opts['dzdata'] = float(self.settings.channel[0]['Z PZT']['interval'])
 		return opts
 
+	def _get_extended_options(self, **kwargs):
+		pass
+
+	def process_channel():
+		pass
+
 	def process(self, indir=None, filepattern='488', binary=CUDAbin(), **options):
 		if indir is None:
 			indir = self.path
-		# otfs = self._get_otfs()
 		opts = self._get_cudaDeconv_options()
-		otf = default_otfs[str(488)]
+		#otf = default_otfs[str(488)]
 		output = binary.process(indir, filepattern, otf, **opts)
 		return output
 

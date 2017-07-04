@@ -4,7 +4,7 @@ import subprocess
 import warnings
 from llspy.config import config
 
-default_cudaBinary = config.user_settings.get('cudaDeconv', 'path')
+default_cudaBinary = config.__CUDADECON__
 
 class CUDAbin():
 	"""
@@ -27,7 +27,7 @@ class CUDAbin():
 			If the _self_test() does not pass
 		"""
 		tmpPath = binPath
-		if tmpPath == "tldecon":
+		if not os.path.isabs(binPath):
 			for path in os.environ["PATH"].split(os.pathsep):
 				fullbinPath = os.path.join(path, binPath)
 				if os.path.isfile(fullbinPath):

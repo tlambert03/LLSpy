@@ -8,6 +8,7 @@ from numba import jit, cuda
 from tifffile import imread, imsave, imshow
 import math
 
+default_params = config.__CAMPARAMS__
 
 # #THIS ONE WORKS BEST SO FAR
 @jit(nopython=True, nogil=True, cache=True)
@@ -176,7 +177,6 @@ class CameraROI(object):
 				.format(type(other)))
 
 
-default_params = config.user_settings.get('camera', 'parameters')
 class CameraParameters(object):
 	"""Class to store parameters for camera correction
 
