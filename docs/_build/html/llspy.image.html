@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>llspy.image package &#8212; llspy 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="llspy-image-package">
+<h1>llspy.image package<a class="headerlink" href="#llspy-image-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-llspy.image.camera">
+<span id="llspy-image-camera-module"></span><h2>llspy.image.camera module<a class="headerlink" href="#module-llspy.image.camera" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="llspy.image.camera.CameraParameters">
+<em class="property">class </em><code class="descclassname">llspy.image.camera.</code><code class="descname">CameraParameters</code><span class="sig-paren">(</span><em>fname=None, data=None, roi=[513, 769, 1536, 1280]</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.camera.CameraParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Class to store parameters for camera correction</p>
+<dl class="docutils">
+<dt>Filename: path to tif file that stores the camera correction parameters,</dt>
+<dd>first plane = param A
+second plane = param B
+third plane = dark image (offset map)
+#TODO: fourth plane = variance map</dd>
+</dl>
+<dl class="method">
+<dt id="llspy.image.camera.CameraParameters.correct_stacks">
+<code class="descname">correct_stacks</code><span class="sig-paren">(</span><em>stacks</em>, <em>dampening=0.88</em>, <em>median=True</em>, <em>target='cpu'</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.camera.CameraParameters.correct_stacks" title="Permalink to this definition">¶</a></dt>
+<dd><p>interleave stacks and apply correction for &#8220;sticky&#8221; Flash pixels.</p>
+<dl class="docutils">
+<dt>Expects a list of 3D np.ndarrays ordered in order of acquisition:</dt>
+<dd>e.g. [stack_ch0, stack_ch1, stack_ch2, ...]</dd>
+</dl>
+<p>Returns a corrected list of np.ndarrays of the same
+shape and length as the input</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.image.camera.CameraParameters.get_subroi">
+<code class="descname">get_subroi</code><span class="sig-paren">(</span><em>subroi</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.camera.CameraParameters.get_subroi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="llspy.image.camera.CameraROI">
+<em class="property">class </em><code class="descclassname">llspy.image.camera.</code><code class="descname">CameraROI</code><span class="sig-paren">(</span><em>arr</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.camera.CameraROI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>class to define camera roi</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="llspy.image.camera.calc_correction">
+<code class="descclassname">llspy.image.camera.</code><code class="descname">calc_correction</code><a class="headerlink" href="#llspy.image.camera.calc_correction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="llspy.image.camera.correctInsensitivePixels">
+<code class="descclassname">llspy.image.camera.</code><code class="descname">correctInsensitivePixels</code><span class="sig-paren">(</span><em>stack</em>, <em>backgroundValue</em>, <em>medianRange=3</em>, <em>verbose=False</em>, <em>withMean=False</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.camera.correctInsensitivePixels" title="Permalink to this definition">¶</a></dt>
+<dd><p>correct bad pixels on sCMOS camera.
+based on MATLAB code by Philipp J. Keller,
+HHMI/Janelia Research Campus, 2011-2014</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.image.camera.determineThreshold">
+<code class="descclassname">llspy.image.camera.</code><code class="descname">determineThreshold</code><span class="sig-paren">(</span><em>array</em>, <em>maxSamples=50000</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.camera.determineThreshold" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="llspy.image.camera.savetiff">
+<code class="descclassname">llspy.image.camera.</code><code class="descname">savetiff</code><span class="sig-paren">(</span><em>arr</em>, <em>outpath</em>, <em>dx=1</em>, <em>dz=1</em>, <em>dt=1</em>, <em>unit='micron'</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.camera.savetiff" title="Permalink to this definition">¶</a></dt>
+<dd><p>sample wrapper for tifffile.imsave imagej=True.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-llspy.image.deskew">
+<span id="llspy-image-deskew-module"></span><h2>llspy.image.deskew module<a class="headerlink" href="#module-llspy.image.deskew" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="llspy.image.deskew.deskew">
+<code class="descclassname">llspy.image.deskew.</code><code class="descname">deskew</code><span class="sig-paren">(</span><em>rawdata</em>, <em>dz=0.3</em>, <em>dx=0.105</em>, <em>angle=31.5</em>, <em>filler=0</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.image.deskew.deskew" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="llspy-image-register-module">
+<h2>llspy.image.register module<a class="headerlink" href="#llspy-image-register-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-llspy.image">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-llspy.image" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">llspy.image package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-llspy.image.camera">llspy.image.camera module</a></li>
+<li><a class="reference internal" href="#module-llspy.image.deskew">llspy.image.deskew module</a></li>
+<li><a class="reference internal" href="#llspy-image-register-module">llspy.image.register module</a></li>
+<li><a class="reference internal" href="#module-llspy.image">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/llspy.image.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Talley Lambert.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/llspy.image.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
