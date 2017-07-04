@@ -7,7 +7,7 @@ Submodules
 llspy\.image\.camera module
 ---------------------------
 
-.. automodule:: llspy.image.camera
+.. automodule:: llspy.camera
     :members:
     :undoc-members:
     :show-inheritance:

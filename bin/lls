@@ -1,7 +1,15 @@
 #! /usr/bin/env python
-import sys,os
+from __future__ import print_function
+import sys
+import os
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-from llspy.lls import *
+import llspy as LLS
+from llspy import llsfiles
+
+from llspy.config import config
+
+default_otfdir = config.__OTFPATH__
+
 
 def main(argv=None):
 	"""Command line usage main function."""
@@ -18,8 +26,8 @@ def main(argv=None):
 		description='Helper program for processing Lattice Light Sheet data')
 	arg = parser.add_argument
 	arg('path', help='folder or folders to process')
-	arg('-i', '--iters', type=int, default=5,
-		help='number of RL-deconvolution iterations (default=6)')
+	arg('-i', '--iters', type=int, default=8,
+		help='number of RL-deconvolution iterations (default=8)')
 	arg('-b', '--background', type=int, default=None,
 		help="Specify image background (default is to autodetect)")
 	arg('-w', '--width', type=int, default=None,
@@ -52,9 +60,6 @@ def main(argv=None):
 	arg('--batch', action='store_true', default=False,
 		help="batch process folder: \
 				look for all subfolders with a Settings.txt file")
-	arg('--procmode', type=str, default='auto',
-		choices=['auto', 'gpu', 'cpu'],
-		help="whether to process on GPU or CPU, default is to autodetect")
 	arg('-r', '--reprocess', action='store_true', default=False,
 		help="Process even if the folder already has a processingLog JSON file, \
 		(otherwise skip)")
@@ -66,16 +71,6 @@ def main(argv=None):
 			options.correct = True
 	path = os.path.abspath(options.path)
 
-	# FIXME
-	# This section is a bit strange and should probably be
-	# reconfigured in the options
-	# The goal is to generate MIPS using deconvolved images, but not save the
-	# deconvolved stacks unless deconvolution is explicitly requested
-	deconrequested = False
-	if '-i' in sys.argv and options.iters > 0:
-			deconrequested = True  # decon explicitly requested
-	deleteDecon = True if not deconrequested else False
-
 	# fix path errors
 	if not path:
 		path = raw_input(
@@ -84,25 +79,23 @@ def main(argv=None):
 			parser.error("No file specified")
 		if not os.path.exists(path):
 			parser.error("Path does not exist")
+
+	# batch processing
 	if not options.batch and not glob.glob(os.path.join(path, '*Settings.txt')):
 		parser.error('not a LLS data folder, use --batch for batch processing')
 
-	if options.procmode == 'auto':
-		nCudaDevices = get_nvidia_devices()
-		if nCudaDevices >= 1:
-			options.procmode = 'gpu'
-		else:
-			options.procmode = 'cpu'
-
+	# autodetect width by default
 	if options.width is None:
 			options.width = 'auto'
+
+	# allow for provided OTF directory
 	if not default_otfdir and options.otfdir is None:
-		print 'Could not find OTF directory... tried:'
-		for D in config.otfdirs:
-				print "\t" + D
+		print('Could not find OTF directory at {}'.format(default_otfdir))
 		sys.exit('Please specify where the OTFs are with --otfdir')
 	elif options.otfdir is None:
 		options.otfdir = default_otfdir
+
+	# autodetect background from first plane mode
 	if options.background is None:
 			options.background = 'auto'
 
@@ -113,14 +106,22 @@ def main(argv=None):
 			options.rawMIP = options.deconMIP
 			options.deconMIP = (0, 0, 0)
 
-	def procfolder(input_folder):
-		if len(glob.glob(os.path.join(
-			input_folder, '*ProcessingLog.txt'))) and not options.reprocess:
-			print "Folder already appears to be processed: %s" % input_folder
-			print "Skipping ... use the '--reprocess' flag to force reprocessing"
+	def procfolder(input_folder, options):
+		E = llsfiles.LLSdir(input_folder)
+
+		# check whether folder has already been processed by the presence of a
+		# ProcessingLog.txt file
+		if E.has_been_processed() and not options.reprocess:
+			print("Folder already appears to be processed: {}".format(input_folder))
+			print("Skipping ... use the '--reprocess' flag to force reprocessing")
 			return 0
-		if options.reprocess and len(glob.glob(os.path.join(input_folder, '*.bz2'))):
+
+		if options.reprocess and E.raw_is_compressed():
+			# uncompress the raw files first...
+
+
 			llscompress.untar(input_folder, verbose=options.verbose)
+
 			# if reprocessing, look for a top level MIPs folder and remove it
 			if os.path.isdir(os.path.join(input_folder, 'MIPs')):
 				shutil.rmtree(os.path.join(input_folder, 'MIPs'))
