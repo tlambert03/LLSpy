@@ -1,0 +1,63 @@
+#! /usr/bin/env python
+import sys,os
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+from llspy.correct import *
+
+def main(argv=None):
+	import glob
+
+	if argv is None:
+		argv = sys.argv
+
+	import argparse
+
+	parser = argparse.ArgumentParser(
+		description='Helper program for processing Lattice Light Sheet data')
+	arg = parser.add_argument
+	arg('path', help='folder or folders to process')
+	arg('-C', '--withMedian', action='store_true', default=False,
+		help="additionally correct with Phillip Keller median filter method")
+	arg('--batch', action='store_true', default=False,
+		help="batch process folder: \
+			look for all subfolders with a Settings.txt file")
+
+	options = parser.parse_args()
+	path = os.path.abspath(options.path)
+
+	# fix path errors
+	if not path:
+		path = raw_input(
+			"\nPlease type in the path to your file and press 'Enter': ")
+		if not path:
+			parser.error("No file specified")
+		if not os.path.exists(path):
+			parser.error("Path does not exist")
+
+	if not options.batch and not glob.glob(os.path.join(path, '*Settings.txt')):
+		parser.error('not a LLS data folder, use --batch for batch processing')
+
+	if options.batch:
+		try:
+			import helpers
+			subfolders = helpers.get_subfolders_containing_filepattern(
+				path, filepattern='*Settings.txt')
+			print "Correcting the following LLS data folders:"
+			for folder in subfolders:
+				print folder.split(path)[1]
+			for folder in subfolders:
+				batchFlashCorrect(folder, options.withMedian)
+			sys.exit('\n\nDone batch correction!')
+		except:
+			raise
+	else:
+		try:
+			batchFlashCorrect(path, options.withMedian)
+			sys.exit('Done!')
+		except:
+			raise
+	sys.exit(0)
+
+
+if __name__ == "__main__":
+	import sys
+	sys.exit(main())

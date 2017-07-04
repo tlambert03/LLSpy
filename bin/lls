@@ -1,0 +1,246 @@
+#! /usr/bin/env python
+import sys,os
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+from llspy.lls import *
+
+def main(argv=None):
+	"""Command line usage main function."""
+	if float(sys.version[0:3]) < 2.6:
+		print("This script requires Python version 2.6 or better.")
+		print("This is Python version %s" % sys.version)
+		return 0
+	if argv is None:
+		argv = sys.argv
+
+	import argparse
+
+	parser = argparse.ArgumentParser(
+		description='Helper program for processing Lattice Light Sheet data')
+	arg = parser.add_argument
+	arg('path', help='folder or folders to process')
+	arg('-i', '--iters', type=int, default=5,
+		help='number of RL-deconvolution iterations (default=6)')
+	arg('-b', '--background', type=int, default=None,
+		help="Specify image background (default is to autodetect)")
+	arg('-w', '--width', type=int, default=None,
+		help="width of image after deskewing.  \
+		Default is to autocrop. 0 = full frame")
+	arg('--nodeskew', dest='deskew', action='store_false', default=True,
+		help="no deskewing before deconvolution")
+	arg('-R', '--rotate', action='store_true', default=False,
+		help="rotate image to coverslip coordinates after deconvolution")
+	arg('-M', '--deconMIP', type=int, nargs=3, default=(0, 0, 1),
+		help="Save max-intensity projection after deconvolution \
+		along x, y, or z axis; takes 3 binary numbers separated by space: 0 0 1")
+	arg('-m', '--rawMIP', type=int, nargs=3, default=(0, 0, 0),
+		help="Save max-intensity projection after deskewing \
+		along x, y, or z axis; takes 3 binary numbers separated by space: 0 0 1")
+	arg('-s', '--sepmips', action='store_true', default=False,
+		help="don't combine MIP files into single hyperstack")
+	arg('-u', '--32bit', dest='bit16', action='store_false',
+		help="save as 32 bit", default=True)
+	arg('-p', '--bleachCorrect', dest='bleachCorrect', action='store_true',
+		help="perform bleach correction on timelapse data", default=False),
+	arg('--otfdir', help="specify directory with otfs.\n\
+		OTFs should be named (e.g.): 488_otf.tif", default=None)
+	arg('-c', '--correct', action='store_true', default=False,
+		help="Correct Flash pixels before processing")
+	arg('-C', '--withMedian', action='store_true', default=False,
+		help="additionally correct with Phillip Keller median filter method")
+	arg('-z', '--compress', action='store_true', default=False,
+		help="Compress raw files after processing")
+	arg('--batch', action='store_true', default=False,
+		help="batch process folder: \
+				look for all subfolders with a Settings.txt file")
+	arg('--procmode', type=str, default='auto',
+		choices=['auto', 'gpu', 'cpu'],
+		help="whether to process on GPU or CPU, default is to autodetect")
+	arg('-r', '--reprocess', action='store_true', default=False,
+		help="Process even if the folder already has a processingLog JSON file, \
+		(otherwise skip)")
+	arg('-v', '--verbose', action='store_true', default=True)
+	arg('-q', '--quiet', action='store_false')
+
+	options = parser.parse_args()
+	if options.withMedian:
+			options.correct = True
+	path = os.path.abspath(options.path)
+
+	# FIXME
+	# This section is a bit strange and should probably be
+	# reconfigured in the options
+	# The goal is to generate MIPS using deconvolved images, but not save the
+	# deconvolved stacks unless deconvolution is explicitly requested
+	deconrequested = False
+	if '-i' in sys.argv and options.iters > 0:
+			deconrequested = True  # decon explicitly requested
+	deleteDecon = True if not deconrequested else False
+
+	# fix path errors
+	if not path:
+		path = raw_input(
+			"\nPlease type in the path to your file and press 'Enter': ")
+		if not path:
+			parser.error("No file specified")
+		if not os.path.exists(path):
+			parser.error("Path does not exist")
+	if not options.batch and not glob.glob(os.path.join(path, '*Settings.txt')):
+		parser.error('not a LLS data folder, use --batch for batch processing')
+
+	if options.procmode == 'auto':
+		nCudaDevices = get_nvidia_devices()
+		if nCudaDevices >= 1:
+			options.procmode = 'gpu'
+		else:
+			options.procmode = 'cpu'
+
+	if options.width is None:
+			options.width = 'auto'
+	if not default_otfdir and options.otfdir is None:
+		print 'Could not find OTF directory... tried:'
+		for D in config.otfdirs:
+				print "\t" + D
+		sys.exit('Please specify where the OTFs are with --otfdir')
+	elif options.otfdir is None:
+		options.otfdir = default_otfdir
+	if options.background is None:
+			options.background = 'auto'
+
+	# if not doing decon, but MIPs requested, do raw mips instead
+	if (options.iters == 0 and
+		any(list(options.deconMIP)) and
+		not any(list(options.rawMIP))):
+			options.rawMIP = options.deconMIP
+			options.deconMIP = (0, 0, 0)
+
+	def procfolder(input_folder):
+		if len(glob.glob(os.path.join(
+			input_folder, '*ProcessingLog.txt'))) and not options.reprocess:
+			print "Folder already appears to be processed: %s" % input_folder
+			print "Skipping ... use the '--reprocess' flag to force reprocessing"
+			return 0
+		if options.reprocess and len(glob.glob(os.path.join(input_folder, '*.bz2'))):
+			llscompress.untar(input_folder, verbose=options.verbose)
+			# if reprocessing, look for a top level MIPs folder and remove it
+			if os.path.isdir(os.path.join(input_folder, 'MIPs')):
+				shutil.rmtree(os.path.join(input_folder, 'MIPs'))
+
+		print "\n"
+		print "#" * (int(len(input_folder)) + 24)
+		print "##    processing: %s    ##" % input_folder
+		print "#" * (int(len(input_folder)) + 24)
+		print "\n"
+
+		if options.correct:
+			docorrection = True
+			if os.path.exists(os.path.join(input_folder, 'Corrected')):
+				import select
+				print "Corrected folder already exists!  Use it? \
+						(y/n 6 seconds to answer)"
+				i, o, e = select.select([sys.stdin], [], [], 6)
+				if (i):
+					if sys.stdin.readline().strip()[0].lower() == 'y':
+						print "Using already corrected files..."
+						docorrection = False
+					else:
+						print "recreating corrected files..."
+						docorrection = True
+				else:
+					print "timed out... recreating corrected Files..."
+
+			if docorrection:
+				try:
+					from correct import batchFlashCorrect
+					original_input = input_folder
+					input_folder = batchFlashCorrect(
+						input_folder, options.withMedian)
+				except Exception as e:
+					print "ERROR: problem with correcting dataset: %s" % input_folder
+					print e
+
+		S, logdict = process_folder(input_folder, deskew=options.deskew,
+			background=options.background, iters=options.iters,
+			rawMIP=options.rawMIP, deconMIP=options.deconMIP,
+			rotate=options.rotate, bit16=options.bit16,
+			bleachCorrect=options.bleachCorrect, width=options.width,
+			otfdir=options.otfdir, verbose=options.verbose,
+			procmode=options.procmode)
+
+		if S == 0:
+			print "processing failed for directory %s" % input_folder
+			return
+
+		if options.iters == 0:
+			try:
+				shutil.rmtree(os.path.join(input_folder, 'GPUdecon'))
+			except:
+				print "unable to remove directory: %s" % os.path.join(
+					input_folder, 'GPUdecon')
+		if not options.sepmips:
+			print "merging MIPs..."
+			mipmerge(S, delete=True, bit16=options.bit16)
+		if deleteDecon:
+			if options.procmode == 'cpu':
+				decon_folder = 'CPPdecon'
+			else:
+				decon_folder = 'GPUdecon'
+			deconstacks = glob.glob(
+				os.path.join(input_folder, decon_folder, '*_decon.tif'))
+			for stack in deconstacks:
+					os.remove(stack)
+			logdict['decon_saved'] = False
+		else:
+			logdict['decon_saved'] = True
+
+		if options.correct:
+			if os.path.basename(input_folder) == 'Corrected':
+				for d in ['GPUdecon', 'Deskewed', 'CPPdecon']:
+					subd = os.path.join(input_folder, d)
+					if os.path.exists(subd):
+						if os.path.exists(os.path.join(original_input, d)):
+							shutil.rmtree(os.path.join(original_input, d))
+						shutil.move(subd, os.path.join(original_input, d))
+				proclog = os.path.join(input_folder, '%s_%s' % (S['basename'],
+										config.processingLogfile))
+				shutil.copy(proclog, original_input)
+				corrected = input_folder
+				input_folder = original_input
+				shutil.rmtree(os.path.join(corrected))
+
+		if options.compress:
+			llscompress.make_tar(input_folder, verbose=options.verbose)
+		if logdict:
+			logdict['corrected'] = options.correct
+			logdict['compressed'] = options.compress
+			logdict['size_total'] = getfoldersize(input_folder, 1)
+			try:
+				write_stats_to_log(logdict, masterLogfile)
+			except Exception as e:
+				print "ERROR: could not write stats to master log file:"
+				print e
+		return
+
+	if options.batch:
+		try:
+			print "Looking for data folders in %s... " % path
+			subfolders = get_subfolders_containing_filepattern(
+				path, filepattern='*Settings.txt')
+			print "found the following LLS data folders:"
+			for folder in subfolders:
+					print folder.split(path)[1]
+			for folder in subfolders:
+					procfolder(folder)
+			sys.exit('\n\nDone batch processing!')
+		except:
+			raise
+	else:
+		try:
+			procfolder(path)
+			sys.exit('Done!')
+		except:
+			raise
+	sys.exit(0)
+
+
+if __name__ == "__main__":
+	sys.exit(main())

@@ -1,0 +1,588 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>llspy package &#8212; llspy 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="llspy-package">
+<h1>llspy package<a class="headerlink" href="#llspy-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="llspy.image.html">llspy.image package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="llspy.image.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llspy.image.html#module-llspy.image.camera">llspy.image.camera module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llspy.image.html#module-llspy.image.deskew">llspy.image.deskew module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llspy.image.html#llspy-image-register-module">llspy.image.register module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="llspy.image.html#module-llspy.image">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-llspy.cudabinwrapper">
+<span id="llspy-cudabinwrapper-module"></span><h2>llspy.cudabinwrapper module<a class="headerlink" href="#module-llspy.cudabinwrapper" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="llspy.cudabinwrapper.CUDAProcessError">
+<em class="property">exception </em><code class="descclassname">llspy.cudabinwrapper.</code><code class="descname">CUDAProcessError</code><span class="sig-paren">(</span><em>cmd</em>, <em>rtnCode</em>, <em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAProcessError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#llspy.cudabinwrapper.CUDAbinException" title="llspy.cudabinwrapper.CUDAbinException"><code class="xref py py-class docutils literal"><span class="pre">llspy.cudabinwrapper.CUDAbinException</span></code></a></p>
+<p>Exception to describe an cudaDeconv execution error.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="llspy.cudabinwrapper.CUDAbin">
+<em class="property">class </em><code class="descclassname">llspy.cudabinwrapper.</code><code class="descname">CUDAbin</code><span class="sig-paren">(</span><em>binPath='cudaDeconv'</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Wrapper class for Lin Shao&#8217;s cudaDeconv binary</p>
+<dl class="method">
+<dt id="llspy.cudabinwrapper.CUDAbin.describe_option">
+<code class="descname">describe_option</code><span class="sig-paren">(</span><em>flag</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbin.describe_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>print the description provided in the binary help string for a given flag</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.cudabinwrapper.CUDAbin.has_option">
+<code class="descname">has_option</code><span class="sig-paren">(</span><em>flag</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbin.has_option" title="Permalink to this definition">¶</a></dt>
+<dd><p>check the existence of a given flag in the binary help string.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.cudabinwrapper.CUDAbin.help">
+<code class="descname">help</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbin.help" title="Permalink to this definition">¶</a></dt>
+<dd><p>print the help string provided by cudaDeconv</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.cudabinwrapper.CUDAbin.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>indir</em>, <em>filepattern</em>, <em>otf</em>, <em>**options</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbin.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.cudabinwrapper.CUDAbin.set_path">
+<code class="descname">set_path</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbin.set_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set path to the binary.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="llspy.cudabinwrapper.CUDAbinException">
+<em class="property">exception </em><code class="descclassname">llspy.cudabinwrapper.</code><code class="descname">CUDAbinException</code><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbinException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>Generic exception indicating anything relating to the execution
+of cudaDeconDeskew. A string containing an error message should be supplied
+when raising this exception.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="llspy.cudabinwrapper.CUDAbinResult">
+<em class="property">class </em><code class="descclassname">llspy.cudabinwrapper.</code><code class="descname">CUDAbinResult</code><span class="sig-paren">(</span><em>rtnCode</em>, <em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.cudabinwrapper.CUDAbinResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Holds the result of running an cudaDeconv command.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-llspy.goodoc">
+<span id="llspy-goodoc-module"></span><h2>llspy.goodoc module<a class="headerlink" href="#module-llspy.goodoc" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="llspy.goodoc.SampleClass">
+<em class="property">class </em><code class="descclassname">llspy.goodoc.</code><code class="descname">SampleClass</code><span class="sig-paren">(</span><em>likes_spam=False</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.goodoc.SampleClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Summary of class here.</p>
+<p>Longer class information....
+Longer class information....</p>
+<dl class="attribute">
+<dt id="llspy.goodoc.SampleClass.likes_spam">
+<code class="descname">likes_spam</code><a class="headerlink" href="#llspy.goodoc.SampleClass.likes_spam" title="Permalink to this definition">¶</a></dt>
+<dd><p>A boolean indicating if we like SPAM or not.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="llspy.goodoc.SampleClass.eggs">
+<code class="descname">eggs</code><a class="headerlink" href="#llspy.goodoc.SampleClass.eggs" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer count of the eggs we have laid.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.goodoc.SampleClass.public_method">
+<code class="descname">public_method</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.goodoc.SampleClass.public_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs operation blah.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.goodoc.example_generator">
+<code class="descclassname">llspy.goodoc.</code><code class="descname">example_generator</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.goodoc.example_generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generators have a <code class="docutils literal"><span class="pre">Yields</span></code> section instead of a <code class="docutils literal"><span class="pre">Returns</span></code> section.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>int</em>) &#8211; The upper limit of the range to generate, from 0 to <cite>n</cite> - 1.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><em>int</em> &#8211; The next number in the range of 0 to <cite>n</cite> - 1.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Examples should be written in doctest format, and should illustrate how
+to use the function.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">example_generator</span><span class="p">(</span><span class="mi">4</span><span class="p">)])</span>
+<span class="go">[0, 1, 2, 3]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.goodoc.fetch_bigtable_rows">
+<code class="descclassname">llspy.goodoc.</code><code class="descname">fetch_bigtable_rows</code><span class="sig-paren">(</span><em>big_table</em>, <em>keys</em>, <em>other_silly_variable=None</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.goodoc.fetch_bigtable_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetches rows from a Bigtable.</p>
+<p>Retrieves rows pertaining to the given keys from the Table instance
+represented by big_table.  Silly things may happen if
+other_silly_variable is not None.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>big_table</strong> &#8211; An open Bigtable Table instance.</li>
+<li><strong>keys</strong> &#8211; A sequence of strings representing the key of each table row
+to fetch.</li>
+<li><strong>other_silly_variable</strong> &#8211; Another optional variable, that has a much
+longer name than the other args, and which does nothing.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>A dict mapping keys to the corresponding table row data
+fetched. Each row is represented as a tuple of strings. For
+example:</p>
+<p>{&#8216;Serak&#8217;: (&#8216;Rigel VII&#8217;, &#8216;Preparer&#8217;),
+&#8216;Zim&#8217;: (&#8216;Irk&#8217;, &#8216;Invader&#8217;),
+&#8216;Lrrr&#8217;: (&#8216;Omicron Persei 8&#8217;, &#8216;Emperor&#8217;)}</p>
+<p>If a key from the keys argument is missing from the dictionary,
+then that row was not found in the table.</p>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>For module TODOs</li>
+<li>You have to also use <code class="docutils literal"><span class="pre">sphinx.ext.todo</span></code> extension</li>
+</ul>
+</div>
+<p class="rubric">Examples</p>
+<p>Examples should be written in doctest format, and should illustrate how
+to use the function.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">example_generator</span><span class="p">(</span><span class="mi">4</span><span class="p">)])</span>
+<span class="go">[0, 1, 2, 3]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">IOError</span></code> &#8211; An error occurred accessing the bigtable.Table object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.goodoc.function_with_types_in_docstring">
+<code class="descclassname">llspy.goodoc.</code><code class="descname">function_with_types_in_docstring</code><span class="sig-paren">(</span><em>param1</em>, <em>param2</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.goodoc.function_with_types_in_docstring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Example function with types documented in the docstring.</p>
+<p><a class="reference external" href="https://www.python.org/dev/peps/pep-0484/">PEP 484</a> type annotations are supported. If attribute, parameter, and
+return types are annotated according to <a class="reference external" href="https://www.python.org/dev/peps/pep-0484/">PEP 484</a>, they do not need to be
+included in the docstring:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>param1</strong> (<em>int</em>) &#8211; The first parameter.</li>
+<li><strong>param2</strong> (<em>str</em>) &#8211; The second parameter.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The return value. True for success, False otherwise.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.goodoc.module_level_function">
+<code class="descclassname">llspy.goodoc.</code><code class="descname">module_level_function</code><span class="sig-paren">(</span><em>param1</em>, <em>param2=None</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.goodoc.module_level_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is an example of a module level function.</p>
+<p>Function parameters should be documented in the <code class="docutils literal"><span class="pre">Args</span></code> section. The name
+of each parameter is required. The type and description of each parameter
+is optional, but should be included if not obvious.</p>
+<p>If *args or **kwargs are accepted,
+they should be listed as <code class="docutils literal"><span class="pre">*args</span></code> and <code class="docutils literal"><span class="pre">**kwargs</span></code>.</p>
+<p>The format for a parameter is:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">name</span> <span class="p">(</span><span class="nb">type</span><span class="p">):</span> <span class="n">description</span>
+    <span class="n">The</span> <span class="n">description</span> <span class="n">may</span> <span class="n">span</span> <span class="n">multiple</span> <span class="n">lines</span><span class="o">.</span> <span class="n">Following</span>
+    <span class="n">lines</span> <span class="n">should</span> <span class="n">be</span> <span class="n">indented</span><span class="o">.</span> <span class="n">The</span> <span class="s2">&quot;(type)&quot;</span> <span class="ow">is</span> <span class="n">optional</span><span class="o">.</span>
+
+    <span class="n">Multiple</span> <span class="n">paragraphs</span> <span class="n">are</span> <span class="n">supported</span> <span class="ow">in</span> <span class="n">parameter</span>
+    <span class="n">descriptions</span><span class="o">.</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>param1</strong> (<em>int</em>) &#8211; The first parameter.</li>
+<li><strong>param2</strong> (<code class="xref py py-obj docutils literal"><span class="pre">str</span></code>, optional) &#8211; The second parameter. Defaults to None.
+Second line of description should be indented.</li>
+<li><strong>*args</strong> &#8211; Variable length argument list.</li>
+<li><strong>**kwargs</strong> &#8211; Arbitrary keyword arguments.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>True if successful, False otherwise.</p>
+<p>The return type is optional and may be specified at the beginning of
+the <code class="docutils literal"><span class="pre">Returns</span></code> section followed by a colon.</p>
+<p>The <code class="docutils literal"><span class="pre">Returns</span></code> section may span multiple lines and paragraphs.
+Following lines should be indented to match the first line.</p>
+<p>The <code class="docutils literal"><span class="pre">Returns</span></code> section supports any reStructuredText formatting,
+including literal blocks:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;param1&#39;</span><span class="p">:</span> <span class="n">param1</span><span class="p">,</span>
+    <span class="s1">&#39;param2&#39;</span><span class="p">:</span> <span class="n">param2</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">bool</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></code> &#8211; The <code class="docutils literal"><span class="pre">Raises</span></code> section is a list of all exceptions
+that are relevant to the interface.</li>
+<li><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> &#8211; If <cite>param2</cite> is equal to <cite>param1</cite>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-llspy.llsfiles">
+<span id="llspy-llsfiles-module"></span><h2>llspy.llsfiles module<a class="headerlink" href="#module-llspy.llsfiles" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="llspy.llsfiles.LLSdir">
+<em class="property">class </em><code class="descclassname">llspy.llsfiles.</code><code class="descname">LLSdir</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Top level class for an LLS experiment folder</p>
+<p>Detect parameters of an LLS experiment from a folder of files.</p>
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.correct_flash">
+<code class="descname">correct_flash</code><span class="sig-paren">(</span><em>camparams</em>, <em>target='parallel'</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.correct_flash" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.count_tiffs">
+<code class="descname">count_tiffs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.count_tiffs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.ditch_partial_tiffs">
+<code class="descname">ditch_partial_tiffs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.ditch_partial_tiffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>yields self.raw: a list of tiffs that match in file size.
+this excludes partially acquired files that can screw up various steps
+perhaps a better (but slower?) approach would be to look at the tiff
+header for each file?</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.get_all_tiffs">
+<code class="descname">get_all_tiffs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.get_all_tiffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>a list of every tiff file in the top level folder (all raw tiffs)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.get_c">
+<code class="descname">get_c</code><span class="sig-paren">(</span><em>c</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.get_c" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.get_files">
+<code class="descname">get_files</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.get_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.get_reltime">
+<code class="descname">get_reltime</code><span class="sig-paren">(</span><em>rt</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.get_reltime" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.get_t">
+<code class="descname">get_t</code><span class="sig-paren">(</span><em>t</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.get_t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.get_volume_shape">
+<code class="descname">get_volume_shape</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.get_volume_shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.get_w">
+<code class="descname">get_w</code><span class="sig-paren">(</span><em>w</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.get_w" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSdir.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>indir=None</em>, <em>binary=&lt;module 'llspy.cudabinwrapper' from '/Users/talley/Dropbox (HMS)/Python/LLSpy2/llspy/cudabinwrapper.py'&gt;</em>, <em>**options</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSdir.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="llspy.llsfiles.LLSsettings">
+<em class="property">class </em><code class="descclassname">llspy.llsfiles.</code><code class="descname">LLSsettings</code><span class="sig-paren">(</span><em>fname</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSsettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Class for parsing and storing info from LLS Settings.txt.</p>
+<dl class="method">
+<dt id="llspy.llsfiles.LLSsettings.parse">
+<code class="descname">parse</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSsettings.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>parse the settings file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSsettings.printDate">
+<code class="descname">printDate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSsettings.printDate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSsettings.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSsettings.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSsettings.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>outpath</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSsettings.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="llspy.llsfiles.LLSsettings.write_ini">
+<code class="descname">write_ini</code><span class="sig-paren">(</span><em>outpath</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.LLSsettings.write_ini" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.check_otf_dir">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">check_otf_dir</code><span class="sig-paren">(</span><em>dirname</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.check_otf_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.clean_string">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">clean_string</code><span class="sig-paren">(</span><em>varStr</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.clean_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>sanitize string for use as a variable name</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.correctTimepoint">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">correctTimepoint</code><span class="sig-paren">(</span><em>fnames</em>, <em>camparams</em>, <em>outpath</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.correctTimepoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>accepts a list of filenames (fnames) that represent Z stacks that have
+been acquired in an interleaved manner (i.e. ch1z1,ch2z1,ch1z2,ch2z2...)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.custom_formatwarning">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">custom_formatwarning</code><span class="sig-paren">(</span><em>msg</em>, <em>*a</em>, <em>**k</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.custom_formatwarning" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.filter_c">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">filter_c</code><span class="sig-paren">(</span><em>filelist</em>, <em>channels</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.filter_c" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of filenames whose channel numbers are within trange
+channels is either a single int, or an iterator with a range of channel
+numbers desired</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.filter_files">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">filter_files</code><span class="sig-paren">(</span><em>filelist</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.filter_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to filter a list of filenames according to
+stack number, channel number, wavelength name, relative time</p>
+<dl class="docutils">
+<dt>accepted arguments:</dt>
+<dd>t -&gt; filter_t,
+time -&gt; filter_t,
+s -&gt; filter_t,
+stacks -&gt; filter_t,
+timepoints -&gt; filter_t,
+c -&gt; filter_c,
+channel -&gt; filter_c,
+channels -&gt; filter_c,
+w -&gt; filter_w,
+wave -&gt; filter_w,
+waves -&gt; filter_w,
+wavelengths -&gt; filter_w,
+reltime -&gt; filter_reltime,
+relative time -&gt; filter_reltime,</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.filter_reltime">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">filter_reltime</code><span class="sig-paren">(</span><em>filelist</em>, <em>trange</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.filter_reltime" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of filenames whose relative timepoints are within trange
+trange is a tuple of (min, max) relative time in the experiment</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.filter_t">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">filter_t</code><span class="sig-paren">(</span><em>filelist</em>, <em>trange</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.filter_t" title="Permalink to this definition">¶</a></dt>
+<dd><p>return a list of filenames whose stack numbers are within trange
+trange is either a single int, or an iterator with a range of stack
+numbers desired</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.filter_w">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">filter_w</code><span class="sig-paren">(</span><em>filelist</em>, <em>w</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.filter_w" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.gen_filename">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">gen_filename</code><span class="sig-paren">(</span><em>d</em>, <em>template='{basename}_ch{channel}_stack{stack:04d}_{wave}nm_{reltime:07d}msec_{abstime:010d}msecAbs.tif'</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.gen_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate filename from dict with file attributes.</p>
+<p>using dicts like this
+o = {</p>
+<blockquote>
+<div>&#8216;basename&#8217;: &#8216;cell5&#8217;,
+&#8216;channel&#8217;: 0,
+&#8216;stack&#8217;: 4,
+&#8216;wave&#8217;: &#8216;488&#8217;,
+&#8216;reltime&#8217;: 4932,
+&#8216;abstime&#8217;: 12324,</div></blockquote>
+<p>}</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="llspy.llsfiles.parse_filename">
+<code class="descclassname">llspy.llsfiles.</code><code class="descname">parse_filename</code><span class="sig-paren">(</span><em>fname</em>, <em>matchword=None</em>, <em>pattern=re.compile('\n\t^(?P&lt;basename&gt;\\w+)\n\t_ch(?P&lt;channel&gt;\\d)\n\t_stack(?P&lt;stack&gt;\\d{4})\n\t_(?P&lt;wave&gt;\\d{3})nm\n\t_(?P&lt;reltime&gt;\\d{7})msec\n\t_(?P&lt;abstime&gt;\\d{10})msecAbs\n\t'</em>, <em>re.VERBOSE)</em><span class="sig-paren">)</span><a class="headerlink" href="#llspy.llsfiles.parse_filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">llspy package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-llspy.cudabinwrapper">llspy.cudabinwrapper module</a></li>
+<li><a class="reference internal" href="#module-llspy.goodoc">llspy.goodoc module</a></li>
+<li><a class="reference internal" href="#module-llspy.llsfiles">llspy.llsfiles module</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/llspy.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Talley Lambert.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/llspy.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
