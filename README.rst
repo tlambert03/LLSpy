@@ -18,7 +18,7 @@ Usage
     print(Experiment.settings)
 
     # wrapper for binary file
-    cudabin = LLS.cudabin.CUDAbin('/usr/local/bin/cudaDeconv')
+    cudabin = LLS.CUDAbin('/usr/local/bin/cudaDeconv')
     # parses help text to get a useful dict of available options and descriptions
     print(cudabin.options)
     cudabin.describe_option('--wiener')
