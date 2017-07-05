@@ -1,7 +1,11 @@
 #! /usr/bin/env python
 from __future__ import print_function
+from builtins import input
+
 import sys
 import os
+import shutil
+
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
 import llspy as LLS
 from llspy import llsfiles
@@ -47,7 +51,7 @@ def main(argv=None):
 		help="don't combine MIP files into single hyperstack")
 	arg('-u', '--32bit', dest='bit16', action='store_false',
 		help="save as 32 bit", default=True)
-	arg('-p', '--bleachCorrect', dest='bleachCorrect', action='store_true',
+	arg('-p', '--bleachCorrection', dest='bleachCorrect', action='store_true',
 		help="perform bleach correction on timelapse data", default=False),
 	arg('--otfdir', help="specify directory with otfs.\n\
 		OTFs should be named (e.g.): 488_otf.tif", default=None)
@@ -73,15 +77,17 @@ def main(argv=None):
 
 	# fix path errors
 	if not path:
-		path = raw_input(
+		path = input(
 			"\nPlease type in the path to your file and press 'Enter': ")
 		if not path:
 			parser.error("No file specified")
-		if not os.path.exists(path):
-			parser.error("Path does not exist")
+		if not os.path.isdir(path):
+			parser.error("Path must be an existing directory")
+
+	E = llsfiles.LLSdir(path)
 
 	# batch processing
-	if not options.batch and not glob.glob(os.path.join(path, '*Settings.txt')):
+	if not options.batch and not E.has_settings:
 		parser.error('not a LLS data folder, use --batch for batch processing')
 
 	# autodetect width by default
@@ -95,7 +101,7 @@ def main(argv=None):
 	elif options.otfdir is None:
 		options.otfdir = default_otfdir
 
-	# autodetect background from first plane mode
+	# autodetect background from mode of first plane
 	if options.background is None:
 			options.background = 'auto'
 
@@ -106,92 +112,60 @@ def main(argv=None):
 			options.rawMIP = options.deconMIP
 			options.deconMIP = (0, 0, 0)
 
-	def procfolder(input_folder, options):
-		E = llsfiles.LLSdir(input_folder)
-
+	def procfolder(E, options):
 		# check whether folder has already been processed by the presence of a
 		# ProcessingLog.txt file
 		if E.has_been_processed() and not options.reprocess:
-			print("Folder already appears to be processed: {}".format(input_folder))
+			print("Folder already appears to be processed: {}".format(E.path))
 			print("Skipping ... use the '--reprocess' flag to force reprocessing")
 			return 0
 
 		if options.reprocess and E.raw_is_compressed():
 			# uncompress the raw files first...
-
-
-			llscompress.untar(input_folder, verbose=options.verbose)
-
+			E.decompress(verbose=options.verbose)
 			# if reprocessing, look for a top level MIPs folder and remove it
-			if os.path.isdir(os.path.join(input_folder, 'MIPs')):
-				shutil.rmtree(os.path.join(input_folder, 'MIPs'))
+			if E.path.joinpath('MIPs').exists():
+				shutil.rmtree(E.path.joinpath('MIPs'))
 
-		print "\n"
-		print "#" * (int(len(input_folder)) + 24)
-		print "##    processing: %s    ##" % input_folder
-		print "#" * (int(len(input_folder)) + 24)
-		print "\n"
+		print("\n")
+		print("#" * (int(len(str(E.path))) + 24))
+		print("##    processing: %s    ##" % str(E.path))
+		print("#" * (int(len(str(E.path))) + 24))
+		print("\n")
 
 		if options.correct:
 			docorrection = True
-			if os.path.exists(os.path.join(input_folder, 'Corrected')):
+			if E.has_corrected():
 				import select
-				print "Corrected folder already exists!  Use it? \
-						(y/n 6 seconds to answer)"
-				i, o, e = select.select([sys.stdin], [], [], 6)
+				print("Corrected folder already exists!  Use it?"
+						"(y/n 8 seconds to answer)")
+				i, o, e = select.select([sys.stdin], [], [], 8)
 				if (i):
 					if sys.stdin.readline().strip()[0].lower() == 'y':
-						print "Using already corrected files..."
+						print("Using already corrected files...")
 						docorrection = False
 					else:
-						print "recreating corrected files..."
+						print("recreating corrected files...")
 						docorrection = True
 				else:
-					print "timed out... recreating corrected Files..."
+					print("timed out... recreating corrected Files...")
 
 			if docorrection:
 				try:
-					from correct import batchFlashCorrect
-					original_input = input_folder
-					input_folder = batchFlashCorrect(
-						input_folder, options.withMedian)
-				except Exception as e:
-					print "ERROR: problem with correcting dataset: %s" % input_folder
-					print e
+					E.correct_flash(target='parallel', median=options.withMedian)
+				except Exception:
+					raise RuntimeError(
+						"ERROR: problem with correcting dataset: {}".format(E.path))
 
-		S, logdict = process_folder(input_folder, deskew=options.deskew,
-			background=options.background, iters=options.iters,
-			rawMIP=options.rawMIP, deconMIP=options.deconMIP,
-			rotate=options.rotate, bit16=options.bit16,
-			bleachCorrect=options.bleachCorrect, width=options.width,
-			otfdir=options.otfdir, verbose=options.verbose,
-			procmode=options.procmode)
+		try:
+			S = E.process(**vars(options))
+			logdict = None
+		except CUDAProcessError as e:
+			print(e)
 
-		if S == 0:
-			print "processing failed for directory %s" % input_folder
-			return
-
-		if options.iters == 0:
-			try:
-				shutil.rmtree(os.path.join(input_folder, 'GPUdecon'))
-			except:
-				print "unable to remove directory: %s" % os.path.join(
-					input_folder, 'GPUdecon')
 		if not options.sepmips:
-			print "merging MIPs..."
+			print("merging MIPs...")
 			mipmerge(S, delete=True, bit16=options.bit16)
-		if deleteDecon:
-			if options.procmode == 'cpu':
-				decon_folder = 'CPPdecon'
-			else:
-				decon_folder = 'GPUdecon'
-			deconstacks = glob.glob(
-				os.path.join(input_folder, decon_folder, '*_decon.tif'))
-			for stack in deconstacks:
-					os.remove(stack)
-			logdict['decon_saved'] = False
-		else:
-			logdict['decon_saved'] = True
 
 		if options.correct:
 			if os.path.basename(input_folder) == 'Corrected':
@@ -209,7 +183,8 @@ def main(argv=None):
 				shutil.rmtree(os.path.join(corrected))
 
 		if options.compress:
-			llscompress.make_tar(input_folder, verbose=options.verbose)
+			E.compress(verbose=options.verbose)
+
 		if logdict:
 			logdict['corrected'] = options.correct
 			logdict['compressed'] = options.compress
@@ -217,18 +192,17 @@ def main(argv=None):
 			try:
 				write_stats_to_log(logdict, masterLogfile)
 			except Exception as e:
-				print "ERROR: could not write stats to master log file:"
-				print e
+				print("ERROR: could not write stats to master log file:")
 		return
 
 	if options.batch:
 		try:
-			print "Looking for data folders in %s... " % path
+			print("Looking for data folders in %s... " % path)
 			subfolders = get_subfolders_containing_filepattern(
 				path, filepattern='*Settings.txt')
-			print "found the following LLS data folders:"
+			print("found the following LLS data folders:")
 			for folder in subfolders:
-					print folder.split(path)[1]
+					print(folder.split(path)[1])
 			for folder in subfolders:
 					procfolder(folder)
 			sys.exit('\n\nDone batch processing!')
@@ -236,7 +210,7 @@ def main(argv=None):
 			raise
 	else:
 		try:
-			procfolder(path)
+			procfolder(E, options)
 			sys.exit('Done!')
 		except:
 			raise

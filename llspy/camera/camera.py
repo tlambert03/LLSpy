@@ -5,10 +5,11 @@ import warnings
 import numpy as np
 # note: numba.cuda MUST be imported before gputools, otherwise segfault 11
 from numba import jit, cuda
-from tifffile import imread, imsave, imshow
+from tifffile import imread, imsave
 import math
 
 default_params = config.__CAMPARAMS__
+
 
 # #THIS ONE WORKS BEST SO FAR
 @jit(nopython=True, nogil=True, cache=True)
@@ -27,6 +28,7 @@ def calc_correction(stack, a, b, offset):
 					res[i, j, k] = d if d > 0 else 0
 	return res
 
+
 # FIXME: almost correct... but still returning some "blocky" output
 # ... I think it's due to the the stack[z - 1, y, x] not finding the right value
 # ... also, speed is likely not as fast as @ jit for this problem
@@ -42,7 +44,7 @@ def cuda_correct(stack, a, b):
 			stack[z, y, x] = d if d > 0 else 0
 
 
-#FIXME: this shouldn't go here
+# FIXME: this shouldn't go here
 def savetiff(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
 	"""sample wrapper for tifffile.imsave imagej=True."""
 	# array must be in TZCYX order
@@ -117,6 +119,7 @@ def correctInsensitivePixels(
 			out[z] = np.asarray(frame, dt)
 
 		return out, pixelCorrection
+
 
 def determineThreshold(array, maxSamples=50000):
 	array = np.array(array)
@@ -324,13 +327,13 @@ if __name__=='__main__':
 	for _ in range(niters):
 		d1 = corrector.correct_stacks(stacks, median=False, target='cpu')
 	end = time.time()
-	print("JitCPU Time: " + str((end - start)/niters))
+	print("JitCPU Time: " + str((end - start) / niters))
 
 	start = time.time()
 	for _ in range(niters):
 		d2 = corrector.correct_stacks(stacks, median=False, target='numpy')
 	end = time.time()
-	print("NumpyCPU Time: " + str((end - start)/niters))
+	print("NumpyCPU Time: " + str((end - start) / niters))
 	print("Equal? = " + str(np.allclose(d1[0], d2[0])))
 	print("Equal? = " + str(np.allclose(d1[1], d2[1])))
 	print("Equal? = " + str(np.allclose(d1[2], d2[2])))
@@ -339,9 +342,9 @@ if __name__=='__main__':
 	for _ in range(niters):
 		d3 = corrector.correct_stacks(stacks, median=False, target='gpu')
 	end = time.time()
-	print("GPU Time: " + str((end - start)/niters))
+	print("GPU Time: " + str((end - start) / niters))
 	print("Equal? = " + str(np.allclose(d3[0], d2[0])))
 	print("Equal? = " + str(np.allclose(d3[1], d2[1])))
 	print("Equal? = " + str(np.allclose(d3[2], d2[2])))
 
-	#batchFlashCorrect(llsdir,camparams)
+	# batchFlashCorrect(llsdir,camparams)
