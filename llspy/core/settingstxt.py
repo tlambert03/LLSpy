@@ -4,6 +4,7 @@ import os
 import re
 import io
 import configparser
+import warnings
 
 from datetime import datetime
 
@@ -41,7 +42,7 @@ class LLSsettings(object):
 	'''Class for parsing and storing info from LLS Settings.txt.'''
 
 	def __init__(self, fname):
-		self.path = fname
+		self.path = os.path.abspath(fname)
 		self.basename = os.path.basename(fname)
 		if self.read():
 			self.parse()
@@ -55,6 +56,9 @@ class LLSsettings(object):
 			with io.open(self.path, 'r', encoding='utf-8') as f:
 				self.raw_text = f.read()
 			return 1
+		except IOError:
+			warnings.warn('Settings file not found at {}'.format(self.path))
+			return 0
 		except Exception:
 			return 0
 

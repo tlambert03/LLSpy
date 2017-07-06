@@ -1,16 +1,17 @@
 #! /usr/bin/env python
 from __future__ import print_function
-from builtins import input
+
+from llspy.config import config
+from llspy.core.llsdir import LLSdir
 
 import sys
 import os
 import shutil
+from builtins import input
 
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-import llspy as LLS
-from llspy import llsfiles
 
-from llspy.config import config
+
 
 default_otfdir = config.__OTFPATH__
 
@@ -84,7 +85,7 @@ def main(argv=None):
 		if not os.path.isdir(path):
 			parser.error("Path must be an existing directory")
 
-	E = llsfiles.LLSdir(path)
+	E = LLSdir(path)
 
 	# batch processing
 	if not options.batch and not E.has_settings:
@@ -135,7 +136,7 @@ def main(argv=None):
 
 		if options.correct:
 			docorrection = True
-			if E.has_corrected():
+			if E.is_corrected():
 				import select
 				print("Corrected folder already exists!  Use it?"
 						"(y/n 8 seconds to answer)")

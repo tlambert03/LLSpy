@@ -1,7 +1,0 @@
-pytest
-sphinx
-tifffile
-numpy
-scipy
-gputools
-joblib

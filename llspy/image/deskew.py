@@ -1,19 +1,21 @@
 import numpy as np
 import math
 
-try:
-	import sys
-	import os
-	# silence gputools error if config file is missing
-	sys.stdout = open(os.devnull, "w")
-	import gputools
-	sys.stdout = sys.__stdout__
-except ImportError:
-	sys.stdout = sys.__stdout__
-	print("could not import gputools, can't deskew")
-
 
 def deskew(rawdata, dz=0.3, dx=0.105, angle=31.5, filler=0):
+	try:
+		import sys
+		import os
+		# silence gputools error if config file is missing
+		#sys.stdout = open(os.devnull, "w")
+		# the PyPI gputools repo doesn't yet have the required affine params
+		sys.path.insert(0, '/Users/talley/Dropbox (HMS)/Python/repos/gputools/')
+		import gputools
+		#sys.stdout = sys.__stdout__
+	except ImportError:
+		#sys.stdout = sys.__stdout__
+		print("could not import gputools, can't deskew")
+
 	deskewFactor = np.cos(angle * np.pi / 180) * dz / dx
 	T = np.array([[1, 0, deskewFactor, 0],
 				[0, 1, 0, 0],

@@ -318,7 +318,7 @@ if __name__=='__main__':
 	corrector = camparams.get_subroi(CameraROI(E.settings.camera.roi))
 
 	# this is the list you need to make
-	stacks = [imread(str(t)) for t in E.raw if 'stack0001' in str(t)]
+	stacks = [imread(str(t)) for t in E.tiff.raw if 'stack0001' in str(t)]
 
 	niters = 5
 
