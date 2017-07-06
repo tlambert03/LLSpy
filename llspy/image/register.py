@@ -4,14 +4,20 @@ import numpy as np
 from scipy import ndimage
 from scipy import stats
 import scipy
-import cv2
 import os
 try:
 	import SimpleITK as sitk
-	sitkImported = True
+	__sitkImported = True
 except Exception:
-	print "could not import SimpleITK module!"
-	sitkImported = False
+	print("could not import SimpleITK module!")
+	__sitkImported = False
+
+try:
+	import cv2
+	__cv2Imported = True
+except Exception:
+	print("could not import opencv module!")
+	__cv2Imported = False
 
 
 def calcTranslationRegistration(moving, fixed):
@@ -104,34 +110,39 @@ def normxcorr2(b,a):
 	b = np.sum(b.flatten()**2)
 	return c/sqrt(a*b)
 
-img1 = imread('/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_registration_samp/janelia_reg_example/deskewed/488_beadfield_0,6umStep_deskewed.tif')
-img2 = imread('/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_registration_samp/janelia_reg_example/deskewed/560_beadfield_0,6umStep_uncorrected_deskewed.tif')
 
-# crop top and bottom 5 planes to remove partial PSFs
-# check that the images are the same size
 
-# get img shape
-zslices, h, w = img1.shape
+if __name__ == '__main__':
+	img1 = imread('/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_registration_samp/janelia_reg_example/deskewed/488_beadfield_0,6umStep_deskewed.tif')
+	img2 = imread('/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_registration_samp/janelia_reg_example/deskewed/560_beadfield_0,6umStep_uncorrected_deskewed.tif')
 
-# background subtraction by rolling ball?
-background = 10
-img1[img1 < background] = background
-img1bg = img1 - background
-img2[img2 < background] = background
-img2bg = img2 - background
-# sum images along Z axis
-img1sum = np.sum(img1bg, 0)
-img2sum = np.sum(img2bg, 0)
+	# crop top and bottom 5 planes to remove partial PSFs
+	# check that the images are the same size
 
-# Auto Detect maximum threshold to detect alignment beads
-# get bead peak coordinates in the process
-peaks1, peaks2 = autodetect_peaks((img1sum, img2sum))
+	# get img shape
+	zslices, h, w = img1.shape
 
-# Rough align images using cross correlation
-temp = img2sum.astype(np.float32)
-crop = 20
-temp = temp[crop:-crop, crop:-crop]
-result = cv2.matchTemplate(img1sum.astype(np.float32), temp, cv2.TM_CCORR_NORMED)
-min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-xshift = crop - max_loc[0]
-yshift = crop - max_loc[1]
+	# background subtraction by rolling ball?
+	background = 10
+	img1[img1 < background] = background
+	img1bg = img1 - background
+	img2[img2 < background] = background
+	img2bg = img2 - background
+	# sum images along Z axis
+	img1sum = np.sum(img1bg, 0)
+	img2sum = np.sum(img2bg, 0)
+
+	# Auto Detect maximum threshold to detect alignment beads
+	# get bead peak coordinates in the process
+	peaks1, peaks2 = autodetect_peaks((img1sum, img2sum))
+
+	# Rough align images using cross correlation
+	temp = img2sum.astype(np.float32)
+	crop = 20
+	temp = temp[crop:-crop, crop:-crop]
+	result = cv2.matchTemplate(img1sum.astype(np.float32), temp, cv2.TM_CCORR_NORMED)
+	min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+	xshift = crop - max_loc[0]
+	yshift = crop - max_loc[1]
+	print(xshift)
+	print(yshift)

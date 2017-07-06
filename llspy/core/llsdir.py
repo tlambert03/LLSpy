@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import print_function, division
 
 from llspy.config import config
 from llspy.core.settingstxt import LLSsettings
@@ -7,6 +7,8 @@ from llspy.core import compress
 from llspy.core.cudabinwrapper import CUDAbin
 from llspy.util import util
 from llspy.camera.camera import CameraParameters, CameraROI
+from llspy import plib
+from llspy.image.autodetect import feature_width, detect_background
 
 import os
 import shutil
@@ -14,14 +16,6 @@ import warnings
 import numpy as np
 import pprint
 from tifffile import TiffFile, imsave, imread
-
-try:
-	import pathlib as plib
-	plib.Path().expanduser()
-except (ImportError, AttributeError):
-	import pathlib2 as plib
-except (ImportError, AttributeError):
-	raise ImportError('no pathlib detected. For python2: pip install pathlib2')
 
 try:
 	from joblib import Parallel, delayed
@@ -55,17 +49,34 @@ class LLSdir(object):
 
 	def __init__(self, path):
 		self.path = plib.Path(path)
-		self.settings_files = [str(s) for s in self.path.glob('*Settings.txt')]
-		self.has_settings = len(self.settings_files) > 0
+		self.basename = self.path.name
+		self.date = None
+		self.parameters = util.dotdict()
+		self.tiff = util.dotdict()
+		settings_files = self.get_settings_files()
+		self.has_settings = bool(len(settings_files))
 		if self.has_settings:
-			self.settings = LLSsettings(self.settings_files[0])
+			if len(settings_files) > 1:
+				warnings.warn('Multiple Settings.txt files detected...')
+			self.settings = LLSsettings(settings_files[0])
 			self.date = self.settings.date
+			if self.settings.z_motion == 'Sample piezo':
+				self.parameters.dz = float(
+					self.settings.channel[0]['S PZT']['interval'])
+			else:
+				self.parameters.dz = float(
+					self.settings.channel[0]['Z PZT']['interval'])
+			self.parameters.dx = self.settings.pixel_size
+			self.parameters.angle = self.settings.sheet_angle
 		else:
 			warnings.warn('No Settings.txt folder detected, is this an LLS folder?')
 		if self.get_all_tiffs():
 			self.ditch_partial_tiffs()
-			self.count_tiffs()
-			self.get_volume_shape()
+			self.detect_parameters()
+			self.read_tiff_header()
+
+	def get_settings_files(self):
+		return [str(s) for s in self.path.glob('*Settings.txt')]
 
 	def get_all_tiffs(self):
 		'''a list of every tiff file in the top level folder (all raw tiffs)'''
@@ -73,69 +84,72 @@ class LLSdir(object):
 		if not all_tiffs:
 			warnings.warn('No raw/uncompressed Tiff files detected in folder')
 			return 0
-		self.nFiles = len(all_tiffs)
-		# self.bytes can be used to get size of raw data: np.sum(self.bytes)
-		self.bytes = [f.stat().st_size for f in all_tiffs]
-		self.all_tiffs = [str(f) for f in all_tiffs]
+		self.tiff.numtiffs = len(all_tiffs)
+		# self.tiff.bytes can be used to get size of raw data: np.sum(self.tiff.bytes)
+		self.tiff.bytes = [f.stat().st_size for f in all_tiffs]
+		self.tiff.all = [str(f) for f in all_tiffs]
 		return 1
 
 	def ditch_partial_tiffs(self):
-		'''yields self.raw: a list of tiffs that match in file size.
+		'''yields self.tiff.raw: a list of tiffs that match in file size.
 		this excludes partially acquired files that can screw up various steps
 		perhaps a better (but slower?) approach would be to look at the tiff
 		header for each file?
 		'''
-		self.file_size = round(np.mean(self.bytes), 2)
+		self.tiff.size_raw = round(np.mean(self.tiff.bytes), 2)
 		i = 0
-		self.raw = []
-		for f in self.all_tiffs:
-			if abs(self.bytes[i] - self.file_size) < 1000:
-				self.raw.append(str(f))
+		self.tiff.raw = []
+		for f in self.tiff.all:
+			if abs(self.tiff.bytes[i] - self.tiff.size_raw) < 1000:
+				self.tiff.raw.append(str(f))
 			else:
 				warnings.warn('discarding small file:  {}'.format(f.name))
 			i += 1
-		self.unraw = list(
-			set(self.raw).difference(set(self.all_tiffs)))
+		self.tiff.rejected = list(
+			set(self.tiff.raw).difference(set(self.tiff.all)))
 
-	# FIXME
-	# this is ugly code... refactor
-	def count_tiffs(self):
-		self.imagecount = []
-		self.wavelength = []
-		self.interval = []
+	def detect_parameters(self):
+		self.tiff.imagecount = []
+		self.parameters.wavelength = []
+		self.parameters.interval = []
 		for c in range(6):
-			q = [f for f in self.raw if 'ch' + str(c) in f]
+			q = [f for f in self.tiff.raw if '_ch' + str(c) in f]
 			if len(q):
-				self.imagecount.append(len(q))
-				self.wavelength.append(parse.parse_filename(str(q[0]), 'wave'))
+				self.tiff.imagecount.append(len(q))
+				self.parameters.wavelength.append(
+					parse.parse_filename(str(q[0]), 'wave'))
 				if len(q) > 1:
-					self.interval.append(
+					self.parameters.interval.append(
 						parse.parse_filename(str(q[1]), 'reltime') / 1000)
-		self.nc = len(self.imagecount)
-		self.nt = max(self.imagecount)
-		if all([f == self.imagecount[0] for f in self.imagecount]):
+		self.parameters.nc = len(self.tiff.imagecount)
+		self.parameters.nt = max(self.tiff.imagecount)
+		if all([f == self.tiff.imagecount[0] for f in self.tiff.imagecount]):
 			# different count for each channel ... decimated stacks?
-			self.decimated = False
+			self.parameters.decimated = False
 		else:
-			self.decimated = True
+			self.parameters.decimated = True
 		try:
-			self.duration = max(
-				[(a - 1) * b for a, b in zip(self.imagecount, self.interval)])
+			self.parameters.duration = max(
+				[(a - 1) * b for a, b in zip(
+					self.tiff.imagecount, self.parameters.interval)])
 		except Exception:
-			self.duration = []
+			self.parameters.duration = []
 
-	def get_volume_shape(self):
+	def read_tiff_header(self):
 		with warnings.catch_warnings():
 			warnings.simplefilter("ignore")
-			firstTiff = TiffFile(self.raw[0])
-		self.shape = firstTiff.series[0].shape
-		self.nz, self.ny, self.nx = self.shape
-		self.bit_depth = firstTiff.pages[0].bits_per_sample
+			firstTiff = TiffFile(self.tiff.raw[0])
+		self.parameters.shape = firstTiff.pages[0].shape
+		self.parameters.nz, self.parameters.ny, self.parameters.nx = self.parameters.shape
+		self.tiff.bit_depth = firstTiff.pages[0].bits_per_sample
+
+	def is_compressed(self, subdir='.'):
+		return bool(len([s for s in self.path.joinpath(subdir).glob('*.bz2')]))
 
 	def has_been_processed(self):
 		return bool(len([s for s in self.path.glob('*ProcessingLog.txt')]))
 
-	def has_corrected(self):
+	def is_corrected(self):
 		corpath = self.path.joinpath('Corrected')
 		if corpath.exists():
 			if len(list(corpath.glob('*COR*'))) < self.nFiles:
@@ -148,18 +162,15 @@ class LLSdir(object):
 			return False
 
 	def compress(self, subfolder='.', **kwargs):
-		return compress.make_tar(self.path.joinpath(subfolder), **kwargs)
+		return compress.make_tar(str(self.path.joinpath(subfolder)), **kwargs)
 
 	def decompress(self, subfolder='.', **kwargs):
-		o = compress.untar(self.path.joinpath(subfolder), **kwargs)
+		o = compress.untar(str(self.path.joinpath(subfolder)), **kwargs)
 		if self.get_all_tiffs():
 			self.ditch_partial_tiffs()
-			self.count_tiffs()
-			self.get_volume_shape()
+			self.detect_parameters()
+			self.read_tiff_header()
 		return o
-
-	def raw_is_compressed(self):
-		return bool(len([s for s in self.path.glob('*.bz2')]))
 
 	def reduce_to_raw(self, keepmip=True, verbose=True):
 		"""
@@ -227,23 +238,6 @@ class LLSdir(object):
 		else:
 			pass
 
-	def _get_cudaDeconv_options(self):
-		opts = {}
-		opts['drdata'] = self.settings.pixel_size
-		if self.settings.z_motion == 'Sample piezo':
-			opts['deskew'] = self.settings.sheet_angle
-			opts['dzdata'] = float(self.settings.channel[0]['S PZT']['interval'])
-		else:
-			opts['deskew'] = 0
-			opts['dzdata'] = float(self.settings.channel[0]['Z PZT']['interval'])
-		return opts
-
-	def _get_extended_options(self, **kwargs):
-		pass
-
-	def process_channel():
-		pass
-
 	def process(self, indir=None, filepattern='488', binary=CUDAbin(), **options):
 		print(options)
 		return
@@ -255,19 +249,36 @@ class LLSdir(object):
 		return output
 
 	def get_t(self, t):
-		return parse.filter_t(self.raw, t)
+		return parse.filter_t(self.tiff.raw, t)
 
 	def get_c(self, c):
-		return parse.filter_c(self.raw, c)
+		return parse.filter_c(self.tiff.raw, c)
 
 	def get_w(self, w):
-		return parse.filter_w(self.raw, w)
+		return parse.filter_w(self.tiff.raw, w)
 
 	def get_reltime(self, rt):
-		return parse.filter_reltime(self.raw, rt)
+		return parse.filter_reltime(self.tiff.raw, rt)
 
 	def get_files(self, **kwargs):
-		return parse.filter_files(self.raw, **kwargs)
+		return parse.filter_files(self.tiff.raw, **kwargs)
+
+	def detect_width(self, **kwargs):
+		# defaults background=100, pad=100, sigma=2
+		w = feature_width(self, **kwargs)
+		self.parameters.content_width = w['width']
+		self.parameters.content_offset = w['offset']
+		self.parameters.deskewed_nx = w['newX']
+		return w
+
+	def detect_background(self, **kwargs):
+		# defaults background=100, pad=100, sigma=2
+		bgrd = []
+		for c in range(self.parameters.nc):
+			i = imread(self.get_files(t=0, c=c))
+			bgrd.append(detect_background(i))
+		self.parameters.background = bgrd
+		return bgrd
 
 	def correct_flash(self, camparams=None, target='parallel', median=True):
 		if camparams is None:
@@ -282,8 +293,8 @@ class LLSdir(object):
 		outpath = self.path.joinpath('Corrected')
 		if not outpath.is_dir():
 			outpath.mkdir()
-		self.settings.write(outpath.joinpath(self.settings.basename))
-		timegroups = [self.get_t(t) for t in range(self.nt)]
+		self.settings.write(str(outpath.joinpath(self.settings.basename)))
+		timegroups = [self.get_t(t) for t in range(self.parameters.nt)]
 
 		if hasjoblib and target == 'parallel':
 			Parallel(n_jobs=cpu_count(), verbose=9)(delayed(
@@ -294,10 +305,10 @@ class LLSdir(object):
 			for t in timegroups:
 				correctTimepoint(t, camparams, outpath, median)
 
-	def __repr__(self):
+	def __str__(self):
 		out = {}
 		if hasattr(self, 'bytes'):
-			out.update({'raw data size': util.format_size(np.mean(self.bytes))})
+			out.update({'raw data size': util.format_size(np.mean(self.tiff.bytes))})
 		for k, v in self.__dict__.items():
 			if k not in {'all_tiffs', 'date', 'settings_files'}:
 				out.update({k: v})
