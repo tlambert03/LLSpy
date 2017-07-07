@@ -44,11 +44,11 @@ def feature_width(E, background=None, pad=100, sigma=2):
 	topmax = np.max(bounds[:, 1])
 	topmin = np.min(bounds[:, 0])
 	deskewedWidth = bounds[0, 2]
-	width = topmax - topmin + pad
+	width = int(topmax - topmin + pad)
 	middle = np.floor(topmax - width / 2)
-	offset = np.floor(middle - deskewedWidth / 2)
+	offset = int(np.floor(middle - deskewedWidth / 2))
 	# print "width: %d,   offset: %d" % (width, offset)
-	return {'width': width, 'offset': offset, 'newX': deskewedWidth}
+	return {'width': width, 'offset': offset, 'deskewed_nx': deskewedWidth}
 
 
 def detect_background(im):
