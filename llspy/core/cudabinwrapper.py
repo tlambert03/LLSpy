@@ -6,7 +6,7 @@ from llspy.config import config
 
 default_cudaBinary = config.__CUDADECON__
 
-class CUDAbin():
+class CUDAbin(object):
 	"""
 	Wrapper class for Lin Shao's cudaDeconv binary
 	"""
@@ -70,13 +70,18 @@ class CUDAbin():
 		cmd = [self.path, indir, filepattern, otf]
 		for o in options:
 			if self.has_option('--' + o):
-				if isinstance(options[o], bool):
-					cmd.extend(['--' + o])
+				if 'MIP' in o:
+					if options[o] is not None and len(options[o]) == 3:
+						cmd.extend(['--' + o, str(options[o][0]),
+							str(options[o][1]), str(options[o][2])])
+				elif isinstance(options[o], bool):
+					if options[o]:
+						cmd.extend(['--' + o])
 				else:
 					cmd.extend(['--' + o, str(options[o])])
 			else:
 				warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
-		print(cmd)
+		print(" ".join(cmd))
 		return self._run_command(cmd)
 
 	def _run_command(self, cmd):
@@ -101,7 +106,7 @@ class CUDAbin():
 		h = self._run_command(cmd.split())
 		self.helpstring = h.output.decode('utf-8')
 		H = self.helpstring.splitlines()
-		options = [re.findall('[^A-Za-z]-[a-zA-Z-]+', i) for i in H]
+		options = [re.findall('[^A-Za-z1-9]-[1-9a-zA-Z-]+', i) for i in H]
 		hasarg = [1 if z else 0 for z in options]
 		options = [tuple(z.strip(' ') for z in i) for i in options if i]
 		d = [i.split('   ')[-1].strip()
