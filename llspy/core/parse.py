@@ -185,10 +185,4 @@ def filter_files(filelist, **kwargs):
 
 # 'cell5_ch1_stack0102_560nm_0001760msec_0020933033msecAbs.tif'
 # {name}_ch{channel:1}_stack{stack:4}_{wave:3}nm_{reltime:7}msec_{abstime:10}msecAbs
-psffile_pattern = re.compile(r"""
-	^(?P<date>\d{8})
-	_(?P<wave>\d{3})
-	_(?P<psftype>[a-zA-Z_]*)
-	(?P<innerNA>[0-9p]+)
-	-(?P<outerNA>[0-9p]+)
-	.tif$""", re.VERBOSE)
+
