@@ -228,16 +228,16 @@ class LLSdir(object):
 				return 1
 
 	def autoprocess(self, correct=False, median=True, width='auto', pad=50,
-		shift=0, background=None, trange=None, crange=None, nIters=10,
-		MIP=(0, 0, 1), rMIP=None, uint16=True, rotate=False,
+		shift=0, background=None, trange=None, crange=None, iters=10,
+		MIP=(0, 0, 1), rawMIP=None, uint16=True, rotate=False,
 		bleachCorrection=False, saveDeskewedRaw=True, quiet=False, verbose=False,
 		compress=False, mipmerge=True, binary=CUDAbin()):
 		"""Main method for easy processing of the folder"""
-
+		otfs = self.get_otfs()
 		E = self
+
 		if correct:
 			E = E.correct_flash(trange=trange, median=median)
-			background = 0
 
 		P = E.parameters
 
@@ -249,27 +249,35 @@ class LLSdir(object):
 		else:
 			crange = [item for item in crange if item < P.nc]
 
+		if background is None:
+			background = E.get_background()
+		elif isinstance(background, (int, float)):
+			background = [background] * len(crange)
+
+		if (width == 'auto') and not rotate:
+			wd = E.get_feature_width()
+
 		for c in crange:
 			opts = {
-				'background': E.background[c] if background is None else background,
+				'background': background[c] if not correct else 0,
 				'drdata': P.dx,
 				'dzdata': P.dz,
 				'wavelength': P.wavelength[c] / 1000,
 				'deskew': P.angle if P.samplescan else 0,
 				'saveDeskewedRaw': bool(saveDeskewedRaw) if P.samplescan else False,
 				'MIP': MIP,
-				'rMIP': rMIP,
+				'rawMIP': rawMIP,
 				'uint16': uint16,
 				'bleachCorrection': bool(bleachCorrection),
-				'RL': nIters if nIters is not None else 0,
+				'RL': iters if iters is not None else 0,
 				'rotate': P.angle if rotate else 0,
 				'quiet': bool(quiet),
 				'verbose': bool(verbose),
 			}
 			if width and not rotate:
 				opts.update({
-					'width': E.feature_width.width if width == 'auto' else width,
-					'shift': E.feature_width.offset if width == 'auto' else shift,
+					'width': wd['width'] if width == 'auto' else width,
+					'shift': wd['offset'] if width == 'auto' else shift,
 				})
 			# filter by channel and trange
 			if trange is not None:
@@ -279,7 +287,7 @@ class LLSdir(object):
 					c, util.pyrange_to_perlregex(trange))
 			else:
 				filepattern = 'ch{}_'.format(c)
-			otf = E.otfs[c]
+			otf = otfs[c]
 			response = binary.process(str(E.path), filepattern, otf, **opts)
 			if verbose:
 				print(response.output.decode('utf-8'))
@@ -295,7 +303,6 @@ class LLSdir(object):
 					util.imsave(array, str(MIPdir.joinpath(outname)),
 						dx=E.parameters.dx, dt=E.parameters.interval[0])
 				[file.unlink() for file in filelist]
-
 		if compress:
 			E.compress()
 
@@ -320,8 +327,7 @@ class LLSdir(object):
 	def get_files(self, **kwargs):
 		return parse.filter_files(self.tiff.raw, **kwargs)
 
-	@tf.lazyattr
-	def otfs(self):
+	def get_otfs(self):
 		""" intelligently pick OTF from archive directory based on date and mask
 		settings..."""
 		otfs = {}
@@ -339,19 +345,17 @@ class LLSdir(object):
 			otfs[c] = otf
 		return otfs
 
-	@tf.lazyattr
-	def feature_width(self, **kwargs):
+	def get_feature_width(self, **kwargs):
 		# defaults background=100, pad=100, sigma=2
-		w = util.dotdict()
+		w = {}
 		w.update(feature_width(self, **kwargs))
 		# self.parameters.content_width = w['width']
 		# self.parameters.content_offset = w['offset']
 		# self.parameters.deskewed_nx = w['newX']
 		return w
 
-	@tf.lazyattr
 	# FIXME: should calculate background of provided folder (e.g. Corrected)
-	def background(self, **kwargs):
+	def get_background(self, **kwargs):
 		# defaults background and=100, pad=100, sigma=2
 		bgrd = {}
 		for c in range(self.parameters.nc):
