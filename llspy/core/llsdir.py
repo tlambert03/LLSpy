@@ -10,6 +10,7 @@ from llspy.util import util
 from llspy.camera.camera import CameraParameters, CameraROI
 from llspy import plib
 from llspy.image.autodetect import feature_width, detect_background
+from llspy.image.mipmerge import mergemips
 
 import os
 import shutil
@@ -27,7 +28,6 @@ except ImportError:
 	hasjoblib = False
 
 
-# FIXME: fix metadata on save
 def correctTimepoint(fnames, camparams, outpath, median):
 	'''accepts a list of filenames (fnames) that represent Z stacks that have
 	been acquired in an interleaved manner (i.e. ch1z1,ch2z1,ch1z2,ch2z2...)
@@ -39,7 +39,8 @@ def correctTimepoint(fnames, camparams, outpath, median):
 	for n in range(len(outstacks)):
 		with warnings.catch_warnings():
 			warnings.simplefilter("ignore")
-			tf.imsave(outnames[n], outstacks[n], imagej=True)
+			util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'),
+					outnames[n])
 
 
 class LLSdir(object):
@@ -62,7 +63,8 @@ class LLSdir(object):
 			self.settings = LLSsettings(self.settings_files[0])
 			self.date = self.settings.date
 			self.parameters.z_motion = self.settings.z_motion
-			if self.settings.z_motion == 'Sample piezo':
+			self.parameters.samplescan = bool(self.settings.z_motion == 'Sample piezo')
+			if self.parameters.samplescan:
 				self.parameters.dz = float(
 					self.settings.channel[0]['S PZT']['interval'])
 			else:
@@ -125,11 +127,12 @@ class LLSdir(object):
 						parse.parse_filename(str(q[1]), 'reltime') / 1000)
 		self.parameters.nc = len(self.tiff.count)
 		self.parameters.nt = max(self.tiff.count)
-		if all([f == self.tiff.count[0] for f in self.tiff.count]):
+		if len(set(self.tiff.count)) > 1:
 			# different count for each channel ... decimated stacks?
-			self.parameters.decimated = False
-		else:
 			self.parameters.decimated = True
+		else:
+			self.parameters.decimated = False
+
 		try:
 			self.parameters.duration = max(
 				[(a - 1) * b for a, b in zip(
@@ -180,21 +183,18 @@ class LLSdir(object):
 		"""
 		if verbose:
 			print('reducing %s...' % str(self.path.name))
-		subfolders = ['GPUdecon', 'CPPdecon', 'Deskewed', 'Corrected']
-		if keepmip:
-			for folder in subfolders:
-				# see if there is are MIP.tifs in the folder itself
-				L = list(self.path.joinpath(folder).glob('*MIP*.tif'))
 
-				if not len(L):
-					if self.path.joinpath(folder, 'MIPs').is_dir():
-						L = [self.path.joinpath(folder, 'MIPs')]
-				if len(L):
-					if not self.path.joinpath('MIPs').exists():
-						not self.path.joinpath('MIPs').mkdir()
-					for f in L:
-						f.rename(self.path.joinpath('MIPs', f.name))
-					break
+		subfolders = ['GPUdecon', 'CPPdecon', 'Deskewed', 'Corrected']
+
+		if keepmip:
+			miplist = list(self.path.glob('**/*_MIP_*.tif'))
+			if len(miplist):
+				if not self.path.joinpath('MIPs').exists():
+					not self.path.joinpath('MIPs').mkdir()
+				for mipfile in miplist:
+					mipfile.rename(self.path.joinpath('MIPs', mipfile.name))
+		else:
+			subfolders.append('MIPs')
 
 		for folder in subfolders:
 			if self.path.joinpath(folder).exists():
@@ -202,8 +202,6 @@ class LLSdir(object):
 					if verbose:
 						print('\tdeleting %s...' % folder)
 					shutil.rmtree(self.path.joinpath(folder))
-					if not keepmip and self.path.joinpath('MIPs').exists():
-						shutil.rmtree(self.path.joinpath('MIPs'))
 				except Exception:
 					print("unable to remove directory: {}".format(
 						self.path.joinpath(folder)))
@@ -229,30 +227,12 @@ class LLSdir(object):
 			if self.compress(verbose=verbose, **kwargs):
 				return 1
 
-	def autoprocess(self, correct=False, median=True, width='auto', shift=0,
-		background=None, trange=None, crange=None, nIters=10, MIP=(0, 0, 1),
-		rMIP=None, uint16=True, rotate=False, bleachCorrection=False,
-		quiet=False, verbose=False, saveDeskewedRaw=True, compress=False,
-		binary=CUDAbin()):
-
-		# used to break up among different GPU devices
-		regexes = {
-			1: ["stack.*_"],
-			2: ["stack...((((0|2)|4)|6)|8)_",
-				"stack...((((1|3)|5)|7)|9)_"],
-			3: ["stack...((0|3)|6)_",
-				"stack...(((1|4)|7)|9)_",
-				"stack...((2|5)|8)_"],
-			4: ["stack...((0|4)|8)_",
-				"stack...(1|5)_",
-				"stack...((2|6)|9)_",
-				"stack...(3|7)_"],
-			5: ["stack...(0|5)_",
-				"stack...(1|6)_",
-				"stack...(2|7)_",
-				"stack...(3|8)_",
-				"stack...(4|9)_"]
-		}
+	def autoprocess(self, correct=False, median=True, width='auto', pad=50,
+		shift=0, background=None, trange=None, crange=None, nIters=10,
+		MIP=(0, 0, 1), rMIP=None, uint16=True, rotate=False,
+		bleachCorrection=False, saveDeskewedRaw=True, quiet=False, verbose=False,
+		compress=False, mipmerge=True, binary=CUDAbin()):
+		"""Main method for easy processing of the folder"""
 
 		E = self
 		if correct:
@@ -260,14 +240,23 @@ class LLSdir(object):
 			background = 0
 
 		P = E.parameters
-		for c in range(P.nc):
+
+		# filter by channel
+		if crange is None:
+			crange = range(P.nc)
+		elif isinstance(crange, int):
+			crange = [crange]
+		else:
+			crange = [item for item in crange if item < P.nc]
+
+		for c in crange:
 			opts = {
 				'background': E.background[c] if background is None else background,
 				'drdata': P.dx,
 				'dzdata': P.dz,
-				'deskew': P.angle if P.z_motion == 'Sample piezo' else 0,
 				'wavelength': P.wavelength[c] / 1000,
-				'saveDeskewedRaw': bool(saveDeskewedRaw),
+				'deskew': P.angle if P.samplescan else 0,
+				'saveDeskewedRaw': bool(saveDeskewedRaw) if P.samplescan else False,
 				'MIP': MIP,
 				'rMIP': rMIP,
 				'uint16': uint16,
@@ -277,15 +266,36 @@ class LLSdir(object):
 				'quiet': bool(quiet),
 				'verbose': bool(verbose),
 			}
-			if width:
+			if width and not rotate:
 				opts.update({
 					'width': E.feature_width.width if width == 'auto' else width,
 					'shift': E.feature_width.offset if width == 'auto' else shift,
 				})
-			filepattern = 'ch' + str(c)
+			# filter by channel and trange
+			if trange is not None:
+				if isinstance(trange, int):
+					trange = [trange]
+				filepattern = 'ch{}_stack{}'.format(
+					c, util.pyrange_to_perlregex(trange))
+			else:
+				filepattern = 'ch{}_'.format(c)
 			otf = E.otfs[c]
 			response = binary.process(str(E.path), filepattern, otf, **opts)
-			print(response.output.decode('utf-8'))
+			if verbose:
+				print(response.output.decode('utf-8'))
+		if mipmerge:
+			# the "**" pattern means this directory and all subdirectories, recursively
+			for MIPdir in E.path.glob('**/MIPs/'):
+				arrays = mergemips(MIPdir)
+				filelist = list(MIPdir.glob('*MIP*.tif'))
+				cor = 'COR_' if 'COR' in filelist[0].name else ''
+				for axis in arrays:
+					array = arrays[axis]
+					outname = '{}_{}MIP_{}.tif'.format(E.basename, cor, axis)
+					util.imsave(array, str(MIPdir.joinpath(outname)),
+						dx=E.parameters.dx, dt=E.parameters.interval[0])
+				[file.unlink() for file in filelist]
+
 		if compress:
 			E.compress()
 
@@ -354,6 +364,8 @@ class LLSdir(object):
 		""" where trange is an iterable of timepoints
 
 		"""
+		if not self.has_settings:
+			raise LLSpyError('Cannot correct flash pixels without settings.txt file')
 		if camparams is None:
 			camparams = CameraParameters()
 		dataroi = CameraROI(self.settings.camera.roi)
@@ -396,3 +408,12 @@ class LLSdir(object):
 			if k not in {'all_tiffs', 'date', 'settings_files'}:
 				out.update({k: v})
 		return pprint.pformat(out)
+
+
+class LLSpyError(Exception):
+	"""
+	Generic exception indicating anything relating to the execution
+	of LLSpy. A string containing an error message should be supplied
+	when raising this exception.
+	"""
+	pass
