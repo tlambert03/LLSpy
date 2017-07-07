@@ -1,5 +1,6 @@
 import os
 import configparser
+from llspy import plib
 
 configdir = os.path.dirname(os.path.abspath(__file__))
 pardir = os.path.abspath(os.path.join(configdir, os.pardir))
@@ -8,6 +9,7 @@ __CONFIGFILE__ = os.path.expanduser("~/.llspy")
 
 defaults = {
 	'cudadeconv': 'cudaDeconv',
+	'radialft': 'radialft',
 	'camera_parameters': os.path.abspath(os.path.join(pardir, 'camera', "FlashParams.tif")),
 	'otf_path': '/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_PSFs',
 	'output_log': 'ProcessingLog.txt',
@@ -37,6 +39,7 @@ def _get_param(name, type, section='DEFAULT'):
 
 
 __CUDADECON__ = _get_param("cudadeconv", str)
+__RADIALFT__ = _get_param("radialft", str)
 __CAMPARAMS__ = _get_param("camera_parameters", str)
-__OTFPATH__ = _get_param("otf_path", str)
+__OTFPATH__ = plib.Path(_get_param("otf_path", str))
 __OUTPUTLOG__ = _get_param("output_log", str)
