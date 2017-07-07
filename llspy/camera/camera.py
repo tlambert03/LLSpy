@@ -240,7 +240,7 @@ class CameraParameters(object):
 						diffroi[1] + hshift:diffroi[3] + hshift]
 		return CameraParameters(data=subP, roi=subroi.arr)
 
-	def correct_stacks(self, stacks, dampening=0.88, median=True, target='cpu'):
+	def correct_stacks(self, stacks, dampening=0.88, median=True, trimedges=1, target='cpu'):
 		"""interleave stacks and apply correction for "sticky" Flash pixels.
 
 		Expects a list of 3D np.ndarrays ordered in order of acquisition:
@@ -290,8 +290,16 @@ class CameraParameters(object):
 		# interleaved[1:, :, :] -= dampening * correction
 		# interleaved[interleaved < 0] = 0
 
+		# do Philpp Keller Median Filter
 		if median:
 			interleaved, pixCorrection = correctInsensitivePixels(interleaved, 0)
+
+		# sometimes the columns on the very edge are brighter than the rest
+		# (particularly if an object is truncated and there's more content
+		# just off to the side of the camera ROI)
+		# this will delete the edge columns
+		if trimedges:
+			interleaved = interleaved[:, :, trimedges:-trimedges]
 
 		interleaved = interleaved.astype(typ)
 		deinterleaved = [s for s in np.split(interleaved, interleaved.shape[0])]
