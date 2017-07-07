@@ -126,7 +126,7 @@ def determineThreshold(array, maxSamples=50000):
 	elements = len(array)
 
 	if elements > maxSamples:  # subsample
-		step = elements / maxSamples
+		step = round(elements / maxSamples)
 		array = array[0::step]
 		elements = len(array)
 
