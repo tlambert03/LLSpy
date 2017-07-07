@@ -1,21 +1,20 @@
 # This file may be used to create an environment using:
 # $ conda env create --file <this file>
 # platform: osx-64
-name: llspy
+name: llsenv
 channels:
 - simpleitk
 - conda-forge
 - defaults
 dependencies:
-- matplotlib
-- numpy
 - python=3.6.1
-- scikit-image
+- numpy
 - scipy
 - tifffile
-- accelerate
+- joblib
+- numba
+- scikit-image
 - simpleitk
 - opencv
-- joblib
 - pip:
   - gputools
