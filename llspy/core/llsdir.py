@@ -5,6 +5,7 @@ from llspy.core.settingstxt import LLSsettings
 from llspy.core import parse
 from llspy.core import compress
 from llspy.core.cudabinwrapper import CUDAbin
+from llspy.core.otf import get_otf_by_date
 from llspy.util import util
 from llspy.camera.camera import CameraParameters, CameraROI
 from llspy import plib
@@ -15,7 +16,7 @@ import shutil
 import warnings
 import numpy as np
 import pprint
-from tifffile import TiffFile, imsave, imread
+import tifffile as tf
 
 try:
 	from joblib import Parallel, delayed
@@ -31,14 +32,14 @@ def correctTimepoint(fnames, camparams, outpath, median):
 	'''accepts a list of filenames (fnames) that represent Z stacks that have
 	been acquired in an interleaved manner (i.e. ch1z1,ch2z1,ch1z2,ch2z2...)
 	'''
-	stacks = [imread(f) for f in fnames]
+	stacks = [tf.imread(f) for f in fnames]
 	outstacks = camparams.correct_stacks(stacks, median=median)
 	outnames = [str(outpath.joinpath(os.path.basename(
 		str(f).replace('.tif', '_COR.tif')))) for f in fnames]
 	for n in range(len(outstacks)):
 		with warnings.catch_warnings():
 			warnings.simplefilter("ignore")
-			imsave(outnames[n], outstacks[n], imagej=True)
+			tf.imsave(outnames[n], outstacks[n], imagej=True)
 
 
 class LLSdir(object):
@@ -53,13 +54,14 @@ class LLSdir(object):
 		self.date = None
 		self.parameters = util.dotdict()
 		self.tiff = util.dotdict()
-		settings_files = self.get_settings_files()
-		self.has_settings = bool(len(settings_files))
+		self.settings_files = self.get_settings_files()
+		self.has_settings = bool(len(self.settings_files))
 		if self.has_settings:
-			if len(settings_files) > 1:
+			if len(self.settings_files) > 1:
 				warnings.warn('Multiple Settings.txt files detected...')
-			self.settings = LLSsettings(settings_files[0])
+			self.settings = LLSsettings(self.settings_files[0])
 			self.date = self.settings.date
+			self.parameters.z_motion = self.settings.z_motion
 			if self.settings.z_motion == 'Sample piezo':
 				self.parameters.dz = float(
 					self.settings.channel[0]['S PZT']['interval'])
@@ -109,21 +111,21 @@ class LLSdir(object):
 			set(self.tiff.raw).difference(set(self.tiff.all)))
 
 	def detect_parameters(self):
-		self.tiff.imagecount = []
+		self.tiff.count = []
 		self.parameters.wavelength = []
 		self.parameters.interval = []
 		for c in range(6):
 			q = [f for f in self.tiff.raw if '_ch' + str(c) in f]
 			if len(q):
-				self.tiff.imagecount.append(len(q))
+				self.tiff.count.append(len(q))
 				self.parameters.wavelength.append(
 					parse.parse_filename(str(q[0]), 'wave'))
 				if len(q) > 1:
 					self.parameters.interval.append(
 						parse.parse_filename(str(q[1]), 'reltime') / 1000)
-		self.parameters.nc = len(self.tiff.imagecount)
-		self.parameters.nt = max(self.tiff.imagecount)
-		if all([f == self.tiff.imagecount[0] for f in self.tiff.imagecount]):
+		self.parameters.nc = len(self.tiff.count)
+		self.parameters.nt = max(self.tiff.count)
+		if all([f == self.tiff.count[0] for f in self.tiff.count]):
 			# different count for each channel ... decimated stacks?
 			self.parameters.decimated = False
 		else:
@@ -131,15 +133,15 @@ class LLSdir(object):
 		try:
 			self.parameters.duration = max(
 				[(a - 1) * b for a, b in zip(
-					self.tiff.imagecount, self.parameters.interval)])
+					self.tiff.count, self.parameters.interval)])
 		except Exception:
 			self.parameters.duration = []
 
 	def read_tiff_header(self):
 		with warnings.catch_warnings():
 			warnings.simplefilter("ignore")
-			firstTiff = TiffFile(self.tiff.raw[0])
-		self.parameters.shape = firstTiff.pages[0].shape
+			firstTiff = tf.TiffFile(self.tiff.raw[0])
+		self.parameters.shape = firstTiff.series[0].shape
 		self.parameters.nz, self.parameters.ny, self.parameters.nx = self.parameters.shape
 		self.tiff.bit_depth = firstTiff.pages[0].bits_per_sample
 
@@ -227,24 +229,69 @@ class LLSdir(object):
 			if self.compress(verbose=verbose, **kwargs):
 				return 1
 
-	def _get_otfs(self, otfdir=None):
-		if hasattr(self.settings, 'mask'):
-			innerNA = self.settings.mask.innerNA
-			outerNA = self.settings.mask.outerNA
-			for c in self.settings.channel.keys():
-				pass
-				# find the most recent otf that matches the mask settings
-				# in the PSF directory and append it to the channel dict...
-		else:
-			pass
+	def autoprocess(self, correct=False, median=True, width='auto', shift=0,
+		background=None, trange=None, crange=None, nIters=10, MIP=(0, 0, 1),
+		rMIP=None, uint16=True, rotate=False, bleachCorrection=False,
+		quiet=False, verbose=False, saveDeskewedRaw=True, compress=False,
+		binary=CUDAbin()):
 
-	def process(self, indir=None, filepattern='488', binary=CUDAbin(), **options):
-		print(options)
-		return
+		# used to break up among different GPU devices
+		regexes = {
+			1: ["stack.*_"],
+			2: ["stack...((((0|2)|4)|6)|8)_",
+				"stack...((((1|3)|5)|7)|9)_"],
+			3: ["stack...((0|3)|6)_",
+				"stack...(((1|4)|7)|9)_",
+				"stack...((2|5)|8)_"],
+			4: ["stack...((0|4)|8)_",
+				"stack...(1|5)_",
+				"stack...((2|6)|9)_",
+				"stack...(3|7)_"],
+			5: ["stack...(0|5)_",
+				"stack...(1|6)_",
+				"stack...(2|7)_",
+				"stack...(3|8)_",
+				"stack...(4|9)_"]
+		}
+
+		E = self
+		if correct:
+			E = E.correct_flash(trange=trange, median=median)
+			background = 0
+
+		P = E.parameters
+		for c in range(P.nc):
+			opts = {
+				'background': E.background[c] if background is None else background,
+				'drdata': P.dx,
+				'dzdata': P.dz,
+				'deskew': P.angle if P.z_motion == 'Sample piezo' else 0,
+				'wavelength': P.wavelength[c] / 1000,
+				'saveDeskewedRaw': bool(saveDeskewedRaw),
+				'MIP': MIP,
+				'rMIP': rMIP,
+				'uint16': uint16,
+				'bleachCorrection': bool(bleachCorrection),
+				'RL': nIters if nIters is not None else 0,
+				'rotate': P.angle if rotate else 0,
+				'quiet': bool(quiet),
+				'verbose': bool(verbose),
+			}
+			if width:
+				opts.update({
+					'width': E.feature_width.width if width == 'auto' else width,
+					'shift': E.feature_width.offset if width == 'auto' else shift,
+				})
+			filepattern = 'ch' + str(c)
+			otf = E.otfs[c]
+			response = binary.process(str(E.path), filepattern, otf, **opts)
+			print(response.output.decode('utf-8'))
+		if compress:
+			E.compress()
+
+	def process(self, filepattern, otf, indir=None, binary=CUDAbin(), **opts):
 		if indir is None:
-			indir = self.path
-		opts = self._get_cudaDeconv_options()
-		#otf = default_otfs[str(488)]
+			indir = str(self.path)
 		output = binary.process(indir, filepattern, otf, **opts)
 		return output
 
@@ -263,24 +310,50 @@ class LLSdir(object):
 	def get_files(self, **kwargs):
 		return parse.filter_files(self.tiff.raw, **kwargs)
 
-	def detect_width(self, **kwargs):
+	@tf.lazyattr
+	def otfs(self):
+		""" intelligently pick OTF from archive directory based on date and mask
+		settings..."""
+		otfs = {}
+		for c in range(self.parameters.nc):
+			wave = self.parameters.wavelength[c]
+			if hasattr(self.settings, 'mask'):
+				innerNA = self.settings.mask.innerNA
+				outerNA = self.settings.mask.outerNA
+				# find the most recent otf that matches the mask settings
+				# in the PSF directory and append it to the channel dict...
+				otf = get_otf_by_date(
+					self.date, wave, (innerNA, outerNA), direction='nearest')
+			else:
+				otf = str(config.__OTFPATH__.joinpath(str(wave) + '_otf.tif'))
+			otfs[c] = otf
+		return otfs
+
+	@tf.lazyattr
+	def feature_width(self, **kwargs):
 		# defaults background=100, pad=100, sigma=2
-		w = feature_width(self, **kwargs)
-		self.parameters.content_width = w['width']
-		self.parameters.content_offset = w['offset']
-		self.parameters.deskewed_nx = w['newX']
+		w = util.dotdict()
+		w.update(feature_width(self, **kwargs))
+		# self.parameters.content_width = w['width']
+		# self.parameters.content_offset = w['offset']
+		# self.parameters.deskewed_nx = w['newX']
 		return w
 
-	def detect_background(self, **kwargs):
-		# defaults background=100, pad=100, sigma=2
-		bgrd = []
+	@tf.lazyattr
+	# FIXME: should calculate background of provided folder (e.g. Corrected)
+	def background(self, **kwargs):
+		# defaults background and=100, pad=100, sigma=2
+		bgrd = {}
 		for c in range(self.parameters.nc):
-			i = imread(self.get_files(t=0, c=c))
-			bgrd.append(detect_background(i))
-		self.parameters.background = bgrd
+			i = tf.imread(self.get_files(t=0, c=c))
+			bgrd[c] = detect_background(i)
+		# self.parameters.background = bgrd
 		return bgrd
 
-	def correct_flash(self, camparams=None, target='parallel', median=True):
+	def correct_flash(self, trange=None, camparams=None, target='parallel', median=True):
+		""" where trange is an iterable of timepoints
+
+		"""
 		if camparams is None:
 			camparams = CameraParameters()
 		dataroi = CameraROI(self.settings.camera.roi)
@@ -294,7 +367,11 @@ class LLSdir(object):
 		if not outpath.is_dir():
 			outpath.mkdir()
 		self.settings.write(str(outpath.joinpath(self.settings.basename)))
-		timegroups = [self.get_t(t) for t in range(self.parameters.nt)]
+
+		if trange is not None:
+			timegroups = [self.get_t(t) for t in trange]
+		else:
+			timegroups = [self.get_t(t) for t in range(self.parameters.nt)]
 
 		if hasjoblib and target == 'parallel':
 			Parallel(n_jobs=cpu_count(), verbose=9)(delayed(
@@ -304,6 +381,12 @@ class LLSdir(object):
 		else:
 			for t in timegroups:
 				correctTimepoint(t, camparams, outpath, median)
+		return LLSdir(outpath)
+
+	def toJSON(self):
+		import json
+		return json.dumps(self, default=lambda o: o.__dict__,
+			sort_keys=True, indent=4)
 
 	def __str__(self):
 		out = {}
