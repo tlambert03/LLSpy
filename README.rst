@@ -1,6 +1,26 @@
 
 *Object oriented python processing of Lattice Light Sheet Data*
 
+Features:
+---------
+- Python 2/3 compatible
+- LLS directory class for interactive command line processing
+- cudaDeconv wrapper class
+- parse settings.txt and file structure to intelligently detect experiment settings and autofill cudaDeconv parameters
+- Flash4.0 camera correction for residual electron artifact
+- autodetect: channel-specific background, and image feature content for autocropping width/offset
+- auto-choose OTF with matching mask NA and closest matching date
+- auto-generate OTF if PSF exists in PSF folder without matching OTF
+- fast lbzip2 compression/decompression after/before processing
+- reduce_to_raw to return data to original state
+- freeze data for long term storage (reduce to raw then compress)
+- merge MIP files into single multidimensional hyperstack
+- easily process subset of channels or timepoints
+- command line binary
+- pure python deskewing using gputools (& gpu-decon coming)
+- image registration correction (coming)
+
+
 Installation
 ------------
 
@@ -18,7 +38,6 @@ Download LLSpy and set up an environment with the appropriate dependencies:
     $ conda env create --file environment.yml
     $ source activate llsenv
     $ ipython
-
 
 Usage
 -----
@@ -54,27 +73,10 @@ Usage
         bleachCorrection=False, saveDeskewedRaw=True, quiet=False, verbose=False,
         compress=False, mipmerge=True, binary=CUDAbin(), **kwargs):
 
-Features:
----------
-- Python 2/3 compatible
-- LLS directory class for interactive command line processing
-- cudaDeconv wrapper class
-- parse settings.txt and file structure to intelligently detect experiment settings and autofill cudaDeconv parameters
-- Flash4.0 camera correction for residual electron artifact
-- autodetect: channel-specific background, and image feature content for autocropping width/offset
-- auto-choose OTF with matching mask NA and closest matching date
-- auto-generate OTF if PSF exists in PSF folder without matching OTF
-- fast lbzip2 compression/decompression after/before processing
-- reduce_to_raw to return data to original state
-- freeze data for long term storage (reduce to raw then compress)
-- merge MIP files into single multidimensional hyperstack
-- easily process subset of channels or timepoints
-- pure python deskewing using gputools (decon coming)
-- image registration correction (coming)
-
 
 To Do:
 ------
 - progress bar for cudaDeconv processes
 - batch processing
 - pretty-print info on directory
+- add ProcessingLog.txt and possible pickle LLSdir object for state maintenance
