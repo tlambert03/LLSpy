@@ -1,6 +1,25 @@
 
 *Object oriented python processing of Lattice Light Sheet Data*
 
+Installation
+------------
+
+Install `Anaconda`_.
+LLSpy is designed to be compatible with both python 2 and python 3, so chose whichever version you prefer.
+
+.. _Anaconda: https://www.continuum.io/downloads
+
+Download LLSpy and set up an environment with the appropriate dependencies:
+
+.. code:: bash
+
+    $ git clone git@github.com:tlambert03/llspy2.git
+    $ cd llspy2
+    $ conda env create --file environment.yml
+    $ source activate llsenv
+    $ ipython
+
+
 Usage
 -----
 
