@@ -229,9 +229,9 @@ class LLSdir(object):
 
 	def autoprocess(self, correct=False, median=True, width='auto', pad=50,
 		shift=0, background=None, trange=None, crange=None, iters=10,
-		MIP=(0, 0, 1), rawMIP=None, uint16=True, rotate=False,
+		MIP=(0, 0, 1), rMIP=None, uint16=True, rotate=False,
 		bleachCorrection=False, saveDeskewedRaw=True, quiet=False, verbose=False,
-		compress=False, mipmerge=True, binary=CUDAbin()):
+		compress=False, mipmerge=True, binary=CUDAbin(), **kwargs):
 		"""Main method for easy processing of the folder"""
 		otfs = self.get_otfs()
 		E = self
@@ -266,7 +266,7 @@ class LLSdir(object):
 				'deskew': P.angle if P.samplescan else 0,
 				'saveDeskewedRaw': bool(saveDeskewedRaw) if P.samplescan else False,
 				'MIP': MIP,
-				'rawMIP': rawMIP,
+				'rMIP': rMIP,
 				'uint16': uint16,
 				'bleachCorrection': bool(bleachCorrection),
 				'RL': iters if iters is not None else 0,
@@ -296,13 +296,14 @@ class LLSdir(object):
 			for MIPdir in E.path.glob('**/MIPs/'):
 				arrays = mergemips(MIPdir)
 				filelist = list(MIPdir.glob('*MIP*.tif'))
-				cor = 'COR_' if 'COR' in filelist[0].name else ''
-				for axis in arrays:
-					array = arrays[axis]
-					outname = '{}_{}MIP_{}.tif'.format(E.basename, cor, axis)
-					util.imsave(array, str(MIPdir.joinpath(outname)),
-						dx=E.parameters.dx, dt=E.parameters.interval[0])
-				[file.unlink() for file in filelist]
+				if len(filelist):
+					cor = 'COR_' if 'COR' in filelist[0].name else ''
+					for axis in arrays:
+						array = arrays[axis]
+						outname = '{}_{}MIP_{}.tif'.format(E.basename, cor, axis)
+						util.imsave(array, str(MIPdir.joinpath(outname)),
+							dx=E.parameters.dx, dt=E.parameters.interval[0])
+					[file.unlink() for file in filelist]
 		if compress:
 			E.compress()
 
