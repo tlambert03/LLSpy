@@ -1,5 +1,19 @@
+|ImageLink|_
 
+.. |ImageLink| image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2015/07/logo-horizontal-small.png
+.. _ImageLink: http://cbmf.hms.harvard.edu/lattice-light-sheet/
+
+Talley Lambert, Harvard Medical School
+
+LLSpy: Lattice light-sheet processing scripts
+=============================================
 *Object oriented python processing of Lattice Light Sheet Data*
+
+|licenselink|_
+
+.. |licenselink| image:: https://img.shields.io/badge/License-MIT-yellow.svg
+.. _licenselink: https://opensource.org/licenses/MIT
+
 
 Features:
 ---------
@@ -80,3 +94,11 @@ To Do:
 - batch processing
 - pretty-print info on directory
 - add ProcessingLog.txt and possible pickle LLSdir object for state maintenance
+- multithreading, multi-GPU support
+- merge datasets (when for stop/start acquisition)
+- rename files acquired in script-editor for loops for standard processing
+- export for bigDataViewer/.ims/.hdf5 format?
+- docs
+- logging module instead of print() and warnings
+- more user-friendly settings.ini
+- GUI
