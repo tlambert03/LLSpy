@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import subprocess
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -34,7 +36,7 @@ class DragDropListView(QtWidgets.QListWidget):
             event.accept()
             links = []
             for url in event.mimeData().urls():
-                print str(url.toLocalFile())
+                print(str(url.toLocalFile()))
                 links.append(str(url.toLocalFile()))
             self.dropSignal.emit(links)
         else:
@@ -173,7 +175,7 @@ class main_GUI(QtWidgets.QFrame):
         display result on a popup viewer
         '''
         self.validateParams()
-        print "To do"
+        print("To do")
         return
 
     def onProcess(self):
@@ -203,7 +205,7 @@ class main_GUI(QtWidgets.QFrame):
         bRotResult = self.rotResultCheck.isChecked()
         bSaveFloat = self.saveFloatCheck.isChecked()
         bBleachCorr = self.bleachCorrCheck.isChecked()
-        
+
 
         # The following was done for SIM; needs to be changed
         for ind in xrange(self.listbox.count()):
@@ -231,8 +233,15 @@ class main_GUI(QtWidgets.QFrame):
 
 
 if __name__ == '__main__':
+
     # Load defaults, such as Windows batch file names, into global namespace:
-    execfile(os.path.dirname(os.path.abspath(__file__))+'/settings.py', globals())
+    settings_file = os.path.dirname(os.path.abspath(__file__))+'/settings.py'
+    with open(settings_file) as f:
+        code = compile(f.read(), settings_file, 'exec')
+        exec(code, globals())
+
+    # python2 only
+    # execfile(os.path.dirname(os.path.abspath(__file__))+'/settings.py', globals())
 
     app = QtWidgets.QApplication([])
     window = main_GUI()
