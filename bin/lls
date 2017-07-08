@@ -1,17 +1,14 @@
 #! /usr/bin/env python
 from __future__ import print_function
 
-from llspy.config import config
-from llspy.core.llsdir import LLSdir
-
 import sys
 import os
 import shutil
 from builtins import input
 
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-
-
+from llspy.config import config
+from llspy.core.llsdir import LLSdir, LLSpyError
 
 default_otfdir = config.__OTFPATH__
 
@@ -38,27 +35,25 @@ def main(argv=None):
 	arg('-w', '--width', type=int, default=None,
 		help="width of image after deskewing.  \
 		Default is to autocrop. 0 = full frame")
-	arg('--nodeskew', dest='deskew', action='store_false', default=True,
-		help="no deskewing before deconvolution")
 	arg('-R', '--rotate', action='store_true', default=False,
 		help="rotate image to coverslip coordinates after deconvolution")
-	arg('-M', '--deconMIP', type=int, nargs=3, default=(0, 0, 1),
+	arg('-M', '--MIP', type=int, nargs=3, default=(0, 0, 1),
 		help="Save max-intensity projection after deconvolution \
 		along x, y, or z axis; takes 3 binary numbers separated by space: 0 0 1")
-	arg('-m', '--rawMIP', type=int, nargs=3, default=(0, 0, 0),
+	arg('-m', '--rMIP', type=int, nargs=3, default=(0, 0, 0),
 		help="Save max-intensity projection after deskewing \
 		along x, y, or z axis; takes 3 binary numbers separated by space: 0 0 1")
-	arg('-s', '--sepmips', action='store_true', default=False,
+	arg('-s', '--sepmips', dest='mipmerge', action='store_false', default=True,
 		help="don't combine MIP files into single hyperstack")
-	arg('-u', '--32bit', dest='bit16', action='store_false',
-		help="save as 32 bit", default=True)
-	arg('-p', '--bleachCorrection', dest='bleachCorrect', action='store_true',
+	arg('-u', '--uint16', action='store_true', help="save deconvolved as 16 bit",
+		default=False)
+	arg('-p', '--bleachCorrection', action='store_true',
 		help="perform bleach correction on timelapse data", default=False),
 	arg('--otfdir', help="specify directory with otfs.\n\
 		OTFs should be named (e.g.): 488_otf.tif", default=None)
 	arg('-c', '--correct', action='store_true', default=False,
 		help="Correct Flash pixels before processing")
-	arg('-C', '--withMedian', action='store_true', default=False,
+	arg('-C', '--withMedian', dest='median', action='store_true', default=False,
 		help="additionally correct with Phillip Keller median filter method")
 	arg('-z', '--compress', action='store_true', default=False,
 		help="Compress raw files after processing")
@@ -68,11 +63,11 @@ def main(argv=None):
 	arg('-r', '--reprocess', action='store_true', default=False,
 		help="Process even if the folder already has a processingLog JSON file, \
 		(otherwise skip)")
-	arg('-v', '--verbose', action='store_true', default=True)
-	arg('-q', '--quiet', action='store_false')
+	arg('-v', '--verbose', action='store_true', default=False)
+	arg('-q', '--quiet', action='store_true', default=False)
 
 	options = parser.parse_args()
-	if options.withMedian:
+	if options.median:
 			options.correct = True
 	path = os.path.abspath(options.path)
 
@@ -101,10 +96,6 @@ def main(argv=None):
 		sys.exit('Please specify where the OTFs are with --otfdir')
 	elif options.otfdir is None:
 		options.otfdir = default_otfdir
-
-	# autodetect background from mode of first plane
-	if options.background is None:
-			options.background = 'auto'
 
 	# if not doing decon, but MIPs requested, do raw mips instead
 	if (options.iters == 0 and
@@ -153,48 +144,17 @@ def main(argv=None):
 
 			if docorrection:
 				try:
-					E.correct_flash(target='parallel', median=options.withMedian)
+					E.correct_flash(target='parallel', median=options.median)
 				except Exception:
 					raise RuntimeError(
 						"ERROR: problem with correcting dataset: {}".format(E.path))
 
 		try:
-			S = E.process(**vars(options))
+			S = E.autoprocess(**vars(options))
 			logdict = None
-		except CUDAProcessError as e:
+		except LLSpyError as e:
 			print(e)
 
-		if not options.sepmips:
-			print("merging MIPs...")
-			mipmerge(S, delete=True, bit16=options.bit16)
-
-		if options.correct:
-			if os.path.basename(input_folder) == 'Corrected':
-				for d in ['GPUdecon', 'Deskewed', 'CPPdecon']:
-					subd = os.path.join(input_folder, d)
-					if os.path.exists(subd):
-						if os.path.exists(os.path.join(original_input, d)):
-							shutil.rmtree(os.path.join(original_input, d))
-						shutil.move(subd, os.path.join(original_input, d))
-				proclog = os.path.join(input_folder, '%s_%s' % (S['basename'],
-										config.processingLogfile))
-				shutil.copy(proclog, original_input)
-				corrected = input_folder
-				input_folder = original_input
-				shutil.rmtree(os.path.join(corrected))
-
-		if options.compress:
-			E.compress(verbose=options.verbose)
-
-		if logdict:
-			logdict['corrected'] = options.correct
-			logdict['compressed'] = options.compress
-			logdict['size_total'] = getfoldersize(input_folder, 1)
-			try:
-				write_stats_to_log(logdict, masterLogfile)
-			except Exception as e:
-				print("ERROR: could not write stats to master log file:")
-		return
 
 	if options.batch:
 		try:
