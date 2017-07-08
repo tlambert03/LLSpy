@@ -56,7 +56,8 @@ Usage
 
 Features:
 ---------
-    - LLS directory class
+    - Python 2/3 compatible
+    - LLS directory class for interactive command line processing
     - cudaDeconv wrapper class
     - parse settings.txt and file structure to intelligently detect experiment settings and autofill cudaDeconv parameters
     - Flash4.0 camera correction for residual electron artifact
