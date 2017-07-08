@@ -93,7 +93,7 @@ To Do:
 - progress bar for cudaDeconv processes
 - batch processing
 - pretty-print info on directory
-- add ProcessingLog.txt and possible pickle LLSdir object for state maintenance
+- add ProcessingLog.txt and possibly pickle LLSdir object for state maintenance
 - multithreading, multi-GPU support
 - merge datasets (when for stop/start acquisition)
 - rename files acquired in script-editor for loops for standard processing
