@@ -83,9 +83,11 @@ Examples
 """
 
 from scipy import ndimage, optimize, stats
-import os
+from os import path as osp
 import itertools
 import numpy as np
+import logging
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 np.seterr(divide='ignore', invalid='ignore')
 
 
@@ -123,6 +125,7 @@ def get_thresh(im, mincount=10, steps=100):
 	object_count = [ndimage.label(im > t)[1] for t in threshrange]
 	object_count = np.array(object_count)
 	modecount = stats.mode(object_count[(object_count > mincount)], axis=None)[0][0]
+	logging.debug('Threshold detected: {}'.format(threshrange[np.argmax(object_count == modecount)]))
 	return threshrange[np.argmax(object_count == modecount)], modecount
 
 
@@ -247,11 +250,13 @@ def infer_2step(X, Y):
 	Yxy = Yxyz[:2]
 	Xxy = X[:2]
 	Xz = X[2:]
-	Txy = infer_affine(Xxy, Yxy)
-	M = mat2to3(Txy)
-	Xxy_reg = affineXF(Xxy, Txy)
+	T1 = infer_affine(Xxy, Yxy)
+	M = mat2to3(T1)
+	Xxy_reg = affineXF(Xxy, T1)
 	Xxyz_reg = np.concatenate((Xxy_reg, Xz), axis=0)
-	M[0:3, -1] += np.mean(Yxyz - Xxyz_reg, 1)
+	T2 = infer_similarity(Xxyz_reg, Yxyz)
+	M[0:3, -1] += T2[0:3, -1]
+	M[2, 2] *= T2[2, 2]
 	return M
 
 
@@ -266,6 +271,16 @@ def infer_translation(X, Y):
 
 def cart2hom(X):
 	return np.vstack((X, np.ones((1, X.shape[1]))))
+
+
+def intrinsicToWorld(intrinsicXYZ, dxy, dz, worldStart=0.5):
+	""" where intrinsicXYZ is a 1x3 vector np.array([X, Y, Z]) """
+	return worldStart + (intrinsicXYZ - 0.5) * np.array([dxy, dxy, dz])
+
+
+def worldToInstrinsic(worldXYZ, dxy, dz, worldStart=0.5):
+	""" where XYZ coord is a 1x3 vector np.array([X, Y, Z]) """
+	return .5 + (worldXYZ - worldStart) / np.array([dxy, dxy, dz])
 
 
 def affineXF(X, T, invert=False):
@@ -346,11 +361,15 @@ def weightedMissfitF(p, fcn, data, weights, *args):
 
 
 def FitModelWeighted(modelFcn, startParameters, data, sigmas, *args):
-	return optimize.leastsq(weightedMissfitF, startParameters, (modelFcn, data.ravel(), (1.0 / sigmas).astype('f').ravel()) + args, full_output=1)
+	return optimize.leastsq(
+		weightedMissfitF, startParameters,
+		(modelFcn, data.ravel(), (1.0 / sigmas).astype('f').ravel()) + args,
+		full_output=1)
 
 
 class GaussFitResult:
-	def __init__(self, fitResults, dx, dz, slicekey=None, resultCode=None, fitErr=None):
+	def __init__(self, fitResults, dx, dz, slicekey=None, resultCode=None,
+		fitErr=None):
 		self.fitResults = fitResults
 		self.dx = dx
 		self.dz = dz
@@ -409,7 +428,7 @@ class GaussFitter3D(object):
 		A = dataROI.max() - dataROI.min()  # amplitude
 
 		drc = dataROI - dataROI.min()  # subtract background
-		drc = np.maximum(drc - drc.max() / 2, 0)  # subtract off half of the peak amplitude?
+		drc = np.maximum(drc - drc.max() / 2, 0)
 		drc = drc / drc.sum()  # normalize sum to 1
 
 		x0 = (X * drc).sum()
@@ -419,7 +438,7 @@ class GaussFitter3D(object):
 		startParameters = [3 * A, x0, y0, z0, self.wx, self.wz, dataROI.min()]
 
 		# should use gain and noise map from camera Parameters
-		# for now assume uniform noise characteristcs
+		# for now assume uniform noise characteristcs and sCMOS read noise
 		electrons_per_ADU = 0.5
 		TrueEMGain = 1
 		NoiseFactor = 1
@@ -446,12 +465,14 @@ class GaussFitter3D(object):
 
 class FiducialCloud(object):
 
-	def __init__(self, data, dz=0.3, dx=0.1, xysig=1, zsig=2.5, threshold='auto', mincount=20):
+	def __init__(self, data, dz=0.3, dx=0.1, xysig=1, zsig=2.5, threshold='auto',
+		mincount=20, imref=None):
 		# data is a numpy array or filename
-		if isinstance(data, str) and os.path.isfile(data):
+		if isinstance(data, str) and osp.isfile(data):
 			# fc = FiducialCloud('/path/to/file')
 			try:
 				import tifffile as tf
+				self.filename = osp.basename(data)
 				self.data = tf.imread(data).astype('f')
 			except ImportError:
 				raise ImportError('The tifffile package is required to read a '
@@ -462,7 +483,6 @@ class FiducialCloud(object):
 		else:
 			raise ValueError('Input to Registration must either be a '
 				'filepath or a numpy arrays')
-
 		self.nz, self.ny, self.nx = self.data.shape
 		self.ndim = self.data.ndim
 		self.dx = dx
@@ -471,7 +491,9 @@ class FiducialCloud(object):
 		self.zsig = zsig
 		self.threshold = threshold
 		self._mincount = mincount
-		self.get_coords()
+		self.imref = imref
+		self.coords = None
+		self.update_coords()
 
 	@property
 	def mincount(self):
@@ -480,12 +502,15 @@ class FiducialCloud(object):
 	@mincount.setter
 	def mincount(self, value):
 		self._mincount = value
-		self.get_coords()
+		self.update_coords()
 		print("found {} spots".format(self.count))
 
 	@property
 	def count(self):
-		return self.coords.shape[1]
+		if self.coords and self.coords.shape[1]:
+			return self.coords.shape[1]
+		else:
+			return 0
 
 	@lazyattr
 	def filtered(self):
@@ -496,7 +521,7 @@ class FiducialCloud(object):
 			mincount = self._mincount
 		return get_thresh(self.filtered, mincount)[0]
 
-	def get_coords(self, thresh=None):
+	def update_coords(self, thresh=None):
 		if thresh is None:
 			thresh = self.threshold
 		if thresh == 'auto':
@@ -509,12 +534,11 @@ class FiducialCloud(object):
 		gaussfits = []
 		for chunk in objects:
 			try:
-
-				# gaussfits.append(self.fitter[chunk])
+				# TODO: filter by bead intensity as well to reject bright clumps
 				F = self.fitter[chunk]
-				if ((F.x(0) < self.nx) and (F.y(0) < self.ny) and
-					(F.z(0) < self.nz) and
-					all([i > 0 for i in (F.x(0), F.y(0), F.z(0))])):
+				if ((F.x(0) < self.nx) and (F.x(0) > 0) and
+					(F.y(0) < self.ny) and (F.y(0) > 0) and
+					(F.z(0) < self.nz) and (F.z(0) > 0)):
 						gaussfits.append(F)
 			except Exception:
 				pass
@@ -522,7 +546,12 @@ class FiducialCloud(object):
 				# warnings.warn('skipped a spot')
 		self.coords = np.array([[n.x(0), n.y(0), n.z(0)] for n in gaussfits]).T
 		if not len(self.coords):
-			raise IndexError('What good is a point cloud without any points?')
+			logging.warning('PointCloud has no points! {}'.format(
+				self.filename if 'filename' in dir(self) else ''))
+
+	@property
+	def coords_inworld(self):
+		return intrinsicToWorld(self.coords.T, self.dx, self.dz).T
 
 	def show(self, withimage=True, filtered=True):
 		import matplotlib.pyplot as plt
@@ -532,7 +561,8 @@ class FiducialCloud(object):
 			else:
 				im = self.data.max(0)
 			plt.imshow(im, cmap='gray', vmax=im.max() * 0.7)
-		plt.scatter(self.coords[0], self.coords[1], c='red', s=5)
+		if self.count:
+			plt.scatter(self.coords[0], self.coords[1], c='red', s=5)
 
 
 class CloudSet(object):
@@ -540,7 +570,8 @@ class CloudSet(object):
 
 	def __init__(self, data, labels=None, **kwargs):
 		if not isinstance(data, (list, tuple, set)):
-			raise ValueError('CloudSet expects a list of np.ndarrays or filename strings')
+			raise ValueError('CloudSet expects a list of np.ndarrays or '
+				'filename strings')
 		if labels is not None:
 			if len(labels) != len(data):
 				raise ValueError('Length of optional labels list must match '
@@ -557,16 +588,24 @@ class CloudSet(object):
 
 	@property
 	def count_matching(self):
-		return self.matching[0].shape[1]
+		return self.matching()[0].shape[1]
 
-	def set_mincount(self, value):
+	@property
+	def mincount(self):
+		return [c.mincount for c in self.clouds]
+
+	@mincount.setter
+	def mincount(self, value):
 		for c in self.clouds:
 			c.mincount = value
+		self._matching = self._get_matching()
 
-	@lazyattr
-	def matching(self):
+	def _get_matching(self, inworld=False):
 		""" enforce matching points in cloudset """
-		coords = [C.coords for C in self.clouds]
+		if inworld:
+			coords = [C.coords_inworld for C in self.clouds]
+		else:
+			coords = [C.coords for C in self.clouds]
 		while True:
 			# for n in range(1, self.N):
 			# 	self.clouds[0], self.clouds[n] = get_matching_points(
@@ -579,6 +618,13 @@ class CloudSet(object):
 			raise IndexError('At least one point cloud has no points')
 		return coords
 
+	def matching(self):
+		if '_matching' in dir(self):
+			return self._matching
+		else:
+			self._matching = self._get_matching()
+			return self._matching
+
 	def __getitem__(self, key):
 		if isinstance(key, str):
 			if self.labels is not None:
@@ -587,16 +633,18 @@ class CloudSet(object):
 				else:
 					raise ValueError('Unrecognized label for CloudSet')
 			else:
-				raise ValueError('Cannot index CloudSet by string without provided labels')
+				raise ValueError('Cannot index CloudSet by string without '
+					'provided labels')
 		elif isinstance(key, int) and key < self.N:
 			return self.clouds[key]
 		else:
-			raise ValueError('Indes must either be label or int < numClouds in Set')
+			raise ValueError('Index must either be label or int < numClouds in Set')
 
 	# Main Method
-	def get_tform(self, movingLabel=None, fixedLabel=None, mode='2step'):
+	def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=False):
+		""" get tform matrix that maps moving point cloud to fixed point cloud"""
 		if self.labels is None:
-			print('No label list provided... cannot get tform by label')
+			logging.warning('No label list provided... cannot get tform by label')
 			return
 		movingLabel = movingLabel if movingLabel is not None else self.labels[1]
 		fixedLabel = fixedLabel if fixedLabel is not None else self.labels[0]
@@ -606,71 +654,47 @@ class CloudSet(object):
 		fixIdx = self.labels.index(fixedLabel)
 
 		funcDict = {
-			'translate'		: self.infer_translation,
-			'translation'	: self.infer_translation,
-			'rigid'			: self.infer_rigid,
-			'similarity'	: self.infer_similarity,
-			'affine'		: self.infer_affine,
-			'2step'			: self.infer_2step,
-			'cpd_rigid'		: self.cpd_rigid,
-			'cpd_similarity': self.cpd_similarity,
-			'cpd_affine'	: self.cpd_affine,
-			'cpd_2step'		: self.cpd_2step,
+			'translate'		: infer_translation,
+			'translation'	: infer_translation,
+			'rigid'			: infer_rigid,
+			'similarity'	: infer_similarity,
+			'affine'		: infer_affine,
+			'2step'			: infer_2step,
+			'cpd_rigid'		: CPDrigid,
+			'cpd_similarity': CPDsimilarity,
+			'cpd_affine'	: CPDaffine,
+			'cpd_2step'		: cpd_2step,
 		}
 
 		if mode in funcDict:
-			return funcDict[mode](movIdx, fixIdx)
+			if mode.startswith('cpd'):
+				if inworld:
+					moving = self.clouds[movIdx].coords_inworld.T
+					fixed = self.clouds[fixIdx].coords_inworld.T
+				else:
+					moving = self.clouds[movIdx].coords.T
+					fixed = self.clouds[fixIdx].coords.T
+				if '2step' in mode:
+					tform = funcDict[mode](moving, fixed)
+				else:
+					reg = funcDict[mode](moving, fixed)
+					tform = reg.register(None)[4]
+			else:
+				if inworld:
+					matching = self._get_matching(inworld=True)
+					moving = matching[movIdx]
+					fixed = matching[fixIdx]
+				else:
+					moving = self.matching()[movIdx]
+					fixed = self.matching()[fixIdx]
+				tform = funcDict[mode](moving, fixed)
+			return tform
 		else:
 			raise ValueError('Unrecognized transformation mode: {}'.format(mode))
 
-	# LEAST SQUARES REGISTRATION
-
-	def infer_translation(self, movIdx, fixIdx):
-		return infer_translation(self.matching[movIdx], self.matching[fixIdx])
-
-	def infer_rigid(self, movIdx, fixIdx):
-		return infer_rigid(self.matching[movIdx], self.matching[fixIdx])
-
-	def infer_similarity(self, movIdx, fixIdx):
-		return infer_similarity(self.matching[movIdx], self.matching[fixIdx])
-
-	def infer_affine(self, movIdx, fixIdx):
-		return infer_affine(self.matching[movIdx], self.matching[fixIdx])
-
-	def infer_2step(self, movIdx, fixIdx):
-		return infer_rigid(self.matching[movIdx], self.matching[fixIdx])
-
-	# CPD REGISTRATION
-
-	def cpd_rigid(self, movIdx, fixIdx):
-		reg = CPDrigid(self.clouds[fixIdx].coords.T, self.clouds[movIdx].coords.T)
-		M = reg.register(None)[4]
-		return M
-
-	def cpd_similarity(self, movIdx, fixIdx):
-		reg = CPDsimilarity(self.clouds[fixIdx].coords.T, self.clouds[movIdx].coords.T)
-		M = reg.register(None)[4]
-		return M
-
-	def cpd_affine(self, movIdx, fixIdx):
-		reg = CPDaffine(self.clouds[fixIdx].coords.T, self.clouds[movIdx].coords.T)
-		M = reg.register(None)[4]
-		return M
-
-	def cpd_2step(self, movIdx, fixIdx):
-		fixXYZ = self.clouds[fixIdx].coords.T
-		fixXY = fixXYZ[:2].T
-		movXY = self.clouds[movIdx].coords[:2].T
-		movZ = self.clouds[movIdx].coords[2:].T
-		reg1 = CPDaffine(fixXY, movXY)
-		TmovXY, _, _, _, M = reg1.register(None)
-		M = mat2to3(M)
-		reg2 = CPDrigid(fixXYZ, np.concatenate((TmovXY, movZ), axis=1))
-		tR = reg2.register(None)[3]
-		M[2, 3] = tR[2]
-		return M
-
-	def show(self, withimage=True, filtered=True):
+	def show(self, matching=False, withimage=True, filtered=True):
+		"""show points in clouds overlaying image, if matching is true, only
+		show matching points from all sets"""
 		import matplotlib.pyplot as plt
 		if withimage:
 			if filtered:
@@ -681,10 +705,68 @@ class CloudSet(object):
 
 		colors = ['red', 'purple', 'magenta', 'blue', 'green']
 		for i in reversed(range(self.N)):
-			X = self.clouds[i].coords[0]
-			Y = self.clouds[i].coords[1]
+			if matching:
+				X = self.matching()[i][0]
+				Y = self.matching()[i][1]
+			else:
+				X = self.clouds[i].coords[0]
+				Y = self.clouds[i].coords[1]
 			plt.scatter(X, Y, c=colors[i], s=5)
+		plt.show()
 
+	def show_matching(self, **kwargs):
+		self.show(matching=True, **kwargs)
+
+	def showtform(self, movingLabel=None, fixedLabel=None, **kwargs):
+		import matplotlib.pyplot as plt
+		T = self.tform(movingLabel, fixedLabel, **kwargs)
+		movingpoints = self[movingLabel].coords
+		fixedpoints = self[fixedLabel].coords
+		shiftedpoints = affineXF(movingpoints, T)
+		fp = plt.scatter(fixedpoints[0], fixedpoints[1], c='b', s=5)
+		mp = plt.scatter(movingpoints[0], movingpoints[1], c='m', marker='x', s=5)
+		sp = plt.scatter(shiftedpoints[0], shiftedpoints[1], c='r', s=5)
+		plt.legend((fp, mp, sp), ('Fixed', 'Moving', 'Registered'))
+		plt.show()
+
+
+def imshowpair(im1, im2, method=None, mip=False):
+	# normalize
+	if not im1.shape == im2.shape:
+		raise ValueError('images must be same shape')
+
+	if not mip:
+		try:
+			from tifffile import imshow
+		except ImportError:
+			from matplotlib.pyplot import imshow
+			mip = True
+	else:
+		from matplotlib.pyplot import imshow
+		if im1.ndim < 3:
+			mip = False
+
+	im1 = im1.astype(np.float) if not mip else im1.astype(np.float).max(0)
+	im2 = im2.astype(np.float) if not mip else im2.astype(np.float).max(0)
+	im1 -= im1.min()
+	im1 /= im1.max()
+	im2 -= im2.min()
+	im2 /= im2.max()
+
+	ndim = im1.ndim
+	if method == 'diff':
+		im3 = im1-im2
+		im3 -= im3.min()
+		im3 /= im3.max()
+		imshow(im3, cmap='gray', vmin=0.2, vmax=.8)
+	elif method == '3D':
+		im3 = np.stack((im1, im2, im1), ndim)
+		fig, subpl, ax = imshow(im3, subplot=221)
+		imshow(np.rot90(im3.max(1)), figure=fig, subplot=222)
+		imshow(im3.max(2), figure=fig, subplot=223)
+	else:  # falsecolor
+		im3 = np.stack((im1, im2, im1), ndim)
+		imshow(im3)
 
 ###############################################################################
 # code below is a *very* slightly modified version of the pycpd repo from
@@ -712,6 +794,20 @@ class CloudSet(object):
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 ###############################################################################
+
+
+def cpd_2step(moving, fixed):
+	fixXYZ = fixed
+	fixXY = fixXYZ[:, :2]
+	movXY = moving[:, :2]
+	movZ = moving[:, 2:]
+	reg1 = CPDaffine(fixXY, movXY)
+	TmovXY, _, _, _, M = reg1.register(None)
+	M = mat2to3(M)
+	reg2 = CPDrigid(fixXYZ, np.concatenate((TmovXY, movZ), axis=1))
+	tR = reg2.register(None)[3]
+	M[2, 3] = tR[2]
+	return M
 
 
 class CPDregistration(object):

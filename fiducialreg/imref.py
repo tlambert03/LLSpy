@@ -85,7 +85,7 @@ class DimensionManager(object):
 	def worldToIntrinsic(self, worldCoordinate):
 		if isinstance(worldCoordinate, list):
 			worldCoordinate = np.array(worldCoordinate)
-		return 0.5 + (worldCoordinate - self.StartCoordinateInWorld) * self.Delta
+		return 0.5 + (worldCoordinate - self.StartCoordinateInWorld) / self.Delta
 
 	def worldToSubscript(self, worldCoordinate):
 		if np.isscalar(worldCoordinate):
