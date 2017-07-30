@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.ndimage.interpolation import map_coordinates
-from fiducialreg.imref import imref3d
+from .imref import imref3d
 from numba import njit
 
 
