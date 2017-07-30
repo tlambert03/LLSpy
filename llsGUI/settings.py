@@ -1,8 +1,0 @@
-exec3D488 = "C:/SIM Data/job3Dgreen.bat"
-exec3D560 = "C:/SIM Data/job3Dred.bat"
-exec3D647 = "C:/SIM Data/job3Ddarkred.bat"
-# execTIRF488 = "C:/SIM Data/jobTIRF1.57green.bat"
-# execTIRF560 = "C:/SIM Data/jobTIRF1.57red.bat"
-execTIRF488 = "C:/SIM Data/jobTIRFgreen.bat"
-execTIRF560 = "C:/SIM Data/jobTIRFred.bat"
-execTIRF647 = "C:/SIM Data/jobTIRFdarkred.bat"
