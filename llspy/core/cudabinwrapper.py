@@ -6,6 +6,35 @@ from llspy.config import config
 
 default_cudaBinary = config.__CUDADECON__
 
+# TODO: this would probable be better implemented as a voluptuous schema
+# FIXME: passing of the binary is messed up... is it a string?  is it None?
+def assemble_args(binary, indir, filepattern, otf, **options):
+	if not isinstance(binary, CUDAbin):
+		if isinstance(binary, str):
+			try:
+				binary = CUDAbin(binary)
+			except Exception:
+				CUDAbinException("Not a valid cudaDeconv binary: {}".format(binary))
+		else:
+			binary = CUDAbin()
+
+	arglist = [indir, filepattern, otf]
+	for o in options:
+		if binary.has_option_longname(o):
+			if 'MIP' in o:
+				if options[o] is not None and len(options[o]) == 3:
+					arglist.extend(['--' + o, str(options[o][0]),
+						str(options[o][1]), str(options[o][2])])
+			elif isinstance(options[o], bool):
+				if options[o]:
+					arglist.extend(['--' + o])
+			else:
+				arglist.extend(['--' + o, str(options[o])])
+		else:
+			warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
+	return arglist
+
+
 class CUDAbin(object):
 	"""
 	Wrapper class for Lin Shao's cudaDeconv binary
@@ -40,6 +69,16 @@ class CUDAbin(object):
 			self.path = tmpPath
 			self.options = self._get_options()
 
+	@property
+	def opts_longform(self):
+		return [next(x.strip('--') for x in key if x.startswith('--'))
+				for key in self.options.keys()]
+
+	@property
+	def opts_shortform(self):
+		return [next(x.strip('-') for x in key if x.startswith('-'))
+				for key in self.options.keys()]
+
 	def set_path(self, path):
 		"""
 		Set path to the binary.
@@ -67,22 +106,9 @@ class CUDAbin(object):
 				'cudaDeconv could not be located or is not executable.')
 
 	def process(self, indir, filepattern, otf, **options):
-		cmd = [self.path, indir, filepattern, otf]
-		for o in options:
-			if self.has_option('--' + o):
-				if 'MIP' in o:
-					if options[o] is not None and len(options[o]) == 3:
-						cmd.extend(['--' + o, str(options[o][0]),
-							str(options[o][1]), str(options[o][2])])
-				elif isinstance(options[o], bool):
-					if options[o]:
-						cmd.extend(['--' + o])
-				else:
-					cmd.extend(['--' + o, str(options[o])])
-			else:
-				warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
-		print(" ".join(cmd))
-		return self._run_command(cmd)
+		cmd = [self.path]
+		cmd.extend(assemble_args(self, indir, filepattern, otf, **options))
+		self._run_command(cmd)
 
 	def _run_command(self, cmd):
 		"""
@@ -126,6 +152,10 @@ class CUDAbin(object):
 	def has_option(self, flag):
 		"""check the existence of a given flag in the binary help string."""
 		return any([flag in key for key in self.options.keys()])
+
+	def has_option_longname(self, name):
+		"""check the existence of a given flag in the binary help string."""
+		return name in self.opts_longform
 
 	def _validate_flag_list(self, flaglist):
 		"""validate a list of options flags... before sending command string"""
