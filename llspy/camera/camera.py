@@ -1,14 +1,13 @@
 from llspy.config import config
+from llspy.core import libcudawrapper as libcu
+from llspy.util.util import imread
+from llspy.image import arrayfun
 
 import os
 import warnings
 import numpy as np
-# note: numba.cuda MUST be imported before gputools, otherwise segfault 11
-from numba import jit, cuda
-from tifffile import imread, imsave
+from numba import jit
 import math
-
-default_params = config.__CAMPARAMS__
 
 
 # #THIS ONE WORKS BEST SO FAR
@@ -27,40 +26,6 @@ def calc_correction(stack, a, b, offset):
 					d = stack[i, j, k] - offset[j, k] - 0.88 * cor
 					res[i, j, k] = d if d > 0 else 0
 	return res
-
-
-# FIXME: almost correct... but still returning some "blocky" output
-# ... I think it's due to the the stack[z - 1, y, x] not finding the right value
-# ... also, speed is likely not as fast as @ jit for this problem
-@cuda.jit
-def cuda_correct(stack, a, b):
-	z, y, x = cuda.grid(3)
-	if z < stack.shape[0] and y < stack.shape[1] and x < stack.shape[2]:
-		if z == 0:
-			stack[z, y, x] = stack[z, y, x] if stack[z, y, x] > 0 else 0
-		else:
-			cor = a[z, y, x] * (1 - math.exp(-b[z, y, x] * (stack[z - 1, y, x])))
-			d = stack[z, y, x] - 0.88 * cor
-			stack[z, y, x] = d if d > 0 else 0
-
-
-# FIXME: this shouldn't go here
-def savetiff(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
-	"""sample wrapper for tifffile.imsave imagej=True."""
-	# array must be in TZCYX order
-	md = {
-		'unit': unit,
-		'spacing': dz,
-		'finterval': dt,
-		'hyperstack': 'true',
-		'mode': 'composite',
-		'loop': 'true',
-	}
-	bigT = True if arr.nbytes > 3758096384 else False  # > 3.5GB make a bigTiff
-	with warnings.catch_warnings():
-		warnings.simplefilter("ignore")
-		imsave(outpath, arr, bigtiff=bigT, imagej=True,
-						resolution=(1 / dx, 1 / dx), metadata=md)
 
 
 def correctInsensitivePixels(
@@ -140,44 +105,32 @@ def determineThreshold(array, maxSamples=50000):
 	return threshold
 
 
-# TODO: should subclass np.ndarray instead
-class CameraROI(object):
-	"""class to define camera roi"""
-	def __init__(self, arr):
-		self.arr = np.array(arr)
-		if not len(arr) == 4:
-			raise ValueError('camera roi must be a list of 4 values')
-		self.left = arr[0]
-		self.top = arr[1]
-		self.right = arr[2]
-		self.bottom = arr[3]
+class CameraROI(np.ndarray):
+
+	def __new__(cls, input_array):
+		obj = np.asarray(input_array).view(cls)
+		return obj
+
+	def __array_finalize__(self, obj):
+		if obj is None:
+			return
+		self.left = self[0]
+		self.top = self[1]
+		self.right = self[2]
+		self.bottom = self[3]
 		self.width = abs(self.right - self.left) + 1
 		self.height = abs(self.bottom - self.top) + 1
-		self.shape = (self.width, self.height)
 
-	def __repr__(self):
-		return str(self.arr)
+	def __array_wrap__(self, out_arr, context=None):
+		# then just call the parent
+		return np.ndarray.__array_wrap__(self, out_arr, context)
 
-	def __str__(self):
-		return str(self.arr)
-
-	def __add__(self, other):
-		if isinstance(other, CameraROI):
-			return np.array(self.arr) + np.array(other.arr)
-		elif isinstance(other, (list, np.ndarray, tuple)):
-			return np.array(self.arr) + np.array(other)
+	def contains(self, subroi):
+		# make sure the Parameter ROI contains the data ROI
+		if np.any((subroi - self) * np.array([-1, -1, 1, 1]) > 0):
+			return False
 		else:
-			raise TypeError("unsupported operand type for +: 'CameraROI' and '{}"
-				.format(type(other)))
-
-	def __sub__(self, other):
-		if isinstance(other, CameraROI):
-			return np.array(self.arr) - np.array(other.arr)
-		elif isinstance(other, (list, np.ndarray, tuple)):
-			return np.array(self.arr) - np.array(other)
-		else:
-			raise TypeError("unsupported operand type for -: 'CameraROI' and '{}"
-				.format(type(other)))
+			return True
 
 
 class CameraParameters(object):
@@ -189,7 +142,8 @@ class CameraParameters(object):
 		third plane = dark image (offset map)
 		#TODO: fourth plane = variance map
 	"""
-	def __init__(self, fname=default_params, data=None, roi=[513, 769, 1536, 1280]):
+
+	def __init__(self, fname=config.__CAMPARAMS__, data=None, roi=[513, 769, 1536, 1280]):
 		if data is None and fname is None:
 			raise ValueError('Must provide either filename or data array')
 		if data is not None:
@@ -224,12 +178,12 @@ class CameraParameters(object):
 		self.offset = self.data[2]
 
 	def get_subroi(self, subroi):
-		diffroi = subroi - self.roi
 		# make sure the Parameter ROI contains the data ROI
-		if (any([i < 0 for i in diffroi[0:1]]) or
-			any([i > 0 for i in diffroi[2:3]])):
+		if not self.roi.contains(subroi):
 			raise ValueError(
 				'ROI for correction file does not encompass data ROI')
+
+		diffroi = subroi - self.roi
 		# either Labview or the camera is doing
 		# something weird with the ROI... or I am calculating the required ROI
 		# alignment wrong... this is the hack I empirically came up with
@@ -238,16 +192,23 @@ class CameraParameters(object):
 		hshift = 0
 		subP = self.data[:, diffroi[0] + vshift:diffroi[2] + vshift,
 						diffroi[1] + hshift:diffroi[3] + hshift]
-		return CameraParameters(data=subP, roi=subroi.arr)
+		return CameraParameters(data=subP, roi=subroi)
 
-	def correct_stacks(self, stacks, dampening=0.88, median=True, trimedges=1, target='cpu'):
+	def init_CUDAcamcor(self, shape):
+		libcu.camcor_init(shape, self.data[:3])
+
+	def correct_stacks(self, stacks, dampening=0.88, median=False,
+		trim=((1, 0), (0, 0), (1, 1)), target='cpu'):
 		"""interleave stacks and apply correction for "sticky" Flash pixels.
 
 		Expects a list of 3D np.ndarrays ordered in order of acquisition:
 			e.g. [stack_ch0, stack_ch1, stack_ch2, ...]
 
 		Returns a corrected list of np.ndarrays of the same
-		shape and length as the input
+		shape and length as the input ... unless trimedges is used
+		trim edges is a tuple of 2tuples that controls how many pixels are trimmed
+		from the ((1stplane,lastplane),(top,bottom), (left, right))
+		by default: trim first Z plane and single pixel from X-edges
 		"""
 		if len({S.shape for S in stacks}) > 1:
 			raise ValueError('All stacks in list must have the same shape')
@@ -259,36 +220,32 @@ class CameraParameters(object):
 		nz, ny, nx = stacks[0].shape
 		numStacks = len(stacks)
 		typ = stacks[0].dtype
-		interleaved = np.stack(stacks, 1).reshape((-1, ny, nx)).astype(np.float64)
 
-		if target == 'cpu':
-			# JIT VERSION
-			interleaved = calc_correction(interleaved, self.a, self.b, self.offset)
-		elif target == 'gpu':
-			# CUDA VERSION ... doesn't really gain much
-			iZ = interleaved.shape[0]
-			tpb = (64, 4, 4)
-			bpgZ = math.ceil(interleaved.shape[0] / tpb[0])
-			bpgY = math.ceil(interleaved.shape[1] / tpb[1])
-			bpgX = math.ceil(interleaved.shape[2] / tpb[2])
-			bpg = (bpgZ, bpgY, bpgX)
-			interleaved -= np.tile(self.offset, (iZ, 1, 1))
-			cuda_correct[bpg, tpb](interleaved, np.tile(
-				self.a, (iZ, 1, 1)), np.tile(self.b, (iZ, 1, 1)))
-		elif target == 'numpy':
-			# NUMPY VERSION
-			interleaved = np.subtract(interleaved, self.offset)
-			correction = self.a * (1 - np.exp(-self.b * interleaved[:-1, :, :]))
-			interleaved[1:, :, :] -= dampening * correction
-			interleaved[interleaved < 0] = 0
+		if target == 'cuda' or target == 'gpu':
+			# this must be called before! but better to do it outside of this function
+			# libcu.camcor_init(interleaved.shape, self.a, self.b, self.offset)
+			interleaved = np.stack(stacks, 1).reshape((-1, ny, nx))
+			interleaved = libcu.camcor(interleaved)
 		else:
-			raise ValueError(
-				'unrecognized value for target parameter: {}'.format(target))
+			interleaved = np.stack(stacks, 1).reshape((-1, ny, nx))
 
-		# interleaved = np.subtract(interleaved, self.offset)
-		# correction = self.a * (1 - np.exp(-self.b * interleaved[:-1, :, :]))
-		# interleaved[1:, :, :] -= dampening * correction
-		# interleaved[interleaved < 0] = 0
+			if target == 'cpu':
+				# JIT VERSION
+				interleaved = calc_correction(interleaved, self.a, self.b, self.offset)
+			elif target == 'numpy':
+				# NUMPY VERSION
+				interleaved = np.subtract(interleaved, self.offset)
+				correction = self.a * (1 - np.exp(-self.b * interleaved[:-1, :, :]))
+				interleaved[1:, :, :] -= dampening * correction
+				interleaved[interleaved < 0] = 0
+			else:
+				raise ValueError(
+					'unrecognized value for target parameter: {}'.format(target))
+
+			# interleaved = np.subtract(interleaved, self.offset)
+			# correction = self.a * (1 - np.exp(-self.b * interleaved[:-1, :, :]))
+			# interleaved[1:, :, :] -= dampening * correction
+			# interleaved[interleaved < 0] = 0
 
 		# do Philpp Keller Median Filter
 		if median:
@@ -298,10 +255,13 @@ class CameraParameters(object):
 		# (particularly if an object is truncated and there's more content
 		# just off to the side of the camera ROI)
 		# this will delete the edge columns
-		if trimedges:
-			interleaved = interleaved[:, :, trimedges:-trimedges]
+		if trim is not None and any(trim):
+			interleaved = arrayfun.trimedges(interleaved, trim, numStacks)
 
-		interleaved = interleaved.astype(typ)
+		if not np.issubdtype(interleaved.dtype, typ):
+			warnings.warn('CONVERTING')
+			interleaved = interleaved.astype(typ)
+
 		deinterleaved = [s for s in np.split(interleaved, interleaved.shape[0])]
 		deinterleaved = [np.concatenate(deinterleaved[q::numStacks])
 						for q in range(numStacks)]
@@ -309,14 +269,14 @@ class CameraParameters(object):
 		return deinterleaved
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
 
-	from llspy import llsfiles, samples
+	from llspy.core import llsdir
+	from llspy.samples import samples
 
 	paramfile = samples.camparams  # path to the calibration file
-	llsdir = samples.stickypix  # path to the raw data
 
-	E = llsfiles.LLSdir(llsdir)  # special class for my data...
+	E = llsdir.LLSdir(samples.stickypix)  # special class for my data...
 	# you'll need to work around this to generate a list of filenames you want to correct
 
 	# get the master parameters TIF file and then crop it according to the
@@ -326,8 +286,7 @@ if __name__=='__main__':
 	corrector = camparams.get_subroi(CameraROI(E.settings.camera.roi))
 
 	# this is the list you need to make
-	stacks = [imread(str(t)) for t in E.tiff.raw if 'stack0001' in str(t)]
-
+	stacks = [imread(str(t)) for t in E.tiff.raw if 'stack0000' in str(t)]
 	niters = 5
 
 	import time
@@ -342,17 +301,16 @@ if __name__=='__main__':
 		d2 = corrector.correct_stacks(stacks, median=False, target='numpy')
 	end = time.time()
 	print("NumpyCPU Time: " + str((end - start) / niters))
-	print("Equal? = " + str(np.allclose(d1[0], d2[0])))
-	print("Equal? = " + str(np.allclose(d1[1], d2[1])))
-	print("Equal? = " + str(np.allclose(d1[2], d2[2])))
+	print("Equal? = " + str(np.mean(d1[0] - d2[0])))
+	print("Equal? = " + str(np.mean(d1[1] - d2[1])))
+	print("Equal? = " + str(np.mean(d1[2] - d2[2])))
 
 	start = time.time()
+	corrector.init_CUDAcamcor(stacks[0].shape * np.array([len(stacks), 1, 1]))
 	for _ in range(niters):
-		d3 = corrector.correct_stacks(stacks, median=False, target='gpu')
+		d3 = corrector.correct_stacks(stacks, median=False, target='cuda')
 	end = time.time()
-	print("GPU Time: " + str((end - start) / niters))
-	print("Equal? = " + str(np.allclose(d3[0], d2[0])))
-	print("Equal? = " + str(np.allclose(d3[1], d2[1])))
-	print("Equal? = " + str(np.allclose(d3[2], d2[2])))
-
-	# batchFlashCorrect(llsdir,camparams)
+	print("CUDA Time: " + str((end - start) / niters))
+	print("Equal? = " + str(np.mean(d3[0] - d1[0])))
+	print("Equal? = " + str(np.mean(d3[1] - d1[1])))
+	print("Equal? = " + str(np.mean(d3[2] - d1[2])))
