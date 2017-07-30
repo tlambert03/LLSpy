@@ -1,23 +1,27 @@
 from __future__ import print_function, division
 
+from llspy import plib
 from llspy.config import config
 from llspy.core.settingstxt import LLSsettings
-from llspy.core import parse
-from llspy.core import compress
-from llspy.core.cudabinwrapper import CUDAbin
+from llspy.core import parse, compress, schema
 from llspy.core.otf import get_otf_by_date
+from llspy.core.cudabinwrapper import CUDAbin
 from llspy.util import util
-from llspy.camera.camera import CameraParameters, CameraROI
-from llspy import plib
-from llspy.image.autodetect import feature_width, detect_background
-from llspy.image.mipmerge import mergemips
+from llspy.camera.camera import CameraParameters
+from llspy.image import arrayfun, mipmerge
+
+from llspy.core.libcudawrapper import deskewGPU, affineGPU, quickDecon
+from fiducialreg.fiducialreg import CloudSet
 
 import os
 import shutil
 import warnings
 import numpy as np
 import pprint
+import json
 import tifffile as tf
+
+np.seterr(divide='ignore', invalid='ignore')
 
 try:
 	from joblib import Parallel, delayed
@@ -28,12 +32,12 @@ except ImportError:
 	hasjoblib = False
 
 
-def correctTimepoint(fnames, camparams, outpath, median):
+def correctTimepoint(fnames, camparams, outpath, median, target='cpu'):
 	'''accepts a list of filenames (fnames) that represent Z stacks that have
 	been acquired in an interleaved manner (i.e. ch1z1,ch2z1,ch1z2,ch2z2...)
 	'''
-	stacks = [tf.imread(f) for f in fnames]
-	outstacks = camparams.correct_stacks(stacks, median=median)
+	stacks = [util.imread(f) for f in fnames]
+	outstacks = camparams.correct_stacks(stacks, median=median, target=target)
 	outnames = [str(outpath.joinpath(os.path.basename(
 		str(f).replace('.tif', '_COR.tif')))) for f in fnames]
 	for n in range(len(outstacks)):
@@ -41,6 +45,173 @@ def correctTimepoint(fnames, camparams, outpath, median):
 			warnings.simplefilter("ignore")
 			util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'),
 					outnames[n])
+
+
+def preview(E, tR=0, **kwargs):
+	""" process a restricted time range (defaults to t=0) with same settings
+	as autoprocess, but without file I/O"""
+
+	if not isinstance(E, LLSdir):
+		if isinstance(E, str):
+			E = LLSdir(E)
+
+	if E.is_compressed():
+		E.decompress()
+
+	if not E.ready_to_process:
+		if not E.has_lls_tiffs:
+			warnings.warn('No TIFF files to process in {}'.format(E.path))
+		if not E.has_settings:
+			warnings.warn('Could not find Settings.txt file in {}'.format(E.path))
+		return
+
+	kwargs['tRange'] = tR
+	P = E.localParams(**kwargs)
+
+	out = []
+	for timepoint in P.tRange:
+		stacks = [util.imread(f) for f in E.get_t(timepoint)]
+		# print("shape_raw: {}".format(stacks[0].shape))
+		if P.bFlashCorrect:
+			camparams = CameraParameters(P.camparamsPath)
+			camparams = camparams.get_subroi(E.settings.camera.roi)
+			stacks = camparams.correct_stacks(stacks, trim=P.edgeTrim, median=P.bMedianCorrect)
+		else:
+			# camera correction trims edges, so if we aren't doing the camera correction
+			# we need to call the edge trim on our own
+			if P.edgeTrim is not None and any(P.edgeTrim):
+				stacks = [arrayfun.trimedges(s, P.edgeTrim) for s in stacks]
+			# camera correction also does background subtraction
+			# so otherwise trigger it manually here
+			stacks = [arrayfun.sub_background(s, b) for s, b in zip(stacks, P.background)]
+
+		# FIXME: background is the only thing keeping this from just **P to deconvolve
+		if P.nIters > 0:
+			opts = {
+				'nIters': P.nIters,
+				'drdata': P.drdata,
+				'dzdata': P.dzdata,
+				'deskew': P.deskew,
+				'rotate': P.rotate,
+				'width': P.width,
+				'shift': P.shift,
+				'background': 0,  # zero here because it's already been subtracted above
+			}
+			for i, d in enumerate(zip(stacks, P.otfs)):
+				stk, otf = d
+				stacks[i] = quickDecon(stk, otf, **opts)
+		else:
+			# deconvolution does deskewing and cropping, so we do it here if we're
+			#
+			if P.deskew:
+				stacks = [deskewGPU(s, P.dzdata, P.drdata, P.deskew) for s in stacks]
+			stacks = [arrayfun.cropX(s, P.width, P.shift) for s in stacks]
+
+		# FIXME: this is going to be slow until we cache the tform Matrix results
+		if P.bDoRegistration:
+			if P.regCalibDir is None:
+				warnings.warn('Registration requested but no Calibration Directory provided')
+			else:
+				RD = RegDir(P.regCalibDir)
+				if RD.isValid():
+					for i, d in enumerate(zip(stacks, P.wavelength)):
+						stk, wave = d
+						if not wave == P.regRefWave:  # don't reg the reference channel
+							stacks[i] = RD.register_image_to_wave(stk, imwave=wave,
+								refwave=P.regRefWave, mode=P.regMode)
+				else:
+					warnings.warn('Registration Calibration dir not valid'
+						'{}'.format(P.regCalibDir))
+
+		out.append(np.stack(stacks, 0))
+
+	return np.stack(out, 0) if len(out) > 1 else out[0]
+
+
+def process(E, binary=None, **kwargs):
+	"""Main method for easy processing of the folder"""
+
+	if not isinstance(E, LLSdir):
+		if isinstance(E, str):
+			E = LLSdir(E)
+
+	if E.is_compressed():
+		E.decompress()
+
+	if not E.ready_to_process:
+		if not E.has_lls_tiffs:
+			warnings.warn('No TIFF files to process in {}'.format(E.path))
+		if not E.has_settings:
+			warnings.warn('Could not find Settings.txt file in {}'.format(E.path))
+		return
+
+	P = E.localParams(**kwargs)
+
+	if binary is None:
+		binary = CUDAbin()
+
+	if P.bFlashCorrect:
+		E = E.correct_flash(trange=P.tRange, median=P.bMedianCorrect)
+
+	for chan in P.cRange:
+		opts = {
+			'background': P.background[chan] if not P.bFlashCorrect else 0,
+			'drdata': P.drdata,
+			'dzdata': P.dzdata,
+			'wavelength': float(P.wavelength[chan])/1000,
+			'deskew': P.deskew,
+			'saveDeskewedRaw': P.bSaveDeskewedRaw,
+			'MIP': P.MIP,
+			'rMIP': P.MIPraw,
+			'uint16': P.buint16,
+			'bleachCorrection': P.bBleachCor,
+			'RL': P.nIters,
+			'rotate': P.rotate,
+			'width': P.width,
+			'shift': P.shift,
+			# 'quiet': bool(quiet),
+			# 'verbose': bool(verbose),
+		}
+
+		# filter by channel and trange
+		if len(list(P.tRange)) == E.parameters.nt:
+			filepattern = 'ch{}_'.format(chan)
+		else:
+			filepattern = 'ch{}_stack{}'.format(chan, util.pyrange_to_perlregex(P.tRange))
+
+		response = binary.process(str(E.path), filepattern, P.otfs[chan], **opts)
+
+		# if verbose:
+		# 	print(response.output.decode('utf-8'))
+
+	# FIXME: this is just a messy first try...
+	if P.bDoRegistration:
+		RD = RegDir(P.regCalibDir)
+		if RD.isValid():
+			RD.cloud()  # optional, intialized the cloud...
+			for D in [E.path.glob('**/GPUdecon/'), E.path.glob('**/Deskewed/')]:
+				D = list(D)[0]
+				filelist = list(D.glob('*.tif'))
+				for F in filelist:
+					if P.regRefWave not in str(F):
+						outname = str(F).replace('.tif', '_REG.tif')
+						im = RD.register_image_to_wave(str(F), refwave=P.regRefWave, mode=P.regMode)
+						util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
+							str(D.joinpath(outname)),
+							dx=P.drdata, dz=P.dzFinal)
+		else:
+			warnings.warn('Registration Calibration dir not valid: {}'.format(P.regCalibDir))
+
+	if P.bMergeMIPs:
+		E.mipmerge('GPUdecon')
+
+	if P.bMergeMIPsraw:
+		E.mipmerge('Deskewed')
+
+	if P.bCompress:
+		E.compress()
+
+	return response
 
 
 class LLSdir(object):
@@ -62,22 +233,25 @@ class LLSdir(object):
 				warnings.warn('Multiple Settings.txt files detected...')
 			self.settings = LLSsettings(self.settings_files[0])
 			self.date = self.settings.date
-			self.parameters.z_motion = self.settings.z_motion
-			self.parameters.samplescan = bool(self.settings.z_motion == 'Sample piezo')
-			if self.parameters.samplescan:
-				self.parameters.dz = float(
-					self.settings.channel[0]['S PZT']['interval'])
-			else:
-				self.parameters.dz = float(
-					self.settings.channel[0]['Z PZT']['interval'])
-			self.parameters.dx = self.settings.pixel_size
-			self.parameters.angle = self.settings.sheet_angle
+			self.parameters.update(self.settings.parameters)
 		else:
 			warnings.warn('No Settings.txt folder detected, is this an LLS folder?')
-		if self.get_all_tiffs():
+		if self.has_lls_tiffs:
+			self.get_all_tiffs()
 			self.ditch_partial_tiffs()
 			self.detect_parameters()
 			self.read_tiff_header()
+
+	@property
+	def ready_to_process(self):
+		return bool(self.has_lls_tiffs and self.has_settings)
+
+	@property
+	def has_lls_tiffs(self):
+		for f in self.path.iterdir():
+			if parse.filename_pattern.match(f.name):
+				return True
+		return False
 
 	def get_settings_files(self):
 		return [str(s) for s in self.path.glob('*Settings.txt')]
@@ -92,7 +266,7 @@ class LLSdir(object):
 		# self.tiff.bytes can be used to get size of raw data: np.sum(self.tiff.bytes)
 		self.tiff.bytes = [f.stat().st_size for f in all_tiffs]
 		self.tiff.all = [str(f) for f in all_tiffs]
-		return 1
+		return self.tiff.numtiffs
 
 	def ditch_partial_tiffs(self):
 		'''yields self.tiff.raw: a list of tiffs that match in file size.
@@ -100,17 +274,17 @@ class LLSdir(object):
 		perhaps a better (but slower?) approach would be to look at the tiff
 		header for each file?
 		'''
-		self.tiff.size_raw = round(np.mean(self.tiff.bytes), 2)
-		i = 0
+		self.tiff.size_raw = round(np.median(self.tiff.bytes), 2)
 		self.tiff.raw = []
-		for f in self.tiff.all:
-			if abs(self.tiff.bytes[i] - self.tiff.size_raw) < 1000:
+		for idx, f in enumerate(self.tiff.all):
+			if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < 1000:
 				self.tiff.raw.append(str(f))
 			else:
-				warnings.warn('discarding small file:  {}'.format(f.name))
-			i += 1
+				warnings.warn('discarding small file:  {}'.format(f))
 		self.tiff.rejected = list(
 			set(self.tiff.raw).difference(set(self.tiff.all)))
+		if not len(self.tiff.raw):
+			raise IndexError('We seem to have discarded of all the tiffs!')
 
 	def detect_parameters(self):
 		self.tiff.count = []
@@ -201,10 +375,11 @@ class LLSdir(object):
 				try:
 					if verbose:
 						print('\tdeleting %s...' % folder)
-					shutil.rmtree(self.path.joinpath(folder))
-				except Exception:
+					shutil.rmtree(str(self.path.joinpath(folder)))
+				except Exception as e:
 					print("unable to remove directory: {}".format(
 						self.path.joinpath(folder)))
+					print(e)
 					return 0
 		try:
 			i = self.path.glob('*' + config.__OUTPUTLOG__)
@@ -227,87 +402,103 @@ class LLSdir(object):
 			if self.compress(verbose=verbose, **kwargs):
 				return 1
 
-	def autoprocess(self, correct=False, median=True, width='auto', pad=50,
-		shift=0, background=None, trange=None, crange=None, iters=10,
-		MIP=(0, 0, 1), rMIP=None, uint16=True, rotate=False,
-		bleachCorrection=False, saveDeskewedRaw=True, quiet=False, verbose=False,
-		compress=False, mipmerge=True, binary=CUDAbin(), **kwargs):
-		"""Main method for easy processing of the folder"""
-		otfs = self.get_otfs()
-		E = self
+	def localParams(self, **kwargs):
+		""" provides a validated dict of processing parameters that are specific
+		to this LLSdir instance.
+		accepts any kwargs that are recognized by the LLSParams schema.
 
-		if correct:
-			E = E.correct_flash(trange=trange, median=median)
+		>>> E.localParams(nIters=0, bRotate=True, bBleachCor=True)
+		"""
 
-		P = E.parameters
+		P = self.parameters
+		S = schema.procParams(kwargs)
 
-		# filter by channel
-		if crange is None:
-			crange = range(P.nc)
-		elif isinstance(crange, int):
-			crange = [crange]
+		if S.cRange is None:
+			S.cRange = range(P.nc)
 		else:
-			crange = [item for item in crange if item < P.nc]
+			if np.max(list(S.cRange)) > (P.nc - 1):
+				warnings.warn('cRange was larger than number of Channels! Excluding C > {}'.format(P.nc - 1))
+			S.cRange = sorted([n for n in S.cRange if n < P.nc])
 
-		if background is None:
-			background = E.get_background()
-		elif isinstance(background, (int, float)):
-			background = [background] * len(crange)
+		if S.tRange is None:
+			S.tRange = range(P.nt)
+		else:
+			if np.max(list(S.tRange)) > (P.nt - 1):
+				warnings.warn('tRange was larger than number of Timepoints! Excluding T > {}'.format(P.nt - 1))
+			S.tRange = sorted([n for n in S.tRange if n < P.nt])
 
-		if (width == 'auto') and not rotate:
-			wd = E.get_feature_width()
+		# FIXME:
+		# shouldn't have to get OTF if not deconvolving... though cudaDeconv
+		# may have an issue with this...
+		if S.nIters > 0:
+			o = self.get_otfs()
+			S.otfs = [o[i] for i in S.cRange]
+		else:
+			S.otfs = [None for _ in S.cRange]
 
-		for c in crange:
-			opts = {
-				'background': background[c] if not correct else 0,
-				'drdata': P.dx,
-				'dzdata': P.dz,
-				'wavelength': P.wavelength[c] / 1000,
-				'deskew': P.angle if P.samplescan else 0,
-				'saveDeskewedRaw': bool(saveDeskewedRaw) if P.samplescan else False,
-				'MIP': MIP,
-				'rMIP': rMIP,
-				'uint16': uint16,
-				'bleachCorrection': bool(bleachCorrection),
-				'RL': iters if iters is not None else 0,
-				'rotate': P.angle if rotate else 0,
-				'quiet': bool(quiet),
-				'verbose': bool(verbose),
-			}
-			if width and not rotate:
-				opts.update({
-					'width': wd['width'] if width == 'auto' else width,
-					'shift': wd['offset'] if width == 'auto' else shift,
-				})
-			# filter by channel and trange
-			if trange is not None:
-				if isinstance(trange, int):
-					trange = [trange]
-				filepattern = 'ch{}_stack{}'.format(
-					c, util.pyrange_to_perlregex(trange))
-			else:
-				filepattern = 'ch{}_'.format(c)
-			otf = otfs[c]
-			response = binary.process(str(E.path), filepattern, otf, **opts)
-			if verbose:
-				print(response.output.decode('utf-8'))
-		if mipmerge:
-			# the "**" pattern means this directory and all subdirectories, recursively
-			for MIPdir in E.path.glob('**/MIPs/'):
-				arrays = mergemips(MIPdir)
-				filelist = list(MIPdir.glob('*MIP*.tif'))
-				if len(filelist):
-					cor = 'COR_' if 'COR' in filelist[0].name else ''
-					for axis in arrays:
-						array = arrays[axis]
-						outname = '{}_{}MIP_{}.tif'.format(E.basename, cor, axis)
-						util.imsave(array, str(MIPdir.joinpath(outname)),
-							dx=E.parameters.dx, dt=E.parameters.interval[0])
-					[file.unlink() for file in filelist]
-		if compress:
-			E.compress()
+		# note: background should be forced to 0 if it is getting corrected
+		# in the camera correction step
+		if S.bAutoBackground:
+			B = self.get_background()
+			S.background = [B[i] for i in S.cRange]
+		else:
+			S.background = [S.background] * len(list(S.cRange))
 
-	def process(self, filepattern, otf, indir=None, binary=CUDAbin(), **opts):
+		if S.cropMode == 'auto':
+			wd = self.get_feature_width()
+			S.width = wd['width']
+			S.shift = wd['offset']
+		elif S.cropMode == 'none':
+			S.width = 0
+			S.shift = 0
+		else:  # manual mode
+			# use defaults
+			S.width = S.width
+			S.shift = S.shift
+		# TODO: add constrainst to make sure that width/2 +/- shift is within bounds
+
+		# add check for RegDIR
+		# RD = RegDir(P.regCalibDir)
+		# RD = self.path.parent.joinpath('tspeck')
+		S.drdata = P.dx
+		S.dzdata = P.dz
+		S.dzFinal = np.sin(np.deg2rad(P.angle)) * P.dz if P.samplescan else P.dz
+		S.wavelength = P.wavelength
+		S.deskew = P.angle if P.samplescan else 0
+		S.bSaveDeskewedRaw = S.bSaveDeskewedRaw if P.samplescan else False
+		if S.bRotate:
+			S.rotate = S.rotate if S.rotate is not None else P.angle
+		else:
+			S.rotate = 0
+
+		return util.dotdict(schema.__localSchema__(S))
+
+	def autoprocess(self, **kwargs):
+		"""Main method for easy processing of the folder"""
+		return process(self, **kwargs)
+
+	def mipmerge(self, subdir=None):
+		# the "**" pattern means this directory and all subdirectories, recursively
+		if subdir is not None and self.path.joinpath(subdir).is_dir():
+			subdir = self.path.joinpath(subdir)
+		else:
+			subdir = self.path
+		for MIPdir in subdir.glob('**/MIPs/'):
+			arrays = mipmerge.mergemips(MIPdir)
+			filelist = list(MIPdir.glob('*MIP*.tif'))
+			if len(filelist):
+				cor = 'COR_' if 'COR' in filelist[0].name else ''
+				for axis in arrays:
+					array = arrays[axis]
+					outname = '{}_{}MIP_{}.tif'.format(self.basename, cor, axis)
+					util.imsave(array, str(MIPdir.joinpath(outname)),
+						dx=self.parameters.dx, dt=self.parameters.interval[0])
+				[file.unlink() for file in filelist]
+
+	def process(self, filepattern, otf, indir=None, binary=None, **opts):
+		if binary is None:
+			binary = CUDAbin()
+
 		if indir is None:
 			indir = str(self.path)
 		output = binary.process(indir, filepattern, otf, **opts)
@@ -349,23 +540,23 @@ class LLSdir(object):
 	def get_feature_width(self, **kwargs):
 		# defaults background=100, pad=100, sigma=2
 		w = {}
-		w.update(feature_width(self, **kwargs))
+		w.update(arrayfun.feature_width(self, **kwargs))
 		# self.parameters.content_width = w['width']
 		# self.parameters.content_offset = w['offset']
 		# self.parameters.deskewed_nx = w['newX']
 		return w
 
-	# FIXME: should calculate background of provided folder (e.g. Corrected)
+	# TODO: should calculate background of provided folder (e.g. Corrected)
 	def get_background(self, **kwargs):
 		# defaults background and=100, pad=100, sigma=2
-		bgrd = {}
+		bgrd = []
 		for c in range(self.parameters.nc):
-			i = tf.imread(self.get_files(t=0, c=c))
-			bgrd[c] = detect_background(i)
+			i = util.imread(self.get_files(t=0, c=c))
+			bgrd.append(arrayfun.detect_background(i))
 		# self.parameters.background = bgrd
 		return bgrd
 
-	def correct_flash(self, trange=None, camparams=None, target='parallel', median=True):
+	def correct_flash(self, trange=None, camparams=None, target='parallel', median=False):
 		""" where trange is an iterable of timepoints
 
 		"""
@@ -373,10 +564,9 @@ class LLSdir(object):
 			raise LLSpyError('Cannot correct flash pixels without settings.txt file')
 		if camparams is None:
 			camparams = CameraParameters()
-		dataroi = CameraROI(self.settings.camera.roi)
-		if not camparams.roi == dataroi:
+		if not np.all(camparams.roi == self.settings.camera.roi):
 			try:
-				camparams = camparams.get_subroi(dataroi)
+				camparams = camparams.get_subroi(self.settings.camera.roi)
 			except Exception:
 				raise ValueError('ROI in parameters doesn not match data ROI')
 
@@ -393,11 +583,17 @@ class LLSdir(object):
 		if hasjoblib and target == 'parallel':
 			Parallel(n_jobs=cpu_count(), verbose=9)(delayed(
 				correctTimepoint)(t, camparams, outpath, median) for t in timegroups)
-		elif target == 'gpu':
-			pass
-		else:
+		elif target == 'cpu':
 			for t in timegroups:
 				correctTimepoint(t, camparams, outpath, median)
+		elif target == 'cuda' or target == 'gpu':
+			camparams.init_CUDAcamcor((self.parameters.nz*self.parameters.nc,
+				self.parameters.ny, self.parameters.nx))
+			for t in timegroups:
+				correctTimepoint(t, camparams, outpath, median, target='cuda')
+		else:
+			for t in timegroups:
+				correctTimepoint(t, camparams, outpath, median,  target='cpu')
 		return LLSdir(outpath)
 
 	def toJSON(self):
@@ -413,6 +609,99 @@ class LLSdir(object):
 			if k not in {'all_tiffs', 'date', 'settings_files'}:
 				out.update({k: v})
 		return pprint.pformat(out)
+
+
+# TODO: cache cloud result after reading files and filtering once
+class RegDir(LLSdir):
+	"""Special type of LLSdir that holds image registraion data like
+	tetraspeck beads
+	"""
+	def __init__(self, path, t=0, **kwargs):
+		super(RegDir, self).__init__(path, **kwargs)
+		if self.path is not None:
+			if self.path.joinpath('cloud.json').is_file():
+				with open(self.path.joinpath('cloud.json')) as json_data:
+					self = self.fromJSON(json.load(json_data))
+		self.t = t
+		if self.isValid():
+			self.data = self.getdata()
+			self.waves = [parse.parse_filename(f, 'wave') for f in self.get_t(t)]
+			self.channels = [parse.parse_filename(f, 'channel') for f in self.get_t(t)]
+			self.deskew = self.parameters.samplescan
+
+	@property
+	def isValid(self):
+		return bool(len(self.get_t(self.t)))
+
+	def getdata(self):
+		return [util.imread(f) for f in self.get_t(self.t)]
+
+	def toJSON(self):
+		D = self.__dict__.copy()
+		D['cloudset'] = self.cloudset.toJSON()
+		D['path'] = str(self.path)
+		# FIXME: make LLSsettings object serializeable
+		D.pop('settings', None)
+		# D['settings']['camera']['roi'] = self.settings.camera.roi.tolist()
+		# D['settings']['date'] = self.settings.date.isoformat()
+		D['date'] = self.date.isoformat()
+		D.pop('data', None)
+		D.pop('deskewed', None)
+		return json.dumps(D)
+
+	def fromJSON(self, Jstring):
+		D = json.loads(Jstring)
+		for k, v in D.items():
+			setattr(self, k, v)
+		super(RegDir, self).__init__(D['path'])
+		self.cloudset = CloudSet().fromJSON(D['cloudset'])
+		return self
+
+	def _deskewed(self, dz=None, dx=None, angle=None):
+		if 'deskewed' in dir(self):
+			return self.deskewed
+		else:
+			dx = dx if dx else self.parameters.dx
+			dz = dz if dz else self.parameters.dz
+			angle = angle if angle else self.parameters.angle
+			if (not dx) or (not dz) or (not angle):
+				raise ValueError('Cannot deskew without dx, dz & angle')
+
+			self.deskewed = [deskewGPU(i, dz, dx, angle) for i in self.data]
+			return self.deskewed
+
+	def cloud(self, redo=False):
+		""" actually generates the fiducial cloud """
+		if 'cloudset' in dir(self) and not redo:
+			return self.cloudset
+		self.cloudset = CloudSet(
+			self._deskewed() if self.deskew else self.data, labels=self.waves)
+		with open(self.path.joinpath('cloud.json'), 'w') as outfile:
+			json.dump(self.toJSON(), outfile)
+		return self.cloudset
+
+	def get_tform(self, movingWave, refWave=488, mode='2step'):
+		return self.cloud().tform(movingWave, refWave, mode)
+
+	def register_image_to_wave(self, img, imwave=None, refwave=488, mode='2step'):
+		if isinstance(img, np.ndarray):
+			if imwave is None:
+				raise ValueError('Must provide wavelength when providing array '
+					'for registration.')
+		elif isinstance(img, str) and os.path.isfile(img):
+			if imwave is None:
+				try:
+					imwave = parse.parse_filename(img, 'wave')
+				except Exception:
+					pass
+				if not imwave:
+					raise ValueError('Could not detect image wavelength.')
+			img = util.imread(img)
+		else:
+			raise ValueError('Input to Registration must either be a np.array '
+				'or a path to a tif file')
+
+		return affineGPU(img, self.get_tform(imwave, refwave, mode))
 
 
 class LLSpyError(Exception):
