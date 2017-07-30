@@ -1,6 +1,7 @@
 from .fiducialreg import (GaussFitter3D, FiducialCloud, CloudSet, log_filter,
 	infer_affine, infer_rigid, infer_similarity, infer_2step, affineXF)
-from fiducialreg import imref, imwarp
+from . import imref
+from . import imwarp
 
 
 __version__ = '0.10.0'
