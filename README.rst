@@ -14,34 +14,31 @@ LLSpy: Lattice light-sheet processing scripts
 .. |licenselink| image:: https://img.shields.io/badge/License-MIT-yellow.svg
 .. _licenselink: https://opensource.org/licenses/MIT
 
-
 Features:
 ---------
-- Python 2/3 compatible
-- LLS directory class for interactive command line processing
-- cudaDeconv wrapper class
-- parse settings.txt and file structure to intelligently detect experiment settings and autofill cudaDeconv parameters
-- Flash4.0 camera correction for residual electron artifact
-- autodetect: channel-specific background, and image feature content for autocropping width/offset
-- auto-choose OTF with matching mask NA and closest matching date
-- auto-generate OTF if PSF exists in PSF folder without matching OTF
-- fast lbzip2 compression/decompression after/before processing
-- reduce_to_raw to return data to original state
-- freeze data for long term storage (reduce to raw then compress)
-- merge MIP files into single multidimensional hyperstack
-- easily process subset of channels or timepoints
-- command line binary
-- pure python deskewing using gputools (& gpu-decon coming)
-- image registration correction (coming)
+* Python 2/3 compatible
+* LLS directory class for interactive command line processing
+* cudaDeconv wrapper class
+* ctypes wrapper for libcudaDeconv functions including decon, and transforms
+* parse settings.txt and file structure to intelligently detect experiment settings and autofill cudaDeconv parameters
+* Flash4.0 camera correction for residual electron artifact
+* autodetect: channel-specific background, and image feature content for autocropping width/offset
+* auto-choose OTF with matching mask NA and closest matching date
+* auto-generate OTF if PSF exists in PSF folder without matching OTF
+* fast lbzip2 compression/decompression after/before processing
+* reduce_to_raw to return data to original state
+* freeze data for long term storage (reduce to raw then compress)
+* merge MIP files into single multidimensional hyperstack
+* easily process subset of channels or timepoints
+* command line binary
+* image registration correction (coming)
 
 
 Installation
 ------------
 
-Install `Anaconda`_.
+Install `Anaconda <https://www.continuum.io/downloads>`_.
 LLSpy is designed to be compatible with both python 2 and python 3, so chose whichever version you prefer.
-
-.. _Anaconda: https://www.continuum.io/downloads
 
 Download LLSpy and set up an environment with the appropriate dependencies:
 
@@ -90,15 +87,15 @@ Usage
 
 To Do:
 ------
-- progress bar for cudaDeconv processes
-- batch processing
-- pretty-print info on directory
-- add ProcessingLog.txt and possibly pickle LLSdir object for state maintenance
-- multithreading, multi-GPU support
-- merge datasets (when for stop/start acquisition)
-- rename files acquired in script-editor for loops for standard processing
-- export for bigDataViewer/.ims/.hdf5 format?
-- docs
-- logging module instead of print() and warnings
-- more user-friendly settings.ini
-- GUI
+* progress bar for cudaDeconv processes
+* batch processing
+* pretty-print info on directory
+* add ProcessingLog.txt and possibly pickle LLSdir object for state maintenance
+* multithreading, multi-GPU support
+* merge datasets (when for stop/start acquisition)
+* rename files acquired in script-editor for loops for standard processing
+* export for bigDataViewer/.ims/.hdf5 format?
+* docs
+* logging module instead of print() and warnings
+* more user-friendly settings.ini
+* GUI
