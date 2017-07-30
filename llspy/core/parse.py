@@ -8,8 +8,10 @@ import warnings
 # ############### Patterns and regex constants ####################
 
 # declare the filename template... could go in config file
+# this only is used for generating filenames (gen_filename)...
+# which isn't really used
 DELIM = '_'
-FNAME_TEMP = ('{basename}' +
+FNAME_TEMPLATE = ('{basename}' +
 					DELIM + 'ch{channel}' +
 					DELIM + 'stack{stack:04d}' +
 					DELIM + '{wave}nm' +  # FIXME this depends on the AOTF name
@@ -30,13 +32,20 @@ warnings.formatwarning = custom_formatwarning
 # 'cell5_ch1_stack0102_560nm_0001760msec_0020933033msecAbs.tif'
 # {name}_ch{channel:1}_stack{stack:4}_{wave:3}nm_{reltime:7}msec_{abstime:10}msecAbs
 filename_pattern = re.compile(r"""
-	^(?P<basename>\w+)
+	^(?P<basename>.+)
 	_ch(?P<channel>\d)
 	_stack(?P<stack>\d{4})
-	_(?P<wave>\d{3})nm
+	_\D*(?P<wave>\d+).*		# allowing for non-strict wavelength naming
 	_(?P<reltime>\d{7})msec
 	_(?P<abstime>\d{10})msecAbs
 	""", re.VERBOSE)
+
+
+def contains_LLSfiles(path):
+	for item in os.listdir(path):
+		if filename_pattern.match(item):
+			return True
+	return False
 
 
 def parse_filename(fname, matchword=None, pattern=filename_pattern):
@@ -49,7 +58,7 @@ def parse_filename(fname, matchword=None, pattern=filename_pattern):
 		return gd
 
 
-def gen_filename(d, template=FNAME_TEMP):
+def gen_filename(d, template=FNAME_TEMPLATE):
 	''' generate filename from dict with file attributes.
 
 	using dicts like this
@@ -108,6 +117,7 @@ def filter_c(filelist, channels):
 	return q
 
 
+# TODO: make this accept an iterator
 def filter_w(filelist, w):
 	# f = [f for f in filelist if parse_filename(f, 'wave') == w]
 	# above is more robust... this is faster
@@ -177,12 +187,3 @@ def filter_files(filelist, **kwargs):
 			raise AttributeError('Did not recognize filter argument: {}'.format(k))
 		filelist = funcdict[k](filelist, kwargs[k])
 	return filelist
-
-
-# ################### otf files ###################
-
-# 20170210_488_totPSF_mb0p5-0p42.tif
-
-# 'cell5_ch1_stack0102_560nm_0001760msec_0020933033msecAbs.tif'
-# {name}_ch{channel:1}_stack{stack:4}_{wave:3}nm_{reltime:7}msec_{abstime:10}msecAbs
-
