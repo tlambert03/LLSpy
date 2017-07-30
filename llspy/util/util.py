@@ -4,6 +4,7 @@ import warnings
 import tifffile
 import numpy as np
 
+
 class dotdict(dict):
 	"""dot.notation access to dictionary attributes"""
 	__getattr__ = dict.get
@@ -12,6 +13,12 @@ class dotdict(dict):
 
 	def __dir__(self):
 		return self.keys()
+
+
+def imread(*args, **kwargs):
+	with warnings.catch_warnings():
+		warnings.simplefilter("ignore")
+		return tifffile.imread(*args, **kwargs)
 
 
 def getfoldersize(folder, recurse=False):
@@ -106,3 +113,4 @@ def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
 		warnings.simplefilter("ignore")
 		tifffile.imsave(outpath, arr, bigtiff=bigT, imagej=True,
 						resolution=(1 / dx, 1 / dx), metadata=md)
+

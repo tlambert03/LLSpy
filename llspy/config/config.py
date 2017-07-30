@@ -26,7 +26,7 @@ for o in [488, 560, 592, 640]:
 config.read(__CONFIGFILE__)
 
 
-def write_config(fname=__CONFIGFILE__):
+def write(fname):
 	with open(fname, 'w') as configfile:
 		config.write(configfile)
 
