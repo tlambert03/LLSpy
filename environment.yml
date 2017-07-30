@@ -3,9 +3,9 @@
 # platform: osx-64
 name: llsenv
 channels:
-- simpleitk
-- conda-forge
 - defaults
+- conda-forge
+- simpleitk
 dependencies:
 - python=3.6.1
 - numpy
@@ -16,5 +16,6 @@ dependencies:
 - scikit-image
 - simpleitk
 - opencv
-- pip:
-  - gputools
+- ipython
+- pyqt
+- voluptuous
