@@ -77,8 +77,6 @@ Examples
 
 # 560_to_488_rigid can then be used to transform a stack from 560 channel
 # to a stack from the 488 channel...
-# for GPU transformation, check out gputools.transforms.transformations.affine
->>> from gputools import affine
 >>> out = affine(im560, 560_to_488_rigid)
 """
 
@@ -87,10 +85,12 @@ from os import path as osp
 import itertools
 import numpy as np
 import logging
+import json
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 np.seterr(divide='ignore', invalid='ignore')
 
 
+# TODO: try seperable gaussian filter instead for speed
 def log_filter(img, xysigma=1, zsigma=2.5, mask=None):
 	# sigma that works for 2 or 3 dimensional img
 	sigma = [zsigma, xysigma, xysigma][-img.ndim:]
@@ -465,26 +465,26 @@ class GaussFitter3D(object):
 
 class FiducialCloud(object):
 
-	def __init__(self, data, dz=0.3, dx=0.1, xysig=1, zsig=2.5, threshold='auto',
+	def __init__(self, data=None, dz=0.3, dx=0.1, xysig=1, zsig=2.5, threshold='auto',
 		mincount=20, imref=None):
 		# data is a numpy array or filename
-		if isinstance(data, str) and osp.isfile(data):
-			# fc = FiducialCloud('/path/to/file')
-			try:
-				import tifffile as tf
-				self.filename = osp.basename(data)
-				self.data = tf.imread(data).astype('f')
-			except ImportError:
-				raise ImportError('The tifffile package is required to read a '
-					'filepath into an array.')
-		elif isinstance(data, np.ndarray):
-			# fc = FiducialCloud(np.ndarray)
-			self.data = data
-		else:
-			raise ValueError('Input to Registration must either be a '
-				'filepath or a numpy arrays')
-		self.nz, self.ny, self.nx = self.data.shape
-		self.ndim = self.data.ndim
+		self.data = None
+		if data is not None:
+			if isinstance(data, str) and osp.isfile(data):
+				# fc = FiducialCloud('/path/to/file')
+				try:
+					import tifffile as tf
+					self.filename = osp.basename(data)
+					self.data = tf.imread(data).astype('f')
+				except ImportError:
+					raise ImportError('The tifffile package is required to read a '
+						'filepath into an array.')
+			elif isinstance(data, np.ndarray):
+				# fc = FiducialCloud(np.ndarray)
+				self.data = data
+			else:
+				raise ValueError('Input to Registration must either be a '
+					'filepath or a numpy arrays')
 		self.dx = dx
 		self.dz = dz
 		self.xysig = xysig
@@ -493,7 +493,8 @@ class FiducialCloud(object):
 		self._mincount = mincount
 		self.imref = imref
 		self.coords = None
-		self.update_coords()
+		if self.data is not None:
+			self.update_coords()
 
 	@property
 	def mincount(self):
@@ -507,14 +508,17 @@ class FiducialCloud(object):
 
 	@property
 	def count(self):
-		if self.coords and self.coords.shape[1]:
+		if self.coords is not None and self.coords.shape[1] > 0:
 			return self.coords.shape[1]
 		else:
 			return 0
 
 	@lazyattr
 	def filtered(self):
-		return log_filter(self.data, self.xysig, self.zsig)
+		if self.data is not None:
+			return log_filter(self.data, self.xysig, self.zsig)
+		else:
+			return None
 
 	def autothresh(self, mincount=None):
 		if mincount is None:
@@ -522,6 +526,8 @@ class FiducialCloud(object):
 		return get_thresh(self.filtered, mincount)[0]
 
 	def update_coords(self, thresh=None):
+		if self.filtered is None:
+			return
 		if thresh is None:
 			thresh = self.threshold
 		if thresh == 'auto':
@@ -530,15 +536,15 @@ class FiducialCloud(object):
 		objects = ndimage.find_objects(labeled)
 
 		# FIXME: pass sigmas to wx and wz parameters of GaussFitter
-		self.fitter = GaussFitter3D(self.data, dz=self.dz, dx=self.dx)
+		fitter = GaussFitter3D(self.data, dz=self.dz, dx=self.dx)
 		gaussfits = []
 		for chunk in objects:
 			try:
 				# TODO: filter by bead intensity as well to reject bright clumps
-				F = self.fitter[chunk]
-				if ((F.x(0) < self.nx) and (F.x(0) > 0) and
-					(F.y(0) < self.ny) and (F.y(0) > 0) and
-					(F.z(0) < self.nz) and (F.z(0) > 0)):
+				F = fitter[chunk]
+				if ((F.x(0) < self.data.shape[2]) and (F.x(0) > 0) and
+					(F.y(0) < self.data.shape[1]) and (F.y(0) > 0) and
+					(F.z(0) < self.data.shape[0]) and (F.z(0) > 0)):
 						gaussfits.append(F)
 			except Exception:
 				pass
@@ -555,7 +561,7 @@ class FiducialCloud(object):
 
 	def show(self, withimage=True, filtered=True):
 		import matplotlib.pyplot as plt
-		if withimage:
+		if withimage and self.filtered is not None:
 			if filtered:
 				im = self.filtered.max(0)
 			else:
@@ -564,23 +570,53 @@ class FiducialCloud(object):
 		if self.count:
 			plt.scatter(self.coords[0], self.coords[1], c='red', s=5)
 
+	def toJSON(self):
+		D = self.__dict__.copy()
+		D.pop('filtered', None)
+		D.pop('data', None)
+		D['coords'] = self.coords.tolist()
+		return json.dumps(D)
+
+	def fromJSON(self, Jstring):
+		J = json.loads(Jstring)
+		for k, v in J.items():
+			setattr(self, k, v)
+		self.coords = np.array(self.coords)
+		return self
+
 
 class CloudSet(object):
 	"""docstring for CloudSet"""
 
-	def __init__(self, data, labels=None, **kwargs):
-		if not isinstance(data, (list, tuple, set)):
-			raise ValueError('CloudSet expects a list of np.ndarrays or '
-				'filename strings')
-		if labels is not None:
-			if len(labels) != len(data):
-				raise ValueError('Length of optional labels list must match '
-					'length of the data list')
-
-		self.N = len(data)
+	def __init__(self, data=None, labels=None, **kwargs):
+		if data is not None:
+			if not isinstance(data, (list, tuple, set)):
+				raise ValueError('CloudSet expects a list of np.ndarrays or '
+					'filename strings')
+			if labels is not None:
+				if len(labels) != len(data):
+					raise ValueError('Length of optional labels list must match '
+						'length of the data list')
+			self.N = len(data)
+			self.clouds = [FiducialCloud(i, **kwargs) for i in data]
+		else:
+			self.clouds = []
+			self.N = 0
 		self.labels = labels
-		self.kwargs = kwargs
-		self.clouds = [FiducialCloud(i, **kwargs) for i in data]
+
+	def toJSON(self):
+		return json.dumps({
+			'N': self.N,
+			'clouds': [cloud.toJSON() for cloud in self.clouds],
+			'labels': self.labels
+		})
+
+	def fromJSON(self, Jstring):
+		J = json.loads(Jstring)
+		self.N = J['N']
+		self.clouds = [FiducialCloud().fromJSON(js) for js in J['clouds']]
+		self.labels = J['labels']
+		return self
 
 	@property
 	def count(self):
@@ -649,9 +685,16 @@ class CloudSet(object):
 		movingLabel = movingLabel if movingLabel is not None else self.labels[1]
 		fixedLabel = fixedLabel if fixedLabel is not None else self.labels[0]
 
-		# try/except?
-		movIdx = self.labels.index(movingLabel)
-		fixIdx = self.labels.index(fixedLabel)
+		try:
+			movIdx = self.labels.index(movingLabel)
+		except ValueError:
+			raise ValueError('Could not find label {} in reg list: {}'.format(
+				movingLabel, self.labels))
+		try:
+			fixIdx = self.labels.index(fixedLabel)
+		except ValueError:
+			raise ValueError('Could not find label {} in reg list: {}'.format(
+				fixedLabel, self.labels))
 
 		funcDict = {
 			'translate'		: infer_translation,
@@ -666,6 +709,7 @@ class CloudSet(object):
 			'cpd_2step'		: cpd_2step,
 		}
 
+		mode = mode.lower()
 		if mode in funcDict:
 			if mode.startswith('cpd'):
 				if inworld:
