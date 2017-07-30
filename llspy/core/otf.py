@@ -26,6 +26,7 @@ def get_otf_dict(otfdir=config.__OTFPATH__):
 	for t in list(otfdir.glob('*tif')):
 		M = psffile_pattern.search(str(t.name))
 		if M:
+			M = M.groupdict()
 			wave = int(M['wave'])
 			if wave not in otf_dict:
 				otf_dict[wave] = {'default': None}
@@ -50,6 +51,7 @@ def get_otf_dict(otfdir=config.__OTFPATH__):
 		else:
 			M = default_otf_pattern.search(str(t.name))
 			if M:
+				M = M.groupdict()
 				wave = int(M['wave'])
 				if wave not in otf_dict:
 					otf_dict[wave] = {}
