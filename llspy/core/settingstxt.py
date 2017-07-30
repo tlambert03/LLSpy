@@ -1,5 +1,5 @@
 from llspy.util import util
-
+from llspy.camera import camera
 import os
 import re
 import io
@@ -19,7 +19,7 @@ waveform_pattern = re.compile(r"""
 	^(?P<waveform>.*)\sOffset,	# Waveform type, newline followed by description
 	.*\((?P<channel>\d+)\)\s	# get channel number inside of parentheses
 	:\s*(?P<offset>\d*\.?\d*)	# float offset value after colon
-	\s*(?P<interval>\d*\.?\d*)	# float interval value next
+	\s*(?P<interval>[-\d]*\.?\d*)	# float interval value next
 	\s*(?P<numpix>\d+)			# integer number of pixels last
 	""", re.MULTILINE | re.VERBOSE)
 
@@ -129,8 +129,8 @@ class LLSsettings(object):
 		self.camera.exp = cp.get('exp(s)')
 		self.camera.cycle = cp.get('cycle(s)')
 		self.camera.cycleHz = cp.get('cycle(hz)')
-		self.camera.roi = [int(i) for i in re.findall(
-			r'\d+', cp.get('roi'))]
+		self.camera.roi = camera.CameraROI([int(i) for i in re.findall(
+			r'\d+', cp.get('roi'))])
 		self.camera.pixel = PIXEL_SIZE[self.camera.model.split('-')[0]]
 
 		# parse the timing part
@@ -161,6 +161,27 @@ class LLSsettings(object):
 				self.mask = util.dotdict()
 				for k, v in self.SPIMproject['Annular Mask'].items():
 					self.mask[k] = float(v)
+
+		# these will be overriden by the LLSDir file detection, but write anyway
+
+		self.parameters = util.dotdict()
+		self.parameters.update({
+			'dx': self.pixel_size,
+			'z_motion': self.z_motion,
+			'samplescan': bool(self.z_motion == 'Sample piezo'),
+			'angle': self.sheet_angle,
+			'nc': len(self.channel),
+			'nt': int(self.channel[0]['numstacks_requested']),
+			'nx': self.camera.roi.height,  # camera is usually rotated 90deg
+			'ny': self.camera.roi.width,  # camera is usually rotated 90deg
+			'wavelength': [int(v['laser']) for k, v in self.channel.items()]
+		})
+		if self.parameters.samplescan:
+			self.parameters.dz = abs(float(self.channel[0]['S PZT']['interval']))
+			self.parameters.nz = int(self.channel[0]['S PZT']['numpix'])
+		else:
+			self.parameters.dz = abs(float(self.channel[0]['Z PZT']['interval']))
+			self.parameters.nz = int(self.channel[0]['Z PZT']['numpix'])
 
 	def write(self, outpath):
 		with open(outpath, 'w') as outfile:
