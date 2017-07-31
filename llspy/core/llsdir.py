@@ -113,7 +113,7 @@ def preview(E, tR=0, **kwargs):
 				warnings.warn('Registration requested but no Calibration Directory provided')
 			else:
 				RD = RegDir(P.regCalibDir)
-				if RD.isValid():
+				if RD.isValid:
 					for i, d in enumerate(zip(stacks, P.wavelength)):
 						stk, wave = d
 						if not wave == P.regRefWave:  # don't reg the reference channel
@@ -188,7 +188,7 @@ def process(E, binary=None, **kwargs):
 	if P.bDoRegistration:
 		RD = RegDir(P.regCalibDir)
 		if RD.isValid():
-			RD.cloud()  # optional, intialized the cloud...
+			RD.cloudset()  # optional, intialized the cloud...
 			for D in [E.path.glob('**/GPUdecon/'), E.path.glob('**/Deskewed/')]:
 				D = list(D)[0]
 				filelist = list(D.glob('*.tif'))
@@ -222,6 +222,8 @@ class LLSdir(object):
 
 	def __init__(self, path):
 		self.path = plib.Path(path)
+		if not self.path.is_dir():
+			return
 		self.basename = self.path.name
 		self.date = None
 		self.parameters = util.dotdict()
@@ -243,8 +245,18 @@ class LLSdir(object):
 			self.read_tiff_header()
 
 	@property
+	def isValid(self):
+		if self.path.is_dir() and self.has_settings:
+			return True
+		else:
+			return False
+
+	@property
 	def ready_to_process(self):
-		return bool(self.has_lls_tiffs and self.has_settings)
+		if self.path.is_dir():
+			if self.has_lls_tiffs and self.has_settings:
+				return True
+		return False
 
 	@property
 	def has_lls_tiffs(self):
@@ -409,6 +421,9 @@ class LLSdir(object):
 
 		>>> E.localParams(nIters=0, bRotate=True, bBleachCor=True)
 		"""
+		if self.is_compressed():
+			warnings.warn('Cannot get localParams on compressed folder')
+			return {}
 
 		P = self.parameters
 		S = schema.procParams(kwargs)
@@ -623,7 +638,7 @@ class RegDir(LLSdir):
 				with open(self.path.joinpath('cloud.json')) as json_data:
 					self = self.fromJSON(json.load(json_data))
 		self.t = t
-		if self.isValid():
+		if self.isValid:
 			self.data = self.getdata()
 			self.waves = [parse.parse_filename(f, 'wave') for f in self.get_t(t)]
 			self.channels = [parse.parse_filename(f, 'channel') for f in self.get_t(t)]
@@ -636,9 +651,12 @@ class RegDir(LLSdir):
 	def getdata(self):
 		return [util.imread(f) for f in self.get_t(self.t)]
 
+	def has_data(self):
+		return all([isinstance(a, np.ndarray) for a in self.data])
+
 	def toJSON(self):
 		D = self.__dict__.copy()
-		D['cloudset'] = self.cloudset.toJSON()
+		D['_cloudset'] = self._cloudset.toJSON()
 		D['path'] = str(self.path)
 		# FIXME: make LLSsettings object serializeable
 		D.pop('settings', None)
@@ -654,7 +672,7 @@ class RegDir(LLSdir):
 		for k, v in D.items():
 			setattr(self, k, v)
 		super(RegDir, self).__init__(D['path'])
-		self.cloudset = CloudSet().fromJSON(D['cloudset'])
+		self._cloudset = CloudSet().fromJSON(D['_cloudset'])
 		return self
 
 	def _deskewed(self, dz=None, dx=None, angle=None):
@@ -670,18 +688,23 @@ class RegDir(LLSdir):
 			self.deskewed = [deskewGPU(i, dz, dx, angle) for i in self.data]
 			return self.deskewed
 
-	def cloud(self, redo=False):
+	def cloudset(self, redo=False):
 		""" actually generates the fiducial cloud """
-		if 'cloudset' in dir(self) and not redo:
-			return self.cloudset
-		self.cloudset = CloudSet(
-			self._deskewed() if self.deskew else self.data, labels=self.waves)
+		if '_cloudset' in dir(self) and not redo:
+			return self._cloudset
+		self._cloudset = CloudSet(self._deskewed() if self.deskew else self.data, labels=self.waves)
 		with open(self.path.joinpath('cloud.json'), 'w') as outfile:
 			json.dump(self.toJSON(), outfile)
-		return self.cloudset
+		return self._cloudset
+
+	def cloudset_has_data(self):
+		return self.cloudset().has_data()
+
+	def reload_data(self):
+		self.cloudset(redo=True)
 
 	def get_tform(self, movingWave, refWave=488, mode='2step'):
-		return self.cloud().tform(movingWave, refWave, mode)
+		return self.cloudset().tform(movingWave, refWave, mode)
 
 	def register_image_to_wave(self, img, imwave=None, refwave=488, mode='2step'):
 		if isinstance(img, np.ndarray):
