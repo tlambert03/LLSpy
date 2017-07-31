@@ -3,17 +3,17 @@ import numpy as np
 import os
 import sys
 
-if 'darwin' in sys.platform:
-	libname = 'libcudaDeconv.so'
-elif 'win32' in sys.platform:
+if sys.platform.startswith('darwin'):
+	libname = 'libcudaDeconv.dylib'
+elif sys.platform.startswith('win32'):
 	libname = 'libcudaDeconv.dll'
-else:
+elif sys.platform.startswith('linux'):
 	libname = 'libcudaDeconv.so'
 
 
-#curdir = os.path.dirname(__file__)
-#dylib = os.path.join(curdir, '..', '..', 'lib', libname)
-dylib = '/Users/talley/Dropbox (HMS)/CBMF/Equipment/lattice/software/cudaDeconDeskew/build/libcudadecon.so'
+curdir = os.path.dirname(__file__)
+dylib = os.path.join(curdir, '..', '..', 'lib', libname)
+#dylib = '/Users/talley/Dropbox (HMS)/CBMF/Equipment/lattice/software/cudaDeconDeskew/build/libcudadecon.so'
 cudaLib = ctypes.cdll.LoadLibrary(dylib)
 
 try:
@@ -98,8 +98,10 @@ try:
 
 	# call after
 	RL_cleanup = cudaLib.RL_cleanup
-except AttributeError:
-	pass
+
+except AttributeError as e:
+	warnings.warn('Failed to properly import libcudaDeconv')
+	print(e)
 
 
 def quickCamcor(imstack, camparams):
