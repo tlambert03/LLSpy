@@ -79,6 +79,7 @@ Examples
 # to a stack from the 488 channel...
 >>> out = affine(im560, 560_to_488_rigid)
 """
+from __future__ import print_function
 
 from scipy import ndimage, optimize, stats
 from os import path as osp
@@ -496,6 +497,9 @@ class FiducialCloud(object):
 		if self.data is not None:
 			self.update_coords()
 
+	def has_data(self):
+		return isinstance(self.data, np.ndarray)
+
 	@property
 	def mincount(self):
 		return self._mincount
@@ -618,6 +622,27 @@ class CloudSet(object):
 		self.labels = J['labels']
 		return self
 
+	def has_data(self):
+		return all([fc.has_data() for fc in self.clouds])
+
+	def data(self, idx=None, label=None):
+		if not self.has_data():
+			print('Data not loaded, cannot retrieve data')
+			return
+
+		if not (idx or label):
+			raise ValueError('must provide either idx or label to retrieve data')
+		elif label and not idx:
+			try:
+				idx = self.labels.index(label)
+			except ValueError:
+				raise ValueError('Could not find label {} in reg list: {}'.format(
+					label, self.labels))
+		elif label and not idx:
+			print('Both label and index provided, using idx')
+			''
+		return self.clouds[idx].data
+
 	@property
 	def count(self):
 		return [c.count for c in self.clouds]
@@ -662,7 +687,7 @@ class CloudSet(object):
 			return self._matching
 
 	def __getitem__(self, key):
-		if isinstance(key, str):
+		if isinstance(key, str) or (isinstance(key, int) and key > self.N):
 			if self.labels is not None:
 				if key in self.labels:
 					return self.clouds[self.labels.index(key)]
@@ -677,7 +702,7 @@ class CloudSet(object):
 			raise ValueError('Index must either be label or int < numClouds in Set')
 
 	# Main Method
-	def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=False):
+	def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=False, **kwargs):
 		""" get tform matrix that maps moving point cloud to fixed point cloud"""
 		if self.labels is None:
 			logging.warning('No label list provided... cannot get tform by label')
@@ -761,7 +786,7 @@ class CloudSet(object):
 	def show_matching(self, **kwargs):
 		self.show(matching=True, **kwargs)
 
-	def showtform(self, movingLabel=None, fixedLabel=None, **kwargs):
+	def show_tformed(self, movingLabel=None, fixedLabel=None, **kwargs):
 		import matplotlib.pyplot as plt
 		T = self.tform(movingLabel, fixedLabel, **kwargs)
 		movingpoints = self[movingLabel].coords
@@ -773,8 +798,20 @@ class CloudSet(object):
 		plt.legend((fp, mp, sp), ('Fixed', 'Moving', 'Registered'))
 		plt.show()
 
+	def show_tformed_image(self, movingLabel=None, fixedLabel=None, **kwargs):
+		try:
+			from llspy.core.libcudawrapper import affineGPU
+		except ImportError:
+			print("Could not import affineGPU, can't show tformed image")
+			return
+		T = self.tform(movingLabel, fixedLabel, **kwargs)
+		movingImg = self.data(label=movingLabel)
+		fixedImg = self.data(label=fixedLabel)
+		movingReg = affineGPU(movingImg, T)
+		imshowpair(fixedImg, movingReg, **kwargs)
 
-def imshowpair(im1, im2, method=None, mip=False):
+
+def imshowpair(im1, im2, method=None, mip=False, **kwargs):
 	# normalize
 	if not im1.shape == im2.shape:
 		raise ValueError('images must be same shape')
