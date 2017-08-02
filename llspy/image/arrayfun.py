@@ -77,6 +77,8 @@ def feature_width(E, background=None, pad=50, sigma=2):
 
 def detect_background(im):
 	""" get mode of the first plane """
+	if im.ndim == 4:
+		im = im[0][2]
 	if im.ndim == 3:
 		im = im[2]  # pick the third plane... avoid noise in first plane on lattice
 	return mode(im.flatten())[0][0]
