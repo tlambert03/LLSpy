@@ -7,8 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>617</width>
-    <height>813</height>
+    <height>790</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>790</height>
+   </size>
   </property>
   <property name="focusPolicy">
    <enum>Qt::TabFocus</enum>
@@ -23,7 +29,7 @@
       <property name="minimumSize">
        <size>
         <width>593</width>
-        <height>696</height>
+        <height>500</height>
        </size>
       </property>
       <property name="tabPosition">
@@ -45,13 +51,13 @@
           <property name="minimumSize">
            <size>
             <width>0</width>
-            <height>50</height>
+            <height>200</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>200</height>
+            <height>16777215</height>
            </size>
           </property>
           <property name="dragEnabled">
@@ -142,8 +148,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>281</height>
+             <width>537</width>
+             <height>245</height>
             </rect>
            </property>
            <attribute name="label">
@@ -171,7 +177,7 @@
                <item>
                 <widget class="QCheckBox" name="camcorCheckBox">
                  <property name="text">
-                  <string>Do Flash Residual Correction</string>
+                  <string>Do Flash Pixel Correction</string>
                  </property>
                 </widget>
                </item>
@@ -182,6 +188,13 @@
                  </property>
                  <property name="text">
                   <string>Do Median Filter</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="checkBox">
+                 <property name="text">
+                  <string>Save Corrected Files</string>
                  </property>
                 </widget>
                </item>
@@ -485,7 +498,7 @@
              <x>0</x>
              <y>0</y>
              <width>552</width>
-             <height>268</height>
+             <height>204</height>
             </rect>
            </property>
            <attribute name="label">
@@ -974,34 +987,14 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>330</height>
+             <width>541</width>
+             <height>288</height>
             </rect>
            </property>
            <attribute name="label">
             <string>Post-Processing</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_12">
-            <item>
-             <widget class="QCheckBox" name="bleachCorrectionCheckBox">
-              <property name="text">
-               <string>Do Bleach Correction</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <spacer name="verticalSpacer_3">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
             <item>
              <widget class="QGroupBox" name="croppingGroupBox">
               <property name="styleSheet">
@@ -1150,19 +1143,6 @@
              </widget>
             </item>
             <item>
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
              <widget class="QGroupBox" name="rotateGroupBox">
               <property name="enabled">
                <bool>true</bool>
@@ -1275,19 +1255,6 @@
                </item>
               </layout>
              </widget>
-            </item>
-            <item>
-             <spacer name="verticalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
             </item>
             <item>
              <widget class="QGroupBox" name="doRegistrationGroupBox">
@@ -1449,7 +1416,7 @@
                    </item>
                    <item>
                     <property name="text">
-                     <string>cpd_affine</string>
+                     <string>CPD_Affine</string>
                     </property>
                    </item>
                    <item>
@@ -1496,6 +1463,27 @@
              </widget>
             </item>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QCheckBox" name="bleachCorrectionCheckBox">
+                <property name="text">
+                 <string>Do Bleach Correction</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="compressRawCheckBox">
+                <property name="text">
+                 <string>Compress Raw Data</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <spacer name="postprocessSpacer">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -1512,145 +1500,7 @@
           </widget>
          </widget>
         </item>
-        <item>
-         <widget class="QFrame" name="previewProcessButtonFrame">
-          <property name="frameShape">
-           <enum>QFrame::Box</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
-          </property>
-          <layout class="QHBoxLayout" name="processButtonLayout">
-           <property name="topMargin">
-            <number>8</number>
-           </property>
-           <property name="bottomMargin">
-            <number>2</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="previewButton">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>Preview the highlighted dataset with the current settings</string>
-             </property>
-             <property name="text">
-              <string>Preview</string>
-             </property>
-             <property name="autoDefault">
-              <bool>true</bool>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-             <property name="flat">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="previewTRangeLineEdit">
-             <property name="maximumSize">
-              <size>
-               <width>100</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="echoMode">
-              <enum>QLineEdit::Normal</enum>
-             </property>
-             <property name="placeholderText">
-              <string>time subset</string>
-             </property>
-             <property name="cursorMoveStyle">
-              <enum>Qt::LogicalMoveStyle</enum>
-             </property>
-             <property name="clearButtonEnabled">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="Line" name="line">
-             <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
-             </property>
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="processButton">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Process</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="processTRangeLineEdit">
-             <property name="maximumSize">
-              <size>
-               <width>100</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to process. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="placeholderText">
-              <string>time subset</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="processCRangeLineEdit">
-             <property name="minimumSize">
-              <size>
-               <width>100</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>100</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes. &lt;br&gt;For instance: '0,2-3'&lt;br&gt;NOTE: channels are zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="placeholderText">
-              <string>channel subset</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
        </layout>
-      </widget>
-      <widget class="QWidget" name="tab_utilities">
-       <attribute name="title">
-        <string>Utilities</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_2"/>
       </widget>
       <widget class="QWidget" name="tab_config">
        <attribute name="title">
@@ -1855,6 +1705,138 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
+     <widget class="QFrame" name="previewProcessButtonFrame">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <layout class="QHBoxLayout" name="processButtonLayout">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="previewButton">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Preview the highlighted dataset with the current settings</string>
+         </property>
+         <property name="text">
+          <string>Preview</string>
+         </property>
+         <property name="autoDefault">
+          <bool>true</bool>
+         </property>
+         <property name="default">
+          <bool>false</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="previewTRangeLineEdit">
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Normal</enum>
+         </property>
+         <property name="placeholderText">
+          <string>time subset</string>
+         </property>
+         <property name="cursorMoveStyle">
+          <enum>Qt::LogicalMoveStyle</enum>
+         </property>
+         <property name="clearButtonEnabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="processButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Process</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="processTRangeLineEdit">
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to process. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="placeholderText">
+          <string>time subset</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="processCRangeLineEdit">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes. &lt;br&gt;For instance: '0,2-3'&lt;br&gt;NOTE: channels are zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="placeholderText">
+          <string>channel subset</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="progressLayout">
       <item>
        <widget class="QProgressBar" name="progressBar">
@@ -1868,7 +1850,7 @@ p, li { white-space: pre-wrap; }
          <string notr="true">QProgressBar {
 	border: 1px solid grey;
 	border-radius: 3px;
-	height: 16px;
+	height: 20px;
 	margin: 0px 0px 0px 5px;
 }
 
@@ -1946,6 +1928,9 @@ QProgressBar::chunk:horizontal {
     </property>
     <addaction name="actionQuit"/>
     <addaction name="actionOpen_LLSdir"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave_Settings_as_Default"/>
+    <addaction name="actionLoad_Default_Settings"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -1975,6 +1960,11 @@ QProgressBar::chunk:horizontal {
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionReduce_to_Raw"/>
+   <addaction name="actionCompress_Folder"/>
+   <addaction name="actionDecompress_Folder"/>
+   <addaction name="actionConcatenate"/>
+   <addaction name="actionRename_Scripted"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionQuit">
@@ -1990,7 +1980,7 @@ QProgressBar::chunk:horizontal {
     <string>Preview</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+D</string>
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionRun">
@@ -2018,6 +2008,59 @@ QProgressBar::chunk:horizontal {
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSave_Settings_as_Default">
+   <property name="text">
+    <string>Save Settings as Default</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionLoad_Default_Settings">
+   <property name="text">
+    <string>Load Default Settings</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionReduce_to_Raw">
+   <property name="text">
+    <string>Reduce to Raw</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove all processed data from selected folder and restore folder to it's original state after acquisition</string>
+   </property>
+  </action>
+  <action name="actionCompress_Folder">
+   <property name="text">
+    <string>Compress Folder</string>
+   </property>
+   <property name="toolTip">
+    <string>Compress raw data in selected folder</string>
+   </property>
+  </action>
+  <action name="actionDecompress_Folder">
+   <property name="text">
+    <string>Decompress Folder</string>
+   </property>
+  </action>
+  <action name="actionConcatenate">
+   <property name="text">
+    <string>Concatenate</string>
+   </property>
+   <property name="toolTip">
+    <string>Merge selected folders into single LLSdir</string>
+   </property>
+  </action>
+  <action name="actionRename_Scripted">
+   <property name="text">
+    <string>Rename Scripted</string>
+   </property>
+   <property name="toolTip">
+    <string>Rename &quot;Iter_&quot; files in an LLSdir acquired with Script Editor</string>
    </property>
   </action>
  </widget>
@@ -2063,12 +2106,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>431</x>
-     <y>455</y>
+     <x>500</x>
+     <y>527</y>
     </hint>
     <hint type="destinationlabel">
-     <x>523</x>
-     <y>453</y>
+     <x>554</x>
+     <y>528</y>
     </hint>
    </hints>
   </connection>
@@ -2079,12 +2122,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>229</x>
-     <y>456</y>
+     <x>267</x>
+     <y>527</y>
     </hint>
     <hint type="destinationlabel">
-     <x>308</x>
-     <y>455</y>
+     <x>335</x>
+     <y>528</y>
     </hint>
    </hints>
   </connection>
@@ -2095,12 +2138,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>268</x>
-     <y>412</y>
+     <x>304</x>
+     <y>443</y>
     </hint>
     <hint type="destinationlabel">
-     <x>398</x>
-     <y>406</y>
+     <x>435</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>
@@ -2111,12 +2154,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>292</x>
-     <y>415</y>
+     <x>304</x>
+     <y>443</y>
     </hint>
     <hint type="destinationlabel">
-     <x>519</x>
-     <y>412</y>
+     <x>543</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>
@@ -2127,12 +2170,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>310</x>
-     <y>399</y>
+     <x>304</x>
+     <y>443</y>
     </hint>
     <hint type="destinationlabel">
-     <x>354</x>
-     <y>399</y>
+     <x>367</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>
@@ -2143,12 +2186,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>287</x>
-     <y>408</y>
+     <x>304</x>
+     <y>443</y>
     </hint>
     <hint type="destinationlabel">
-     <x>470</x>
-     <y>418</y>
+     <x>477</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>

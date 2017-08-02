@@ -9,10 +9,11 @@ from PyQt5 import QtWidgets as QtW
 import llspy
 import imdisplay
 import logging
+from functools import partial
 import inspect
 import sys
-import time
-import numpy as np
+
+import time # for testing
 
 form_class = uic.loadUiType(osp.join(osp.dirname(osp.abspath(__file__)), 'main_gui.ui'))[0]
 # form_class = uic.loadUiType('./llspy/gui/main_gui.ui')[0]  # for debugging
@@ -20,43 +21,14 @@ form_class = uic.loadUiType(osp.join(osp.dirname(osp.abspath(__file__)), 'main_g
 # platform independent settings file
 QtCore.QCoreApplication.setOrganizationName("LLSpy")
 QtCore.QCoreApplication.setOrganizationDomain("llspy.com")
-settings = QtCore.QSettings("LLSpy", "LLSpyGUI")
-defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
-
+QtCore.QCoreApplication.setApplicationName("LLSpyGUI")
+settings = QtCore.QSettings()
 # located at settings.fileName()
 
 
-def trap_exc_during_debug(errorType, errValue, tback):
-	import traceback
+def trap_exc_during_debug(*args):
 	# when app raises uncaught exception, print info
-	# traceback.print_exc()
-	if errorType.__module__ == 'voluptuous.error':
-		handleSchemaError(errValue, tback)
-		return
-	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	print(traceback.print_tb(tback))
-	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	print(errValue)
-
-
-def handleSchemaError(errMsg, tback):
-	import traceback
-	import re
-	schemaDefaults = llspy.core.schema.__defaults__
-	schemaerrRX = re.compile(r'.*data\[(?P<dictItem>.+)\]. Got (?P<gotValue>.+)')
-	gd = schemaerrRX.search(str(errMsg)).groupdict()
-	item = gd['dictItem']
-	value = gd['gotValue']
-	msg = QtW.QMessageBox()
-	msg.setIcon(QtW.QMessageBox.Warning)
-	msg.setText("Validation Error")
-	msg.setInformativeText(
-		"Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
-			item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0]))
-	msg.setWindowTitle("Schema Error Window")
-	msg.setDetailedText("".join(traceback.format_tb(tback)))
-	msg.setStandardButtons(QtW.QMessageBox.Ok)
-	msg.exec_()
+	print(args)
 
 
 # install exception hook: without this, uncaught exception would cause application to exit
@@ -70,7 +42,7 @@ def byteArrayToString(bytearr):
 		return str(bytearr, encoding='utf-8')
 
 
-# FIXME: temporary testing
+#FIXME: temporary testing
 def channel_args(E, P, chan, binary=None):
 	opts = {
 		'background': P.background[chan] if not P.bFlashCorrect else 0,
@@ -152,9 +124,8 @@ def guisave(widget, settings):
 def guirestore(widget, settings):
 	# Restore geometry
 	selfName = widget.objectName()
-	if 'LLSpyDefaults' not in settings.fileName():
-		widget.resize(settings.value(selfName + '_size', QtCore.QSize(500, 500)))
-		widget.move(settings.value(selfName + '_pos', QtCore.QPoint(60, 60)))
+	widget.resize(settings.value(selfName + '_size', QtCore.QSize(500, 500)))
+	widget.move(settings.value(selfName + '_pos', QtCore.QPoint(60, 60)))
 	for name, obj in inspect.getmembers(widget):
 		try:
 			if isinstance(obj, QtW.QComboBox):
@@ -319,36 +290,11 @@ class DragDropTableView(QtW.QTableWidget):
 				i += 1
 
 
-# ################# WORKERS ################
-
-def newWorkerThread(workerClass, *args, **kwargs):
-	worker = workerClass(*args)
-	thread = QtCore.QThread()
-	worker.moveToThread(thread)
-	# all workers started using this function must implement work() func
-	thread.started.connect(worker.work)
-	# all workers started using this function must emit finished signal
-	worker.finished.connect(thread.quit)
-	worker.finished.connect(worker.deleteLater)
-	thread.finished.connect(thread.deleteLater)
-
-	# connect dict from calling object to worker signals
-	worker_connections = kwargs.get('workerConnect', None)
-	if worker_connections:
-		[getattr(worker, key).connect(val) for key, val in worker_connections.items()]
-	# optionally, can supply onfinish callable when thread finishes
-	if kwargs.get('onfinish', None):
-		thread.finished.connect(kwargs.get('onfinish'))
-	if kwargs.get('start', False) is True:
-		thread.start()  # usually need to connect stuff before starting
-	return worker, thread
-
-
 class CudaDeconvWorker(QtCore.QObject):
 
-	file_finished = QtCore.pyqtSignal(int, str)  # worker id, filename
-	finished = QtCore.pyqtSignal(int)  # worker id: emitted at end of work()
-	logUpdate = QtCore.pyqtSignal(str)  # message to be shown to user
+	sig_file_finished = QtCore.pyqtSignal(int, str)  # worker id, step description: emitted every step through work() loop
+	sig_CUDA_done = QtCore.pyqtSignal(int)  # worker id: emitted at end of work()
+	sig_msg = QtCore.pyqtSignal(str)  # message to be shown to user
 
 	def __init__(self, id, args):
 		super(CudaDeconvWorker, self).__init__()
@@ -358,12 +304,27 @@ class CudaDeconvWorker(QtCore.QObject):
 
 		# QProcess object for external app
 		self.process = QtCore.QProcess(self)
-		self.binary = mainGUI.cudaDeconvPathLineEdit.text()
+		self.binary = 'cudaDeconv'
 		# self.process.setProcessEnvironment(env)
 
 		# QProcess emits `readyRead` when there is data to be read
 		self.process.readyRead.connect(self.procOutputReady)
 		# Just to prevent accidentally running multiple times
+
+	# TODO: make pickup something other than <<<FINISHED>>>
+	def procOutputReady(self):
+		while self.process.canReadLine():
+			line = self.process.readLine()
+			line = byteArrayToString(line)
+			if "<<<FINISHED>>>" in line:
+				path = line.split("<<<FINISHED>>>")[1]
+				base = osp.basename(path.strip())
+				gd = llspy.core.parse.parse_filename(base)
+				report = "finished {}: channel: {} time: {}".format(
+					gd['basename'], gd['channel'], gd['stack'])
+				self.sig_file_finished.emit(self.__id, report)
+			else:
+				self.sig_msg.emit(line.rstrip())
 
 	@QtCore.pyqtSlot()
 	def work(self):
@@ -375,7 +336,7 @@ class CudaDeconvWorker(QtCore.QObject):
 		"""
 		# thread_name = QtCore.QThread.currentThread().objectName()
 		# thread_id = int(QtCore.QThread.currentThreadId())  # cast to int() is necessary
-		self.logUpdate.emit('='*20 + '\nRunning cudaDeconv thread_{} with args: '
+		self.sig_msg.emit('='*20 + '\nRunning cudaDeconv thread_{} with args: '
 			'\n{}\n'.format(self.__id, " ".join(self.__args)) + '='*20)
 
 		# DO WORK
@@ -389,251 +350,37 @@ class CudaDeconvWorker(QtCore.QObject):
 			if self.__abort:
 				self.process.terminate()
 				# note that "step" value will not necessarily be same for every thread
-				self.logUpdate.emit('aborting CUDAworker #{}'.format(self.__id))
+				self.sig_msg.emit('aborting worker #{}'.format(self.__id))
 				break
 		self.process.waitForFinished()
 
-	def procOutputReady(self):
-		while self.process.canReadLine():
-			line = self.process.readLine()
-			line = byteArrayToString(line)
-			if "Output:" in line:
-				path = line.split("Output:")[1]
-				base = osp.basename(path.strip())
-				self.file_finished.emit(self.__id, base)
-			else:
-				self.logUpdate.emit(line.rstrip())
-
 	def onFinished(self, exitCode,  exitStatus):
-		self.logUpdate.emit('cudaDeconv process finished with code({}) and '
+		self.sig_msg.emit('cudaDeconv process finished with code({}) and '
 			'status: {}'.format(exitCode,  exitStatus))
-		self.finished.emit(self.__id)
+		self.sig_CUDA_done.emit(self.__id)
 
 	def abort(self):
-		self.logUpdate.emit('CUDAWorker #{} notified to abort'.format(self.__id))
+		self.sig_msg.emit('Worker #{} notified to abort'.format(self.__id))
 		self.__abort = True
 
 
-class PreviewWorker(QtCore.QObject):
-	"""docstring for PreviewWorker"""
-
-	finished = QtCore.pyqtSignal()
-	previewReady = QtCore.pyqtSignal(np.ndarray)
-
-	def __init__(self, path, tRange, opts):
-		super(PreviewWorker, self).__init__()
-		self.path = path
-		self.tRange = tRange
-		self.opts = opts
-
-	@QtCore.pyqtSlot()
-	def work(self):
-		E = llspy.LLSdir(self.path)
-		previewStack = llspy.core.llsdir.preview(E, self.tRange, **self.opts)
-		self.previewReady.emit(previewStack)
-		self.finished.emit()
-
-
-class LLSitemWorker(QtCore.QObject):
-	NUM_CUDA_THREADS = 1
-	sig_abort = QtCore.pyqtSignal()
-	file_finished = QtCore.pyqtSignal(int, str)  # worker id, filename
-	sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
-	finished = QtCore.pyqtSignal()
-	statusUpdate = QtCore.pyqtSignal(str)  # update mainGUI status
-	logUpdate = QtCore.pyqtSignal(str)  # message to be shown to user
-	progressUp = QtCore.pyqtSignal()  # set progressbar value
-	progressValue = QtCore.pyqtSignal(int)  # set progressbar value
-	progressMaxVal = QtCore.pyqtSignal(int)  # set progressbar maximum
-	clockUpdate = QtCore.pyqtSignal(str)  # set progressbar value
-
-	def __init__(self, id, path, opts):
-		super(LLSitemWorker, self).__init__()
-		self.__id = int(id)
-		self.opts = opts
-		self.E = llspy.LLSdir(path)
-		self.shortname = osp.sep.join(self.E.path.parts[-2:])
-		self.aborted = False
-		self.__argQueue = []  # holds all argument lists that will be sent to threads
-
-	@QtCore.pyqtSlot()
-	def work(self):
-
-		if self.E.is_compressed():
-			self.statusUpdate.emit('Decompressing {}'.format(self.E.basename))
-			self.E.decompress()
-
-		if not self.E.ready_to_process:
-			if not self.E.has_lls_tiffs:
-				self.logUpdate.emit(
-					'No TIFF files to process in {}'.format(self.E.path))
-			if not self.E.has_settings:
-				self.logUpdate.emit(
-					'Could not find Settings.txt file in {}'.format(self.E.path))
-			return
-
-		self.P = self.E.localParams(**self.opts)
-
-		# we process one folder at a time. Progress bar updates per Z stack
-		# so the maximum is the total number of timepoints * channels
-		self.nFiles = len(self.P.tRange) * len(self.P.cRange)
-
-		self.logUpdate.emit('\n' + '#' * 65)
-		self.logUpdate.emit('Processing {}'.format(self.E.basename))
-		self.logUpdate.emit('#' * 65 + '\n')
-
-		if self.P.bFlashCorrect:
-			self.statusUpdate.emit('Correcting Flash artifact on {}'.format(self.E.basename))
-			self.E = self.E.correct_flash(trange=self.P.tRange,
-				median=self.P.bMedianCorrect, target=self.P.flashCorrectTarget)
-
-		self.nFiles_done = 0
-		self.progressValue.emit(0)
-		self.progressMaxVal.emit(self.nFiles)
-
-		self.statusUpdate.emit(
-			'Processing {}: (0 of {})'.format(self.E.basename, self.nFiles))
-
-		# generate all the channel specific cudaDeconv arguments for this item
-		for chan in self.P.cRange:
-			self.__argQueue.append(channel_args(self.E, self.P, chan))
-		# with the argQueue populated, we can now start the workers
-		if not len(self.__argQueue):
-			self.logUpdate.emit('ERROR: no channel arguments to process in LLSitem')
-			self.finished.emit()
-			return
-
-		self.startCUDAWorkers()
-		self.timer = QtCore.QTime()
-		self.timer.restart()
-
-	def startCUDAWorkers(self):
-		# initialize the workers and threads
-		self.__CUDAworkers_done = 0
-		self.__CUDAthreads = []
-
-		for idx in range(self.NUM_CUDA_THREADS):
-			# create new CUDAworker for every thread
-			# each CUDAworker will control one cudaDeconv process (which only gets
-			# one wavelength at a time)
-
-			# grab the next arguments from the queue
-			# THIS BREAKS the relationship between num_cuda_threads
-			# and self.__CUDAworkers_done...
-			# if len(self.__argQueue)== 0:
-			# 	return
-			args = self.__argQueue.pop(0)
-
-			CUDAworker, thread = newWorkerThread(CudaDeconvWorker, idx, args,
-				workerConnect={
-					# get progress messages from CUDAworker and pass to parent
-					'file_finished': self.on_file_finished,
-					'finished': self.on_CUDAworker_done,
-					# any messages go straight to the log window
-					'logUpdate': self.logUpdate.emit,
-					# 'error': self.errorstring  # implement error signal?
-				})
-
-			# need to store worker too otherwise will be garbage collected
-			self.__CUDAthreads.append((thread, CUDAworker))
-			# connect mainGUI abort CUDAworker signal to the new CUDAworker
-			self.sig_abort.connect(CUDAworker.abort)
-
-			# start the thread
-			thread.start()
-
-	def on_file_finished(self, worker_id, filename):
-		# send report to the log window
-		gd = llspy.core.parse.parse_filename(filename)
-		report = "finished {}: channel: {} time: {}".format(
-			gd['basename'], gd['channel'], gd['stack'])
-		self.logUpdate.emit(report)
-		# update status bar
-		self.nFiles_done = self.nFiles_done+1
-		self.statusUpdate.emit('Processing {}: ({} of {})'.format(
-			self.shortname, self.nFiles_done, self.nFiles))
-		# update progress bar
-		self.progressUp.emit()
-		# update the countdown timer with estimate of remaining time
-		avgTimePerFile = int(self.timer.elapsed() / self.nFiles_done)
-		filesToGo = self.nFiles - self.nFiles_done + 1
-		remainingTime = filesToGo * avgTimePerFile
-		timeAsString = QtCore.QTime(0, 0).addMSecs(remainingTime).toString()
-		self.clockUpdate.emit(timeAsString)
-
-	@QtCore.pyqtSlot(int)
-	def on_CUDAworker_done(self, worker_id):
-		# a CUDAworker has finished... update the log and check if any are still going
-		self.logUpdate.emit('CUDAworker #{} done\n'.format(worker_id))
-		self.__CUDAworkers_done += 1
-		if self.__CUDAworkers_done == self.NUM_CUDA_THREADS:
-			# all the workers are finished, cleanup thread(s) and start again
-			for thread, _ in self.__CUDAthreads:
-				thread.quit()
-				thread.wait()
-			self.__CUDAthreads = []
-			# if there's still stuff left in the argQueue for this item, keep going
-			if self.aborted:
-				self.aborted = False
-				self.finished.emit()
-			elif len(self.__argQueue):
-				self.startCUDAWorkers()
-			# otherwise send the signal that this item is done
-			else:
-				self.post_process()
-
-	def post_process(self):
-
-		if self.P.bDoRegistration:
-			self.statusUpdate.emit(
-				'Doing Channel Registration: {}'.format(self.E.basename))
-			self.E.register(self.P.regRefWave, self.P.regMode, self.P.regCalibDir)
-
-		if self.P.bMergeMIPs:
-			if self.E.path.joinpath('GPUdecon').is_dir():
-				self.statusUpdate.emit(
-					'Merging deconvolved MIPs: {}'.format(self.E.basename))
-				self.E.mergemips('GPUdecon')
-
-		if self.P.bMergeMIPsraw:
-			if self.E.path.joinpath('Deskewed').is_dir():
-				self.statusUpdate.emit(
-					'Merging raw MIPs: {}'.format(self.E.basename))
-				self.E.mergemips('Deskewed')
-
-		if self.P.bCompress:
-			self.statusUpdate.emit(
-				'Compressing Raw: {}'.format(self.E.basename))
-			self.E.compress()
-
-		self.finished.emit()
-
-	@QtCore.pyqtSlot()
-	def abort(self):
-		print('got it')
-		self.logUpdate.emit('LLSworker #{} notified to abort'.format(self.__id))
-		if len(self.__CUDAthreads):
-			print(self.__CUDAthreads)
-			self.aborted = True
-			self.__argQueue = []
-			self.sig_abort.emit()
-			# self.processButton.setDisabled(True) # will be reenabled when workers done
-		else:
-			self.finished.emit()
+class LLSpreprocessor(QtCore.QObject):
+	pass
 
 
 class main_GUI(QtW.QMainWindow, form_class):
 	"""docstring for main_GUI"""
 
-	sig_abort_LLSworkers = QtCore.pyqtSignal()
+	sig_abort_CUDAworkers = QtCore.pyqtSignal()
+	sig_processing_starting = QtCore.pyqtSignal()
 	sig_item_finished = QtCore.pyqtSignal()
 	sig_processing_done = QtCore.pyqtSignal()
+	NUM_CUDA_THREADS = 1
 
 	def __init__(self, parent=None):
 		super(main_GUI, self).__init__(parent)
 		self.setupUi(self)  # method inherited from form_class to init UI
 		self.setWindowTitle("Lattice Light Sheet")
-		self.LLSItemThreads = []
 		self.argQueue = []  # holds all argument lists that will be sent to threads
 		self.aborted = False  # current abort status
 		self.inProcess = False
@@ -645,26 +392,9 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.listbox.dropSignal.connect(self.onFolderDroppedTable)
 
 		# connect buttons
-		self.previewButton.clicked.connect(self.onPreview)
 		self.processButton.clicked.connect(self.onProcess)
+		self.previewButton.clicked.connect(self.onPreview)
 
-		# connect actions
-		self.actionOpen_LLSdir.triggered.connect(self.openLLSdir)
-		self.actionRun.triggered.connect(self.onProcess)
-		self.actionAbort.triggered.connect(self.abort_workers)
-		self.actionPreview.triggered.connect(self.onPreview)
-		self.actionSave_Settings_as_Default.triggered.connect(
-			self.saveCurrentAsDefault)
-		self.actionLoad_Default_Settings.triggered.connect(
-			self.loadDefaultSettings)
-
-		self.actionReduce_to_Raw.triggered.connect(self.reduceSelected)
-		self.actionCompress_Folder.triggered.connect(self.compressSelected)
-		self.actionDecompress_Folder.triggered.connect(self.decompressSelected)
-		self.actionConcatenate.triggered.connect(self.concatenateSelected)
-		self.actionRename_Scripted.triggered.connect(self.renameSelected)
-
-		# set validators for cRange and tRange fields
 		ctrangeRX = QtCore.QRegExp("(\d[\d-]*,?)*")  # could be better
 		ctrangeValidator = QtGui.QRegExpValidator(ctrangeRX)
 		self.processCRangeLineEdit.setValidator(ctrangeValidator)
@@ -706,6 +436,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 
 		# connect worker signals and slots
 		self.sig_item_finished.connect(self.on_item_finished)
+		self.sig_processing_starting.connect(self.on_proc_starting)
 		self.sig_processing_done.connect(self.on_proc_finished)
 
 		# Restore settings from previous session and show ready status
@@ -713,79 +444,24 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.clock.display("00:00:00")
 		self.statusBar.showMessage('Ready')
 
-	def currentSelectedPaths(self):
-		selectedRows = self.listbox.selectionModel().selectedRows()
-		pathlist = [self.listbox.item(i.row(), 0).text() for i in selectedRows]
-		return pathlist
-
-	def reduceSelected(self):
-		for item in self.currentSelectedPaths():
-			llspy.LLSdir(item).reduce_to_raw()
-
-	def compressSelected(self):
-		for item in self.currentSelectedPaths():
-			llspy.LLSdir(item).compress()
-
-	def decompressSelected(self):
-		for item in self.currentSelectedPaths():
-			llspy.LLSdir(item).decompress()
-
-	def concatenateSelected(self):
-		pass  # not implemented
-
-	def renameSelected(self):
-		pass  # not implemented
-
-	def saveCurrentAsDefault(self):
-		if osp.isfile(defaultSettings.fileName()):
-			reply = QtW.QMessageBox.question(self, 'Save Settings',
-				"Overwrite existing default GUI settings?",
-				QtW.QMessageBox.Yes | QtW.QMessageBox.No,
-				QtW.QMessageBox.No)
-			if reply != QtW.QMessageBox.Yes:
-				return
-		guisave(self, defaultSettings)
-
-	def loadDefaultSettings(self):
-		if not osp.isfile(defaultSettings.fileName()):
-			reply = QtW.QMessageBox.information(self, 'Load Settings',
-				"Default settings have not yet been saved.  Use Save Settings")
-			if reply != QtW.QMessageBox.Yes:
-				return
-		guirestore(self, defaultSettings)
-
-	def openLLSdir(self):
-		path = QtW.QFileDialog.getExistingDirectory(self,
-				'Choose LLSdir to add to list', '', QtW.QFileDialog.ShowDirsOnly)
-		if path is not None:
-			self.addPathToLLSlist(path)
-
-	def incrementProgress(self):
-		# with no values, simply increment progressbar
-		self.progressBar.setValue(self.progressBar.value()+1)
-
-	def addPathToLLSlist(self, path):
-		if osp.exists(path) and osp.isdir(path):
-			# If this folder is not on the list yet, add it to the list:
-			E = llspy.LLSdir(path)
-			shortname = osp.sep.join(E.path.parts[-2:])
-			if not E.has_settings:
-				logging.warn('No Settings.txt! Ignoring: {}'.format(shortname))
-				return
-			# if it's not already on the list, add it
-			if len(self.listbox.findItems(shortname, QtCore.Qt.MatchExactly)) == 0:
-				self.listbox.addLLSitem(E)
-
 	def onFolderDroppedTable(self, links):
 		''' Triggered after URLs are dropped onto self.listbox '''
 		for url in links:
-			self.addPathToLLSlist(url)
+			if osp.exists(url) and osp.isdir(url):
+				# If this folder is not on the list yet, add it to the list:
+				E = llspy.LLSdir(url)
+				shortname = osp.sep.join(E.path.parts[-2:])
+				if not E.has_settings:
+					logging.warn('No Settings.txt! Ignoring: {}'.format(shortname))
+					return
+				# if it's not already on the list, add it
+				if len(self.listbox.findItems(shortname, QtCore.Qt.MatchExactly)) == 0:
+					self.listbox.addLLSitem(E)
 
 	def onPreview(self):
-		self.previewButton.setDisabled(True)
 		if self.listbox.rowCount() == 0:
 			QtW.QMessageBox.warning(self, "Nothing Added!",
-				'Nothing to preview! Drop LLS experiment folders into the list',
+				'Nothing to preview! Drag and drop folders into the list',
 				QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
 			return
 
@@ -807,19 +483,22 @@ class main_GUI(QtW.QMainWindow, form_class):
 		else:
 			tRange = 0
 
-		itemPath = self.listbox.item(firstRowSelected, 0).text()
-		opts = self.getValidatedOptions()
-		w, thread = newWorkerThread(PreviewWorker, itemPath, tRange, opts,
-			workerConnect={'previewReady': self.displayPreview}, start=True)
+		E = llspy.LLSdir(self.listbox.item(firstRowSelected, 0).text())
+		previewStack = llspy.core.llsdir.preview(E, tRange, **self.validatedOptions)
 
-		self.previewthreads = (w, thread)
-
-	@QtCore.pyqtSlot(np.ndarray)
-	def displayPreview(self, array):
+		# for some reason... if this import is put at the top, it crashes with:
+		# [QNSApplication _setup:]: unrecognized selector sent to instance
 		import matplotlib.pyplot as plt
-		imdisplay.imshow3D(array, cmap='gray', interpolation='nearest')
+		imdisplay.imshow3D(previewStack, title="Previewing: {}".format(E.basename),
+			cmap='gray', interpolation='nearest')
 		plt.show()
-		self.previewButton.setEnabled(True)
+
+		# imdisplay.slices3D(previewStack[0])
+		# win = pg.GraphicsWindow()
+		# vb = win.addViewBox()
+		# for stack in previewStack:
+		# 	s = stack.transpose(0, 2, 1)
+		# 	pg.image(s, levels=(s.min() - 20, s.max() * 0.5))
 
 	def onProcess(self):
 		# prevent additional button clicks which processing
@@ -833,106 +512,159 @@ class main_GUI(QtW.QMainWindow, form_class):
 			return
 
 		# store current options for this processing run.  ??? Unecessary?
-		self.optionsOnProcessClick = self.getValidatedOptions()
+		self.optionsOnProcessClick = self.validatedOptions
 
-		self.currentItem = self.listbox.item(0, 1).text()
-		self.on_proc_starting()
+		self.sig_processing_starting.emit()
 		self.process_next_item()
 
 	def process_next_item(self):
 		# get path from first row and create a new LLSdir object
 		nextitem = self.listbox.item(0, 0).text()
-		idx = 0  # might use this later to spawn more threads
-		opts = self.optionsOnProcessClick
-		LLSworker, thread = newWorkerThread(LLSitemWorker, idx, nextitem, opts,
-			workerConnect={
-				'finished': self.on_item_finished,
-				'statusUpdate': self.statusBar.showMessage,
-				'logUpdate': self.log.append,
-				'progressMaxVal': self.progressBar.setMaximum,
-				'progressValue': self.progressBar.setValue,
-				'progressUp': self.incrementProgress,
-				'clockUpdate': self.clock.display,
-				# 'error': self.errorstring  # implement error signal?
-			})
+		E = llspy.LLSdir(nextitem)  # create new LLSdir object
 
-		self.LLSItemThreads.append((thread, LLSworker))
+		# calculate parameters specific to this LLSdir based on options when
+		# process button was originally clicked
+		P = E.localParams(**self.optionsOnProcessClick)
 
-		# connect mainGUI abort LLSworker signal to the new LLSworker
-		self.sig_abort_LLSworkers.connect(LLSworker.abort)
+		# #### PREPROCESS THREADS ######### <<<<<<<<<<<
 
-		# prepare and start LLSworker:
-		# thread.started.connect(LLSworker.work)
-		thread.start()  # this will emit 'started' and start thread's event loop
+		# we process one folder at a time. Progress bar updates per Z stack
+		# so the maximum is the total number of timepoints * channels
+		self.cur_nFiles = len(P.tRange) * len(P.cRange)
+		self.cur_File = E.basename
 
-		# recolor the first row to indicate processing
-		self.listbox.setRowBackgroudColor(0, '#E9E9E9')
+		self.log.append('\n' + '#' * 65)
+		self.log.append('Processing {}'.format(self.cur_File))
+		self.log.append('#' * 65 + '\n')
+
+		self.progressBar.setMaximum(self.cur_nFiles)
+		self.progressBar.setValue(0)
+		self.statusBar.showMessage('Processing {} ... stack {} of {}'.format(
+			self.cur_File, 0, self.cur_nFiles))
+		self.listbox.setRowBackgroudColor(0, '#484DE7')
 		self.listbox.clearSelection()
-		# start a timer in the main GUI to measure item processing time
+
+		# generate all the channel specific cudaDeconv arguments for this item
+		for chan in P.cRange:
+			self.argQueue.append(channel_args(E, P, chan))
+		# with the argQueue populated, we can now start the workers
+		self.startCUDAWorkers()
+
+		# start timer for estimation of time left
 		self.timer = QtCore.QTime()
 		self.timer.restart()
 
+	def startCUDAWorkers(self):
+		# initialize the workers and threads
+		self.__CUDAworkers_done = 0
+		self.__threads = []
+		for idx in range(self.NUM_CUDA_THREADS):
+			# create new CUDAworker for every thread
+			# each CUDAworker will control one cudaDeconv process (which only gets
+			# one wavelength at a time)
+
+			# grab the next arguments from the queue
+			args = self.argQueue.pop(0)
+			CUDAworker = CudaDeconvWorker(idx, args)
+			thread = QtCore.QThread()
+			thread.setObjectName('thread_' + str(idx))
+			# need to store worker too otherwise will be garbage collected
+			self.__threads.append((thread, CUDAworker))
+			# transfer the thread to the worker
+			CUDAworker.moveToThread(thread)
+
+			# get progress messages from CUDAworker:
+			CUDAworker.sig_file_finished.connect(self.on_file_finished)
+			CUDAworker.sig_CUDA_done.connect(self.on_CUDAworker_done)
+			# any messages go straight to the log window
+			CUDAworker.sig_msg.connect(self.log.append)
+
+			# connect mainGUI abort CUDAworker signal to the new CUDAworker
+			self.sig_abort_CUDAworkers.connect(CUDAworker.abort)
+
+			# get ready to start CUDAworker:
+			thread.started.connect(CUDAworker.work)
+			thread.start()  # this will emit 'started' and start thread's event loop
+
+	@QtCore.pyqtSlot(int, str)
+	def on_file_finished(self, worker_id, data):
+		# a file has been finished ... update the progressbar and the log
+		self.log.append('thread_{}: {}'.format(int(worker_id), data))
+		numFilesSoFar = self.progressBar.value()
+		self.progressBar.setValue(numFilesSoFar + 1)
+		self.statusBar.showMessage('Processing {} ... stack {} of {}'.format(
+			self.cur_File, numFilesSoFar, self.cur_nFiles))
+		# update the LCD with estimate of remaining time
+		avgTimePerFile = int(self.timer.elapsed() / (numFilesSoFar+1))
+		remainingTime = (self.cur_nFiles - numFilesSoFar) * avgTimePerFile
+		self.clock.display(QtCore.QTime(0, 0).addMSecs(remainingTime).toString())
+
+	@QtCore.pyqtSlot(int)
+	def on_CUDAworker_done(self, worker_id):
+		# a CUDAworker has finished... update the log and check if any are still going
+		self.log.append('worker #{} done\n'.format(worker_id))
+		self.__CUDAworkers_done += 1
+		if self.__CUDAworkers_done == self.NUM_CUDA_THREADS:
+			# all the workers are finished, cleanup thread(s) and start again
+			for thread, _ in self.__threads:
+				thread.quit()
+				thread.wait()
+			# if there's still stuff left in the argQueue for this item, keep going
+			if self.aborted:
+				self.aborted = False
+				self.progressBar.setValue(0)
+				self.statusBar.showMessage('Aborting ...')
+				self.sig_processing_done.emit()
+			elif len(self.argQueue):
+				self.startCUDAWorkers()
+			# otherwise send the signal that this item is done
+			else:
+				self.sig_item_finished.emit()
+
 	@QtCore.pyqtSlot()
 	def on_proc_starting(self):
-		self.statusBar.showMessage('Starting processing on ...{}'.format(self.currentItem))
 		self.inProcess = True
-		# turn Process button into a Cancel button and udpate menu items
+		# turn Process button into a Cancel button
 		self.processButton.clicked.disconnect()
 		self.processButton.setText('CANCEL')
 		self.processButton.clicked.connect(self.abort_workers)
 		self.processButton.setEnabled(True)
-		self.actionRun.setDisabled(True)
-		self.actionAbort.setEnabled(True)
 
 	@QtCore.pyqtSlot()
 	def on_proc_finished(self):
-		# change Process button back to "Process" and udpate menu items
+		# change Process button back to "Process" and reinit progressBar
 		self.processButton.clicked.disconnect()
 		self.processButton.clicked.connect(self.onProcess)
 		self.processButton.setText('Process')
-		self.actionRun.setEnabled(True)
-		self.actionAbort.setDisabled(True)
-
-		# reinit statusbar and clock
+		# self.processButton.setEnabled(True)
 		self.statusBar.showMessage('Ready')
 		self.clock.display("00:00:00")
-		self.inProcess = False
-		self.aborted = False
 
-		self.log.append("Processing Finished")
+		self.__threads = []
+		self.inProcess = False
 
 	@QtCore.pyqtSlot()
 	def on_item_finished(self):
-		thread, _  = self.LLSItemThreads.pop(0)
-		thread.quit()
-		thread.wait()
+		self.listbox.removeRow(0)
 		self.clock.display("00:00:00")
-		self.progressBar.setValue(0)
-		if self.aborted:
-			self.sig_processing_done.emit()
+		if self.listbox.rowCount() > 0:
+			self.process_next_item()
 		else:
-			itemTime = QtCore.QTime(0, 0).addMSecs(self.timer.elapsed()).toString()
-			self.log.append(">" * 4 + " Item {} finished in {} ".format(
-				self.currentItem, itemTime) + "<" * 4)
-			self.listbox.removeRow(0)
-			if self.listbox.rowCount() > 0:
-				self.process_next_item()
-			else:
-				self.sig_processing_done.emit()
+			self.sig_processing_done.emit()
 
 	@QtCore.pyqtSlot()
 	def abort_workers(self):
-		self.statusBar.showMessage('Aborting ...')
-		self.log.append('Message sent to abort ...')
-		if len(self.LLSItemThreads):
+		if len(self.__threads):
 			self.aborted = True
-			self.sig_abort_LLSworkers.emit()
+			self.argQueue = []
+			self.sig_abort_workers.emit()
 			self.listbox.setRowBackgroudColor(0, '#FFFFFF')
 			# self.processButton.setDisabled(True) # will be reenabled when workers done
 		else:
 			self.sig_processing_done.emit()
 
-	def getValidatedOptions(self):
+	@property
+	def validatedOptions(self):
 		options = {
 			'bFlashCorrect': self.camcorCheckBox.isChecked(),
 			'bMedianCorrect': self.medianFilterCheckBox.isChecked(),
@@ -942,13 +674,13 @@ class main_GUI(QtW.QMainWindow, form_class):
 			'nIters': self.iterationsSpinBox.value() if self.doDeconGroupBox.isChecked() else 0,
 			'nApodize': self.apodizeSpinBox.value(),
 			'nZblend': self.zblendSpinBox.value(),
-			# if bRotate == True and rotateAngle is not none: rotate based on sheet angle
+			# if rotate == True and rotateAngle is not none: rotate based on sheet angle
 			# this will be done in the LLSdir function
 			'bRotate': self.rotateGroupBox.isChecked(),
 			'rotate': (self.rotateOverrideSpinBox.value() if
 							self.rotateOverrideCheckBox.isChecked() else None),
 			'bSaveDeskewedRaw': self.saveDeskewedCheckBox.isChecked(),
-			# 'bsaveDecon': self.saveDeconvolvedCheckBox.isChecked(),
+			#'bsaveDecon': self.saveDeconvolvedCheckBox.isChecked(),
 			'MIP': tuple([int(i) for i in (self.deconXMIPCheckBox.isChecked(),
 								self.deconYMIPCheckBox.isChecked(),
 								self.deconZMIPCheckBox.isChecked())]),
@@ -963,8 +695,9 @@ class main_GUI(QtW.QMainWindow, form_class):
 			'bDoRegistration': self.doRegistrationGroupBox.isChecked(),
 			'regRefWave': int(self.channelRefCombo.currentText()),
 			'regMode': self.channelRefModeCombo.currentText(),
+			'regCalibDir': self.RegCalibPathLineEdit.text(),
 			'otfDir': self.otfFolderLineEdit.text(),
-			'bCompress': self.compressRawCheckBox.isChecked(),
+			'bCompress': True,
 			'bReprocess': False,
 			'width': self.cropWidthSpinBox.value(),
 			'shift': self.cropShiftSpinBox.value(),
@@ -973,16 +706,6 @@ class main_GUI(QtW.QMainWindow, form_class):
 			# 'bRollingBall': self.backgroundRollingRadio.isChecked(),
 			# 'rollingBall': self.backgroundRollingSpinBox.value()
 		}
-
-		rCalibText = self.RegCalibPathLineEdit.text()
-		dCalibText = self.defaultRegCalibPathLineEdit.text()
-		if rCalibText and rCalibText is not '':
-			options['regCalibDir'] = rCalibText
-		else:
-			if dCalibText and dCalibText is not '':
-				options['regCalibDir'] = dCalibText
-			else:
-				options['regCalibDir'] = None
 
 		if self.cropAutoRadio.isChecked():
 			options['cropMode'] = 'auto'
@@ -1029,7 +752,7 @@ if __name__ == "__main__":
 	app = QtW.QApplication(sys.argv)
 	# dlg = LogWindow()
 	# dlg.show()
-	mainGUI = main_GUI()
-	mainGUI.show()
-	mainGUI.raise_()
+	window = main_GUI()
+	window.show()
+	window.raise_()
 	sys.exit(app.exec_())
