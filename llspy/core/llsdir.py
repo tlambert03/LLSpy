@@ -186,27 +186,15 @@ def process(E, binary=None, **kwargs):
 
 	# FIXME: this is just a messy first try...
 	if P.bDoRegistration:
-		RD = RegDir(P.regCalibDir)
-		if RD.isValid():
-			RD.cloudset()  # optional, intialized the cloud...
-			for D in [E.path.glob('**/GPUdecon/'), E.path.glob('**/Deskewed/')]:
-				D = list(D)[0]
-				filelist = list(D.glob('*.tif'))
-				for F in filelist:
-					if P.regRefWave not in str(F):
-						outname = str(F).replace('.tif', '_REG.tif')
-						im = RD.register_image_to_wave(str(F), refwave=P.regRefWave, mode=P.regMode)
-						util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
-							str(D.joinpath(outname)),
-							dx=P.drdata, dz=P.dzFinal)
-		else:
-			warnings.warn('Registration Calibration dir not valid: {}'.format(P.regCalibDir))
+		E.register(P.regRefWave, P.regMode, P.regCalibDir)
 
 	if P.bMergeMIPs:
-		E.mipmerge('GPUdecon')
+		if E.path.joinpath('GPUdecon').is_dir():
+			E.mergemips('GPUdecon')
 
 	if P.bMergeMIPsraw:
-		E.mipmerge('Deskewed')
+		if E.path.joinpath('Deskewed').is_dir():
+			E.mergemips('Deskewed')
 
 	if P.bCompress:
 		E.compress()
@@ -239,10 +227,7 @@ class LLSdir(object):
 		else:
 			warnings.warn('No Settings.txt folder detected, is this an LLS folder?')
 		if self.has_lls_tiffs:
-			self.get_all_tiffs()
-			self.ditch_partial_tiffs()
-			self.detect_parameters()
-			self.read_tiff_header()
+			self.register_tiffs()
 
 	@property
 	def isValid(self):
@@ -267,6 +252,12 @@ class LLSdir(object):
 
 	def get_settings_files(self):
 		return [str(s) for s in self.path.glob('*Settings.txt')]
+
+	def register_tiffs(self):
+		if self.get_all_tiffs():
+			self.ditch_partial_tiffs()
+			self.detect_parameters()
+			self.read_tiff_header()
 
 	def get_all_tiffs(self):
 		'''a list of every tiff file in the top level folder (all raw tiffs)'''
@@ -421,10 +412,6 @@ class LLSdir(object):
 
 		>>> E.localParams(nIters=0, bRotate=True, bBleachCor=True)
 		"""
-		if self.is_compressed():
-			warnings.warn('Cannot get localParams on compressed folder')
-			return {}
-
 		P = self.parameters
 		S = schema.procParams(kwargs)
 
@@ -453,7 +440,8 @@ class LLSdir(object):
 
 		# note: background should be forced to 0 if it is getting corrected
 		# in the camera correction step
-		if S.bAutoBackground:
+
+		if S.bAutoBackground and self.has_lls_tiffs:
 			B = self.get_background()
 			S.background = [B[i] for i in S.cRange]
 		else:
@@ -477,7 +465,7 @@ class LLSdir(object):
 		# RD = self.path.parent.joinpath('tspeck')
 		S.drdata = P.dx
 		S.dzdata = P.dz
-		S.dzFinal = np.sin(np.deg2rad(P.angle)) * P.dz if P.samplescan else P.dz
+		S.dzFinal = P.dzFinal
 		S.wavelength = P.wavelength
 		S.deskew = P.angle if P.samplescan else 0
 		S.bSaveDeskewedRaw = S.bSaveDeskewedRaw if P.samplescan else False
@@ -492,23 +480,31 @@ class LLSdir(object):
 		"""Main method for easy processing of the folder"""
 		return process(self, **kwargs)
 
-	def mipmerge(self, subdir=None):
-		# the "**" pattern means this directory and all subdirectories, recursively
+	def mergemips(self, subdir=None, delete=True):
+		""" look for MIP files in subdirectory, compress into single hyperstack
+		and write file to disk"""
 		if subdir is not None and self.path.joinpath(subdir).is_dir():
 			subdir = self.path.joinpath(subdir)
 		else:
-			subdir = self.path
+			warnings.warn('Could not find subdir: '.format('subdir'))
+			return
+
+		# the "**" pattern means this directory and all subdirectories, recursively
 		for MIPdir in subdir.glob('**/MIPs/'):
+			# get dict with keys= axes(x,y,z) and values = numpy array
 			arrays = mipmerge.mergemips(MIPdir)
+
+			# find all MIP*tifs.
 			filelist = list(MIPdir.glob('*MIP*.tif'))
 			if len(filelist):
+				# check whether we're in a corrected directory and keep it in the filename
 				cor = 'COR_' if 'COR' in filelist[0].name else ''
-				for axis in arrays:
-					array = arrays[axis]
+				for axis, array in arrays.items():
 					outname = '{}_{}MIP_{}.tif'.format(self.basename, cor, axis)
 					util.imsave(array, str(MIPdir.joinpath(outname)),
 						dx=self.parameters.dx, dt=self.parameters.interval[0])
-				[file.unlink() for file in filelist]
+				if delete:
+					[file.unlink() for file in filelist]
 
 	def process(self, filepattern, otf, indir=None, binary=None, **opts):
 		if binary is None:
@@ -563,10 +559,13 @@ class LLSdir(object):
 
 	# TODO: should calculate background of provided folder (e.g. Corrected)
 	def get_background(self, **kwargs):
+		if not self.has_lls_tiffs:
+			warnings.warn('Cannot calculate background on folder with no Tiffs')
+			return
 		# defaults background and=100, pad=100, sigma=2
 		bgrd = []
 		for c in range(self.parameters.nc):
-			i = util.imread(self.get_files(t=0, c=c))
+			i = util.imread(self.get_files(t=0, c=c)).squeeze()
 			bgrd.append(arrayfun.detect_background(i))
 		# self.parameters.background = bgrd
 		return bgrd
@@ -611,6 +610,28 @@ class LLSdir(object):
 				correctTimepoint(t, camparams, outpath, median,  target='cpu')
 		return LLSdir(outpath)
 
+	def register(self, regRefWave, regMode, regCalibDir):
+		if self.parameters.nc < 2:
+			warnings.warn('Cannot register single channel dataset')
+			return
+		RD = RegDir(regCalibDir)
+		if not RD.isValid:
+			warnings.warn('Registration Calibration dir not valid: {}'.format(regCalibDir))
+			return
+		RD.cloudset()  # optional, intialized the cloud...
+
+		subdirs = [x for x in self.path.iterdir() if x.is_dir() and
+					x.name in ('GPUdecon', 'Deskewed')]
+		for D in subdirs:
+			files = [fn for fn in D.glob('*.tif') if not ('_REG' in fn.name or
+				str(regRefWave) in fn.name)]
+			for F in files:
+				outname = str(F).replace('.tif', '_REG.tif')
+				im = RD.register_image_to_wave(str(F), refwave=regRefWave, mode=regMode)
+				util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
+					str(D.joinpath(outname)),
+					dx=self.parameters.dx, dz=self.parameters.dzFinal)
+
 	def toJSON(self):
 		import json
 		return json.dumps(self, default=lambda o: o.__dict__,
@@ -631,6 +652,7 @@ class RegDir(LLSdir):
 	"""Special type of LLSdir that holds image registraion data like
 	tetraspeck beads
 	"""
+
 	def __init__(self, path, t=0, **kwargs):
 		super(RegDir, self).__init__(path, **kwargs)
 		if self.path is not None:
