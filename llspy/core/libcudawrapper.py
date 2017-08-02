@@ -100,6 +100,7 @@ try:
 	RL_cleanup = cudaLib.RL_cleanup
 
 except AttributeError as e:
+	import warnings
 	warnings.warn('Failed to properly import libcudaDeconv')
 	print(e)
 
