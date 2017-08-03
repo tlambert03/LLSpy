@@ -2,10 +2,7 @@
 from __future__ import print_function, division
 
 import os.path as osp
-from PyQt5 import QtCore, QtGui, uic
-from PyQt5 import QtWidgets as QtW
-# import sys
-# sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)),'..'))
+import glob
 import llspy
 import imdisplay
 import logging
@@ -13,6 +10,14 @@ import inspect
 import sys
 import time
 import numpy as np
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+from PyQt5 import QtCore, QtGui, uic
+from PyQt5 import QtWidgets as QtW
+# import sys
+# sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)),'..'))
+
 
 form_class = uic.loadUiType(osp.join(osp.dirname(osp.abspath(__file__)), 'main_gui.ui'))[0]
 # form_class = uic.loadUiType('./llspy/gui/main_gui.ui')[0]  # for debugging
@@ -484,8 +489,9 @@ class LLSitemWorker(QtCore.QObject):
 
 		if self.P.bFlashCorrect:
 			self.statusUpdate.emit('Correcting Flash artifact on {}'.format(self.E.basename))
-			self.E = self.E.correct_flash(trange=self.P.tRange,
+			self.E.correct_flash(trange=self.P.tRange,
 				median=self.P.bMedianCorrect, target=self.P.flashCorrectTarget)
+			self.E.path = self.E.path.joinpath('Corrected')
 
 		self.nFiles_done = 0
 		self.progressValue.emit(0)
@@ -622,6 +628,30 @@ class LLSitemWorker(QtCore.QObject):
 			self.finished.emit()
 
 
+class MyHandler(FileSystemEventHandler, QtCore.QObject):
+
+	foundLLSdir = QtCore.pyqtSignal(str)
+	lostListItem = QtCore.pyqtSignal(str)
+
+	def __init__(self):
+		super(MyHandler, self).__init__()
+
+	def on_created(self, event):
+		# Called when a file or directory is created.
+		if event.is_directory:
+			pass
+		else:
+			if 'Settings.txt' in event.src_path:
+				self.foundLLSdir.emit(osp.dirname(event.src_path))
+
+	def on_deleted(self, event):
+		# Called when a file or directory is created.
+		if event.is_directory:
+			# TODO:  Is it safe to directly access main gui listbox here?
+			if len(mainGUI.listbox.findItems(event.src_path, QtCore.Qt.MatchExactly)):
+				self.lostListItem.emit(event.src_path)
+
+
 class main_GUI(QtW.QMainWindow, form_class):
 	"""docstring for main_GUI"""
 
@@ -637,6 +667,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.argQueue = []  # holds all argument lists that will be sent to threads
 		self.aborted = False  # current abort status
 		self.inProcess = False
+		self.observer = None  # for watching the watchdir
 
 		# delete  reintroduce custom DragDropTableView
 		self.listbox.setParent(None)
@@ -647,6 +678,8 @@ class main_GUI(QtW.QMainWindow, form_class):
 		# connect buttons
 		self.previewButton.clicked.connect(self.onPreview)
 		self.processButton.clicked.connect(self.onProcess)
+		self.watchDirCheckBox.stateChanged.connect(
+			lambda st: self.startWatcher() if st else self.stopWatcher())
 
 		# connect actions
 		self.actionOpen_LLSdir.triggered.connect(self.openLLSdir)
@@ -704,6 +737,8 @@ class main_GUI(QtW.QMainWindow, form_class):
 					self, 'Set Registration Calibration Directory',
 					'', QtW.QFileDialog.ShowDirsOnly)))
 
+		self.watchDirToolButton.clicked.connect(self.changeWatchDir)
+
 		# connect worker signals and slots
 		self.sig_item_finished.connect(self.on_item_finished)
 		self.sig_processing_done.connect(self.on_proc_finished)
@@ -713,28 +748,40 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.clock.display("00:00:00")
 		self.statusBar.showMessage('Ready')
 
+	@QtCore.pyqtSlot()
+	def startWatcher(self):
+		self.watchdir = self.watchDirLineEdit.text()
+		if osp.isdir(self.watchdir):
+			self.log.append('Starting watcher on {}'.format(self.watchdir))
+			self.watchHandler = MyHandler()
+			self.watchHandler.foundLLSdir.connect(self.addPathToLLSlist)
+			self.watchHandler.lostListItem.connect(self.removePathFromLLSlist)
+			self.observer = Observer()
+			self.observer.schedule(self.watchHandler, self.watchdir, recursive=True)
+			self.observer.start()
+
+	@QtCore.pyqtSlot()
+	def stopWatcher(self):
+		if self.observer is not None and self.observer.is_alive():
+			self.observer.stop()
+			self.observer.join()
+			self.observer = None
+			self.log.append('Stopped watcher on {}'.format(self.watchdir))
+			self.watchdir = None
+
+	@QtCore.pyqtSlot()
+	def changeWatchDir(self):
+		self.watchDirLineEdit.setText(QtW.QFileDialog.getExistingDirectory(
+			self, 'Choose directory to monitor for new LLSdirs', '',
+			QtW.QFileDialog.ShowDirsOnly))
+		if self.observer and self.watchDirCheckBox.isChecked():
+			self.stopWatcher()
+			self.startWatcher()
+
 	def currentSelectedPaths(self):
 		selectedRows = self.listbox.selectionModel().selectedRows()
 		pathlist = [self.listbox.item(i.row(), 0).text() for i in selectedRows]
 		return pathlist
-
-	def reduceSelected(self):
-		for item in self.currentSelectedPaths():
-			llspy.LLSdir(item).reduce_to_raw()
-
-	def compressSelected(self):
-		for item in self.currentSelectedPaths():
-			llspy.LLSdir(item).compress()
-
-	def decompressSelected(self):
-		for item in self.currentSelectedPaths():
-			llspy.LLSdir(item).decompress()
-
-	def concatenateSelected(self):
-		pass  # not implemented
-
-	def renameSelected(self):
-		pass  # not implemented
 
 	def saveCurrentAsDefault(self):
 		if osp.isfile(defaultSettings.fileName()):
@@ -764,6 +811,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 		# with no values, simply increment progressbar
 		self.progressBar.setValue(self.progressBar.value()+1)
 
+	@QtCore.pyqtSlot(str)
 	def addPathToLLSlist(self, path):
 		if osp.exists(path) and osp.isdir(path):
 			# If this folder is not on the list yet, add it to the list:
@@ -775,6 +823,13 @@ class main_GUI(QtW.QMainWindow, form_class):
 			# if it's not already on the list, add it
 			if len(self.listbox.findItems(shortname, QtCore.Qt.MatchExactly)) == 0:
 				self.listbox.addLLSitem(E)
+
+	@QtCore.pyqtSlot(str)
+	def removePathFromLLSlist(self, path):
+		shortname = osp.sep.join(llspy.plib.Path(path).parts[-2:])
+		items = self.listbox.findItems(shortname, QtCore.Qt.MatchExactly)
+		for item in items:
+			self.listbox.removeRow(item.row())
 
 	def onFolderDroppedTable(self, links):
 		''' Triggered after URLs are dropped onto self.listbox '''
@@ -935,6 +990,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 	def getValidatedOptions(self):
 		options = {
 			'bFlashCorrect': self.camcorCheckBox.isChecked(),
+			'flashCorrectTarget': self.camcorTargetCombo.currentText(),
 			'bMedianCorrect': self.medianFilterCheckBox.isChecked(),
 			'edgeTrim': ((self.trimZ0SpinBox.value(), self.trimZ1SpinBox.value()),
 						(self.trimY0SpinBox.value(), self.trimY1SpinBox.value()),
@@ -970,6 +1026,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 			'shift': self.cropShiftSpinBox.value(),
 			'bAutoBackground': self.backgroundAutoRadio.isChecked(),
 			'background': self.backgroundFixedSpinBox.value(),
+
 			# 'bRollingBall': self.backgroundRollingRadio.isChecked(),
 			# 'rollingBall': self.backgroundRollingSpinBox.value()
 		}
@@ -1004,6 +1061,24 @@ class main_GUI(QtW.QMainWindow, form_class):
 			options['tRange'] = None
 
 		return options
+
+	def reduceSelected(self):
+		for item in self.currentSelectedPaths():
+			llspy.LLSdir(item).reduce_to_raw()
+
+	def compressSelected(self):
+		for item in self.currentSelectedPaths():
+			llspy.LLSdir(item).compress()
+
+	def decompressSelected(self):
+		for item in self.currentSelectedPaths():
+			llspy.LLSdir(item).decompress()
+
+	def concatenateSelected(self):
+		pass  # not implemented
+
+	def renameSelected(self):
+		pass  # not implemented
 
 	def closeEvent(self, event):
 		''' triggered when close button is clicked on main window '''
