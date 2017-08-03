@@ -20,16 +20,9 @@ import numpy as np
 import pprint
 import json
 import tifffile as tf
+from multiprocessing import cpu_count, Pool
 
 np.seterr(divide='ignore', invalid='ignore')
-
-try:
-	from joblib import Parallel, delayed
-	from multiprocessing import cpu_count
-	hasjoblib = True
-except ImportError:
-	warnings.warn("Warning: joblib module not found... parallel processing disabled")
-	hasjoblib = False
 
 
 def correctTimepoint(fnames, camparams, outpath, median, target='cpu'):
@@ -45,6 +38,10 @@ def correctTimepoint(fnames, camparams, outpath, median, target='cpu'):
 			warnings.simplefilter("ignore")
 			util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'),
 					outnames[n])
+
+
+def unwrapper(tup):
+	return correctTimepoint(*tup)
 
 
 def preview(E, tR=0, **kwargs):
@@ -587,16 +584,18 @@ class LLSdir(object):
 		outpath = self.path.joinpath('Corrected')
 		if not outpath.is_dir():
 			outpath.mkdir()
-		self.settings.write(str(outpath.joinpath(self.settings.basename)))
 
 		if trange is not None:
 			timegroups = [self.get_t(t) for t in trange]
 		else:
 			timegroups = [self.get_t(t) for t in range(self.parameters.nt)]
 
-		if hasjoblib and target == 'parallel':
-			Parallel(n_jobs=cpu_count(), verbose=9)(delayed(
-				correctTimepoint)(t, camparams, outpath, median) for t in timegroups)
+		if target == 'parallel':
+			pool = Pool(processes=cpu_count())
+			g = [(t, camparams, outpath, median) for t in timegroups]
+			pool.map(unwrapper, g)
+			# Parallel(n_jobs=cpu_count(), verbose=9)(delayed(
+			# 	correctTimepoint)(t, camparams, outpath, median) for t in timegroups)
 		elif target == 'cpu':
 			for t in timegroups:
 				correctTimepoint(t, camparams, outpath, median)

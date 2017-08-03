@@ -11,11 +11,11 @@ dependencies:
 - numpy
 - scipy
 - tifffile
-- joblib
 - numba
 - scikit-image
-- simpleitk
-- opencv
+- simpleitk  # not really necessary
+- opencv  # not really necessary
 - ipython
-- pyqt
 - voluptuous
+- watchdog
+- pyqt
