@@ -36,7 +36,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -141,15 +141,15 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>537</width>
-             <height>245</height>
+             <width>564</width>
+             <height>252</height>
             </rect>
            </property>
            <attribute name="label">
@@ -177,8 +177,30 @@
                <item>
                 <widget class="QCheckBox" name="camcorCheckBox">
                  <property name="text">
-                  <string>Do Flash Pixel Correction</string>
+                  <string>Do Flash Correction</string>
                  </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="camcorTargetCombo">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>CPU</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Parallel</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>CUDA</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
                <item>
@@ -192,7 +214,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="checkBox">
+                <widget class="QCheckBox" name="saveCamCorrectedCheckBox">
                  <property name="text">
                   <string>Save Corrected Files</string>
                  </property>
@@ -1664,6 +1686,39 @@
           </property>
          </spacer>
         </item>
+        <item row="6" column="6">
+         <widget class="QToolButton" name="watchDirToolButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QCheckBox" name="watchDirCheckBox">
+          <property name="text">
+           <string>Watch Directory:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="2">
+         <widget class="QLineEdit" name="watchDirLineEdit">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>New items in watched folder will be automatically processed.</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tab_log">
@@ -1945,6 +2000,7 @@ QProgressBar::chunk:horizontal {
     <addaction name="actionPreview"/>
     <addaction name="actionRun"/>
     <addaction name="actionAbort"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -2084,34 +2140,18 @@ QProgressBar::chunk:horizontal {
    </hints>
   </connection>
   <connection>
-   <sender>otfFolderToolButton</sender>
-   <signal>clicked()</signal>
-   <receiver>Main_GUI</receiver>
-   <slot>show()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>568</x>
-     <y>153</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>308</x>
-     <y>406</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>backgroundRollingRadio</sender>
    <signal>toggled(bool)</signal>
    <receiver>backgroundRollingSpinBox</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>500</x>
-     <y>527</y>
+     <x>477</x>
+     <y>545</y>
     </hint>
     <hint type="destinationlabel">
-     <x>554</x>
-     <y>528</y>
+     <x>571</x>
+     <y>546</y>
     </hint>
    </hints>
   </connection>
@@ -2122,12 +2162,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>267</x>
-     <y>527</y>
+     <x>275</x>
+     <y>545</y>
     </hint>
     <hint type="destinationlabel">
-     <x>335</x>
-     <y>528</y>
+     <x>343</x>
+     <y>546</y>
     </hint>
    </hints>
   </connection>
@@ -2138,12 +2178,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>443</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
     <hint type="destinationlabel">
-     <x>435</x>
-     <y>445</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
    </hints>
   </connection>
@@ -2154,12 +2194,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>443</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
     <hint type="destinationlabel">
-     <x>543</x>
-     <y>445</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
    </hints>
   </connection>
@@ -2170,12 +2210,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>443</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
     <hint type="destinationlabel">
-     <x>367</x>
-     <y>445</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
    </hints>
   </connection>
@@ -2186,12 +2226,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>443</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
     <hint type="destinationlabel">
-     <x>477</x>
-     <y>445</y>
+     <x>146</x>
+     <y>329</y>
     </hint>
    </hints>
   </connection>
@@ -2202,12 +2242,60 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>431</x>
-     <y>494</y>
+     <x>146</x>
+     <y>403</y>
     </hint>
     <hint type="destinationlabel">
-     <x>513</x>
-     <y>494</y>
+     <x>116</x>
+     <y>403</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>camcorCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>camcorTargetCombo</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>155</x>
+     <y>382</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>297</x>
+     <y>386</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchDirToolButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>56</x>
+     <y>632</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>576</x>
+     <y>633</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchDirLineEdit</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>127</x>
+     <y>629</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>234</x>
+     <y>631</y>
     </hint>
    </hints>
   </connection>
