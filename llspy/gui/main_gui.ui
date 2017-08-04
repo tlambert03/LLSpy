@@ -148,8 +148,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>255</height>
+             <width>537</width>
+             <height>252</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1530,6 +1530,9 @@
           <property name="text">
            <string>/usr/local/radialft</string>
           </property>
+          <property name="placeholderText">
+           <string>path to radialft (OTF generation) binary</string>
+          </property>
          </widget>
         </item>
         <item row="3" column="0">
@@ -1572,6 +1575,9 @@
          <widget class="QLineEdit" name="cudaDeconvPathLineEdit">
           <property name="text">
            <string>/usr/local/cudaDeconv</string>
+          </property>
+          <property name="placeholderText">
+           <string>path to cudaDeconv binary</string>
           </property>
          </widget>
         </item>
@@ -1625,27 +1631,36 @@
         <item row="2" column="2">
          <widget class="QLineEdit" name="otfFolderLineEdit">
           <property name="text">
-           <string>/Users/talley/Dropbox (HMS)/CBMF/lattice_sample_data/lls_PSFs/</string>
+           <string/>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="placeholderText">
+           <string>path to directory with PSFs/OTFs</string>
           </property>
          </widget>
         </item>
         <item row="3" column="2">
          <widget class="QLineEdit" name="camParamTiffLineEdit">
           <property name="text">
-           <string>/Users/talley/Dropbox (HMS)/CBMF/lattice_sample_data/lls_stickypix_samp/FlashParams.tif</string>
+           <string/>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="placeholderText">
+           <string>path to TIFF file with measured camera parameters</string>
           </property>
          </widget>
         </item>
         <item row="4" column="2">
          <widget class="QLineEdit" name="defaultRegCalibPathLineEdit">
           <property name="text">
-           <string>/Users/talley/Dropbox (HMS)/CBMF/lattice_sample_data/lls_registration_samp/reg_ex1/tspeck/</string>
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string>path to default registration calibration (tetraspeck) images</string>
           </property>
          </widget>
         </item>
