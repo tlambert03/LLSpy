@@ -41,6 +41,7 @@ def correctTimepoint(fnames, camparams, outpath, median, target='cpu'):
 			util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'),
 					outnames[n])
 
+
 def unwrapper(tup):
 	return correctTimepoint(*tup)
 
@@ -508,7 +509,7 @@ class LLSdir(object):
 					util.imsave(array, str(MIPdir.joinpath(outname)),
 						dx=self.parameters.dx, dt=self.parameters.interval[0])
 				if delete:
-					[file.unlink() for file in filelist if not 'comboMIP' in str(file)]
+					[file.unlink() for file in filelist if 'comboMIP' not in str(file)]
 
 	def process(self, filepattern, otf, indir=None, binary=None, **opts):
 		if binary is None:
