@@ -19,6 +19,8 @@ import warnings
 import numpy as np
 import pprint
 import json
+import re
+import glob
 import tifffile as tf
 from multiprocessing import cpu_count, Pool
 
@@ -38,7 +40,6 @@ def correctTimepoint(fnames, camparams, outpath, median, target='cpu'):
 			warnings.simplefilter("ignore")
 			util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'),
 					outnames[n])
-
 
 def unwrapper(tup):
 	return correctTimepoint(*tup)
@@ -186,12 +187,14 @@ def process(E, binary=None, **kwargs):
 		E.register(P.regRefWave, P.regMode, P.regCalibDir)
 
 	if P.bMergeMIPs:
-		if E.path.joinpath('GPUdecon').is_dir():
-			E.mergemips('GPUdecon')
+		E.mergemips()
+	else:
+		for mipfile in E.path.glob('**/*comboMIP_*'):
+			print(mipfile)
 
-	if P.bMergeMIPsraw:
-		if E.path.joinpath('Deskewed').is_dir():
-			E.mergemips('Deskewed')
+	# if P.bMergeMIPsraw:
+	# 	if E.path.joinpath('Deskewed').is_dir():
+	# 		E.mergemips('Deskewed')
 
 	if P.bCompress:
 		E.compress()
@@ -222,7 +225,8 @@ class LLSdir(object):
 			self.date = self.settings.date
 			self.parameters.update(self.settings.parameters)
 		else:
-			warnings.warn('No Settings.txt folder detected, is this an LLS folder?')
+			pass
+			# warnings.warn('No Settings.txt folder detected, is this an LLS folder?')
 		if self.has_lls_tiffs:
 			self.register_tiffs()
 
@@ -480,28 +484,31 @@ class LLSdir(object):
 	def mergemips(self, subdir=None, delete=True):
 		""" look for MIP files in subdirectory, compress into single hyperstack
 		and write file to disk"""
-		if subdir is not None and self.path.joinpath(subdir).is_dir():
-			subdir = self.path.joinpath(subdir)
+		if subdir is not None:
+			if self.path.joinpath(subdir).is_dir():
+				subdir = self.path.joinpath(subdir)
+			else:
+				warnings.warn('Could not find subdir: '.format('subdir'))
+				return
 		else:
-			warnings.warn('Could not find subdir: '.format('subdir'))
-			return
+			subdir = self.path
 
 		# the "**" pattern means this directory and all subdirectories, recursively
 		for MIPdir in subdir.glob('**/MIPs/'):
 			# get dict with keys= axes(x,y,z) and values = numpy array
-			arrays = mipmerge.mergemips(MIPdir)
+			MIPdict = mipmerge.mergemips(MIPdir)
 
 			# find all MIP*tifs.
 			filelist = list(MIPdir.glob('*MIP*.tif'))
-			if len(filelist):
+			if len(filelist) and len(MIPdict.keys()):
 				# check whether we're in a corrected directory and keep it in the filename
 				cor = 'COR_' if 'COR' in filelist[0].name else ''
-				for axis, array in arrays.items():
-					outname = '{}_{}MIP_{}.tif'.format(self.basename, cor, axis)
+				for axis, array in MIPdict.items():
+					outname = '{}_{}comboMIP_{}.tif'.format(self.basename, cor, axis)
 					util.imsave(array, str(MIPdir.joinpath(outname)),
 						dx=self.parameters.dx, dt=self.parameters.interval[0])
 				if delete:
-					[file.unlink() for file in filelist]
+					[file.unlink() for file in filelist if not 'comboMIP' in str(file)]
 
 	def process(self, filepattern, otf, indir=None, binary=None, **opts):
 		if binary is None:
@@ -589,6 +596,11 @@ class LLSdir(object):
 			timegroups = [self.get_t(t) for t in trange]
 		else:
 			timegroups = [self.get_t(t) for t in range(self.parameters.nt)]
+
+		# FIXME: this is a temporary bug fix to correct for the fact that
+		# LLSdirs acquired in script editor (Iter_0, etc...) don't correctly
+		# detect the number of timepoints
+		timegroups = [t for t in timegroups if len(t)]
 
 		if target == 'parallel':
 			pool = Pool(processes=cpu_count())
@@ -746,6 +758,152 @@ class RegDir(LLSdir):
 				'or a path to a tif file')
 
 		return affineGPU(img, self.get_tform(imwave, refwave, mode))
+
+
+def rename_iters(folder, splitpositions=True, verbose=False):
+	"""
+	Rename files in a folder acquired with LLS multi-position script.
+
+	Assumes every time points is labeled Iter_n.
+
+	This assumes that each position was acquired every iteration
+	and that only a single scan is performed per position per iteration
+	(i.e. it assumes that everything is a "stack0000")
+
+	example, filename (if it's the second position in a scipted FOR loop):
+		filename_Iter_2_ch1_stack0000_560nm_0000000msec_0006443235msecAbs.tif
+	gets changes to:
+		filename_pos01_ch1_stack0002_560nm_0023480msec_0006443235msecAbs.tif
+
+	if splitpositions==True:
+		files from different positions will be placed into subdirectories
+	"""
+	import re
+
+	filelist = glob.glob(os.path.join(folder, '*Iter*stack*'))
+	nPositions = 0
+	if filelist:
+		nIters = max([int(f.split('Iter_')[1].split('_')[0]) for f in filelist]) + 1
+		nChan = 0
+		while True:
+			if any(['ch' + str(nChan) in f for f in filelist]):
+				nChan += 1
+			else:
+				break
+		nPositions = len(filelist) // (nChan * nIters)
+
+		setlist = glob.glob(os.path.join(folder, '*Iter*Settings.txt'))
+		for pos in range(nPositions):
+			settingsFile = [f for f in setlist
+							if 'Settings.txt' in f and 'Iter_%s' % pos in f][0]
+			if nPositions > 1:
+				newname = re.sub(r"Iter_\d+", 'pos%02d' % pos,
+								os.path.basename(settingsFile))
+			else:
+				newname = re.sub(r"_Iter_\d+", '',
+								os.path.basename(settingsFile))
+			os.rename(settingsFile, os.path.join(folder, newname))
+		for chan in range(nChan):
+			t0 = []
+			for i in range(nIters):
+				flist = sorted([f for f in filelist
+							if 'ch%s' % chan in f and 'Iter_%s_' % i in f])
+				for pos in range(nPositions):
+					base = os.path.basename(flist[pos])
+					if i == 0:
+						t0.append(int(base.split('msecAbs')[0].split('_')[-1]))
+					newname = base.replace('stack0000', 'stack%04d' % i)
+					deltaT = int(base.split('msecAbs')[0].split('_')[-1]) - t0[pos]
+					newname = newname.replace('0000000msec_', '%07dmsec_' % deltaT)
+					if nPositions > 1:
+						newname = re.sub(r"Iter_\d+", 'pos%02d' % pos, newname)
+					else:
+						newname = re.sub(r"_Iter_\d+", '', newname)
+					if verbose:
+						print("{} --> {}".format(base, newname))
+					os.rename(flist[pos], os.path.join(folder, newname))
+	if splitpositions and nPositions > 1:
+		# files from different positions will be placed into subdirectories
+		pos = 0
+		while True:
+			movelist = glob.glob(os.path.join(folder, '*pos%02d*' % pos))
+			if not len(movelist):
+					break
+			basename = os.path.basename(movelist[0]).split('_pos')[0]
+			posfolder = os.path.join(folder, basename + '_pos%02d' % pos)
+			if not os.path.exists(posfolder):
+					os.mkdir(posfolder)
+			for f in movelist:
+				os.rename(f, os.path.join(posfolder, os.path.basename(f)))
+			pos += 1
+
+
+def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
+	"""combine a list of folders into a single LLS folder.
+
+	renames stack numbers and relative timestamp in filenames
+	to concatenate folders as if they were taken in a single longer timelapse
+	useful when an experiment was stopped and restarted
+	(for instance, to change the offset)
+	"""
+
+	# get timestamp of stack0000 for all folders
+	stackzeros = []
+	for folder in folderlist:
+		try:
+			firstfile = glob.glob(os.path.join(folder, '*ch0*stack0000*'))[0]
+			basename = os.path.basename(firstfile).split('_ch0')[0]
+			stackzeros.append([folder, firstfile, basename])
+		except Exception:
+			pass
+	# sort by absolute timestamp
+	tzeros = sorted([[int(t[1].split('msecAbs')[0].split('_')[-1]), t[0], t[2]]
+					for t in stackzeros])
+
+	# get relative time offset
+	for t in tzeros:
+		t.append(t[0] - tzeros[0][0])
+		# example tzeros
+		# [[23742190, '/top_folder/cell4', 'cell4', 0],
+		#  [24583591, '/top_folder/cell4b', 'cell4b', 841401],
+		#  [24610148, '/top_folder/cell4e', 'cell4e', 867958],
+		#  [24901726, '/top_folder/cell4d', 'cell4d',1159536]]
+	t0path = tzeros[0][1]
+	basename = tzeros[0][2]
+
+	channelcounts = [0] * 6
+	for fi in sorted(os.listdir(t0path)):
+		if fi.endswith('.tif'):
+			chan = int(fi.split('_ch')[1].split('_')[0])
+			channelcounts[chan] += 1
+	tzeros[0].append(list(channelcounts))
+
+	for t in tzeros[1:]:
+		filelist = sorted(os.listdir(t[1]))
+		tbase = t[2]
+		deltaT = t[3]
+		thisfoldercounts = [0] * 6
+		for fi in filelist:
+			if fi.endswith('.tif'):
+				chan = int(fi.split('_ch')[1].split('_')[0])
+				reltime = int(fi.split('msec_')[0].split('_')[-1])
+				# change relative timestamp
+				newname = re.sub(
+					r"\d+msec_", '%07dmsec_' % int(reltime + deltaT), fi)
+				newname = newname.replace(tbase, basename)
+				# change stack number
+				newname = re.sub(
+					r"_stack\d+", '_stack%04d' % channelcounts[chan], newname)
+				os.rename(os.path.join(t[1], fi), os.path.join(t0path, newname))
+				channelcounts[chan] += 1
+				thisfoldercounts[chan] += 1
+			else:
+				os.rename(os.path.join(t[1], fi), os.path.join(t0path, fi))
+		t.append(thisfoldercounts)
+		os.rmdir(t[1])
+
+	with open(os.path.join(t0path, 'concatenationRecord.txt'), 'w') as outfile:
+		json.dump(tzeros, outfile)
 
 
 class LLSpyError(Exception):
