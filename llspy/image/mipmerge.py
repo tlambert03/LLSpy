@@ -22,8 +22,7 @@ def mergemips(folder):
 				if not len(filelist):
 					break
 				for file in filelist:
-					with tf.TiffFile(str(file)) as im:
-						tiffs.append(im.asarray())
+					tiffs.append(tf.imread(str(file)))
 				imcounts.append(len(filelist))
 				c += 1
 			if c > 0:
@@ -43,5 +42,5 @@ def mergemips(folder):
 		return out
 
 	except ValueError:
-		print("ERROR: could not merge MIPs from {}".format(str(folder)))
+		print("ERROR: failed to merge MIPs from {}".format(str(folder)))
 		print("skipping...\n")
