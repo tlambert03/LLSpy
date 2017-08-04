@@ -412,6 +412,15 @@ class CudaDeconvWorker(QtCore.QObject):
 		"""
 		# thread_name = QtCore.QThread.currentThread().objectName()
 		# thread_id = int(QtCore.QThread.currentThreadId())  # cast to int() is necessary
+
+		# TODO: create err signal
+		if self.__args[2] == '' or self.__args[2] is None:
+			raise Exception('ALERT!!  NO OTF FILE ... WILL CAUSE CRASH')
+			self.process.terminate()
+			self.process.waitForFinished()
+			self.finished.emit(self.__id)
+			return
+
 		self.logUpdate.emit('='*20 + '\nRunning cudaDeconv thread_{} with args: '
 			'\n{}\n'.format(self.__id, " ".join(self.__args)) + '='*20)
 
