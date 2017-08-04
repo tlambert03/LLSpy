@@ -5,33 +5,50 @@
 
 Talley Lambert, Harvard Medical School
 
+
 LLSpy: Lattice light-sheet processing scripts
 =============================================
-*Object oriented python processing of Lattice Light Sheet Data*
+*Automated python & CUDA post-processing of lattice light sheet data with graphical user interface, intelligent parameter detection, and minimized user required*
 
 |licenselink|_
 
 .. |licenselink| image:: https://img.shields.io/badge/License-MIT-yellow.svg
 .. _licenselink: https://opensource.org/licenses/MIT
 
-Features:
+
+Features
 ---------
-* Python 2/3 compatible
-* LLS directory class for interactive command line processing
-* cudaDeconv wrapper class
-* ctypes wrapper for libcudaDeconv functions including decon, and transforms
-* parse settings.txt and file structure to intelligently detect experiment settings and autofill cudaDeconv parameters
-* Flash4.0 camera correction for residual electron artifact
-* autodetect: channel-specific background, and image feature content for autocropping width/offset
-* auto-choose OTF with matching mask NA and closest matching date
-* auto-generate OTF if PSF exists in PSF folder without matching OTF
-* fast lbzip2 compression/decompression after/before processing
-* reduce_to_raw to return data to original state
-* freeze data for long term storage (reduce to raw then compress)
-* merge MIP files into single multidimensional hyperstack
-* easily process subset of channels or timepoints
-* command line binary
-* image registration correction (coming)
+GUI:
+""""""
+* Graphical user-interface: drag and drop folders to be processed, easily navigate and chose from various processing options
+* Designate 'watched' folder, and autoprocess any new LLSdirs that are added to that folder.
+* Quickly preview an image processed with the current settings for a subset of timepoints.
+
+.. image:: gui.png
+    :height: 825 px
+    :width: 615 px
+    :scale: 70%
+    :alt: alternate text
+    :align: right
+
+Processing:
+"""""""""""
+* Parse \*Settings.txt files and directory file structure to intelligently detect experiment settings and processing parameters
+* Easily process subset of channels or timepoints
+* Autodetect: image feature content for autocropping width/offset, and channel-specific background
+* Auto-choose OTF (from designated OTF archive) with matching mask NA and closest matching date of acquisition and auto-generate OTF if PSF exists in PSF folder without matching OTF
+* Flash4.0 camera correction for residual electron artifact seen with synchronous readout mode
+* Fiducialreg subpackage provides automated channel registration using user-provided folder of tetrapseck images, CUDA-based affine transformations, and optional coherent point drift (CPD) registration.
+* Merge MIP files into single multidimensional hyperstack (e.g. for ImageJ)
+* Automated parallelized lbzip2 compression/decompression after/before processing
+* Utilities to return folder to original post-acquisition state, freeze data for long term storage (reduce to raw then compress), concatenate two experiments, and rename files acquired in script-editor mode.
+
+Python:
+"""""""""
+* Python 2/3 cross-compatible
+* `LLSdir` class encapsulates LLS experiment information for simplified interactive command line processing
+* cudaDeconv binary wrapper
+* ctypes wrapper for libcudaDeconv functions including decon, transforms, and camera corrections
 
 
 Installation
