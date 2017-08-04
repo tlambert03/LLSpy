@@ -198,7 +198,7 @@ class CameraParameters(object):
 		libcu.camcor_init(shape, self.data[:3])
 
 	def correct_stacks(self, stacks, dampening=0.88, median=False,
-		trim=((1, 0), (0, 0), (1, 1)), target='cpu'):
+		trim=((0, 0), (0, 0), (0, 0)), target='cpu'):
 		"""interleave stacks and apply correction for "sticky" Flash pixels.
 
 		Expects a list of 3D np.ndarrays ordered in order of acquisition:
@@ -210,6 +210,8 @@ class CameraParameters(object):
 		from the ((1stplane,lastplane),(top,bottom), (left, right))
 		by default: trim first Z plane and single pixel from X-edges
 		"""
+		if not len(stacks):
+			raise ValueError('Empty list of stacks received: {}'.format(stacks))
 		if len({S.shape for S in stacks}) > 1:
 			raise ValueError('All stacks in list must have the same shape')
 		if not all([isinstance(S, np.ndarray) for S in stacks]):
