@@ -793,13 +793,14 @@ class main_GUI(QtW.QMainWindow, form_class):
 
 		# Restore settings from previous session and show ready status
 		guirestore(self, settings)
-		self.clock.display("00:00:00")
-		self.statusBar.showMessage('Ready')
+
 		self.watcherStatus = QtW.QLabel()
-		self.watcherStatus.setText("")
 		self.statusBar.insertPermanentWidget(0, self.watcherStatus)
 		if self.watchDirCheckBox.isChecked():
 			self.startWatcher()
+
+		self.clock.display("00:00:00")
+		self.statusBar.showMessage('Ready')
 
 	@QtCore.pyqtSlot()
 	def startWatcher(self):
