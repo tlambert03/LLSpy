@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
+import os
 import os.path as osp
+import shutil
 import glob
 import llspy
 import imdisplay
@@ -39,9 +41,9 @@ def trap_exc_during_debug(errorType, errValue, tback):
 		handleSchemaError(errValue, tback)
 		return
 	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	print(traceback.print_tb(tback))
-	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	print(traceback.print_tb(tback) + "\n")
 	print(errValue)
+	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 
 def handleSchemaError(errMsg, tback):
@@ -75,7 +77,11 @@ def byteArrayToString(bytearr):
 		return str(bytearr, encoding='utf-8')
 
 
-# FIXME: temporary testing
+def pathHasPattern(path, pattern='*Settings.txt'):
+	return bool(len(glob.glob(osp.join(path, pattern))))
+
+
+# FIXME: temporary
 def channel_args(E, P, chan, binary=None):
 	opts = {
 		'background': P.background[chan] if not P.bFlashCorrect else 0,
@@ -238,7 +244,7 @@ class LogWindow(QtW.QDialog, QPlainTextEditLogger):
 		logging.error('foobar')
 
 
-class DragDropTableView(QtW.QTableWidget):
+class LLSDragDropTable(QtW.QTableWidget):
 
 	colHeaders = ['path', 'name', 'nC', 'nT', 'nZ', 'nY', 'nX', 'desQ']
 	nCOLS = len(colHeaders)
@@ -249,7 +255,7 @@ class DragDropTableView(QtW.QTableWidget):
 	# and triggers handler defined in parent widget.
 
 	def __init__(self, parent=None):
-		super(DragDropTableView, self).__init__(0, self.nCOLS, parent)
+		super(LLSDragDropTable, self).__init__(0, self.nCOLS, parent)
 		self.setAcceptDrops(True)
 		self.setSelectionMode(QtW.QAbstractItemView.ExtendedSelection)
 		self.setSelectionBehavior(QtW.QAbstractItemView.SelectRows)
@@ -266,12 +272,24 @@ class DragDropTableView(QtW.QTableWidget):
 		header.resizeSection(6, 50)
 		header.resizeSection(7, 40)
 
-	def addLLSitem(self, E):
+	@QtCore.pyqtSlot(str)
+	def addPath(self, path):
+		if not (osp.exists(path) and osp.isdir(path)):
+			return
+		# If this folder is not on the list yet, add it to the list:
+		if not pathHasPattern(path, '*Settings.txt'):
+			logging.warn('No Settings.txt! Ignoring: {}'.format(path))
+			return
+		# if it's already on the list, don't add it
+		if len(self.findItems(path, QtCore.Qt.MatchExactly)):
+			return
+
+		E = llspy.LLSdir(path)
 		shortname = osp.sep.join(E.path.parts[-2:])
 		logging.info('Add: {}'.format(shortname))
 		rowPosition = self.rowCount()
 		self.insertRow(rowPosition)
-		item = [str(E.path),
+		item = [path,
 				shortname,
 				str(E.parameters.nc),
 				str(E.parameters.nt),
@@ -283,6 +301,16 @@ class DragDropTableView(QtW.QTableWidget):
 			entry = QtW.QTableWidgetItem(elem)
 			entry.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 			self.setItem(rowPosition, col, entry)
+
+	def selectedPaths(self):
+		selectedRows = self.selectionModel().selectedRows()
+		return [self.item(i.row(), 0).text() for i in selectedRows]
+
+	@QtCore.pyqtSlot(str)
+	def removePath(self, path):
+		items = self.findItems(path, QtCore.Qt.MatchExactly)
+		for item in items:
+			self.removeRow(item.row())
 
 	def setRowBackgroudColor(self, row, color):
 		grayBrush = QtGui.QBrush(QtGui.QColor(color))
@@ -306,15 +334,18 @@ class DragDropTableView(QtW.QTableWidget):
 		if event.mimeData().hasUrls:
 			event.setDropAction(QtCore.Qt.CopyAction)
 			event.accept()
-			links = []
+			# links = []
 			for url in event.mimeData().urls():
-				links.append(str(url.toLocalFile()))
-			self.dropSignal.emit(links)
+				# links.append(str(url.toLocalFile()))
+				self.addPath(str(url.toLocalFile()))
+			# self.dropSignal.emit(links)
+			# for url in links:
+			# 	self.listbox.addPath(url)
 		else:
 			event.ignore()
 
 	def keyPressEvent(self, event):
-		super(DragDropTableView, self).keyPressEvent(event)
+		super(LLSDragDropTable, self).keyPressEvent(event)
 		if (event.key() == QtCore.Qt.Key_Delete or
 			event.key() == QtCore.Qt.Key_Backspace):
 			indices = self.selectionModel().selectedRows()
@@ -326,6 +357,7 @@ class DragDropTableView(QtW.QTableWidget):
 
 # ################# WORKERS ################
 
+# TODO: add timer?
 def newWorkerThread(workerClass, *args, **kwargs):
 	worker = workerClass(*args)
 	thread = QtCore.QThread()
@@ -460,6 +492,7 @@ class LLSitemWorker(QtCore.QObject):
 		self.shortname = osp.sep.join(self.E.path.parts[-2:])
 		self.aborted = False
 		self.__argQueue = []  # holds all argument lists that will be sent to threads
+		self.__CUDAthreads = []
 
 	@QtCore.pyqtSlot()
 	def work(self):
@@ -596,16 +629,32 @@ class LLSitemWorker(QtCore.QObject):
 			self.E.register(self.P.regRefWave, self.P.regMode, self.P.regCalibDir)
 
 		if self.P.bMergeMIPs:
-			if self.E.path.joinpath('GPUdecon').is_dir():
-				self.statusUpdate.emit(
-					'Merging deconvolved MIPs: {}'.format(self.E.basename))
-				self.E.mergemips('GPUdecon')
+			self.statusUpdate.emit(
+				'Merging MIPs: {}'.format(self.E.basename))
+			self.E.mergemips()
+		else:
+			for mipfile in self.E.path.glob('**/*comboMIP_*'):
+				mipfile.unlink()  # clean up any combo MIPs from previous runs
 
-		if self.P.bMergeMIPsraw:
-			if self.E.path.joinpath('Deskewed').is_dir():
-				self.statusUpdate.emit(
-					'Merging raw MIPs: {}'.format(self.E.basename))
-				self.E.mergemips('Deskewed')
+		# if self.P.bMergeMIPsraw:
+		# 	if self.E.path.joinpath('Deskewed').is_dir():
+		# 		self.statusUpdate.emit(
+		# 			'Merging raw MIPs: {}'.format(self.E.basename))
+		# 		self.E.mergemips('Deskewed')
+
+		if self.P.bFlashCorrect:
+			if self.E.path.name == 'Corrected':
+				parent = self.E.path.parent
+				for d in ['GPUdecon', 'Deskewed', 'CPPdecon']:
+					subd = self.E.path.joinpath(d)
+					if subd.exists():
+						target = parent.joinpath(d)
+						if target.exists():
+							shutil.rmtree(target)
+						subd.rename(target)
+				if not self.P.bSaveCorrected:
+					shutil.rmtree(self.E.path)
+					self.E.path = parent
 
 		if self.P.bCompress:
 			self.statusUpdate.emit(
@@ -616,10 +665,8 @@ class LLSitemWorker(QtCore.QObject):
 
 	@QtCore.pyqtSlot()
 	def abort(self):
-		print('got it')
 		self.logUpdate.emit('LLSworker #{} notified to abort'.format(self.__id))
 		if len(self.__CUDAthreads):
-			print(self.__CUDAthreads)
 			self.aborted = True
 			self.__argQueue = []
 			self.sig_abort.emit()
@@ -632,6 +679,7 @@ class MyHandler(FileSystemEventHandler, QtCore.QObject):
 
 	foundLLSdir = QtCore.pyqtSignal(str)
 	lostListItem = QtCore.pyqtSignal(str)
+	processRequest = QtCore.pyqtSignal()
 
 	def __init__(self):
 		super(MyHandler, self).__init__()
@@ -643,6 +691,7 @@ class MyHandler(FileSystemEventHandler, QtCore.QObject):
 		else:
 			if 'Settings.txt' in event.src_path:
 				self.foundLLSdir.emit(osp.dirname(event.src_path))
+				self.processRequest.emit()
 
 	def on_deleted(self, event):
 		# Called when a file or directory is created.
@@ -669,15 +718,16 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.inProcess = False
 		self.observer = None  # for watching the watchdir
 
-		# delete  reintroduce custom DragDropTableView
+		# delete  reintroduce custom LLSDragDropTable
 		self.listbox.setParent(None)
-		self.listbox = DragDropTableView(self.tab_process)
+		self.listbox = LLSDragDropTable(self.tab_process)
 		self.process_tab_layout.insertWidget(0, self.listbox)
-		self.listbox.dropSignal.connect(self.onFolderDroppedTable)
 
 		# connect buttons
 		self.previewButton.clicked.connect(self.onPreview)
 		self.processButton.clicked.connect(self.onProcess)
+
+		self.watchDirToolButton.clicked.connect(self.changeWatchDir)
 		self.watchDirCheckBox.stateChanged.connect(
 			lambda st: self.startWatcher() if st else self.stopWatcher())
 
@@ -737,8 +787,6 @@ class main_GUI(QtW.QMainWindow, form_class):
 					self, 'Set Registration Calibration Directory',
 					'', QtW.QFileDialog.ShowDirsOnly)))
 
-		self.watchDirToolButton.clicked.connect(self.changeWatchDir)
-
 		# connect worker signals and slots
 		self.sig_item_finished.connect(self.on_item_finished)
 		self.sig_processing_done.connect(self.on_proc_finished)
@@ -747,15 +795,22 @@ class main_GUI(QtW.QMainWindow, form_class):
 		guirestore(self, settings)
 		self.clock.display("00:00:00")
 		self.statusBar.showMessage('Ready')
+		self.watcherStatus = QtW.QLabel()
+		self.watcherStatus.setText("")
+		self.statusBar.insertPermanentWidget(0, self.watcherStatus)
+		if self.watchDirCheckBox.isChecked():
+			self.startWatcher()
 
 	@QtCore.pyqtSlot()
 	def startWatcher(self):
 		self.watchdir = self.watchDirLineEdit.text()
 		if osp.isdir(self.watchdir):
 			self.log.append('Starting watcher on {}'.format(self.watchdir))
+			self.watcherStatus.setText("👁 {}".format(osp.basename(self.watchdir)))
 			self.watchHandler = MyHandler()
-			self.watchHandler.foundLLSdir.connect(self.addPathToLLSlist)
-			self.watchHandler.lostListItem.connect(self.removePathFromLLSlist)
+			self.watchHandler.foundLLSdir.connect(self.listbox.addPath)
+			self.watchHandler.lostListItem.connect(self.listbox.removePath)
+			self.watchHandler.processRequest.connect(self.onProcess)
 			self.observer = Observer()
 			self.observer.schedule(self.watchHandler, self.watchdir, recursive=True)
 			self.observer.start()
@@ -768,20 +823,17 @@ class main_GUI(QtW.QMainWindow, form_class):
 			self.observer = None
 			self.log.append('Stopped watcher on {}'.format(self.watchdir))
 			self.watchdir = None
+		if not self.observer:
+			self.watcherStatus.setText("")
 
 	@QtCore.pyqtSlot()
 	def changeWatchDir(self):
 		self.watchDirLineEdit.setText(QtW.QFileDialog.getExistingDirectory(
 			self, 'Choose directory to monitor for new LLSdirs', '',
 			QtW.QFileDialog.ShowDirsOnly))
-		if self.observer and self.watchDirCheckBox.isChecked():
+		if self.watchDirCheckBox.isChecked():
 			self.stopWatcher()
 			self.startWatcher()
-
-	def currentSelectedPaths(self):
-		selectedRows = self.listbox.selectionModel().selectedRows()
-		pathlist = [self.listbox.item(i.row(), 0).text() for i in selectedRows]
-		return pathlist
 
 	def saveCurrentAsDefault(self):
 		if osp.isfile(defaultSettings.fileName()):
@@ -805,36 +857,11 @@ class main_GUI(QtW.QMainWindow, form_class):
 		path = QtW.QFileDialog.getExistingDirectory(self,
 				'Choose LLSdir to add to list', '', QtW.QFileDialog.ShowDirsOnly)
 		if path is not None:
-			self.addPathToLLSlist(path)
+			self.listbox.addPath(path)
 
 	def incrementProgress(self):
 		# with no values, simply increment progressbar
 		self.progressBar.setValue(self.progressBar.value()+1)
-
-	@QtCore.pyqtSlot(str)
-	def addPathToLLSlist(self, path):
-		if osp.exists(path) and osp.isdir(path):
-			# If this folder is not on the list yet, add it to the list:
-			E = llspy.LLSdir(path)
-			shortname = osp.sep.join(E.path.parts[-2:])
-			if not E.has_settings:
-				logging.warn('No Settings.txt! Ignoring: {}'.format(shortname))
-				return
-			# if it's not already on the list, add it
-			if len(self.listbox.findItems(shortname, QtCore.Qt.MatchExactly)) == 0:
-				self.listbox.addLLSitem(E)
-
-	@QtCore.pyqtSlot(str)
-	def removePathFromLLSlist(self, path):
-		shortname = osp.sep.join(llspy.plib.Path(path).parts[-2:])
-		items = self.listbox.findItems(shortname, QtCore.Qt.MatchExactly)
-		for item in items:
-			self.listbox.removeRow(item.row())
-
-	def onFolderDroppedTable(self, links):
-		''' Triggered after URLs are dropped onto self.listbox '''
-		for url in links:
-			self.addPathToLLSlist(url)
 
 	def onPreview(self):
 		self.previewButton.setDisabled(True)
@@ -844,8 +871,10 @@ class main_GUI(QtW.QMainWindow, form_class):
 				QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
 			return
 
+		# if there's only one item on the list show it
 		if self.listbox.rowCount() == 1:
 			firstRowSelected = 0
+		# otherwise, prompt the user to select one
 		else:
 			selectedRows = self.listbox.selectionModel().selectedRows()
 			if not len(selectedRows):
@@ -854,6 +883,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 						QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
 					return
 			else:
+				# if they select multiple, chose the first one
 				firstRowSelected = selectedRows[0].row()
 
 		procTRangetext = self.previewTRangeLineEdit.text()
@@ -871,6 +901,8 @@ class main_GUI(QtW.QMainWindow, form_class):
 
 	@QtCore.pyqtSlot(np.ndarray)
 	def displayPreview(self, array):
+		# FIXME:  pyplot should not be imported in pyqt
+		# use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
 		import matplotlib.pyplot as plt
 		imdisplay.imshow3D(array, cmap='gray', interpolation='nearest')
 		plt.show()
@@ -891,8 +923,15 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.optionsOnProcessClick = self.getValidatedOptions()
 
 		self.currentItem = self.listbox.item(0, 1).text()
-		self.on_proc_starting()
-		self.process_next_item()
+		self.currentPath = self.listbox.item(0, 0).text()
+		if not self.inProcess:  # so far, only one item allowed processing at a time
+			self.inProcess = True
+			self.disableProcessButton()
+			self.process_next_item()
+			self.statusBar.showMessage('Starting processing ...')
+			self.inProcess = True
+		else:
+			self.log.append('ignoring request to process, already processing...')
 
 	def process_next_item(self):
 		# get path from first row and create a new LLSdir object
@@ -927,10 +966,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.timer = QtCore.QTime()
 		self.timer.restart()
 
-	@QtCore.pyqtSlot()
-	def on_proc_starting(self):
-		self.statusBar.showMessage('Starting processing on ...{}'.format(self.currentItem))
-		self.inProcess = True
+	def disableProcessButton(self):
 		# turn Process button into a Cancel button and udpate menu items
 		self.processButton.clicked.disconnect()
 		self.processButton.setText('CANCEL')
@@ -958,7 +994,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 
 	@QtCore.pyqtSlot()
 	def on_item_finished(self):
-		thread, _  = self.LLSItemThreads.pop(0)
+		thread, worker  = self.LLSItemThreads.pop(0)
 		thread.quit()
 		thread.wait()
 		self.clock.display("00:00:00")
@@ -969,7 +1005,9 @@ class main_GUI(QtW.QMainWindow, form_class):
 			itemTime = QtCore.QTime(0, 0).addMSecs(self.timer.elapsed()).toString()
 			self.log.append(">" * 4 + " Item {} finished in {} ".format(
 				self.currentItem, itemTime) + "<" * 4)
-			self.listbox.removeRow(0)
+			self.listbox.removePath(self.currentPath)
+			self.currentPath = None
+			self.currentItem = None
 			if self.listbox.rowCount() > 0:
 				self.process_next_item()
 			else:
@@ -982,7 +1020,8 @@ class main_GUI(QtW.QMainWindow, form_class):
 		if len(self.LLSItemThreads):
 			self.aborted = True
 			self.sig_abort_LLSworkers.emit()
-			self.listbox.setRowBackgroudColor(0, '#FFFFFF')
+			if self.listbox.rowCount():
+				self.listbox.setRowBackgroudColor(0, '#FFFFFF')
 			# self.processButton.setDisabled(True) # will be reenabled when workers done
 		else:
 			self.sig_processing_done.emit()
@@ -992,6 +1031,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 			'bFlashCorrect': self.camcorCheckBox.isChecked(),
 			'flashCorrectTarget': self.camcorTargetCombo.currentText(),
 			'bMedianCorrect': self.medianFilterCheckBox.isChecked(),
+			'bSaveCorrected': self.saveCamCorrectedCheckBox.isChecked(),
 			'edgeTrim': ((self.trimZ0SpinBox.value(), self.trimZ1SpinBox.value()),
 						(self.trimY0SpinBox.value(), self.trimY1SpinBox.value()),
 						(self.trimX0SpinBox.value(), self.trimX1SpinBox.value())),
@@ -1012,7 +1052,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 								self.deskewedYMIPCheckBox.isChecked(),
 								self.deskewedZMIPCheckBox.isChecked())]),
 			'bMergeMIPs': self.deconJoinMIPCheckBox.isChecked(),
-			'bMergeMIPsraw': self.deskewedJoinMIPCheckBox.isChecked(),
+			# 'bMergeMIPsraw': self.deskewedJoinMIPCheckBox.isChecked(),
 			'buint16': ('16' in self.deconvolvedBitDepthCombo.currentText()),
 			'buint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
 			'bBleachCor': self.bleachCorrectionCheckBox.isChecked(),
@@ -1063,22 +1103,28 @@ class main_GUI(QtW.QMainWindow, form_class):
 		return options
 
 	def reduceSelected(self):
-		for item in self.currentSelectedPaths():
+		for item in self.listbox.selectedPaths():
 			llspy.LLSdir(item).reduce_to_raw()
 
 	def compressSelected(self):
-		for item in self.currentSelectedPaths():
+		for item in self.listbox.selectedPaths():
 			llspy.LLSdir(item).compress()
 
 	def decompressSelected(self):
-		for item in self.currentSelectedPaths():
+		for item in self.listbox.selectedPaths():
 			llspy.LLSdir(item).decompress()
 
 	def concatenateSelected(self):
-		pass  # not implemented
+		selectedPaths = self.listbox.selectedPaths()
+		llspy.core.llsdir.concatenate_folders(selectedPaths)
+		[self.listbox.removePath(p) for p in selectedPaths]
+		[self.listbox.addPath(p) for p in selectedPaths]
 
 	def renameSelected(self):
-		pass  # not implemented
+		for item in self.listbox.selectedPaths():
+			llspy.core.llsdir.rename_iters(item)
+			self.listbox.removePath(item)
+			[self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
 
 	def closeEvent(self, event):
 		''' triggered when close button is clicked on main window '''
