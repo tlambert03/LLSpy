@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>617</width>
-    <height>790</height>
+    <height>803</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>790</height>
+    <height>803</height>
    </size>
   </property>
   <property name="focusPolicy">
@@ -36,7 +36,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -141,15 +141,15 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>564</width>
-             <height>252</height>
+             <width>547</width>
+             <height>255</height>
             </rect>
            </property>
            <attribute name="label">
@@ -215,8 +215,14 @@
                </item>
                <item>
                 <widget class="QCheckBox" name="saveCamCorrectedCheckBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
                  <property name="text">
-                  <string>Save Corrected Files</string>
+                  <string>Save Corrected</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -481,6 +487,9 @@
                </item>
                <item>
                 <widget class="QRadioButton" name="backgroundRollingRadio">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
                  <property name="text">
                   <string>Rolling Ball Radius:</string>
                  </property>
@@ -519,8 +528,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>552</width>
-             <height>204</height>
+             <width>547</width>
+             <height>255</height>
             </rect>
            </property>
            <attribute name="label">
@@ -670,7 +679,7 @@
                  <item>
                   <widget class="QCheckBox" name="saveDeconvolvedCheckBox">
                    <property name="enabled">
-                    <bool>true</bool>
+                    <bool>false</bool>
                    </property>
                    <property name="text">
                     <string>Save Stacks</string>
@@ -757,22 +766,6 @@
                       </property>
                       <property name="text">
                        <string>Z</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QCheckBox" name="deconJoinMIPCheckBox">
-                      <property name="enabled">
-                       <bool>true</bool>
-                      </property>
-                      <property name="layoutDirection">
-                       <enum>Qt::RightToLeft</enum>
-                      </property>
-                      <property name="text">
-                       <string>Join MIPs:</string>
                       </property>
                       <property name="checked">
                        <bool>true</bool>
@@ -934,19 +927,6 @@
                     </property>
                    </widget>
                   </item>
-                  <item>
-                   <widget class="QCheckBox" name="deskewedJoinMIPCheckBox">
-                    <property name="layoutDirection">
-                     <enum>Qt::RightToLeft</enum>
-                    </property>
-                    <property name="text">
-                     <string>Join MIPs</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
                  </layout>
                 </widget>
                </item>
@@ -963,7 +943,7 @@
                <item row="0" column="4">
                 <widget class="QComboBox" name="deskewedBitDepthCombo">
                  <property name="enabled">
-                  <bool>true</bool>
+                  <bool>false</bool>
                  </property>
                  <property name="maximumSize">
                   <size>
@@ -987,6 +967,22 @@
                 </widget>
                </item>
               </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="deconJoinMIPCheckBox">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="layoutDirection">
+               <enum>Qt::LeftToRight</enum>
+              </property>
+              <property name="text">
+               <string>Join MIP files into single hyperstack</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item>
@@ -1220,7 +1216,7 @@
                <item>
                 <widget class="QCheckBox" name="rotateCropCheckBox">
                  <property name="enabled">
-                  <bool>true</bool>
+                  <bool>false</bool>
                  </property>
                  <property name="text">
                   <string>Crop</string>
@@ -2092,7 +2088,7 @@ QProgressBar::chunk:horizontal {
   </action>
   <action name="actionCompress_Folder">
    <property name="text">
-    <string>Compress Folder</string>
+    <string>Compress Raw</string>
    </property>
    <property name="toolTip">
     <string>Compress raw data in selected folder</string>
@@ -2100,7 +2096,7 @@ QProgressBar::chunk:horizontal {
   </action>
   <action name="actionDecompress_Folder">
    <property name="text">
-    <string>Decompress Folder</string>
+    <string>Decompress Raw</string>
    </property>
   </action>
   <action name="actionConcatenate">
