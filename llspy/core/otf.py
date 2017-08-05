@@ -1,6 +1,6 @@
 from llspy.config import config
 from llspy.core.cudabinwrapper import CUDAbin
-
+from llspy import plib
 import re
 import warnings
 import numpy as np
@@ -23,6 +23,7 @@ default_otf_pattern = re.compile(r"""
 
 def get_otf_dict(otfdir):
 	otf_dict = {}
+	otfdir = plib.Path(otfdir)
 	for t in list(otfdir.glob('*tif')):
 		M = psffile_pattern.search(str(t.name))
 		if M:

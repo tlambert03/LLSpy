@@ -500,7 +500,8 @@ class LLSdir(object):
 		for MIPdir in subdir.glob('**/MIPs/'):
 			# get dict with keys= axes(x,y,z) and values = numpy array
 			MIPdict = mipmerge.mergemips(MIPdir)
-
+			if not MIPdict:
+				continue
 			# find all MIP*tifs.
 			filelist = list(MIPdir.glob('*MIP*.tif'))
 			if len(filelist) and len(MIPdict.keys()):
