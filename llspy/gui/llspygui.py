@@ -20,17 +20,15 @@ from PyQt5 import QtWidgets as QtW
 # import sys
 # sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)),'..'))
 
-
-form_class = uic.loadUiType(osp.join(osp.dirname(osp.abspath(__file__)), 'main_gui.ui'))[0]
+thisDirectory = osp.dirname(osp.abspath(__file__))
+form_class = uic.loadUiType(osp.join(thisDirectory, 'main_gui.ui'))[0]
 # form_class = uic.loadUiType('./llspy/gui/main_gui.ui')[0]  # for debugging
 
 # platform independent settings file
 QtCore.QCoreApplication.setOrganizationName("LLSpy")
 QtCore.QCoreApplication.setOrganizationDomain("llspy.com")
-settings = QtCore.QSettings("LLSpy", "LLSpyGUI")
+GUIsettings = QtCore.QSettings("LLSpy", "LLSpyGUI")
 defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
-
-# located at settings.fileName()
 
 
 def trap_exc_during_debug(errorType, errValue, tback):
@@ -139,6 +137,7 @@ def string_to_iterable(string):
 
 
 def guisave(widget, settings):
+	print("Saving settings: {}".format(settings.fileName()))
 	# Save geometry
 	selfName = widget.objectName()
 	settings.setValue(selfName + '_size', widget.size())
@@ -158,9 +157,11 @@ def guisave(widget, settings):
 			value = obj.value()
 		if value is not None:
 			settings.setValue(name, value)
+	settings.sync()  # required in some cases to write settings before quit
 
 
 def guirestore(widget, settings):
+	print("Restoring settings: {}".format(settings.fileName()))
 	# Restore geometry
 	selfName = widget.objectName()
 	if 'LLSpyDefaults' not in settings.fileName():
@@ -801,7 +802,12 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.sig_processing_done.connect(self.on_proc_finished)
 
 		# Restore settings from previous session and show ready status
-		guirestore(self, settings)
+		if not osp.isfile(GUIsettings.fileName()):
+			defaultINI = osp.join(thisDirectory, 'guiDefaults.ini')
+			programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
+			guirestore(self, programDefaults)
+		else:
+			guirestore(self, GUIsettings)
 
 		self.watcherStatus = QtW.QLabel()
 		self.statusBar.insertPermanentWidget(0, self.watcherStatus)
@@ -1146,7 +1152,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 			if reply != QtW.QMessageBox.Yes:
 				event.ignore()
 				return
-		guisave(self, settings)
+		guisave(self, GUIsettings)
 
 		# if currently processing, need to shut down threads...
 		if self.inProcess:
