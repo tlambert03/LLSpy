@@ -14,6 +14,9 @@ TODO:
 	* can't yet abort while doing camera correction
 	* and... if someone deletes or moves a folder while it is being processed... it will hang
 
+	* add note about gsettings to readme:
+
+	    - sudo mv ~/anaconda3/bin/gsettings ~/anaconda3/bin/gsettingsBAK
 
 
 
