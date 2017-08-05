@@ -11,7 +11,7 @@ defaults = {
 	'cudadeconv': 'cudaDeconv',
 	'radialft': 'radialft',
 	'camera_parameters': os.path.abspath(os.path.join(pardir, 'camera', "FlashParams.tif")),
-	'otf_path': '/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_PSFs',
+	'otf_path': '~/lls_PSFs',
 	'output_log': 'ProcessingLog.txt',
 }
 

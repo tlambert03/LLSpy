@@ -21,7 +21,7 @@ default_otf_pattern = re.compile(r"""
 	(_otf.tif|.otf)$""", re.VERBOSE)
 
 
-def get_otf_dict(otfdir=config.__OTFPATH__):
+def get_otf_dict(otfdir):
 	otf_dict = {}
 	for t in list(otfdir.glob('*tif')):
 		M = psffile_pattern.search(str(t.name))
@@ -59,16 +59,17 @@ def get_otf_dict(otfdir=config.__OTFPATH__):
 	return otf_dict
 
 
-def get_otf_by_date(date, wave, mask=None, otf_dict=None, direction='nearest'):
+def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction='nearest'):
 	"""return otf with date closest to requested date.
 	if OTF doesn't exist, but PSF does, generate OTF and return the path.i
 	direction can be {'nearest', 'before', 'after'}, where 'before' returns an
 	OTF that was collected before 'date' and 'after' returns one that was
 	collected after 'date.'
 	"""
-	if otf_dict is None:
-		otf_dict = get_otf_dict()
+	otf_dict = get_otf_dict(otfpath)
 	otflist = []
+	if wave not in otf_dict:
+		raise KeyError('Wave: {} not in otfdict: \n{}'.format(wave, otf_dict))
 	if mask is not None:
 		if mask in otf_dict[wave]:
 			otflist = otf_dict[wave][mask]

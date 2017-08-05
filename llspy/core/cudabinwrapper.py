@@ -6,13 +6,14 @@ from llspy.config import config
 
 default_cudaBinary = config.__CUDADECON__
 
+
 # TODO: this would probable be better implemented as a voluptuous schema
 # FIXME: passing of the binary is messed up... is it a string?  is it None?
 def assemble_args(binary, indir, filepattern, otf, **options):
 	if not isinstance(binary, CUDAbin):
 		if isinstance(binary, str):
 			try:
-				binary = CUDAbin(binary)
+				binary = CUDAbin(binPath=binary)
 			except Exception:
 				CUDAbinException("Not a valid cudaDeconv binary: {}".format(binary))
 		else:
