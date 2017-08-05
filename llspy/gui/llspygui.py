@@ -5,8 +5,6 @@ import os
 import os.path as osp
 import shutil
 import glob
-import llspy
-import imdisplay
 import logging
 import inspect
 import sys
@@ -14,6 +12,11 @@ import time
 import numpy as np
 import traceback
 import re
+
+thisDirectory = osp.dirname(osp.abspath(__file__))
+sys.path.append(osp.dirname(osp.dirname(thisDirectory)))
+import llspy
+import imdisplay
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -427,7 +430,7 @@ class CudaDeconvWorker(QtCore.QObject):
 
 		# QProcess emits `readyRead` when there is data to be read
 		self.process.readyRead.connect(self.procOutputReady)
-		# Just to prevent accidentally running multiple times
+		self.process.readyReadStandardError.connect(self.handleError)
 
 	@QtCore.pyqtSlot()
 	def work(self):
@@ -477,9 +480,17 @@ class CudaDeconvWorker(QtCore.QObject):
 			else:
 				self.logUpdate.emit(line.rstrip())
 
+	def handleError(self):
+		self.logUpdate.emit("!!!!!! cudaDeconv Error !!!!!!")
+		self.process.setReadChannel(QtCore.QProcess.StandardError)
+		while self.process.canReadLine():
+			line = self.process.readLine()
+			line = byteArrayToString(line)
+			self.logUpdate.emit(line.rstrip())
+
 	def onFinished(self, exitCode,  exitStatus):
-		self.logUpdate.emit('cudaDeconv process finished with code({}) and '
-			'status: {}'.format(exitCode,  exitStatus))
+		self.logUpdate.emit('cudaDeconv process #{} finished with code({}) and '
+			'status: {}'.format(self.__id, exitCode,  exitStatus))
 		self.finished.emit(self.__id)
 
 	def abort(self):
@@ -530,11 +541,9 @@ class LLSitemWorker(QtCore.QObject):
 		self.aborted = False
 		self.__argQueue = []  # holds all argument lists that will be sent to threads
 		self.__CUDAthreads = []
-		print('initing')
 
 	@QtCore.pyqtSlot()
 	def work(self):
-		print('here')
 		if self.E.is_compressed():
 			self.statusUpdate.emit('Decompressing {}'.format(self.E.basename))
 			self.E.decompress()
@@ -556,15 +565,13 @@ class LLSitemWorker(QtCore.QObject):
 			self.error.emit()
 			return
 
-		print('errored')
-
 		# we process one folder at a time. Progress bar updates per Z stack
 		# so the maximum is the total number of timepoints * channels
 		self.nFiles = len(self.P.tRange) * len(self.P.cRange)
 
-		self.logUpdate.emit('\n' + '#' * 65)
+		self.logUpdate.emit('\n' + '#' * 50)
 		self.logUpdate.emit('Processing {}'.format(self.E.basename))
-		self.logUpdate.emit('#' * 65 + '\n')
+		self.logUpdate.emit('#' * 50 + '\n')
 
 		if self.P.bFlashCorrect:
 			self.statusUpdate.emit('Correcting Flash artifact on {}'.format(self.E.basename))
@@ -581,7 +588,8 @@ class LLSitemWorker(QtCore.QObject):
 
 		# generate all the channel specific cudaDeconv arguments for this item
 		for chan in self.P.cRange:
-			self.__argQueue.append(channel_args(self.E, self.P, chan))
+			self.__argQueue.append(channel_args(self.E, self.P, chan,
+				binary=mainGUI.cudaDeconvPathLineEdit.text()))
 		# with the argQueue populated, we can now start the workers
 		if not len(self.__argQueue):
 			self.logUpdate.emit('ERROR: no channel arguments to process in LLSitem')
@@ -607,6 +615,8 @@ class LLSitemWorker(QtCore.QObject):
 			# and self.__CUDAworkers_done...
 			# if len(self.__argQueue)== 0:
 			# 	return
+			if not len(self.__argQueue):
+				break
 			args = self.__argQueue.pop(0)
 
 			CUDAworker, thread = newWorkerThread(CudaDeconvWorker, idx, args,
@@ -1183,15 +1193,20 @@ class main_GUI(QtW.QMainWindow, form_class):
 	def post_validation_error(self, errMsg, tbackstring):
 		schemaDefaults = llspy.core.schema.__defaults__
 		schemaerrRX = re.compile(r'.*data\[(?P<dictItem>.+)\]. Got (?P<gotValue>.+)')
-		gd = schemaerrRX.search(str(errMsg)).groupdict()
-		item = gd['dictItem']
-		value = gd['gotValue']
+		gd = schemaerrRX.search(errMsg)
 		self.msgBox = QtW.QMessageBox()
 		self.msgBox.setIcon(QtW.QMessageBox.Warning)
 		self.msgBox.setText("Validation Error")
-		self.msgBox.setInformativeText(
-			"Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
-				item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0]))
+
+		if gd:
+			item = gd.groupdict()['dictItem']
+			value = gd.groupdict()['gotValue']
+			msgtext = "Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
+					item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0])
+		else:
+			msgtext = errMsg
+
+		self.msgBox.setInformativeText(msgtext)
 		self.msgBox.setWindowTitle("Schema Error Window")
 		self.msgBox.setDetailedText(tbackstring)
 		self.msgBox.show()

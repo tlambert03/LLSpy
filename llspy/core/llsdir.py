@@ -435,9 +435,8 @@ class LLSdir(object):
 		# shouldn't have to get OTF if not deconvolving... though cudaDeconv
 		# may have an issue with this...
 		if S.nIters > 0:
-			otfs = self.get_otfs()
+			otfs = self.get_otfs(otfpath=S.otfDir)
 			S.otfs = [otfs[i] for i in S.cRange]
-			print(S.otfs)
 			if any([(otf == '' or otf is None) for otf in S.otfs]):
 				raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
 		else:
@@ -538,7 +537,7 @@ class LLSdir(object):
 	def get_files(self, **kwargs):
 		return parse.filter_files(self.tiff.raw, **kwargs)
 
-	def get_otfs(self):
+	def get_otfs(self, otfpath=config.__OTFPATH__):
 		""" intelligently pick OTF from archive directory based on date and mask
 		settings..."""
 		otfs = {}
@@ -550,9 +549,9 @@ class LLSdir(object):
 				# find the most recent otf that matches the mask settings
 				# in the PSF directory and append it to the channel dict...
 				otf = get_otf_by_date(
-					self.date, wave, (innerNA, outerNA), direction='nearest')
+					self.date, wave, (innerNA, outerNA), otfpath=otfpath, direction='nearest')
 			else:
-				otf = str(config.__OTFPATH__.joinpath(str(wave) + '_otf.tif'))
+				otf = str(os.path.join(otfpath, str(wave) + '_otf.tif'))
 			otfs[c] = otf
 		return otfs
 
