@@ -435,8 +435,11 @@ class LLSdir(object):
 		# shouldn't have to get OTF if not deconvolving... though cudaDeconv
 		# may have an issue with this...
 		if S.nIters > 0:
-			o = self.get_otfs()
-			S.otfs = [o[i] for i in S.cRange]
+			otfs = self.get_otfs()
+			S.otfs = [otfs[i] for i in S.cRange]
+			print(S.otfs)
+			if any([(otf == '' or otf is None) for otf in S.otfs]):
+				raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
 		else:
 			S.otfs = [None for _ in S.cRange]
 
