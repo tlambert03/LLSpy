@@ -12,6 +12,8 @@ import inspect
 import sys
 import time
 import numpy as np
+import traceback
+import re
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -31,41 +33,66 @@ GUIsettings = QtCore.QSettings("LLSpy", "LLSpyGUI")
 defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
 
 
-def trap_exc_during_debug(errorType, errValue, tback):
-	import traceback
-	# when app raises uncaught exception, print info
-	# traceback.print_exc()
-	if errorType.__module__ == 'voluptuous.error':
-		handleSchemaError(errValue, tback)
-		return
-	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	print(traceback.print_tb(tback) + "\n")
-	print(errValue)
-	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+# def trap_exc_during_debug(errorType, errValue, tback):
+# 	import traceback
+# 	# when app raises uncaught exception, print info
+# 	# traceback.print_exc()
+# 	if errorType.__module__ == 'voluptuous.error':
+# 		handleSchemaError(errValue, tback)
+# 		return
+# 	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+# 	print(traceback.print_tb(tback) + "\n")
+# 	print(errValue)
+# 	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 
-def handleSchemaError(errMsg, tback):
-	import traceback
-	import re
-	schemaDefaults = llspy.core.schema.__defaults__
-	schemaerrRX = re.compile(r'.*data\[(?P<dictItem>.+)\]. Got (?P<gotValue>.+)')
-	gd = schemaerrRX.search(str(errMsg)).groupdict()
-	item = gd['dictItem']
-	value = gd['gotValue']
-	msg = QtW.QMessageBox()
-	msg.setIcon(QtW.QMessageBox.Warning)
-	msg.setText("Validation Error")
-	msg.setInformativeText(
-		"Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
-			item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0]))
-	msg.setWindowTitle("Schema Error Window")
-	msg.setDetailedText("".join(traceback.format_tb(tback)))
-	msg.setStandardButtons(QtW.QMessageBox.Ok)
-	msg.exec_()
+# def handleSchemaError(errMsg, tback):
+# 	import traceback
+# 	import re
+# 	print("SCHEMA ERROR")
+# 	schemaDefaults = llspy.core.schema.__defaults__
+# 	schemaerrRX = re.compile(r'.*data\[(?P<dictItem>.+)\]. Got (?P<gotValue>.+)')
+# 	gd = schemaerrRX.search(str(errMsg)).groupdict()
+# 	item = gd['dictItem']
+# 	value = gd['gotValue']
+# 	msg = QtW.QMessageBox(app)
+# 	msg.setIcon(QtW.QMessageBox.Warning)
+# 	msg.setText("Validation Error")
+# 	msg.setInformativeText(
+# 		"Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
+# 			item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0]))
+# 	msg.setWindowTitle("Schema Error Window")
+# 	msg.setDetailedText("".join(traceback.format_tb(tback)))
+# 	msg.exec_()
 
 
-# install exception hook: without this, uncaught exception would cause application to exit
-sys.excepthook = trap_exc_during_debug
+# # install exception hook: without this, uncaught exception would cause application to exit
+# sys.excepthook = trap_exc_during_debug
+
+
+class ExceptionHandler(QtCore.QObject):
+
+	errorSignal = QtCore.pyqtSignal()
+	silentSignal = QtCore.pyqtSignal()
+	schemaError = QtCore.pyqtSignal(str, str)
+
+	def __init__(self):
+		super(ExceptionHandler, self).__init__()
+
+	def handler(self, errorType, errValue, tback):
+		self.errorSignal.emit()
+		self.trap_exc_during_debug(errorType, errValue, tback)
+
+	def trap_exc_during_debug(self, errorType, errValue, tback):
+		# when app raises uncaught exception, print info
+		# traceback.print_exc()
+		if errorType.__module__ == 'voluptuous.error':
+			self.schemaError.emit(str(errValue), "".join(traceback.format_tb(tback)))
+			return
+		print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		print(traceback.print_tb(tback) + "\n")
+		print(errValue)
+		print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
 
 def byteArrayToString(bytearr):
@@ -106,7 +133,6 @@ def channel_args(E, P, chan, binary=None):
 	else:
 		filepattern = 'ch{}_stack{}'.format(chan,
 			llspy.util.util.pyrange_to_perlregex(P.tRange))
-
 	args = llspy.core.cudabinwrapper.assemble_args(binary,
 		str(E.path), filepattern, P.otfs[chan], **opts)
 	return args
@@ -493,6 +519,7 @@ class LLSitemWorker(QtCore.QObject):
 	progressValue = QtCore.pyqtSignal(int)  # set progressbar value
 	progressMaxVal = QtCore.pyqtSignal(int)  # set progressbar maximum
 	clockUpdate = QtCore.pyqtSignal(str)  # set progressbar value
+	error = QtCore.pyqtSignal()
 
 	def __init__(self, id, path, opts):
 		super(LLSitemWorker, self).__init__()
@@ -503,10 +530,11 @@ class LLSitemWorker(QtCore.QObject):
 		self.aborted = False
 		self.__argQueue = []  # holds all argument lists that will be sent to threads
 		self.__CUDAthreads = []
+		print('initing')
 
 	@QtCore.pyqtSlot()
 	def work(self):
-
+		print('here')
 		if self.E.is_compressed():
 			self.statusUpdate.emit('Decompressing {}'.format(self.E.basename))
 			self.E.decompress()
@@ -520,7 +548,15 @@ class LLSitemWorker(QtCore.QObject):
 					'Could not find Settings.txt file in {}'.format(self.E.path))
 			return
 
-		self.P = self.E.localParams(**self.opts)
+		try:
+			self.P = self.E.localParams(**self.opts)
+		except Exception:
+			(excepttype, value, traceback) = sys.exc_info()
+			sys.excepthook(excepttype, value, traceback)
+			self.error.emit()
+			return
+
+		print('errored')
 
 		# we process one folder at a time. Progress bar updates per Z stack
 		# so the maximum is the total number of timepoints * channels
@@ -963,6 +999,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 				'progressValue': self.progressBar.setValue,
 				'progressUp': self.incrementProgress,
 				'clockUpdate': self.clock.display,
+				'error': self.abort_workers,
 				# 'error': self.errorstring  # implement error signal?
 			})
 
@@ -1142,6 +1179,23 @@ class main_GUI(QtW.QMainWindow, form_class):
 			self.listbox.removePath(item)
 			[self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
 
+	@QtCore.pyqtSlot(str, str)
+	def post_validation_error(self, errMsg, tbackstring):
+		schemaDefaults = llspy.core.schema.__defaults__
+		schemaerrRX = re.compile(r'.*data\[(?P<dictItem>.+)\]. Got (?P<gotValue>.+)')
+		gd = schemaerrRX.search(str(errMsg)).groupdict()
+		item = gd['dictItem']
+		value = gd['gotValue']
+		self.msgBox = QtW.QMessageBox()
+		self.msgBox.setIcon(QtW.QMessageBox.Warning)
+		self.msgBox.setText("Validation Error")
+		self.msgBox.setInformativeText(
+			"Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
+				item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0]))
+		self.msgBox.setWindowTitle("Schema Error Window")
+		self.msgBox.setDetailedText(tbackstring)
+		self.msgBox.show()
+
 	def closeEvent(self, event):
 		''' triggered when close button is clicked on main window '''
 		if self.listbox.rowCount():
@@ -1169,4 +1223,9 @@ if __name__ == "__main__":
 	mainGUI = main_GUI()
 	mainGUI.show()
 	mainGUI.raise_()
+
+	exceptionHandler = ExceptionHandler()
+	sys.excepthook = exceptionHandler.handler
+	exceptionHandler.schemaError.connect(mainGUI.post_validation_error)
+
 	sys.exit(app.exec_())
