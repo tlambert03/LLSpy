@@ -23,6 +23,7 @@ GUI:
 * Graphical user-interface: drag and drop folders to be processed, easily navigate and chose from various processing options
 * Designate 'watched' folder, and autoprocess any new LLSdirs that are added to that folder.
 * Quickly preview an image processed with the current settings for a subset of timepoints.
+* Settings persist across sessions, or load user-specific defaults
 
 .. image:: gui.png
     :height: 825 px
@@ -42,6 +43,7 @@ Processing:
 * Merge MIP files into single multidimensional hyperstack (e.g. for ImageJ)
 * Automated parallelized lbzip2 compression/decompression after/before processing
 * Utilities to return folder to original post-acquisition state, freeze data for long term storage (reduce to raw then compress), concatenate two experiments, and rename files acquired in script-editor mode.
+* Multithreading, and automatic usage of multiple GPUs
 
 Python:
 """""""""
@@ -109,10 +111,7 @@ To Do:
 * pretty-print info on directory
 * add ProcessingLog.txt and possibly pickle LLSdir object for state maintenance
 * multithreading, multi-GPU support
-* merge datasets (when for stop/start acquisition)
-* rename files acquired in script-editor for loops for standard processing
 * export for bigDataViewer/.ims/.hdf5 format?
 * docs
 * logging module instead of print() and warnings
 * more user-friendly settings.ini
-* GUI
