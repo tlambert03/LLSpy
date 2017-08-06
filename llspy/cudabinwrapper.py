@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import warnings
-from llspy.config import config
+from . import config
 
 default_cudaBinary = config.__CUDADECON__
 

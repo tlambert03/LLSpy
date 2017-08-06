@@ -1,5 +1,5 @@
-from llspy.util import util
-from llspy.camera import camera
+from . import util
+from . import camera
 import os
 import re
 import io

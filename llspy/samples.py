@@ -1,5 +1,5 @@
 from llspy import plib
-from llspy.util.util import dotdict
+from .util import dotdict
 
 basic = '/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_basic_samp/'
 mitosis = '/Users/talley/DropboxHMS/CBMF/lattice_sample_data/lls_mitosis_samp/'
