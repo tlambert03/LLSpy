@@ -114,3 +114,23 @@ def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
 		tifffile.imsave(outpath, arr, bigtiff=bigT, imagej=True,
 						resolution=(1 / dx, 1 / dx), metadata=md)
 
+
+def readHDF5(filename):
+	import h5py
+	f = h5py.File(filename, 'r')
+	return f['data'].value
+
+
+def readHDF5Frame(filename, frame):
+	import h5py
+	f = h5py.File(filename, 'r')
+	return f['data'][frame]
+
+
+def writeHDF5(filename, data):
+	import h5py
+	f = h5py.File(filename, 'w')
+	f['data'] = data
+	f.flush()
+	f.close()
+

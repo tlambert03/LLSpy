@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append('..')
 
-from llspy.core.settingstxt import LLSsettings
+from llspy.settingstxt import LLSsettings
 
 TESTSDIR = os.path.dirname(os.path.abspath(__file__))
 

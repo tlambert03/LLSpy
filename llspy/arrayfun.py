@@ -1,6 +1,6 @@
 from __future__ import print_function, division
-from llspy.core.libcudawrapper import deskewGPU as deskew
-from llspy.util.util import imread
+from .libcudawrapper import deskewGPU as deskew
+from .util import imread
 
 import numpy as np
 from skimage.filters import gaussian, threshold_li
