@@ -32,45 +32,8 @@ form_class = uic.loadUiType(osp.join(thisDirectory, 'main_gui.ui'))[0]
 # platform independent settings file
 QtCore.QCoreApplication.setOrganizationName("LLSpy")
 QtCore.QCoreApplication.setOrganizationDomain("llspy.com")
-GUIsettings = QtCore.QSettings("LLSpy", "LLSpyGUI")
+sessionSettings = QtCore.QSettings("LLSpy", "LLSpyGUI")
 defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
-
-
-# def trap_exc_during_debug(errorType, errValue, tback):
-# 	import traceback
-# 	# when app raises uncaught exception, print info
-# 	# traceback.print_exc()
-# 	if errorType.__module__ == 'voluptuous.error':
-# 		handleSchemaError(errValue, tback)
-# 		return
-# 	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-# 	print(traceback.print_tb(tback) + "\n")
-# 	print(errValue)
-# 	print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-
-
-# def handleSchemaError(errMsg, tback):
-# 	import traceback
-# 	import re
-# 	print("SCHEMA ERROR")
-# 	schemaDefaults = llspy.schema.__defaults__
-# 	schemaerrRX = re.compile(r'.*data\[(?P<dictItem>.+)\]. Got (?P<gotValue>.+)')
-# 	gd = schemaerrRX.search(str(errMsg)).groupdict()
-# 	item = gd['dictItem']
-# 	value = gd['gotValue']
-# 	msg = QtW.QMessageBox(app)
-# 	msg.setIcon(QtW.QMessageBox.Warning)
-# 	msg.setText("Validation Error")
-# 	msg.setInformativeText(
-# 		"Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
-# 			item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0]))
-# 	msg.setWindowTitle("Schema Error Window")
-# 	msg.setDetailedText("".join(traceback.format_tb(tback)))
-# 	msg.exec_()
-
-
-# # install exception hook: without this, uncaught exception would cause application to exit
-# sys.excepthook = trap_exc_during_debug
 
 
 class ExceptionHandler(QtCore.QObject):
@@ -105,42 +68,6 @@ def byteArrayToString(bytearr):
 		return str(bytearr, encoding='utf-8')
 
 
-def pathHasPattern(path, pattern='*Settings.txt'):
-	return bool(len(glob.glob(osp.join(path, pattern))))
-
-
-# FIXME: temporary
-def channel_args(E, P, chan, binary=None):
-	opts = {
-		'background': P.background[chan] if not P.bFlashCorrect else 0,
-		'drdata': P.drdata,
-		'dzdata': P.dzdata,
-		'wavelength': float(P.wavelength[chan])/1000,
-		'deskew': P.deskew,
-		'saveDeskewedRaw': P.bSaveDeskewedRaw,
-		'MIP': P.MIP,
-		'rMIP': P.MIPraw,
-		'uint16': P.buint16,
-		'bleachCorrection': P.bBleachCor,
-		'RL': P.nIters,
-		'rotate': P.rotate,
-		'width': P.width,
-		'shift': P.shift,
-		# 'quiet': bool(quiet),
-		# 'verbose': bool(verbose),
-	}
-
-	# filter by channel and trange
-	if len(list(P.tRange)) == E.parameters.nt:
-		filepattern = 'ch{}_'.format(chan)
-	else:
-		filepattern = 'ch{}_stack{}'.format(chan,
-			llspy.util.pyrange_to_perlregex(P.tRange))
-	args = llspy.cudabinwrapper.assemble_args(binary,
-		str(E.path), filepattern, P.otfs[chan], **opts)
-	return args
-
-
 def string_to_iterable(string):
 	"""convert a string into an iterable
 	note: ranges are inclusive
@@ -148,7 +75,6 @@ def string_to_iterable(string):
 	>>> string_to_iterable('0,3,5-10,15-30-3,40')
 	[0,3,5,6,7,8,9,10,15,18,21,24,27,30,40]
 	"""
-	import re
 	if re.search('[^\d^,^-]', string) is not None:
 		raise ValueError('Iterable string must contain only digits, commas, and dashes')
 	it = []
@@ -307,7 +233,7 @@ class LLSDragDropTable(QtW.QTableWidget):
 		if not (osp.exists(path) and osp.isdir(path)):
 			return
 		# If this folder is not on the list yet, add it to the list:
-		if not pathHasPattern(path, '*Settings.txt'):
+		if not llspy.util.pathHasPattern(path, '*Settings.txt'):
 			logging.warn('No Settings.txt! Ignoring: {}'.format(path))
 			return
 		# if it's already on the list, don't add it
@@ -557,6 +483,7 @@ class LLSitemWorker(QtCore.QObject):
 					'Could not find Settings.txt file in {}'.format(self.E.path))
 			return
 
+		# this needs to go here instead of __init__ in case folder is compressed
 		try:
 			self.P = self.E.localParams(**self.opts)
 		except Exception:
@@ -587,11 +514,30 @@ class LLSitemWorker(QtCore.QObject):
 			'Processing {}: (0 of {})'.format(self.E.basename, self.nFiles))
 
 		# only call cudaDeconv if we need to deskew or deconvolve
-		if self.P.nIters > 0 or (self.P.deskew > 0 and self.P.bSaveDeskewedRaw):
+		if self.P.nIters > 0 or (self.P.deskew > 0 and self.P.saveDeskewedRaw):
+
+			# check the binary path and create object
+			binary = llspy.cudabinwrapper.CUDAbin(mainGUI.cudaDeconvPathLineEdit.text())
+
 			# generate all the channel specific cudaDeconv arguments for this item
 			for chan in self.P.cRange:
-				self.__argQueue.append(channel_args(self.E, self.P, chan,
-					binary=mainGUI.cudaDeconvPathLineEdit.text()))
+
+				# generate channel specific options
+				cudaOpts = self.P.copy()
+				cudaOpts['input-dir'] = str(self.E.path)
+				# filter by channel and trange
+				if len(list(self.P.tRange)) == self.E.parameters.nt:
+					cudaOpts['filename-pattern'] = '_ch{}_'.format(chan)
+				else:
+					cudaOpts['filename-pattern'] = '_ch{}_stack{}'.format(chan,
+						llspy.util.pyrange_to_perlregex(self.P.tRange))
+				cudaOpts['otf-file'] = self.P.otfs[chan]
+				cudaOpts['background'] = self.P.background[chan] if not self.P.bFlashCorrect else 0
+				cudaOpts['wavelength'] = float(self.P.wavelength[chan])/1000
+
+				args = binary.assemble_args(**cudaOpts)
+				self.__argQueue.append(args)
+
 			# with the argQueue populated, we can now start the workers
 			if not len(self.__argQueue):
 				self.logUpdate.emit('ERROR: no channel arguments to process in LLSitem')
@@ -854,12 +800,12 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.sig_processing_done.connect(self.on_proc_finished)
 
 		# Restore settings from previous session and show ready status
-		if not osp.isfile(GUIsettings.fileName()):
+		if not osp.isfile(sessionSettings.fileName()):
 			defaultINI = osp.join(thisDirectory, 'guiDefaults.ini')
 			programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 			guirestore(self, programDefaults)
 		else:
-			guirestore(self, GUIsettings)
+			guirestore(self, sessionSettings)
 
 		self.watcherStatus = QtW.QLabel()
 		self.statusBar.insertPermanentWidget(0, self.watcherStatus)
@@ -1111,19 +1057,19 @@ class main_GUI(QtW.QMainWindow, form_class):
 			'bRotate': self.rotateGroupBox.isChecked(),
 			'rotate': (self.rotateOverrideSpinBox.value() if
 							self.rotateOverrideCheckBox.isChecked() else None),
-			'bSaveDeskewedRaw': self.saveDeskewedCheckBox.isChecked(),
+			'saveDeskewedRaw': self.saveDeskewedCheckBox.isChecked(),
 			# 'bsaveDecon': self.saveDeconvolvedCheckBox.isChecked(),
 			'MIP': tuple([int(i) for i in (self.deconXMIPCheckBox.isChecked(),
 								self.deconYMIPCheckBox.isChecked(),
 								self.deconZMIPCheckBox.isChecked())]),
-			'MIPraw': tuple([int(i) for i in (self.deskewedXMIPCheckBox.isChecked(),
+			'rMIP': tuple([int(i) for i in (self.deskewedXMIPCheckBox.isChecked(),
 								self.deskewedYMIPCheckBox.isChecked(),
 								self.deskewedZMIPCheckBox.isChecked())]),
 			'bMergeMIPs': self.deconJoinMIPCheckBox.isChecked(),
 			# 'bMergeMIPsraw': self.deskewedJoinMIPCheckBox.isChecked(),
-			'buint16': ('16' in self.deconvolvedBitDepthCombo.currentText()),
-			'buint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
-			'bBleachCor': self.bleachCorrectionCheckBox.isChecked(),
+			'uint16': ('16' in self.deconvolvedBitDepthCombo.currentText()),
+			'uint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
+			'bleachCorrection': self.bleachCorrectionCheckBox.isChecked(),
 			'bDoRegistration': self.doRegistrationGroupBox.isChecked(),
 			'regRefWave': int(self.channelRefCombo.currentText()),
 			'regMode': self.channelRefModeCombo.currentText(),
@@ -1226,7 +1172,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 			if reply != QtW.QMessageBox.Yes:
 				event.ignore()
 				return
-		guisave(self, GUIsettings)
+		guisave(self, sessionSettings)
 
 		# if currently processing, need to shut down threads...
 		if self.inProcess:

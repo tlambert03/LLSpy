@@ -1,46 +1,81 @@
+from . import config
+
 import os
 import re
 import subprocess
 import warnings
-from . import config
 
-default_cudaBinary = config.__CUDADECON__
+from voluptuous import (All, Any, Coerce, Length, Range, Exclusive, Schema,
+	Required, REMOVE_EXTRA)
+from voluptuous.humanize import validate_with_humanized_errors
 
 
-# TODO: this would probable be better implemented as a voluptuous schema
-# FIXME: passing of the binary is messed up... is it a string?  is it None?
-def assemble_args(binary, indir, filepattern, otf, **options):
-	if not isinstance(binary, CUDAbin):
-		if isinstance(binary, str):
-			try:
-				binary = CUDAbin(binPath=binary)
-			except Exception:
-				CUDAbinException("Not a valid cudaDeconv binary: {}".format(binary))
-		else:
-			binary = CUDAbin()
+intbool = Schema(lambda x: int(bool(x)))
 
-	arglist = [indir, filepattern, otf]
-	for o in options:
-		if binary.has_option_longname(o):
-			if 'MIP' in o:
-				if options[o] is not None and len(options[o]) == 3:
-					arglist.extend(['--' + o, str(options[o][0]),
-						str(options[o][1]), str(options[o][2])])
-			elif isinstance(options[o], bool):
-				if options[o]:
-					arglist.extend(['--' + o])
-			else:
-				arglist.extend(['--' + o, str(options[o])])
-		else:
-			warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
-	return arglist
+
+def dirpath(v):
+	if not os.path.isdir(str(v)):
+		raise ValueError('Not a valid directory')
+	return v
+
+
+def filepath(v):
+	if not os.path.isfile(str(v)):
+		raise ValueError('Not a valid directory')
+	return v
+
+
+cudaDeconSchema = Schema({
+	Required('input-dir'): dirpath,
+	Required('otf-file'): filepath,
+	Required('filename-pattern'): str,
+	'drdata': All(Coerce(float), Range(0.01, 0.5),
+		msg='Data pixel size (drdata) must be float between 0.01 - 0.5'),
+	'dzdata': All(Coerce(float), Range(0, 50),
+		msg='Data Z step size (dzdata) must be float between 0 - 50'),
+	'drpsf': All(Coerce(float), Range(0.01, 0.5),
+		msg='PSF pixel size (drpsf) must be float between 0.01 - 0.5'),
+	'dzpsf': All(Coerce(float), Range(0, 50),
+		msg='PSF Z step size (dzpsf) must be float between 0 - 50'),
+	'wavelength': All(Coerce(float), Range(.3, 1),
+		msg='wavelength must be float between .3 - 1'),
+	'wiener': Any(-1, All(Coerce(float), Range(0, 50))),
+	'background': All(Coerce(int), Range(0, 65535),
+		msg='background must be int between 0 - 65,535'),
+	'napodize': All(Coerce(int), Range(0, 400),
+		msg='napodize must be int between 0 - 400'),
+	'nzblend': All(Coerce(int), Range(0, 100),
+		msg='nzblend must be int between 0 - 100'),
+	'NA': All(Coerce(float), Range(0.2, 1.33),
+		msg='NA must be float between 0.2 - 1.33'),
+	Exclusive('RL', 'iterations'): All(Coerce(int), Range(0, 30),
+		msg='RL (nIters) must be int between 0 - 30'),
+	Exclusive('nIters', 'iterations'): All(Coerce(int), Range(0, 30),
+		msg='RL (nIters) must be int between 0 - 30'),
+	'deskew': All(Coerce(float), Range(-180, 180),
+		msg='deskew angle must be float between -180 and 180'),
+	'width': All(Coerce(int), Range(0, 2000),
+		msg='width must be int between 0 - 2000'),
+	'shift': All(Coerce(int), Range(-1000, 1000),
+		msg='shift must be int between -1000 - 1000'),
+	'rotate': All(Coerce(float), Range(-180, 180),
+		msg='rotate angle must be float between -180 and 180'),
+	'saveDeskewedRaw': Coerce(bool),
+	'crop': All((All(Coerce(int), Range(0, 2000)),), Length(min=6, max=6)),
+	'MIP': All((intbool,), Length(min=3, max=3)),
+	'rMIP': All((intbool,), Length(min=3, max=3)),
+	'uint16': Coerce(bool),
+	'bleachCorrection': Coerce(bool),
+	'DoNotAdjustResForFFT': Coerce(bool),
+}, extra=REMOVE_EXTRA)
 
 
 class CUDAbin(object):
 	"""
 	Wrapper class for Lin Shao's cudaDeconv binary
 	"""
-	def __init__(self, binPath=default_cudaBinary):
+
+	def __init__(self, binPath=config.__CUDADECON__):
 		"""
 		Init the class by optionally giving it a path to an cudaDeconv executable.
 		Otherwise, the class assumes cudaDeconv is the environment PATH variable
@@ -108,7 +143,10 @@ class CUDAbin(object):
 
 	def process(self, indir, filepattern, otf, **options):
 		cmd = [self.path]
-		cmd.extend(assemble_args(self, indir, filepattern, otf, **options))
+		options['input-dir'] = indir
+		options['otf-file'] = otf
+		options['filename-pattern'] = filepattern
+		cmd.extend(self.assemble_args(self, **options))
 		self._run_command(cmd)
 
 	def _run_command(self, cmd):
@@ -179,10 +217,42 @@ class CUDAbin(object):
 		else:
 			print('The flag "{}" is not listed in the help string.'.format(flag))
 
+	def assemble_args(self, **options):
+
+		options = validate_with_humanized_errors(options, cudaDeconSchema)
+
+		arglist = []
+		for o in options:
+			# convert LLSpy variable naming conventions to cudaDeconv names
+			# TODO: consider uniying everything to cudaDeconv?
+			optname = o
+			convert_name = {
+				'nIters': 'RL',
+			}
+			if optname in convert_name:
+				optname = convert_name[optname]
+
+			# assemble the argument list
+			if self.has_option_longname(optname):
+				# expand listed items like --MIP 0 0 0
+				if optname in ('MIP', 'rMIP', 'crop'):
+						arglist.append('--' + optname)
+						[arglist.append(str(i)) for i in options[o]]
+				# booleans only get a single flag
+				elif isinstance(options[o], bool):
+					if options[o]:
+						arglist.extend(['--' + optname])
+				# otherwise just add the argument
+				else:
+					arglist.extend(['--' + optname, str(options[o])])
+			else:
+				warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
+
+		return arglist
+
 	def help(self):
 		"""print the help string provided by cudaDeconv"""
 		print(self.helpstring)
-
 
 
 class CUDAbinException(Exception):

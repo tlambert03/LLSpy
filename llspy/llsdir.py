@@ -8,7 +8,7 @@ from .otf import get_otf_by_date
 from .cudabinwrapper import CUDAbin
 from . import util
 from .camera import CameraParameters
-from . import arrayfun, mipmerge
+from . import arrayfun
 
 from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
 from fiducialreg.fiducialreg import CloudSet
@@ -159,11 +159,11 @@ def process(E, binary=None, **kwargs):
 			'dzdata': P.dzdata,
 			'wavelength': float(P.wavelength[chan])/1000,
 			'deskew': P.deskew,
-			'saveDeskewedRaw': P.bSaveDeskewedRaw,
+			'saveDeskewedRaw': P.saveDeskewedRaw,
 			'MIP': P.MIP,
-			'rMIP': P.MIPraw,
-			'uint16': P.buint16,
-			'bleachCorrection': P.bBleachCor,
+			'rMIP': P.rMIP,
+			'uint16': P.uint16,
+			'bleachCorrection': P.bleachCorrection,
 			'RL': P.nIters,
 			'rotate': P.rotate,
 			'width': P.width,
@@ -189,9 +189,6 @@ def process(E, binary=None, **kwargs):
 
 	if P.bMergeMIPs:
 		E.mergemips()
-	else:
-		for mipfile in E.path.glob('**/*comboMIP_*'):
-			print(mipfile)
 
 	# if P.bMergeMIPsraw:
 	# 	if E.path.joinpath('Deskewed').is_dir():
@@ -201,6 +198,68 @@ def process(E, binary=None, **kwargs):
 		E.compress()
 
 	return response
+
+
+def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True):
+	"""combine folder of MIPs into a single multi-channel time stack.
+	return dict with keys= axes(x,y,z) and values = numpy array
+	"""
+	folder = plib.Path(folder)
+	if not folder.is_dir():
+		raise IOError('MIP folder does not exist: {}'.format(str(folder)))
+
+	try:
+		filelist = []
+		tiffs = []
+		channelCounts = []
+		c = 0
+		while True:
+			channelFiles = sorted(folder.glob('*ch{}_stack*MIP_{}.tif'.format(c, axis)))
+			if not len(channelFiles):
+				break  # no MIPs in this channel
+				# this assumes that there are no gaps in the channels (i.e. ch1, ch3 but not 2)
+			for file in channelFiles:
+				tiffs.append(tf.imread(str(file)))
+				filelist.append(file)
+			channelCounts.append(len(channelFiles))
+			c += 1
+		if not len(filelist):
+			return None  # there were no MIPs for this axis
+		if c > 0:
+			nt = np.max(channelCounts)
+
+			if (len(set(channelCounts)) > 1):
+				raise ValueError('Cannot merge MIPS with different number of '
+					'timepoints per channel')
+			if len(tiffs) != c * nt:
+				raise ValueError('Number of images does not equal nC * nT')
+
+			stack = np.stack(tiffs)
+			stack = stack.reshape((c, 1, nt,
+						stack.shape[-2], stack.shape[-1]))  # TZCYX
+			stack = np.transpose(stack, (2, 1, 0, 3, 4))
+
+		if write:
+			basename = parse.parse_filename(filelist[0], 'basename')
+			suffix = filelist[0].name.split('msecAbs')[1]
+			if 'decon' in str(folder).lower():
+				miptype = '_decon_'
+			elif 'deskewed' in str(folder).lower():
+				miptype = '_deskewed_'
+			else:
+				miptype = '_'
+			suffix = suffix.replace('MIP', miptype + 'comboMIP')
+			outname = basename + suffix
+			util.imsave(stack, str(folder.joinpath(outname)), dx=dx, dt=dt)
+
+		if delete:
+			[file.unlink() for file in filelist if 'comboMIP' not in str(file)]
+
+		return stack
+
+	except ValueError:
+		print("ERROR: failed to merge MIPs from {}".format(str(folder)))
+		print("skipping...\n")
 
 
 class LLSdir(object):
@@ -412,7 +471,7 @@ class LLSdir(object):
 		to this LLSdir instance.
 		accepts any kwargs that are recognized by the LLSParams schema.
 
-		>>> E.localParams(nIters=0, bRotate=True, bBleachCor=True)
+		>>> E.localParams(nIters=0, bRotate=True, bleachCorrection=True)
 		"""
 		P = self.parameters
 		S = schema.procParams(kwargs)
@@ -469,7 +528,7 @@ class LLSdir(object):
 		S.dzFinal = P.dzFinal
 		S.wavelength = P.wavelength
 		S.deskew = P.angle if P.samplescan else 0
-		S.bSaveDeskewedRaw = S.bSaveDeskewedRaw if P.samplescan else False
+		S.saveDeskewedRaw = S.saveDeskewedRaw if P.samplescan else False
 		if S.bRotate:
 			S.rotate = S.rotate if S.rotate is not None else P.angle
 		else:
@@ -496,20 +555,8 @@ class LLSdir(object):
 		# the "**" pattern means this directory and all subdirectories, recursively
 		for MIPdir in subdir.glob('**/MIPs/'):
 			# get dict with keys= axes(x,y,z) and values = numpy array
-			MIPdict = mipmerge.mergemips(MIPdir)
-			if not MIPdict:
-				continue
-			# find all MIP*tifs.
-			filelist = list(MIPdir.glob('*MIP*.tif'))
-			if len(filelist) and len(MIPdict.keys()):
-				# check whether we're in a corrected directory and keep it in the filename
-				cor = 'COR_' if 'COR' in filelist[0].name else ''
-				for axis, array in MIPdict.items():
-					outname = '{}_{}comboMIP_{}.tif'.format(self.basename, cor, axis)
-					util.imsave(array, str(MIPdir.joinpath(outname)),
-						dx=self.parameters.dx, dt=self.parameters.interval[0])
-				if delete:
-					[file.unlink() for file in filelist if 'comboMIP' not in str(file)]
+			for axis in ['z', 'y', 'x']:
+				mergemips(MIPdir, axis, dx=self.parameters.dx, dt=self.parameters.interval[0])
 
 	def process(self, filepattern, otf, indir=None, binary=None, **opts):
 		if binary is None:
