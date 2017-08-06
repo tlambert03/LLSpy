@@ -13,6 +13,7 @@ TODO:
 	* No Settings.txt folder detected, now shows up during camera correction... remove
 	* can't yet abort while doing camera correction
 	* and... if someone deletes or moves a folder while it is being processed... it will hang
+	* probably best to pull log widget out of mainGUI
 
 	* add note about gsettings to readme:
 
