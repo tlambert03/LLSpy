@@ -1,8 +1,8 @@
 from voluptuous import (All, Any, Coerce, Lower, Strip, Length, Range,
 						Schema, Required, PREVENT_EXTRA)
 from voluptuous.humanize import validate_with_humanized_errors
-from llspy.util.util import dotdict
-from llspy.config import config
+from .util import dotdict
+from . import config
 import os
 
 intbool = Schema(lambda x: int(bool(x)))
@@ -164,7 +164,7 @@ def localParams(*args, **kwargs):
 	with defaults filled in when not supplied, that ALSO
 	contains parameters to a specific LLSdir instance.
 
-	returned by llspy.core.llsdir.localParams()
+	returned by llspy.llsdir.localParams()
 	"""
 
 	if len(args) == 1 and isinstance(args[0], dict):

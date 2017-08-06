@@ -1,16 +1,16 @@
 from __future__ import print_function, division
 
-from llspy import plib
-from llspy.config import config
-from llspy.core.settingstxt import LLSsettings
-from llspy.core import parse, compress, schema
-from llspy.core.otf import get_otf_by_date
-from llspy.core.cudabinwrapper import CUDAbin
-from llspy.util import util
-from llspy.camera.camera import CameraParameters
-from llspy.image import arrayfun, mipmerge
+from . import plib
+from . import config
+from .settingstxt import LLSsettings
+from . import parse, compress, schema
+from .otf import get_otf_by_date
+from .cudabinwrapper import CUDAbin
+from . import util
+from .camera import CameraParameters
+from . import arrayfun, mipmerge
 
-from llspy.core.libcudawrapper import deskewGPU, affineGPU, quickDecon
+from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
 from fiducialreg.fiducialreg import CloudSet
 
 import os
@@ -434,13 +434,10 @@ class LLSdir(object):
 		# FIXME:
 		# shouldn't have to get OTF if not deconvolving... though cudaDeconv
 		# may have an issue with this...
-		if S.nIters > 0:
-			otfs = self.get_otfs(otfpath=S.otfDir)
-			S.otfs = [otfs[i] for i in S.cRange]
-			if any([(otf == '' or otf is None) for otf in S.otfs]):
-				raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
-		else:
-			S.otfs = [None for _ in S.cRange]
+		otfs = self.get_otfs(otfpath=S.otfDir)
+		S.otfs = [otfs[i] for i in S.cRange]
+		if S.nIters > 0 and any([(otf == '' or otf is None) for otf in S.otfs]):
+			raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
 
 		# note: background should be forced to 0 if it is getting corrected
 		# in the camera correction step

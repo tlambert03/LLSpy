@@ -1,6 +1,6 @@
 from __future__ import print_function, division
-from llspy.config import config
-from llspy.util import util
+from . import config
+from . import util
 
 import os
 import subprocess

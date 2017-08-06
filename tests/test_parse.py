@@ -2,7 +2,7 @@ import unittest
 import sys
 sys.path.append('..')
 
-from llspy.core import parse
+from llspy import parse
 
 
 class FilenameTests(unittest.TestCase):

@@ -7,8 +7,8 @@ import shutil
 from builtins import input
 
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-from llspy.config import config
-from llspy.core.llsdir import LLSdir, LLSpyError
+from llspy import config
+from llspy.llsdir import LLSdir, LLSpyError
 
 default_otfdir = config.__OTFPATH__
 

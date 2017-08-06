@@ -1,7 +1,7 @@
-from llspy.config import config
-from llspy.core import libcudawrapper as libcu
-from llspy.util.util import imread
-from llspy.image import arrayfun
+from . import config
+from . import libcudawrapper as libcu
+from .util import imread
+from . import arrayfun
 
 import os
 import warnings
@@ -273,8 +273,8 @@ class CameraParameters(object):
 
 if __name__ == '__main__':
 
-	from llspy.core import llsdir
-	from llspy.samples import samples
+	from llspy import llsdir
+	from llspy import samples
 
 	paramfile = samples.camparams  # path to the calibration file
 
