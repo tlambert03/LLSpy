@@ -1,5 +1,5 @@
-from llspy.config import config
-from llspy.core.cudabinwrapper import CUDAbin
+from . import config
+from .cudabinwrapper import CUDAbin
 from llspy import plib
 import re
 import warnings
@@ -70,7 +70,7 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 	otf_dict = get_otf_dict(otfpath)
 	otflist = []
 	if wave not in otf_dict:
-		raise KeyError('Wave: {} not in otfdict: \n{}'.format(wave, otf_dict))
+		raise KeyError('Wave: {} not in otfdict: {}'.format(wave, otf_dict))
 	if mask is not None:
 		if mask in otf_dict[wave]:
 			otflist = otf_dict[wave][mask]

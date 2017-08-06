@@ -498,14 +498,14 @@ class CudaDeconvWorker(QtCore.QObject):
 		self.__abort = True
 
 
-class PreviewWorker(QtCore.QObject):
-	"""docstring for PreviewWorker"""
+class TimePointWorker(QtCore.QObject):
+	"""docstring for TimePointWorker"""
 
 	finished = QtCore.pyqtSignal()
 	previewReady = QtCore.pyqtSignal(np.ndarray)
 
 	def __init__(self, path, tRange, opts):
-		super(PreviewWorker, self).__init__()
+		super(TimePointWorker, self).__init__()
 		self.path = path
 		self.tRange = tRange
 		self.opts = opts
@@ -586,17 +586,21 @@ class LLSitemWorker(QtCore.QObject):
 		self.statusUpdate.emit(
 			'Processing {}: (0 of {})'.format(self.E.basename, self.nFiles))
 
-		# generate all the channel specific cudaDeconv arguments for this item
-		for chan in self.P.cRange:
-			self.__argQueue.append(channel_args(self.E, self.P, chan,
-				binary=mainGUI.cudaDeconvPathLineEdit.text()))
-		# with the argQueue populated, we can now start the workers
-		if not len(self.__argQueue):
-			self.logUpdate.emit('ERROR: no channel arguments to process in LLSitem')
-			self.finished.emit()
-			return
+		# only call cudaDeconv if we need to deskew or deconvolve
+		if self.P.nIters > 0 or (self.P.deskew > 0 and self.P.bSaveDeskewedRaw):
+			# generate all the channel specific cudaDeconv arguments for this item
+			for chan in self.P.cRange:
+				self.__argQueue.append(channel_args(self.E, self.P, chan,
+					binary=mainGUI.cudaDeconvPathLineEdit.text()))
+			# with the argQueue populated, we can now start the workers
+			if not len(self.__argQueue):
+				self.logUpdate.emit('ERROR: no channel arguments to process in LLSitem')
+				self.finished.emit()
+				return
+			self.startCUDAWorkers()
+		else:
+			self.post_process()
 
-		self.startCUDAWorkers()
 		self.timer = QtCore.QTime()
 		self.timer.restart()
 
@@ -616,7 +620,7 @@ class LLSitemWorker(QtCore.QObject):
 			# if len(self.__argQueue)== 0:
 			# 	return
 			if not len(self.__argQueue):
-				break
+				return
 			args = self.__argQueue.pop(0)
 
 			CUDAworker, thread = newWorkerThread(CudaDeconvWorker, idx, args,
@@ -698,6 +702,8 @@ class LLSitemWorker(QtCore.QObject):
 		# 			'Merging raw MIPs: {}'.format(self.E.basename))
 		# 		self.E.mergemips('Deskewed')
 
+		# if we did camera correction, move the resulting processed folders to
+		# the parent folder, and optionally delete the corrected folder
 		if self.P.bFlashCorrect:
 			if self.E.path.name == 'Corrected':
 				parent = self.E.path.parent
@@ -956,7 +962,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 
 		itemPath = self.listbox.item(firstRowSelected, 0).text()
 		opts = self.getValidatedOptions()
-		w, thread = newWorkerThread(PreviewWorker, itemPath, tRange, opts,
+		w, thread = newWorkerThread(TimePointWorker, itemPath, tRange, opts,
 			workerConnect={'previewReady': self.displayPreview}, start=True)
 
 		self.previewthreads = (w, thread)
@@ -984,8 +990,6 @@ class main_GUI(QtW.QMainWindow, form_class):
 		# store current options for this processing run.  ??? Unecessary?
 		self.optionsOnProcessClick = self.getValidatedOptions()
 
-		self.currentItem = self.listbox.item(0, 1).text()
-		self.currentPath = self.listbox.item(0, 0).text()
 		if not self.inProcess:  # so far, only one item allowed processing at a time
 			self.inProcess = True
 			self.disableProcessButton()
@@ -997,11 +1001,12 @@ class main_GUI(QtW.QMainWindow, form_class):
 
 	def process_next_item(self):
 		# get path from first row and create a new LLSdir object
-		nextitem = self.listbox.item(0, 0).text()
+		self.currentItem = self.listbox.item(0, 1).text()
+		self.currentPath = self.listbox.item(0, 0).text()
 		idx = 0  # might use this later to spawn more threads
 		opts = self.optionsOnProcessClick
-		LLSworker, thread = newWorkerThread(LLSitemWorker, idx, nextitem, opts,
-			workerConnect={
+		LLSworker, thread = newWorkerThread(LLSitemWorker, idx, self.currentPath,
+			opts, workerConnect={
 				'finished': self.on_item_finished,
 				'statusUpdate': self.statusBar.showMessage,
 				'logUpdate': self.log.append,

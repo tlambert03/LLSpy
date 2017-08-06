@@ -12,7 +12,7 @@ elif sys.platform.startswith('linux'):
 
 
 curdir = os.path.dirname(__file__)
-dylib = os.path.join(curdir, '..', '..', 'lib', libname)
+dylib = os.path.join(curdir, '..', 'lib', libname)
 #dylib = '/Users/talley/Dropbox (HMS)/CBMF/Equipment/lattice/software/cudaDeconDeskew/build/libcudadecon.so'
 cudaLib = ctypes.cdll.LoadLibrary(dylib)
 
@@ -79,7 +79,6 @@ try:
 	get_output_nx = cudaLib.get_output_nx
 	get_output_ny = cudaLib.get_output_ny
 	get_output_nz = cudaLib.get_output_nz
-
 
 	# The actual decon
 	RL_interface = cudaLib.RL_interface

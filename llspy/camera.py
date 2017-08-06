@@ -1,7 +1,7 @@
-from llspy.config import config
-from llspy.core import libcudawrapper as libcu
-from llspy.util.util import imread
-from llspy.image import arrayfun
+from . import config
+from . import libcudawrapper as libcu
+from .util import imread
+from . import arrayfun
 
 import os
 import warnings

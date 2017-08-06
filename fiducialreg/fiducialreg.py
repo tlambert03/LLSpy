@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # fiducialreg.py
 #
-# Copyright (c) 2017, Talley LAmbert
+# Copyright (c) 2017, Talley Lambert
 # Copyright (c) 2008-2016, The President and Fellows of Harvard College
 # Produced at the Cell Biology Microscopy Facility, HMS
 # All rights reserved.
