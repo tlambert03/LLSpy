@@ -14,6 +14,12 @@ class dotdict(dict):
 	def __dir__(self):
 		return self.keys()
 
+def pathHasPattern(path, pattern='*Settings.txt'):
+	for file in os.listdir(path):
+		if fnmatch.fnmatch(file, pattern):
+			return True
+	return False
+
 
 def imread(*args, **kwargs):
 	with warnings.catch_warnings():
