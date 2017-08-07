@@ -4,7 +4,6 @@ from __future__ import print_function, division
 import os
 import os.path as osp
 import shutil
-import glob
 import logging
 import inspect
 import sys
@@ -16,17 +15,18 @@ import re
 thisDirectory = osp.dirname(osp.abspath(__file__))
 sys.path.append(osp.dirname(osp.dirname(thisDirectory)))
 import llspy
-import imdisplay
+from llspy.gui.main_gui import Ui_Main_GUI
+from llspy.gui.imdisplay import imshow3D
 
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
 from PyQt5 import QtCore, QtGui, uic
 from PyQt5 import QtWidgets as QtW
 # import sys
 # sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)),'..'))
 
 thisDirectory = osp.dirname(osp.abspath(__file__))
-form_class = uic.loadUiType(osp.join(thisDirectory, 'main_gui.ui'))[0]
+#Ui_Main_GUI = uic.loadUiType(osp.join(thisDirectory, 'main_gui.ui'))[0]
 # form_class = uic.loadUiType('./llspy/gui/main_gui.ui')[0]  # for debugging
 
 # platform independent settings file
@@ -35,12 +35,18 @@ QtCore.QCoreApplication.setOrganizationDomain("llspy.com")
 sessionSettings = QtCore.QSettings("LLSpy", "LLSpyGUI")
 defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
 
+# programDefaults are provided in guiDefaults.ini as a reasonable starting place
+# this line finds the relative path depending on whether we're running in a
+# pyinstaller bundle or live.
+defaultINI = llspy.util.getAbsoluteResourcePath('gui/guiDefaults.ini')
+programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
+
 
 class ExceptionHandler(QtCore.QObject):
 
 	errorSignal = QtCore.pyqtSignal()
 	silentSignal = QtCore.pyqtSignal()
-	schemaError = QtCore.pyqtSignal(str, str)
+	errorMessage = QtCore.pyqtSignal(str, str)
 
 	def __init__(self):
 		super(ExceptionHandler, self).__init__()
@@ -53,13 +59,25 @@ class ExceptionHandler(QtCore.QObject):
 		# when app raises uncaught exception, print info
 		# traceback.print_exc()
 		if errorType.__module__ == 'voluptuous.error':
-			self.schemaError.emit(str(errValue), "".join(traceback.format_tb(tback)))
-			return
-		print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-		print(traceback.print_tb(tback) + "\n")
-		print(errValue)
-		print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+			msgSplit = str(errValue).split('for dictionary value @ data')
+			customMsg = msgSplit[0].strip()
+			if len(customMsg) and customMsg != 'not a valid value':
+				self.errorMessage.emit(customMsg, '')
+			else:
+				errorKey = msgSplit[1].split("'")[1]
+				gotValue = msgSplit[1].split("'")[3]
+				schemaDefaults = llspy.schema.__defaults__
+				itemDescription = schemaDefaults[errorKey][1]
+				report = "Not a valid value for: {}\n\n".format(errorKey)
+				report += "({})".format(itemDescription)
+				self.errorMessage.emit(report, "Got value: {}".format(gotValue))
+		else:
+			self.errorMessage.emit(str(errValue), '')
 
+		print("!" * 50)
+		traceback.print_tb(tback)
+		print(errValue)
+		print("!" * 50)
 
 def byteArrayToString(bytearr):
 	if sys.version_info.major < 3:
@@ -429,6 +447,7 @@ class TimePointWorker(QtCore.QObject):
 
 	finished = QtCore.pyqtSignal()
 	previewReady = QtCore.pyqtSignal(np.ndarray)
+	error = QtCore.pyqtSignal()
 
 	def __init__(self, path, tRange, opts):
 		super(TimePointWorker, self).__init__()
@@ -439,8 +458,14 @@ class TimePointWorker(QtCore.QObject):
 	@QtCore.pyqtSlot()
 	def work(self):
 		E = llspy.LLSdir(self.path)
-		previewStack = llspy.llsdir.preview(E, self.tRange, **self.opts)
-		self.previewReady.emit(previewStack)
+		try:
+			previewStack = llspy.llsdir.preview(E, self.tRange, **self.opts)
+			self.previewReady.emit(previewStack)
+		except Exception:
+			(excepttype, value, traceback) = sys.exc_info()
+			sys.excepthook(excepttype, value, traceback)
+			self.error.emit()
+
 		self.finished.emit()
 
 
@@ -502,7 +527,7 @@ class LLSitemWorker(QtCore.QObject):
 
 		if self.P.bFlashCorrect:
 			self.statusUpdate.emit('Correcting Flash artifact on {}'.format(self.E.basename))
-			self.E.correct_flash(trange=self.P.tRange,
+			self.E.correct_flash(trange=self.P.tRange, camparams=self.P.camparamsPath,
 				median=self.P.bMedianCorrect, target=self.P.flashCorrectTarget)
 			self.E.path = self.E.path.joinpath('Corrected')
 
@@ -516,8 +541,14 @@ class LLSitemWorker(QtCore.QObject):
 		# only call cudaDeconv if we need to deskew or deconvolve
 		if self.P.nIters > 0 or (self.P.deskew > 0 and self.P.saveDeskewedRaw):
 
-			# check the binary path and create object
-			binary = llspy.cudabinwrapper.CUDAbin(mainGUI.cudaDeconvPathLineEdit.text())
+			try:
+				# check the binary path and create object
+				binary = llspy.cudabinwrapper.CUDAbin(mainGUI.cudaDeconvPathLineEdit.text())
+			except Exception:
+				(excepttype, value, traceback) = sys.exc_info()
+				sys.excepthook(excepttype, value, traceback)
+				self.error.emit()
+				return
 
 			# generate all the channel specific cudaDeconv arguments for this item
 			for chan in self.P.cRange:
@@ -658,10 +689,10 @@ class LLSitemWorker(QtCore.QObject):
 					if subd.exists():
 						target = parent.joinpath(d)
 						if target.exists():
-							shutil.rmtree(target)
-						subd.rename(target)
+							shutil.rmtree(str(target))
+						subd.rename(str(target))
 				if not self.P.bSaveCorrected:
-					shutil.rmtree(self.E.path)
+					shutil.rmtree(str(self.E.path))
 					self.E.path = parent
 
 		if self.P.bCompress:
@@ -683,14 +714,39 @@ class LLSitemWorker(QtCore.QObject):
 			self.finished.emit()
 
 
-class MyHandler(FileSystemEventHandler, QtCore.QObject):
+class ActiveHandler(RegexMatchingEventHandler, QtCore.QObject):
+
+	timepointReady = QtCore.pyqtSignal(int)
+
+	def on_created(self, event):
+		# Called when a file or directory is created.
+		print(llspy.parse.parse_filename(osp.basename(event.src_path)))
+
+
+class ActiveWatcher(QtCore.QObject):
+	"""docstring for ActiveWatcher"""
+
+	def __init__(self, path):
+		super(ActiveWatcher, self).__init__()
+		self.watchdir = path
+		self.tQueue = []
+		# Too strict?
+		fpattern = '^.+_ch\d_stack\d{4}_\D*\d+.*_\d{7}msec_\d{10}msecAbs.*.tif'
+		# fpattern = '.*.tif'
+		self.handler = ActiveHandler(regexes=[fpattern], ignore_directories=True)
+		self.handler.timepointReady.connect(self.tQueue.append)
+		self.observer = Observer()
+		self.observer.schedule(self.handler, self.watchdir, recursive=False)
+		self.observer.start()
+
+
+class MainHandler(FileSystemEventHandler, QtCore.QObject):
 
 	foundLLSdir = QtCore.pyqtSignal(str)
 	lostListItem = QtCore.pyqtSignal(str)
-	processRequest = QtCore.pyqtSignal()
 
 	def __init__(self):
-		super(MyHandler, self).__init__()
+		super(MainHandler, self).__init__()
 
 	def on_created(self, event):
 		# Called when a file or directory is created.
@@ -699,7 +755,6 @@ class MyHandler(FileSystemEventHandler, QtCore.QObject):
 		else:
 			if 'Settings.txt' in event.src_path:
 				self.foundLLSdir.emit(osp.dirname(event.src_path))
-				self.processRequest.emit()
 
 	def on_deleted(self, event):
 		# Called when a file or directory is created.
@@ -709,7 +764,7 @@ class MyHandler(FileSystemEventHandler, QtCore.QObject):
 				self.lostListItem.emit(event.src_path)
 
 
-class main_GUI(QtW.QMainWindow, form_class):
+class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 	"""docstring for main_GUI"""
 
 	sig_abort_LLSworkers = QtCore.pyqtSignal()
@@ -725,6 +780,8 @@ class main_GUI(QtW.QMainWindow, form_class):
 		self.aborted = False  # current abort status
 		self.inProcess = False
 		self.observer = None  # for watching the watchdir
+		self.activeWatchers = []
+		self.watchMode = 1  # 1 is active mode, 0 means folders are 'done' when dropped
 
 		# delete  reintroduce custom LLSDragDropTable
 		self.listbox.setParent(None)
@@ -801,8 +858,6 @@ class main_GUI(QtW.QMainWindow, form_class):
 
 		# Restore settings from previous session and show ready status
 		if not osp.isfile(sessionSettings.fileName()):
-			defaultINI = osp.join(thisDirectory, 'guiDefaults.ini')
-			programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 			guirestore(self, programDefaults)
 		else:
 			guirestore(self, sessionSettings)
@@ -821,13 +876,23 @@ class main_GUI(QtW.QMainWindow, form_class):
 		if osp.isdir(self.watchdir):
 			self.log.append('Starting watcher on {}'.format(self.watchdir))
 			self.watcherStatus.setText("👁 {}".format(osp.basename(self.watchdir)))
-			self.watchHandler = MyHandler()
-			self.watchHandler.foundLLSdir.connect(self.listbox.addPath)
+			self.watchHandler = MainHandler()
+			self.watchHandler.foundLLSdir.connect(self.on_watcher_found_item)
 			self.watchHandler.lostListItem.connect(self.listbox.removePath)
-			self.watchHandler.processRequest.connect(self.onProcess)
 			self.observer = Observer()
 			self.observer.schedule(self.watchHandler, self.watchdir, recursive=True)
 			self.observer.start()
+
+	@QtCore.pyqtSlot(str)
+	def on_watcher_found_item(self, path):
+		if self.watchMode > 0:
+			# in this mode, we assume more is coming (like during live acquisition)
+			activeWatcher = ActiveWatcher(path)
+			self.activeWatchers.append(activeWatcher)
+		else:
+			# watchMode 0 assumes folders are completely finished when dropped
+			self.listbox.addPath(path)
+			self.onProcess()
 
 	@QtCore.pyqtSlot()
 	def stopWatcher(self):
@@ -909,8 +974,11 @@ class main_GUI(QtW.QMainWindow, form_class):
 		itemPath = self.listbox.item(firstRowSelected, 0).text()
 		opts = self.getValidatedOptions()
 		w, thread = newWorkerThread(TimePointWorker, itemPath, tRange, opts,
-			workerConnect={'previewReady': self.displayPreview}, start=True)
-
+			workerConnect={
+			'previewReady': self.displayPreview,
+			#'error': self.abort_workers
+			}, start=True)
+		w.finished.connect(lambda: self.previewButton.setEnabled(True))
 		self.previewthreads = (w, thread)
 
 	@QtCore.pyqtSlot(np.ndarray)
@@ -918,9 +986,8 @@ class main_GUI(QtW.QMainWindow, form_class):
 		# FIXME:  pyplot should not be imported in pyqt
 		# use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
 		import matplotlib.pyplot as plt
-		imdisplay.imshow3D(array, cmap='gray', interpolation='nearest')
+		imshow3D(array, cmap='gray', interpolation='nearest')
 		plt.show()
-		self.previewButton.setEnabled(True)
 
 	def onProcess(self):
 		# prevent additional button clicks which processing
@@ -936,7 +1003,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 		# store current options for this processing run.  ??? Unecessary?
 		self.optionsOnProcessClick = self.getValidatedOptions()
 
-		if not self.inProcess:  # so far, only one item allowed processing at a time
+		if not self.inProcess:  # for now, only one item allowed processing at a time
 			self.inProcess = True
 			self.disableProcessButton()
 			self.process_next_item()
@@ -1074,6 +1141,7 @@ class main_GUI(QtW.QMainWindow, form_class):
 			'regRefWave': int(self.channelRefCombo.currentText()),
 			'regMode': self.channelRefModeCombo.currentText(),
 			'otfDir': self.otfFolderLineEdit.text(),
+			'camparamsPath': self.camParamTiffLineEdit.text(),
 			'bCompress': self.compressRawCheckBox.isChecked(),
 			'bReprocess': False,
 			'width': self.cropWidthSpinBox.value(),
@@ -1141,25 +1209,13 @@ class main_GUI(QtW.QMainWindow, form_class):
 			[self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
 
 	@QtCore.pyqtSlot(str, str)
-	def post_validation_error(self, errMsg, tbackstring):
-		schemaDefaults = llspy.schema.__defaults__
-		schemaerrRX = re.compile(r'.*data\[(?P<dictItem>.+)\]. Got (?P<gotValue>.+)')
-		gd = schemaerrRX.search(errMsg)
+	def show_general_error(self, errMsg, msgtext):
 		self.msgBox = QtW.QMessageBox()
 		self.msgBox.setIcon(QtW.QMessageBox.Warning)
-		self.msgBox.setText("Validation Error")
-
-		if gd:
-			item = gd.groupdict()['dictItem']
-			value = gd.groupdict()['gotValue']
-			msgtext = "Not a valid entry for {}.\nGot: {}\n\nDescription: {}\nDefault: {}".format(
-					item, value, schemaDefaults[item.strip("'")][1], schemaDefaults[item.strip("'")][0])
-		else:
-			msgtext = errMsg
-
-		self.msgBox.setInformativeText(msgtext)
-		self.msgBox.setWindowTitle("Schema Error Window")
-		self.msgBox.setDetailedText(tbackstring)
+		self.msgBox.setText(errMsg)
+		if msgtext is not '':
+			self.msgBox.setInformativeText(msgtext)
+		self.msgBox.setWindowTitle("LLSpy Error")
 		self.msgBox.show()
 
 	def closeEvent(self, event):
@@ -1192,6 +1248,6 @@ if __name__ == "__main__":
 
 	exceptionHandler = ExceptionHandler()
 	sys.excepthook = exceptionHandler.handler
-	exceptionHandler.schemaError.connect(mainGUI.post_validation_error)
+	exceptionHandler.errorMessage.connect(mainGUI.show_general_error)
 
 	sys.exit(app.exec_())

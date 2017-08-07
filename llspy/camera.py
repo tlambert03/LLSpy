@@ -11,7 +11,7 @@ import math
 
 
 # #THIS ONE WORKS BEST SO FAR
-@jit(nopython=True, nogil=True, cache=True)
+@jit(nopython=True, nogil=True)
 def calc_correction(stack, a, b, offset):
 	res = np.empty_like(stack)
 	for i in range(stack.shape[0]):

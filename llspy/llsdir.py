@@ -240,7 +240,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True):
 			stack = np.transpose(stack, (2, 1, 0, 3, 4))
 
 		if write:
-			basename = parse.parse_filename(filelist[0], 'basename')
+			basename = parse.parse_filename(str(filelist[0]), 'basename')
 			suffix = filelist[0].name.split('msecAbs')[1]
 			if 'decon' in str(folder).lower():
 				miptype = '_decon_'
@@ -628,8 +628,12 @@ class LLSdir(object):
 		"""
 		if not self.has_settings:
 			raise LLSpyError('Cannot correct flash pixels without settings.txt file')
-		if camparams is None:
-			camparams = CameraParameters()
+		if not isinstance(camparams, CameraParameters):
+			if isinstance(camparams, str):
+				camparams = CameraParameters(camparams)
+			else:
+				camparams = CameraParameters()
+
 		if not np.all(camparams.roi == self.settings.camera.roi):
 			try:
 				camparams = camparams.get_subroi(self.settings.camera.roi)
