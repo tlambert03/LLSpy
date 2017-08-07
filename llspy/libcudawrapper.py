@@ -3,18 +3,32 @@ import numpy as np
 import os
 import sys
 
+# can't seem to not have this in there for pyinstaller...
+try:
+	cudaLib = ctypes.CDLL('libcudaDeconv.dylib')
+except Exception:
+	pass
+
+# get specific library by platform
 if sys.platform.startswith('darwin'):
 	libname = 'libcudaDeconv.dylib'
 elif sys.platform.startswith('win32'):
 	libname = 'libcudaDeconv.dll'
-elif sys.platform.startswith('linux'):
+else:
 	libname = 'libcudaDeconv.so'
 
-
-curdir = os.path.dirname(__file__)
-dylib = os.path.join(curdir, '..', 'lib', libname)
-#dylib = '/Users/talley/Dropbox (HMS)/CBMF/Equipment/lattice/software/cudaDeconDeskew/build/libcudadecon.so'
-cudaLib = ctypes.cdll.LoadLibrary(dylib)
+# by defatul ctypes uses ctypes.util.find_library() which will search
+# the LD_LIBRARY_PATH or DYLD_LIBRARY_PATH for the library name
+# this method is preferable for bundling the app with pyinstaller
+# however, for ease of development, we fall back on the local libraries
+# in llspy/lib
+#cudaLib = ctypes.CDLL('libcudaDeconv.dylib')
+try:
+	cudaLib = ctypes.CDLL(libname)
+except OSError:
+	curdir = os.path.dirname(__file__)
+	sharelib = os.path.abspath(os.path.join(curdir, '..', 'lib', libname))
+	cudaLib = ctypes.CDLL(sharelib)
 
 try:
 	# Deskew is used when no decon is desired
@@ -192,11 +206,16 @@ def rotateGPU(im, angle=32.5, xzRatio=0.4253, reverse=False):
 	return rotated
 
 
-def quickDecon(im, otfpath, **kwargs):
+def quickDecon(im, otfpath, savedeskew=False, **kwargs):
 	RL_init(im.shape, otfpath, **kwargs)
-	decon_result = RL_decon(im, savedeskew=False, **kwargs)
-	RL_cleanup()
-	return decon_result
+	if savedeskew:
+		decon_result, deskew_result = RL_decon(im, savedeskew=True, **kwargs)
+		RL_cleanup()
+		return decon_result, deskew_result
+	else:
+		decon_result = RL_decon(im, savedeskew=False, **kwargs)
+		RL_cleanup()
+		return decon_result
 
 
 def RL_init(rawdata_shape, otfpath, drdata=0.104, dzdata=0.5, drpsf=0.104,
