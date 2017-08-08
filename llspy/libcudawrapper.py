@@ -2,16 +2,17 @@ import ctypes
 import numpy as np
 import os
 import sys
+from . import util
 
-# can't seem to not have this in there for pyinstaller...
-try:
-	cudaLib = ctypes.CDLL('libcudaDeconv.dylib')
-except Exception:
-	pass
 
 # get specific library by platform
 if sys.platform.startswith('darwin'):
 	libname = 'libcudaDeconv.dylib'
+	# this seems to be necessary for pyinstaller to find it?
+	try:
+		ctypes.CDLL('libcudaDeconv.dylib')
+	except Exception:
+		pass
 elif sys.platform.startswith('win32'):
 	libname = 'libcudaDeconv.dll'
 else:
@@ -22,13 +23,19 @@ else:
 # this method is preferable for bundling the app with pyinstaller
 # however, for ease of development, we fall back on the local libraries
 # in llspy/lib
-#cudaLib = ctypes.CDLL('libcudaDeconv.dylib')
+
+# if getattr(sys, 'frozen', False) and sys.platform.startswith('darwin'):
+# 	#libname = os.path.join('lib', libname)
+# 	libname = util.getAbsoluteResourcePath(libname)
+# 	print("BUNDLED libcudaDeconv library path: {}".format(libname))
+
 try:
 	cudaLib = ctypes.CDLL(libname)
 except OSError:
 	curdir = os.path.dirname(__file__)
 	sharelib = os.path.abspath(os.path.join(curdir, '..', 'lib', libname))
 	cudaLib = ctypes.CDLL(sharelib)
+
 
 try:
 	# Deskew is used when no decon is desired
@@ -227,6 +234,7 @@ def RL_init(rawdata_shape, otfpath, drdata=0.104, dzdata=0.5, drpsf=0.104,
 
 def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
 	rescale=False, **kwargs):
+	print('libcudaRL_decon called')
 	nz, ny, nx = im.shape
 	decon_result = np.empty((get_output_nz(), get_output_ny(),
 			get_output_nx()), dtype=np.float32)
