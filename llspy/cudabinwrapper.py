@@ -135,7 +135,7 @@ class CUDAbin(object):
 		If the 'cudaDeconv -h' command failed
 		"""
 		if os.path.isfile(binPath) and os.access(binPath, os.X_OK):
-			self._run_command((binPath + " -h").split())
+			self._run_command([binPath, '-h'])
 			return True
 		else:
 			raise CUDAbinException(
@@ -167,8 +167,7 @@ class CUDAbin(object):
 		query the binary help output and output a list of possible flags
 		and descriptions
 		"""
-		cmd = self.path + " -h "
-		h = self._run_command(cmd.split())
+		h = self._run_command([self.path, '-h'])
 		self.helpstring = h.output.decode('utf-8')
 		H = self.helpstring.splitlines()
 		options = [re.findall('[^A-Za-z1-9]-[1-9a-zA-Z-]+', i) for i in H]
