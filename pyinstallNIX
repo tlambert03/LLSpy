@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+rm -rf ./distOSX
+rm -rf ./buildOSX
+pyinstaller  --noconfirm --clean \
+	--distpath=./distOSX \
+	--workpath=./buildOSX \
+	--upx-dir="/usr/bin/" \
+	llspygui.spec

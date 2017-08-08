@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+export DYLD_LIBRARY_PATH="/Users/talley/DropboxHMS/Python/llspy2/lib/:$DYLD_LIBRARY_PATH"
+rm -rf ./distOSX
+rm -rf ./buildOSX
+pyinstaller  --noconfirm --clean \
+	--distpath=./distOSX \
+	--workpath=./buildOSX \
+	--upx-dir="/usr/local/bin/" \
+	llspygui.spec
