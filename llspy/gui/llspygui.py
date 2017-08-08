@@ -34,13 +34,14 @@ QtCore.QCoreApplication.setOrganizationName("LLSpy")
 QtCore.QCoreApplication.setOrganizationDomain("llspy.com")
 sessionSettings = QtCore.QSettings("LLSpy", "LLSpyGUI")
 defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
-
 # programDefaults are provided in guiDefaults.ini as a reasonable starting place
 # this line finds the relative path depending on whether we're running in a
 # pyinstaller bundle or live.
 defaultINI = llspy.util.getAbsoluteResourcePath('gui/guiDefaults.ini')
 programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 
+if getattr(sys, 'frozen', False):
+	print("frozen mode.  MEIPASS = {}".format(sys._MEIPASS))
 
 class ExceptionHandler(QtCore.QObject):
 
@@ -143,7 +144,7 @@ def guirestore(widget, settings):
 	for name, obj in inspect.getmembers(widget):
 		try:
 			if isinstance(obj, QtW.QComboBox):
-				value = (settings.value(name))
+				value = settings.value(name, defaultSettings.value(name), type=str)
 				if value == "":
 					continue
 				index = obj.findText(value)  # get the corresponding index for specified string in combobox
@@ -152,23 +153,23 @@ def guirestore(widget, settings):
 					index = obj.findText(value)
 					obj.setCurrentIndex(index)
 				else:
-					obj.setCurrentIndex(index)  # preselect a combobox value by index
+					obj.setCurrentIndex(index)
 			if isinstance(obj, QtW.QLineEdit):
-				value = settings.value(name, type=str)  # get stored value from registry
-				obj.setText(value)  # restore lineEditFile
+				value = settings.value(name, defaultSettings.value(name), type=str)
+				obj.setText(value)
 			if isinstance(obj,
 				(QtW.QCheckBox, QtW.QRadioButton, QtW.QGroupBox)):
-				value = settings.value(name, type=bool)  # get stored value from registry
+				value = settings.value(name, defaultSettings.value(name), type=bool)
 				if value is not None:
-					obj.setChecked(value)  # restore checkbox
+					obj.setChecked(value)
 			if isinstance(obj, (QtW.QSlider, QtW.QSpinBox)):
-				value = settings.value(name, type=int)    # get stored value from registry
+				value = settings.value(name, defaultSettings.value(name), type=int)
 				if value is not None:
-					obj.setValue(value)   # restore value from registry
+					obj.setValue(value)
 			if isinstance(obj, (QtW.QDoubleSpinBox,)):
-				value = settings.value(name, type=float)    # get stored value from registry
+				value = settings.value(name, defaultSettings.value(name), type=float)
 				if value is not None:
-					obj.setValue(value)   # restore value from registry
+					obj.setValue(value)
 		except Exception:
 			logging.warn('Unable to restore settings for object: {}'.format(name))
 
@@ -357,7 +358,7 @@ def newWorkerThread(workerClass, *args, **kwargs):
 
 class CudaDeconvWorker(QtCore.QObject):
 
-	file_finished = QtCore.pyqtSignal(int, str)  # worker id, filename
+	file_finished = QtCore.pyqtSignal(int)  # worker id, filename
 	finished = QtCore.pyqtSignal(int)  # worker id: emitted at end of work()
 	logUpdate = QtCore.pyqtSignal(str)  # message to be shown to user
 
@@ -417,10 +418,8 @@ class CudaDeconvWorker(QtCore.QObject):
 		while self.process.canReadLine():
 			line = self.process.readLine()
 			line = byteArrayToString(line)
-			if "Output:" in line:
-				path = line.split("Output:")[1]
-				base = osp.basename(path.strip())
-				self.file_finished.emit(self.__id, base)
+			if "*** Finished!" in line or "Output:" in line:
+				self.file_finished.emit(self.__id)
 			else:
 				self.logUpdate.emit(line.rstrip())
 
@@ -472,7 +471,7 @@ class TimePointWorker(QtCore.QObject):
 class LLSitemWorker(QtCore.QObject):
 	NUM_CUDA_THREADS = 1
 	sig_abort = QtCore.pyqtSignal()
-	file_finished = QtCore.pyqtSignal(int, str)  # worker id, filename
+	file_finished = QtCore.pyqtSignal(int)  # worker id, filename
 	sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
 	finished = QtCore.pyqtSignal()
 	statusUpdate = QtCore.pyqtSignal(str)  # update mainGUI status
@@ -618,12 +617,8 @@ class LLSitemWorker(QtCore.QObject):
 			# start the thread
 			thread.start()
 
-	def on_file_finished(self, worker_id, filename):
-		# send report to the log window
-		gd = llspy.parse.parse_filename(filename)
-		report = "finished {}: channel: {} time: {}".format(
-			gd['basename'], gd['channel'], gd['stack'])
-		self.logUpdate.emit(report)
+	@QtCore.pyqtSlot(int)
+	def on_file_finished(self, worker_id):
 		# update status bar
 		self.nFiles_done = self.nFiles_done+1
 		self.statusUpdate.emit('Processing {}: ({} of {})'.format(
@@ -857,10 +852,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 		self.sig_processing_done.connect(self.on_proc_finished)
 
 		# Restore settings from previous session and show ready status
-		if not osp.isfile(sessionSettings.fileName()):
-			guirestore(self, programDefaults)
-		else:
-			guirestore(self, sessionSettings)
+		guirestore(self, sessionSettings)
 
 		self.watcherStatus = QtW.QLabel()
 		self.statusBar.insertPermanentWidget(0, self.watcherStatus)
@@ -915,7 +907,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 			self.startWatcher()
 
 	def saveCurrentAsDefault(self):
-		if osp.isfile(defaultSettings.fileName()):
+		if len(defaultSettings.childKeys()):
 			reply = QtW.QMessageBox.question(self, 'Save Settings',
 				"Overwrite existing default GUI settings?",
 				QtW.QMessageBox.Yes | QtW.QMessageBox.No,
@@ -925,7 +917,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 		guisave(self, defaultSettings)
 
 	def loadDefaultSettings(self):
-		if not osp.isfile(defaultSettings.fileName()):
+		if not len(defaultSettings.childKeys()):
 			reply = QtW.QMessageBox.information(self, 'Load Settings',
 				"Default settings have not yet been saved.  Use Save Settings")
 			if reply != QtW.QMessageBox.Yes:
@@ -1198,9 +1190,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
 	def concatenateSelected(self):
 		selectedPaths = self.listbox.selectedPaths()
-		llspy.llsdir.concatenate_folders(selectedPaths)
-		[self.listbox.removePath(p) for p in selectedPaths]
-		[self.listbox.addPath(p) for p in selectedPaths]
+		if len(selectedPaths) > 1:
+			llspy.llsdir.concatenate_folders(selectedPaths)
+			[self.listbox.removePath(p) for p in selectedPaths]
+			[self.listbox.addPath(p) for p in selectedPaths]
 
 	def renameSelected(self):
 		for item in self.listbox.selectedPaths():
