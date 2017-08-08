@@ -20,6 +20,12 @@ TODO:
 	    - sudo mv ~/anaconda3/bin/gsettings ~/anaconda3/bin/gsettingsBAK
 
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  File "llspy\gui\llspygui.py", line 969, in onPreview
+  File "llspy\gui\llspygui.py", line 1135, in getValidatedOptions
+invalid literal for int() with base 10: ''
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 User options:
 
