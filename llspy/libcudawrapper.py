@@ -33,7 +33,7 @@ try:
 	cudaLib = ctypes.CDLL(libname)
 except OSError:
 	curdir = os.path.dirname(__file__)
-	sharelib = os.path.abspath(os.path.join(curdir, '..', 'lib', libname))
+	sharelib = os.path.abspath(os.path.join(curdir, os.pardir, 'lib', libname))
 	cudaLib = ctypes.CDLL(sharelib)
 
 
