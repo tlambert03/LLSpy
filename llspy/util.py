@@ -123,6 +123,8 @@ def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
 
 def getAbsoluteResourcePath(relativePath):
 	""" Load relative path, in an environment agnostic way"""
+	import sys
+
 	try:
 		# PyInstaller stores data files in a tmp folder refered to as _MEIPASS
 		basePath = sys._MEIPASS
