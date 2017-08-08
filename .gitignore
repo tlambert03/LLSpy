@@ -102,3 +102,7 @@ ENV/
 /_assets
 
 /_notes
+
+build*
+
+dist*
