@@ -36,7 +36,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -1525,7 +1525,7 @@
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="1" column="2">
+        <item row="2" column="2">
          <widget class="QLineEdit" name="radialftPathLineEdit">
           <property name="text">
            <string>/usr/local/radialft</string>
@@ -1535,7 +1535,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
+        <item row="4" column="0">
          <widget class="QLabel" name="camParamTiffLabel">
           <property name="text">
            <string>CameraParam Tiff</string>
@@ -1548,7 +1548,7 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="6">
+        <item row="1" column="6">
          <widget class="QToolButton" name="cudaDeconvPathToolButton">
           <property name="text">
            <string>...</string>
@@ -1558,7 +1558,7 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
+        <item row="1" column="0">
          <widget class="QLabel" name="cudaDeconvPathLabel">
           <property name="text">
            <string>cudaDeconv binary</string>
@@ -1571,7 +1571,7 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
+        <item row="1" column="2">
          <widget class="QLineEdit" name="cudaDeconvPathLineEdit">
           <property name="text">
            <string>/usr/local/cudaDeconv</string>
@@ -1581,21 +1581,21 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="6">
+        <item row="3" column="6">
          <widget class="QToolButton" name="otfFolderToolButton">
           <property name="text">
            <string>...</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="6">
+        <item row="4" column="6">
          <widget class="QToolButton" name="camParamTiffToolButton">
           <property name="text">
            <string>...</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="radialftPathLabel">
           <property name="text">
            <string>radialft binary</string>
@@ -1608,7 +1608,7 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="defaultRegCalibPathLabel">
           <property name="text">
            <string>Default Reg Calib</string>
@@ -1621,14 +1621,14 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="6">
+        <item row="2" column="6">
          <widget class="QToolButton" name="radialftPathToolButton">
           <property name="text">
            <string>...</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="2">
+        <item row="3" column="2">
          <widget class="QLineEdit" name="otfFolderLineEdit">
           <property name="text">
            <string/>
@@ -1641,7 +1641,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="2">
+        <item row="4" column="2">
          <widget class="QLineEdit" name="camParamTiffLineEdit">
           <property name="text">
            <string/>
@@ -1654,7 +1654,7 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="2">
+        <item row="5" column="2">
          <widget class="QLineEdit" name="defaultRegCalibPathLineEdit">
           <property name="text">
            <string/>
@@ -1664,14 +1664,14 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="6">
+        <item row="5" column="6">
          <widget class="QToolButton" name="defaultRegCalibPathToolButton">
           <property name="text">
            <string>...</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <widget class="QLabel" name="otfFolderPathLabel">
           <property name="text">
            <string>OTF directory</string>
@@ -1684,7 +1684,7 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="2">
+        <item row="6" column="2">
          <spacer name="configTabVertSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -1697,7 +1697,7 @@
           </property>
          </spacer>
         </item>
-        <item row="6" column="6">
+        <item row="7" column="6">
          <widget class="QToolButton" name="watchDirToolButton">
           <property name="enabled">
            <bool>false</bool>
@@ -1707,14 +1707,14 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item row="7" column="0">
          <widget class="QCheckBox" name="watchDirCheckBox">
           <property name="text">
            <string>Watch Directory:</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="2">
+        <item row="7" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -1727,6 +1727,16 @@
           </property>
           <property name="placeholderText">
            <string>New items in watched folder will be automatically processed.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QCheckBox" name="useBundledBinariesCheckBox">
+          <property name="text">
+           <string>Use bundled binaries</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -2157,12 +2167,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>477</x>
-     <y>545</y>
+     <x>490</x>
+     <y>511</y>
     </hint>
     <hint type="destinationlabel">
-     <x>571</x>
-     <y>546</y>
+     <x>544</x>
+     <y>512</y>
     </hint>
    </hints>
   </connection>
@@ -2173,12 +2183,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>275</x>
-     <y>545</y>
+     <x>262</x>
+     <y>511</y>
     </hint>
     <hint type="destinationlabel">
-     <x>343</x>
-     <y>546</y>
+     <x>330</x>
+     <y>512</y>
     </hint>
    </hints>
   </connection>
@@ -2189,12 +2199,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>146</x>
-     <y>329</y>
+     <x>304</x>
+     <y>352</y>
     </hint>
     <hint type="destinationlabel">
-     <x>146</x>
-     <y>329</y>
+     <x>435</x>
+     <y>354</y>
     </hint>
    </hints>
   </connection>
@@ -2205,12 +2215,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>146</x>
-     <y>329</y>
+     <x>304</x>
+     <y>352</y>
     </hint>
     <hint type="destinationlabel">
-     <x>146</x>
-     <y>329</y>
+     <x>543</x>
+     <y>354</y>
     </hint>
    </hints>
   </connection>
@@ -2221,12 +2231,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>146</x>
-     <y>329</y>
+     <x>304</x>
+     <y>352</y>
     </hint>
     <hint type="destinationlabel">
-     <x>146</x>
-     <y>329</y>
+     <x>367</x>
+     <y>354</y>
     </hint>
    </hints>
   </connection>
@@ -2237,12 +2247,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>146</x>
-     <y>329</y>
+     <x>304</x>
+     <y>352</y>
     </hint>
     <hint type="destinationlabel">
-     <x>146</x>
-     <y>329</y>
+     <x>477</x>
+     <y>354</y>
     </hint>
    </hints>
   </connection>
@@ -2253,12 +2263,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>146</x>
-     <y>403</y>
+     <x>477</x>
+     <y>420</y>
     </hint>
     <hint type="destinationlabel">
-     <x>116</x>
-     <y>403</y>
+     <x>552</x>
+     <y>422</y>
     </hint>
    </hints>
   </connection>
@@ -2269,12 +2279,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>155</x>
-     <y>382</y>
+     <x>178</x>
+     <y>348</y>
     </hint>
     <hint type="destinationlabel">
-     <x>297</x>
-     <y>386</y>
+     <x>301</x>
+     <y>352</y>
     </hint>
    </hints>
   </connection>
@@ -2285,12 +2295,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>56</x>
-     <y>632</y>
+     <x>71</x>
+     <y>655</y>
     </hint>
     <hint type="destinationlabel">
-     <x>576</x>
-     <y>633</y>
+     <x>581</x>
+     <y>656</y>
     </hint>
    </hints>
   </connection>
@@ -2301,12 +2311,108 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>127</x>
-     <y>629</y>
+     <x>142</x>
+     <y>655</y>
     </hint>
     <hint type="destinationlabel">
-     <x>234</x>
-     <y>631</y>
+     <x>354</x>
+     <y>655</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cudaDeconvPathLineEdit</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>172</x>
+     <y>98</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>194</x>
+     <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>radialftPathLineEdit</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>280</x>
+     <y>96</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>279</x>
+     <y>157</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cudaDeconvPathLabel</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>345</x>
+     <y>98</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>58</x>
+     <y>125</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cudaDeconvPathToolButton</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>491</x>
+     <y>97</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>565</x>
+     <y>123</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>radialftPathToolButton</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>378</x>
+     <y>97</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>562</x>
+     <y>154</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>radialftPathLabel</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>314</x>
+     <y>93</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>104</x>
+     <y>154</y>
     </hint>
    </hints>
   </connection>

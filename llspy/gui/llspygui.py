@@ -23,7 +23,7 @@ from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
 from PyQt5 import QtCore, QtGui, uic
 from PyQt5 import QtWidgets as QtW
 # import sys
-# sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)),'..'))
+# sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
 
 thisDirectory = osp.dirname(osp.abspath(__file__))
 #Ui_Main_GUI = uic.loadUiType(osp.join(thisDirectory, 'main_gui.ui'))[0]
@@ -40,8 +40,39 @@ defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
 defaultINI = llspy.util.getAbsoluteResourcePath('gui/guiDefaults.ini')
 programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 
+FROZEN = False
 if getattr(sys, 'frozen', False):
-	print("frozen mode.  MEIPASS = {}".format(sys._MEIPASS))
+	FROZEN = True
+	print("RUNNING FROZEN.  BasePath: {}".format(sys._MEIPASS))
+
+
+def getCudaDeconvBinary():
+	if mainGUI.useBundledBinariesCheckBox.isChecked():
+		if FROZEN:
+			binPath = sys._MEIPASS
+		else:
+			binPath = os.path.abspath(osp.join(thisDirectory, os.pardir, os.pardir, 'bin'))
+			if sys.platform.startswith('darwin'):
+				binPath = osp.join(binPath, 'darwin')
+			elif sys.platform.startswith('win32'):
+				binPath = osp.join(binPath, 'win32')
+			else:
+				binPath = osp.join(binPath, 'nix')
+
+		# get specific library by platform
+		if sys.platform.startswith('win32'):
+			binary = osp.join(binPath, 'cudaDeconv.exe')
+		else:
+			binary = osp.join(binPath, 'cudaDeconv')
+	else:
+		binary = mainGUI.cudaDeconvPathLineEdit.text()
+
+	if llspy.util.which(binary):
+		print("found binary: {}".format(binary))
+		return binary
+	else:
+		raise Exception('cudaDeconv binary not found or not executable: {}'.format(binary))
+
 
 class ExceptionHandler(QtCore.QObject):
 
@@ -370,7 +401,7 @@ class CudaDeconvWorker(QtCore.QObject):
 
 		# QProcess object for external app
 		self.process = QtCore.QProcess(self)
-		self.binary = mainGUI.cudaDeconvPathLineEdit.text()
+		self.binary = getCudaDeconvBinary()
 		# self.process.setProcessEnvironment(env)
 
 		# QProcess emits `readyRead` when there is data to be read
@@ -542,7 +573,7 @@ class LLSitemWorker(QtCore.QObject):
 
 			try:
 				# check the binary path and create object
-				binary = llspy.cudabinwrapper.CUDAbin(mainGUI.cudaDeconvPathLineEdit.text())
+				binary = llspy.cudabinwrapper.CUDAbin(getCudaDeconvBinary())
 			except Exception:
 				(excepttype, value, traceback) = sys.exc_info()
 				sys.excepthook(excepttype, value, traceback)
