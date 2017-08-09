@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-rm -rf ./distOSX
-rm -rf ./buildOSX
+source activate llsenv35
+rm -rf ./distNIX
+rm -rf ./buildNIX
 pyinstaller  --noconfirm --clean \
-	--distpath=./distOSX \
-	--workpath=./buildOSX \
+	--distpath=./distNIX \
+	--workpath=./buildNIX \
 	--upx-dir="/usr/bin/" \
 	llspygui.spec
