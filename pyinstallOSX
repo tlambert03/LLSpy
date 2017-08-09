@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source activate llsenv35
 export DYLD_LIBRARY_PATH="/Users/talley/DropboxHMS/Python/llspy2/lib/:$DYLD_LIBRARY_PATH"
 rm -rf ./distOSX
 rm -rf ./buildOSX
