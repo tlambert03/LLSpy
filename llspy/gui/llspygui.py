@@ -68,7 +68,6 @@ def getCudaDeconvBinary():
 		binary = mainGUI.cudaDeconvPathLineEdit.text()
 
 	if llspy.util.which(binary):
-		print("found binary: {}".format(binary))
 		return binary
 	else:
 		raise Exception('cudaDeconv binary not found or not executable: {}'.format(binary))
@@ -479,17 +478,17 @@ class TimePointWorker(QtCore.QObject):
 	previewReady = QtCore.pyqtSignal(np.ndarray)
 	error = QtCore.pyqtSignal()
 
-	def __init__(self, path, tRange, opts):
+	def __init__(self, path, tRange, opts, ditch_partial=True):
 		super(TimePointWorker, self).__init__()
 		self.path = path
 		self.tRange = tRange
 		self.opts = opts
+		self.E = llspy.LLSdir(self.path, ditch_partial)
 
 	@QtCore.pyqtSlot()
 	def work(self):
-		E = llspy.LLSdir(self.path)
 		try:
-			previewStack = llspy.llsdir.preview(E, self.tRange, **self.opts)
+			previewStack = llspy.llsdir.preview(self.E, self.tRange, **self.opts)
 			self.previewReady.emit(previewStack)
 		except Exception:
 			(excepttype, value, traceback) = sys.exc_info()
@@ -501,16 +500,19 @@ class TimePointWorker(QtCore.QObject):
 
 class LLSitemWorker(QtCore.QObject):
 	NUM_CUDA_THREADS = 1
-	sig_abort = QtCore.pyqtSignal()
-	file_finished = QtCore.pyqtSignal(int)  # worker id, filename
+
 	sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
-	finished = QtCore.pyqtSignal()
+
 	statusUpdate = QtCore.pyqtSignal(str)  # update mainGUI status
 	logUpdate = QtCore.pyqtSignal(str)  # message to be shown to user
 	progressUp = QtCore.pyqtSignal()  # set progressbar value
 	progressValue = QtCore.pyqtSignal(int)  # set progressbar value
 	progressMaxVal = QtCore.pyqtSignal(int)  # set progressbar maximum
 	clockUpdate = QtCore.pyqtSignal(str)  # set progressbar value
+	file_finished = QtCore.pyqtSignal(int)  # worker id, filename
+
+	finished = QtCore.pyqtSignal()
+	sig_abort = QtCore.pyqtSignal()
 	error = QtCore.pyqtSignal()
 
 	def __init__(self, id, path, opts):
@@ -742,28 +744,83 @@ class LLSitemWorker(QtCore.QObject):
 
 class ActiveHandler(RegexMatchingEventHandler, QtCore.QObject):
 
-	timepointReady = QtCore.pyqtSignal(int)
+	tiffAdded = QtCore.pyqtSignal(tuple)  # channel, time
 
 	def on_created(self, event):
 		# Called when a file or directory is created.
-		print(llspy.parse.parse_filename(osp.basename(event.src_path)))
+		p = llspy.parse.parse_filename(osp.basename(event.src_path))
+		self.tiffAdded.emit((p['channel'], p['stack'], p['reltime']))
 
 
 class ActiveWatcher(QtCore.QObject):
 	"""docstring for ActiveWatcher"""
 
-	def __init__(self, path):
+	queueStalled = QtCore.pyqtSignal()
+	acquisitionFinished = QtCore.pyqtSignal()
+
+	def __init__(self, path, timeout=600):
 		super(ActiveWatcher, self).__init__()
-		self.watchdir = path
-		self.tQueue = []
+		self.path = path
+		self.timeout = timeout  # seconds to wait for new file before giving up
+
+		self.E = llspy.LLSdir(path, False)
+		self.nc = self.E.parameters.nc
+		self.nt = self.E.parameters.nt
+		self.tRange = list(range(self.nt))  # for now, assume no decimated acquisition
+		self.tReady = []
+		self.tCount = 0
+		# self.fileQueue = []
+
 		# Too strict?
 		fpattern = '^.+_ch\d_stack\d{4}_\D*\d+.*_\d{7}msec_\d{10}msecAbs.*.tif'
 		# fpattern = '.*.tif'
 		self.handler = ActiveHandler(regexes=[fpattern], ignore_directories=True)
-		self.handler.timepointReady.connect(self.tQueue.append)
+		self.handler.tiffAdded.connect(self.receiveItem)
 		self.observer = Observer()
-		self.observer.schedule(self.handler, self.watchdir, recursive=False)
+		self.observer.schedule(self.handler, self.path, recursive=False)
 		self.observer.start()
+
+		self.timer = QtCore.QTimer()
+		self.timer.timeout.connect(self.queueStalled.emit)
+		self.timer.start(self.timeout * 1000)
+
+		print("New LLS directory now being watched: " + self.path)
+
+	@QtCore.pyqtSlot(tuple)
+	def receiveItem(self, tup):
+		# tup = (channel, stacknum, reltime)
+		# self.fileQueue.append(tup)
+		self.tCount += 1
+		if self.tCount >= self.nc:
+			self.tReady.append(self.tRange.pop(0))
+		if len(self.tReady):
+			self.processReady()
+
+	def processReady(self):
+		# TODO: safe?
+		opts = mainGUI.getValidatedOptions()
+		w, thread = newWorkerThread(TimePointWorker, self.path, self.tReady, opts, False,
+			workerConnect={'previewReady': self.writeFile}, start=True)
+		self.worker = (w, thread)
+
+	@QtCore.pyqtSlot(np.ndarray)
+	def writeFile(self, stack):
+		if stack.ndim == 5:
+			pass
+		elif stack.ndim == 4:
+			for c in range(stack.shape[0]):
+				s = stack[c]
+				llspy.util.imsave(llspy.util.reorderstack(np.squeeze(s), 'zyx'),
+					str(self.E.path.joinpath('file_' + str(c) + '.tif')),
+					dx=self.E.parameters.dx, dz=self.E.parameters.dzFinal)
+		else:
+			llspy.util.imsave(llspy.util.reorderstack(np.squeeze(stack), 'zyx'),
+				str(self.E.path.joinpath('file')),
+				dx=self.E.parameters.dx, dz=self.E.parameters.dzFinal)
+
+	def stop(self):
+		self.observer.stop()
+		self.observer.join()
 
 
 class MainHandler(FileSystemEventHandler, QtCore.QObject):
@@ -806,7 +863,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 		self.aborted = False  # current abort status
 		self.inProcess = False
 		self.observer = None  # for watching the watchdir
-		self.activeWatchers = []
+		self.activeWatchers = {}
 		self.watchMode = 1  # 1 is active mode, 0 means folders are 'done' when dropped
 
 		# delete  reintroduce custom LLSDragDropTable
@@ -849,11 +906,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 			self.cudaDeconvPathLineEdit.setText(
 				QtW.QFileDialog.getOpenFileName(
 					self, 'Choose cudaDeconv Binary', '/usr/local/bin/')[0]))
-
-		self.radialftPathToolButton.clicked.connect(lambda:
-			self.radialftPathLineEdit.setText(
-				QtW.QFileDialog.getOpenFileName(
-					self, 'Choose radialft Binary', '/usr/local/bin/')[0]))
 
 		self.otfFolderToolButton.clicked.connect(lambda:
 			self.otfFolderLineEdit.setText(
@@ -911,7 +963,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 		if self.watchMode > 0:
 			# in this mode, we assume more is coming (like during live acquisition)
 			activeWatcher = ActiveWatcher(path)
-			self.activeWatchers.append(activeWatcher)
+			activeWatcher.queueStalled.connect(activeWatcher.deleteLater)
+			activeWatcher.acquisitionFinished.connect(activeWatcher.deleteLater)
+			self.activeWatchers[path] = activeWatcher
 		else:
 			# watchMode 0 assumes folders are completely finished when dropped
 			self.listbox.addPath(path)
