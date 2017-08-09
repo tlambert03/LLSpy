@@ -268,16 +268,17 @@ class LLSdir(object):
 	Detect parameters of an LLS experiment from a folder of files.
 	'''
 
-	def __init__(self, path):
+	def __init__(self, path, ditch_partial=True):
 		self.path = plib.Path(path)
+		self.ditch_partial = ditch_partial
+		self.settings_files = self.get_settings_files()
+		self.has_settings = bool(len(self.settings_files))
 		if not self.path.is_dir():
 			return
 		self.basename = self.path.name
 		self.date = None
 		self.parameters = util.dotdict()
 		self.tiff = util.dotdict()
-		self.settings_files = self.get_settings_files()
-		self.has_settings = bool(len(self.settings_files))
 		if self.has_settings:
 			if len(self.settings_files) > 1:
 				warnings.warn('Multiple Settings.txt files detected...')
@@ -306,9 +307,10 @@ class LLSdir(object):
 
 	@property
 	def has_lls_tiffs(self):
-		for f in self.path.iterdir():
-			if parse.filename_pattern.match(f.name):
-				return True
+		if self.path.is_dir():
+			for f in self.path.iterdir():
+				if parse.filename_pattern.match(f.name):
+					return True
 		return False
 
 	def get_settings_files(self):
@@ -316,7 +318,10 @@ class LLSdir(object):
 
 	def register_tiffs(self):
 		if self.get_all_tiffs():
-			self.ditch_partial_tiffs()
+			if self.ditch_partial:
+				self.ditch_partial_tiffs()
+			else:
+				self.tiff.raw = self.tiff.all
 			self.detect_parameters()
 			self.read_tiff_header()
 
@@ -329,6 +334,7 @@ class LLSdir(object):
 		self.tiff.numtiffs = len(all_tiffs)
 		# self.tiff.bytes can be used to get size of raw data: np.sum(self.tiff.bytes)
 		self.tiff.bytes = [f.stat().st_size for f in all_tiffs]
+		self.tiff.size_raw = round(np.median(self.tiff.bytes), 2)
 		self.tiff.all = [str(f) for f in all_tiffs]
 		return self.tiff.numtiffs
 
@@ -338,7 +344,6 @@ class LLSdir(object):
 		perhaps a better (but slower?) approach would be to look at the tiff
 		header for each file?
 		'''
-		self.tiff.size_raw = round(np.median(self.tiff.bytes), 2)
 		self.tiff.raw = []
 		for idx, f in enumerate(self.tiff.all):
 			if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < 1000:
@@ -593,8 +598,8 @@ class LLSdir(object):
 				outerNA = self.settings.mask.outerNA
 				# find the most recent otf that matches the mask settings
 				# in the PSF directory and append it to the channel dict...
-				otf = get_otf_by_date(
-					self.date, wave, (innerNA, outerNA), otfpath=otfpath, direction='nearest')
+				otf = get_otf_by_date(self.date, wave, (innerNA, outerNA),
+					otfpath=otfpath, direction='nearest')
 			else:
 				otf = str(os.path.join(otfpath, str(wave) + '_otf.tif'))
 			otfs[c] = otf
