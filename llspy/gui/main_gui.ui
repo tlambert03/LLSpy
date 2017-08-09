@@ -36,7 +36,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -148,8 +148,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>537</width>
-             <height>252</height>
+             <width>547</width>
+             <height>255</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1525,39 +1525,6 @@
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="2" column="2">
-         <widget class="QLineEdit" name="radialftPathLineEdit">
-          <property name="text">
-           <string>/usr/local/radialft</string>
-          </property>
-          <property name="placeholderText">
-           <string>path to radialft (OTF generation) binary</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="camParamTiffLabel">
-          <property name="text">
-           <string>CameraParam Tiff</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>camParamTiffLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="6">
-         <widget class="QToolButton" name="cudaDeconvPathToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-          <property name="autoRaise">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="cudaDeconvPathLabel">
           <property name="text">
@@ -1581,67 +1548,7 @@
           </property>
          </widget>
         </item>
-        <item row="3" column="6">
-         <widget class="QToolButton" name="otfFolderToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="6">
-         <widget class="QToolButton" name="camParamTiffToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="radialftPathLabel">
-          <property name="text">
-           <string>radialft binary</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>radialftPathLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="defaultRegCalibPathLabel">
-          <property name="text">
-           <string>Default Reg Calib</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>defaultRegCalibPathLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="6">
-         <widget class="QToolButton" name="radialftPathToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="2">
-         <widget class="QLineEdit" name="otfFolderLineEdit">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-          <property name="placeholderText">
-           <string>path to directory with PSFs/OTFs</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2">
          <widget class="QLineEdit" name="camParamTiffLineEdit">
           <property name="text">
            <string/>
@@ -1654,7 +1561,27 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="2">
+        <item row="3" column="6">
+         <widget class="QToolButton" name="camParamTiffToolButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="defaultRegCalibPathLabel">
+          <property name="text">
+           <string>Default Reg Calib</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>defaultRegCalibPathLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
          <widget class="QLineEdit" name="defaultRegCalibPathLineEdit">
           <property name="text">
            <string/>
@@ -1664,14 +1591,7 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="6">
-         <widget class="QToolButton" name="defaultRegCalibPathToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
+        <item row="2" column="0">
          <widget class="QLabel" name="otfFolderPathLabel">
           <property name="text">
            <string>OTF directory</string>
@@ -1684,37 +1604,14 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="2">
-         <spacer name="configTabVertSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>600</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="7" column="6">
-         <widget class="QToolButton" name="watchDirToolButton">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
+        <item row="4" column="6">
+         <widget class="QToolButton" name="defaultRegCalibPathToolButton">
           <property name="text">
            <string>...</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
-         <widget class="QCheckBox" name="watchDirCheckBox">
-          <property name="text">
-           <string>Watch Directory:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="2">
+        <item row="6" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -1730,12 +1627,85 @@
           </property>
          </widget>
         </item>
+        <item row="6" column="6">
+         <widget class="QToolButton" name="watchDirToolButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2">
+         <spacer name="configTabVertSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>600</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="6" column="0">
+         <widget class="QCheckBox" name="watchDirCheckBox">
+          <property name="text">
+           <string>Watch Directory:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QLineEdit" name="otfFolderLineEdit">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="placeholderText">
+           <string>path to directory with PSFs/OTFs</string>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="2">
          <widget class="QCheckBox" name="useBundledBinariesCheckBox">
           <property name="text">
-           <string>Use bundled binaries</string>
+           <string>Use bundled cudaDeconv binary</string>
           </property>
           <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="6">
+         <widget class="QToolButton" name="otfFolderToolButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="camParamTiffLabel">
+          <property name="text">
+           <string>CameraParam Tiff</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>camParamTiffLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="6">
+         <widget class="QToolButton" name="cudaDeconvPathToolButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="autoRaise">
            <bool>false</bool>
           </property>
          </widget>
@@ -2339,22 +2309,6 @@ QProgressBar::chunk:horizontal {
   <connection>
    <sender>useBundledBinariesCheckBox</sender>
    <signal>toggled(bool)</signal>
-   <receiver>radialftPathLineEdit</receiver>
-   <slot>setHidden(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>280</x>
-     <y>96</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>279</x>
-     <y>157</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>useBundledBinariesCheckBox</sender>
-   <signal>toggled(bool)</signal>
    <receiver>cudaDeconvPathLabel</receiver>
    <slot>setHidden(bool)</slot>
    <hints>
@@ -2381,38 +2335,6 @@ QProgressBar::chunk:horizontal {
     <hint type="destinationlabel">
      <x>565</x>
      <y>123</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>useBundledBinariesCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>radialftPathToolButton</receiver>
-   <slot>setHidden(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>378</x>
-     <y>97</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>562</x>
-     <y>154</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>useBundledBinariesCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>radialftPathLabel</receiver>
-   <slot>setHidden(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>314</x>
-     <y>93</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>104</x>
-     <y>154</y>
     </hint>
    </hints>
   </connection>
