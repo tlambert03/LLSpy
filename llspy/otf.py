@@ -1,11 +1,60 @@
 from . import config
-from .cudabinwrapper import CUDAbin
 from llspy import plib
 import re
-import warnings
+import ctypes
+import sys
+import os
 import numpy as np
 from datetime import datetime, timedelta
 
+
+# get specific library by platform
+if sys.platform.startswith('darwin'):
+	libname = 'libradialft.dylib'
+	# this seems to be necessary for pyinstaller to find it?
+	try:
+		ctypes.CDLL('libradialft.dylib')
+	except Exception:
+		pass
+elif sys.platform.startswith('win32'):
+	libname = 'libradialft.dll'
+else:
+	libname = 'libradialft.so'
+
+# by defatul ctypes uses ctypes.util.find_library() which will search
+# the LD_LIBRARY_PATH or DYLD_LIBRARY_PATH for the library name
+# this method is preferable for bundling the app with pyinstaller
+# however, for ease of development, we fall back on the local libraries
+# in llspy/lib
+
+try:
+	print('first looking for: '+libname)
+	otflib = ctypes.CDLL(libname)
+except OSError:
+	curdir = os.path.dirname(__file__)
+	sharelib = os.path.abspath(os.path.join(curdir, os.pardir, 'lib', libname))
+	print("Could not find libradialft at {}, trying: {}".format(libname,sharelib))
+	otflib = ctypes.CDLL(sharelib)
+	print("using libradialft: {}".format(otflib))
+
+
+
+shared_makeotf = otflib.makeOTF
+shared_makeotf.restype = ctypes.c_int
+shared_makeotf.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int,
+	ctypes.c_float, ctypes.c_int, ctypes.c_bool, ctypes.c_float,
+	ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_int, ctypes.c_bool]
+
+
+def makeotf(psf, otf=None, lambdanm=520, dz=0.102, fixorigin=10,
+	bUserBackground=False, background=90, NA=1.25, NIMM=1.3,
+	dr=0.102, krmax=0, bDoCleanup=False):
+	# krmax => "pixels outside this limit will be zeroed (overwriting estimated value from NA and NIMM)")
+	if otf is None:
+		otf = psf.replace('.tif', '_otf.tif')
+	shared_makeotf(str.encode(psf), str.encode(otf), lambdanm, dz,
+		fixorigin, bUserBackground, background, NA, NIMM, dr, krmax, bDoCleanup)
+	return otf
 
 psffile_pattern = re.compile(r"""
 	^(?P<date>\d{8})
@@ -22,6 +71,8 @@ default_otf_pattern = re.compile(r"""
 
 
 def get_otf_dict(otfdir):
+	""" The otf_dict is a dict with
+	"""
 	otf_dict = {}
 	otfdir = plib.Path(otfdir)
 	for t in list(otfdir.glob('*tif')):
@@ -36,12 +87,13 @@ def get_otf_dict(otfdir):
 			if mask not in otf_dict[wave]:
 				otf_dict[wave][mask] = []
 			if not M['isotf']:
-				matching_otf = otfdir.joinpath(
-					t.name.replace('.tif', '_otf.tif'))
+				matching_otf = otfdir.joinpath(t.name.replace('.tif', '_otf.tif'))
 				if not matching_otf.is_file():
 					matching_otf = None
 				else:
-					matching_otf = None
+					matching_otf = matching_otf
+			else:
+				matching_otf = None
 			otf_dict[wave][mask].append({
 				'date': datetime.strptime(M['date'], '%Y%m%d'),
 				'path': str(t),
@@ -69,14 +121,18 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 	"""
 	otf_dict = get_otf_dict(otfpath)
 	otflist = []
+
 	if wave not in otf_dict:
 		raise KeyError('Wave: {} not in otfdict: {}'.format(wave, otf_dict))
+	# the mask NA has been provided, check to see if it's in the name of any of
+	# files in the otf folder
 	if mask is not None:
+		# if so return that otflist
 		if mask in otf_dict[wave]:
 			otflist = otf_dict[wave][mask]
 	else:
-		keys = list(otf_dict[wave].keys())
-		for k in keys:
+		# otherwise
+		for k in otf_dict[wave].keys():
 			if k != 'default':
 				[otflist.append(i) for i in otf_dict[wave][k]]
 
@@ -108,32 +164,32 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 			if i['date'] == otflist[minIdx]['date'] and i['form'] == 'psf']
 		if matching_psfs:
 			# generate new OTF from PSF
-			otfbin = OTFbin()
-			return otfbin.process(matching_psfs[0]['path'])
+			path = matching_psfs[0]['path']
+			return makeotf(path, lambdanm=int(wave), bDoCleanup=False)
 
 
-class OTFbin(CUDAbin):
-	"""docstring for MakeOTF"""
+# class OTFbin(CUDAbin):
+# 	"""docstring for MakeOTF"""
 
-	def __init__(self, binPath=config.__RADIALFT__):
-		super(OTFbin, self).__init__(binPath)
+# 	def __init__(self, binPath=config.__RADIALFT__):
+# 		super(OTFbin, self).__init__(binPath)
 
-	def process(self, inpath, **options):
-		cmd = [self.path]
-		outfile = inpath.replace('.tif', '_otf.tif')
-		options.update({
-			'input-file': inpath,
-			'output-file': outfile,
-			'fixorigin': '10',
-			'nocleanup': True,
-		})
-		for o in options:
-			if self.has_option('--' + o):
-				if isinstance(options[o], bool):
-					cmd.extend(['--' + o])
-				else:
-					cmd.extend(['--' + o, str(options[o])])
-			else:
-				warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
-		if self._run_command(cmd):
-			return outfile
+# 	def process(self, inpath, **options):
+# 		cmd = [self.path]
+# 		outfile = inpath.replace('.tif', '_otf.tif')
+# 		options.update({
+# 			'input-file': inpath,
+# 			'output-file': outfile,
+# 			'fixorigin': '10',
+# 			'nocleanup': True,
+# 		})
+# 		for o in options:
+# 			if self.has_option('--' + o):
+# 				if isinstance(options[o], bool):
+# 					cmd.extend(['--' + o])
+# 				else:
+# 					cmd.extend(['--' + o, str(options[o])])
+# 			else:
+# 				warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
+# 		if self._run_command(cmd):
+# 			return outfile
