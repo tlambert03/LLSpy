@@ -28,14 +28,11 @@ else:
 # in llspy/lib
 
 try:
-	print('first looking for: '+libname)
 	otflib = ctypes.CDLL(libname)
 except OSError:
 	curdir = os.path.dirname(__file__)
 	sharelib = os.path.abspath(os.path.join(curdir, os.pardir, 'lib', libname))
-	print("Could not find libradialft at {}, trying: {}".format(libname,sharelib))
 	otflib = ctypes.CDLL(sharelib)
-	print("using libradialft: {}".format(otflib))
 
 
 
