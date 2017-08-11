@@ -14,6 +14,7 @@ from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
 from fiducialreg.fiducialreg import CloudSet
 
 import os
+import sys
 import shutil
 import warnings
 import numpy as np
@@ -22,9 +23,45 @@ import json
 import re
 import glob
 import tifffile as tf
-from multiprocessing import cpu_count, Pool
 
 np.seterr(divide='ignore', invalid='ignore')
+
+# this is for multiprocessing with pyinstaller on windows
+# https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
+try:
+    # Python 3.4+
+    if sys.platform.startswith('win'):
+        import multiprocessing.popen_spawn_win32 as forking
+    else:
+        import multiprocessing.popen_fork as forking
+except ImportError:
+    import multiprocessing.forking as forking
+
+if sys.platform.startswith('win'):
+    # First define a modified version of Popen.
+    class _Popen(forking.Popen):
+        def __init__(self, *args, **kw):
+            if hasattr(sys, 'frozen'):
+                # We have to set original _MEIPASS2 value from sys._MEIPASS
+                # to get --onefile mode working.
+                os.putenv('_MEIPASS2', sys._MEIPASS)
+            try:
+                super(_Popen, self).__init__(*args, **kw)
+            finally:
+                if hasattr(sys, 'frozen'):
+                    # On some platforms (e.g. AIX) 'os.unsetenv()' is not
+                    # available. In those cases we cannot delete the variable
+                    # but only set it to the empty string. The bootloader
+                    # can handle this case.
+                    if hasattr(os, 'unsetenv'):
+                        os.unsetenv('_MEIPASS2')
+                    else:
+                        os.putenv('_MEIPASS2', '')
+
+    # Second override 'Popen' class with our modified version.
+    forking.Popen = _Popen
+
+from multiprocessing import Process, cpu_count, Pool
 
 
 def correctTimepoint(fnames, camparams, outpath, median, target='cpu'):
@@ -660,11 +697,21 @@ class LLSdir(object):
 		timegroups = [t for t in timegroups if len(t)]
 
 		if target == 'parallel':
+			# numthreads = cpu_count()
+			# procs = []
+			# for t in timegroups:
+			# 	args = (t, camparams, outpath, median)
+			# 	procs.append(Process(target=correctTimepoint, args=args))
+			# while len(procs):
+			# 	proccessGroup = procs[0:numthreads]
+			# 	procs[0:numthreads] = []
+			# 	[p.start() for p in proccessGroup]
+			# 	[p.join() for p in proccessGroup]
+
 			pool = Pool(processes=cpu_count())
 			g = [(t, camparams, outpath, median) for t in timegroups]
 			pool.map(unwrapper, g)
-			# Parallel(n_jobs=cpu_count(), verbose=9)(delayed(
-			# 	correctTimepoint)(t, camparams, outpath, median) for t in timegroups)
+
 		elif target == 'cpu':
 			for t in timegroups:
 				correctTimepoint(t, camparams, outpath, median)
