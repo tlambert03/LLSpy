@@ -3,13 +3,63 @@ from . import config
 from . import util
 
 import os
+import fnmatch
 import subprocess
 import glob
+
+
+EXTENTIONS = {
+	'.bz2': 'lbzip2',
+	'.gz': 'pigz',
+}
+
+archive_extension = {
+	'lbzip2': 'bz2',
+	'bzip2': 'bz2',
+	'pbzip2': 'bz2',
+	'pigz': 'gz',
+	'gzip': 'gz',
+}
+
+
+def findtar(path):
+	for file in os.listdir(path):
+		if fnmatch.fnmatch(file, '*.tar*'):
+			return os.path.join(path, file)
+	return None
+
+
+def decompress(fpath):
+	# find tarball
+	tarball = findtar(fpath)
+	if not tarball:
+		print('did not find .tar file in {}!'.format(fpath))
+		return
+
+	# get compression binary by extension
+	arch_ext = os.path.splitext(tarball)[1]
+	compression_program = EXTENTIONS.get(arch_ext, None)
+	if not compression_program:
+		raise ValueError('Unrecognized compression extension: {}'.format())
+
+	# decompress the tar file
+	subprocess.call([compression_program, '-d', '-v', tarball])
+
+	# extract the contents of the tarball
+	tarball = tarball.strip(arch_ext)
+	try:
+		subprocess.call(['tar', '-xvf', tarball, '-C', fpath])
+		# remove the tarball
+		os.remove(tarball)
+	except subprocess.CalledProcessError:
+		print('did not delete {}... '
+			'unclear whether it was extracted correctly'.format(tarball))
 
 
 def untar(fpath, verbose=True):
 	"""look for and decompress tarball in folder"""
 
+	# find the tarball
 	tarball = glob.glob(os.path.join(fpath, '*.tar*'))
 	if not len(tarball):
 		if verbose:
