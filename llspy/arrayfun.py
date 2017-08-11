@@ -80,7 +80,7 @@ def detect_background(im):
 	if im.ndim == 4:
 		im = im[0][2]
 	if im.ndim == 3:
-		im = im[2]  # pick the third plane... avoid noise in first plane on lattice
+		im = im[1]  # pick the third plane... avoid noise in first plane on lattice
 	return mode(im.flatten())[0][0]
 
 
