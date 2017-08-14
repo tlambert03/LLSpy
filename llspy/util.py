@@ -14,11 +14,19 @@ class dotdict(dict):
 	def __dir__(self):
 		return self.keys()
 
+
 def pathHasPattern(path, pattern='*Settings.txt'):
 	for file in os.listdir(path):
 		if fnmatch.fnmatch(file, pattern):
 			return True
 	return False
+
+
+def find_filepattern(path, filepattern='*.tar*'):
+	for file in os.listdir(path):
+		if fnmatch.fnmatch(file, filepattern):
+			return os.path.join(path, file)
+	return None
 
 
 def imread(*args, **kwargs):
