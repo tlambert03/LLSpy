@@ -3,6 +3,7 @@ from __future__ import print_function, division
 
 import os
 import os.path as osp
+import fnmatch
 import shutil
 import logging
 import inspect
@@ -11,6 +12,8 @@ import numpy as np
 import traceback
 import re
 import multiprocessing
+import tarfile
+import time
 
 thisDirectory = osp.dirname(osp.abspath(__file__))
 sys.path.append(osp.join(thisDirectory, os.pardir, os.pardir))
@@ -116,6 +119,27 @@ def byteArrayToString(bytearr):
         return str(bytearr)
     else:
         return str(bytearr, encoding='utf-8')
+
+
+def wait_for_file_close(file, delay=0.05):
+    s_now = 0
+    while True:
+        # check to see if the file is the same size as it was 30 ms ago
+        # if so... we assume it is done being written
+        s_last = s_now
+        try:
+            s_now = os.path.getsize(file)
+            if s_now == s_last and s_now > 0:
+                break
+        except FileNotFoundError:
+            print("WARNING: watched file disappeared: " + file)
+            return
+        time.sleep(delay)
+    return
+
+
+def shortname(path, parents=2):
+    return osp.sep.join(os.path.normpath(path).split(os.path.sep)[-parents:])
 
 
 def string_to_iterable(string):
@@ -251,7 +275,7 @@ class LogWindow(QtW.QDialog, QPlainTextEditLogger):
 
 
 class LLSDragDropTable(QtW.QTableWidget):
-    colHeaders = ['path', 'name', 'nC', 'nT', 'nZ', 'nY', 'nX', 'desQ']
+    colHeaders = ['path', 'name', 'nC', 'nT', 'nZ', 'nY', 'nX', 'angle', 'dz', 'dx']
     nCOLS = len(colHeaders)
 
     # A signal needs to be defined on class level:
@@ -265,18 +289,21 @@ class LLSDragDropTable(QtW.QTableWidget):
         self.setAcceptDrops(True)
         self.setSelectionMode(QtW.QAbstractItemView.ExtendedSelection)
         self.setSelectionBehavior(QtW.QAbstractItemView.SelectRows)
+        self.setEditTriggers(QtW.QAbstractItemView.SelectedClicked)
         self.setGridStyle(3)  # dotted grid line
 
         self.setHorizontalHeaderLabels(self.colHeaders)
         self.hideColumn(0)  # column 0 is a hidden col for the full pathname
         header = self.horizontalHeader()
         header.setSectionResizeMode(1, QtW.QHeaderView.Stretch)
-        header.resizeSection(2, 30)
-        header.resizeSection(3, 50)
-        header.resizeSection(4, 50)
-        header.resizeSection(5, 50)
-        header.resizeSection(6, 50)
+        header.resizeSection(2, 27)
+        header.resizeSection(3, 45)
+        header.resizeSection(4, 40)
+        header.resizeSection(5, 40)
+        header.resizeSection(6, 40)
         header.resizeSection(7, 40)
+        header.resizeSection(8, 48)
+        header.resizeSection(9, 48)
 
     @QtCore.pyqtSlot(str)
     def addPath(self, path):
@@ -291,21 +318,28 @@ class LLSDragDropTable(QtW.QTableWidget):
             return
 
         E = llspy.LLSdir(path)
-        shortname = osp.sep.join(E.path.parts[-2:])
-        logging.info('Add: {}'.format(shortname))
+        logging.info('Add: {}'.format(shortname(E.path)))
         rowPosition = self.rowCount()
         self.insertRow(rowPosition)
         item = [path,
-                shortname,
+                shortname(E.path),
                 str(E.parameters.nc),
                 str(E.parameters.nt),
                 str(E.parameters.nz),
                 str(E.parameters.ny),
                 str(E.parameters.nx),
-                '✅' if E.parameters.samplescan else '-']
+                "{:2.1f}".format(E.parameters.angle) if E.parameters.samplescan else "0",
+                "{:0.3f}".format(E.parameters.dz),
+                "{:0.3f}".format(E.parameters.dx)]
         for col, elem in enumerate(item):
             entry = QtW.QTableWidgetItem(elem)
-            entry.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            if col < 7:
+                entry.setFlags(QtCore.Qt.ItemIsSelectable |
+                               QtCore.Qt.ItemIsEnabled)
+            else:
+                entry.setFlags(QtCore.Qt.ItemIsSelectable |
+                               QtCore.Qt.ItemIsEnabled |
+                               QtCore.Qt.ItemIsEditable)
             self.setItem(rowPosition, col, entry)
 
     def selectedPaths(self):
@@ -389,12 +423,12 @@ def newWorkerThread(workerClass, *args, **kwargs):
 
 class SubprocessWorker(QtCore.QObject):
     processStarted = QtCore.pyqtSignal()
-    finished = QtCore.pyqtSignal(int)
+    finished = QtCore.pyqtSignal()
     log_update = QtCore.pyqtSignal(str)
 
-    def __init__(self, binary, args, id=1):
+    def __init__(self, binary, args, wid=1):
         super(SubprocessWorker, self).__init__()
-        self.id = int(id)
+        self.id = int(wid)
         self.binary = binary
         if not llspy.util.which(binary):
             raise OSError('Binary not found or not executable: {}'.format(self.binary))
@@ -404,7 +438,7 @@ class SubprocessWorker(QtCore.QObject):
         self.__abort = False
 
         self.process = QtCore.QProcess(self)
-        self.process.readyRead.connect(self.procReadyRead)
+        self.process.readyReadStandardOutput.connect(self.procReadyRead)
         self.process.readyReadStandardError.connect(self.procErrorRead)
 
     @QtCore.pyqtSlot()
@@ -417,7 +451,7 @@ class SubprocessWorker(QtCore.QObject):
         from GUI (such as abort).
         """
         self.log_update.emit('~' * 20 + '\nRunning {} thread_{} with args: '
-            '\n{}\n'.format(self.name, self.id, " ".join(self.args)) + '~' * 20)
+            '\n{}\n'.format(self.name, self.id, " ".join(self.args)) + '\n')
         self.process.finished.connect(self.onFinished)
         self.process.start(self.binary, self.args)
         self.processStarted.emit()
@@ -436,18 +470,15 @@ class SubprocessWorker(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def procReadyRead(self):
-        while self.process.canReadLine():
-            line = self.process.readLine()
-            line = byteArrayToString(line)
+        line = byteArrayToString(self.process.readAllStandardOutput())
+        if line is not '':
             self.log_update.emit(line.rstrip())
 
     @QtCore.pyqtSlot()
     def procErrorRead(self):
         self.log_update.emit("!!!!!! {} Error !!!!!!".format(self.name))
-        self.process.setReadChannel(QtCore.QProcess.StandardError)
-        while self.process.canReadLine():
-            line = self.process.readLine()
-            line = byteArrayToString(line)
+        line = byteArrayToString(self.process.readAllStandardError())
+        if line is not '':
             self.log_update.emit(line.rstrip())
 
     @QtCore.pyqtSlot(int, QtCore.QProcess.ExitStatus)
@@ -455,20 +486,19 @@ class SubprocessWorker(QtCore.QObject):
         statusmsg = {0: 'exited normally', 1: 'crashed'}
         self.log_update.emit('{} #{} {} with exit code: {}'.format(
             self.name, self.id, statusmsg[exitStatus], exitCode))
-        self.finished.emit(self.id)
+        self.finished.emit()
 
     @QtCore.pyqtSlot()
     def abort(self):
         self.log_update.emit('{} #{} notified to abort'.format(self.name, self.id))
         self.__abort = True
 
-
 class CudaDeconvWorker(SubprocessWorker):
-    file_finished = QtCore.pyqtSignal(int)  # worker id, filename
+    file_finished = QtCore.pyqtSignal()  # worker id, filename
 
-    def __init__(self, args, id=1):
+    def __init__(self, args, wid=1):
         binary = getCudaDeconvBinary()
-        super(CudaDeconvWorker, self).__init__(binary, args, id)
+        super(CudaDeconvWorker, self).__init__(binary, args, wid)
         self.name = 'CudaDeconv'
 
     def procReadyRead(self):
@@ -476,83 +506,76 @@ class CudaDeconvWorker(SubprocessWorker):
             line = self.process.readLine()
             line = byteArrayToString(line)
             if "*** Finished!" in line or "Output:" in line:
-                self.file_finished.emit(self.id)
+                self.file_finished.emit()
             else:
                 self.log_update.emit(line.rstrip())
 
 
 class CompressionWorker(SubprocessWorker):
 
-    status_update = QtCore.pyqtSignal(str)
+    status_update = QtCore.pyqtSignal(str, int)
+    log_update = QtCore.pyqtSignal(str)
 
-    def __init__(self, args, id=1):
-        binary = ''
-        super(CudaDeconvWorker, self).__init__(binary, args, id)
+    def __init__(self, path, mode='compress', binary='lbzip2', wid=1):
+        super(CompressionWorker, self).__init__(binary, [], wid)
+        self.path = path
+        self.mode = mode
         self.name = 'CompressionWorker'
 
+    @QtCore.pyqtSlot()
     def work(self):
-        self.log_update.emit('~' * 20 + '\nRunning {} thread_{} with args: '
-            '\n{}\n'.format(self.name, self.id, " ".join(self.args)) + '~' * 20)
-        self.process.finished.connect(self.onFinished)
+
+        if self.mode == 'decompress':
+            self.status_update.emit(
+                'Decompressing {}...'.format(shortname(self.path)), 0)
+            tar_compressed = llspy.util.find_filepattern(self.path, '*.tar*')
+            self.args = ['-dv', tar_compressed]
+            self.process.finished.connect(
+                lambda: self.untar(os.path.splitext(tar_compressed)[0]))
+
+        elif self.mode == 'compress':
+            self.status_update.emit(
+                'Compressing {}...'.format(shortname(self.path)), 0)
+            tarball = llspy.compress.tartiffs(self.path)
+            self.args = ['-zv', tarball]
+            self.process.finished.connect(self.finished.emit)
+
+        msg = '\nRunning {} thread_{} with args:\n{}\n'.format(
+            self.name, self.id, self.binary + " ".join(self.args))
+        self.log_update.emit('~' * 20 + msg  + '~' * 20)
+
         self.process.start(self.binary, self.args)
         self.processStarted.emit()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.check_events)
         self.timer.start(self.polling_interval)
 
-    def procReadyRead(self):
-        while self.process.canReadLine():
-            line = self.process.readLine()
-            line = byteArrayToString(line)
-            if "*** Finished!" in line or "Output:" in line:
-                self.file_finished.emit(self.id)
-            else:
-                self.log_update.emit(line.rstrip())
-
-
-class TarWorker(SubprocessWorker):
-    file_finished = QtCore.pyqtSignal(int)  # worker id, filename
-
-    def __init__(self, args, id=1):
-        binary = ''
-        super(CudaDeconvWorker, self).__init__(binary, args, id)
-        self.name = 'CompressionWorker'
-
-    def procReadyRead(self):
-        while self.process.canReadLine():
-            line = self.process.readLine()
-            line = byteArrayToString(line)
-            if "*** Finished!" in line or "Output:" in line:
-                self.file_finished.emit(self.id)
-            else:
-                self.log_update.emit(line.rstrip())
-
-
-class TimePointWorker(QtCore.QObject):
-    """docstring for TimePointWorker"""
-
-    finished = QtCore.pyqtSignal()
-    previewReady = QtCore.pyqtSignal(np.ndarray)
-    error = QtCore.pyqtSignal()
-
-    def __init__(self, path, tRange, opts, ditch_partial=True):
-        super(TimePointWorker, self).__init__()
-        self.path = path
-        self.tRange = tRange
-        self.opts = opts
-        self.E = llspy.LLSdir(self.path, ditch_partial)
+    def untar(self, tarball, delete=True):
+        if not os.path.isfile(tarball):
+            self.finished.emit()
+            return
+        try:
+            with tarfile.open(tarball) as tar:
+                tar.extractall(path=os.path.dirname(tarball))
+        except Exception:
+            raise
+        if delete:
+            os.remove(tarball)
+        self.finished.emit()
 
     @QtCore.pyqtSlot()
-    def work(self):
-        try:
-            previewStack = llspy.llsdir.preview(self.E, self.tRange, **self.opts)
-            self.previewReady.emit(previewStack)
-        except Exception:
-            (excepttype, value, traceback) = sys.exc_info()
-            sys.excepthook(excepttype, value, traceback)
-            self.error.emit()
-
-        self.finished.emit()
+    def procErrorRead(self):
+        # for some reason, lbzip2 puts its verbose output in stderr
+        line = byteArrayToString(self.process.readAllStandardError())
+        if line is not '':
+            if not self.binary == 'lbzip2':
+                self.log_update.emit("!!!!!! {} Error !!!!!!".format(self.name))
+                self.log_update.emit(line.rstrip())
+            else:
+                if 'compression ratio' in line:
+                    msg = line.split('compression ratio')[1]
+                    self.status_update.emit('Compression ratio' + msg, 4000)
+                self.log_update.emit(line.rstrip())
 
 
 class LLSitemWorker(QtCore.QObject):
@@ -572,12 +595,12 @@ class LLSitemWorker(QtCore.QObject):
     sig_abort = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal()
 
-    def __init__(self, id, path, opts):
+    def __init__(self, wid, path, opts):
         super(LLSitemWorker, self).__init__()
-        self.__id = int(id)
+        self.__id = int(wid)
         self.opts = opts
         self.E = llspy.LLSdir(path)
-        self.shortname = osp.sep.join(self.E.path.parts[-2:])
+        self.shortname = shortname(self.E.path)
         self.aborted = False
         self.__argQueue = []  # holds all argument lists that will be sent to threads
         self.__CUDAthreads = []
@@ -690,7 +713,7 @@ class LLSitemWorker(QtCore.QObject):
                 return
             args = self.__argQueue.pop(0)
 
-            CUDAworker, thread = newWorkerThread(CudaDeconvWorker, args, id=idx,
+            CUDAworker, thread = newWorkerThread(CudaDeconvWorker, args, wid=idx,
                 workerConnect={
                      # get progress messages from CUDAworker and pass to parent
                      'file_finished': self.on_file_finished,
@@ -723,8 +746,8 @@ class LLSitemWorker(QtCore.QObject):
         timeAsString = QtCore.QTime(0, 0).addMSecs(remainingTime).toString()
         self.clockUpdate.emit(timeAsString)
 
-    @QtCore.pyqtSlot(int)
-    def on_CUDAworker_done(self, worker_id):
+    @QtCore.pyqtSlot()
+    def on_CUDAworker_done(self):
         # a CUDAworker has finished... update the log and check if any are still going
         self.__CUDAworkers_done += 1
         if self.__CUDAworkers_done == self.NUM_CUDA_THREADS:
@@ -779,7 +802,7 @@ class LLSitemWorker(QtCore.QObject):
                     # subd.rename(str(target))
                 if not self.P.bSaveCorrected:
                     shutil.rmtree(str(self.E.path))
-                    self.E.path = parent
+                self.E.path = parent
 
         if self.P.bCompress:
             self.status_update.emit(
@@ -800,90 +823,203 @@ class LLSitemWorker(QtCore.QObject):
             self.finished.emit()
 
 
+class TimePointWorker(QtCore.QObject):
+    """docstring for TimePointWorker"""
+
+    finished = QtCore.pyqtSignal()
+    previewReady = QtCore.pyqtSignal(np.ndarray)
+    error = QtCore.pyqtSignal()
+
+    def __init__(self, path, tRange, opts, ditch_partial=True):
+        super(TimePointWorker, self).__init__()
+        self.path = path
+        self.tRange = tRange
+        self.opts = opts
+        self.E = llspy.LLSdir(self.path, ditch_partial)
+
+    @QtCore.pyqtSlot()
+    def work(self):
+        try:
+            previewStack = llspy.llsdir.preview(self.E, self.tRange, **self.opts)
+            self.previewReady.emit(previewStack)
+        except Exception:
+            (excepttype, value, traceback) = sys.exc_info()
+            sys.excepthook(excepttype, value, traceback)
+            self.error.emit()
+
+        self.finished.emit()
+
+
 class ActiveHandler(RegexMatchingEventHandler, QtCore.QObject):
-    tiffAdded = QtCore.pyqtSignal(tuple)  # channel, time
+    tReady = QtCore.pyqtSignal(int)
+    allReceived = QtCore.pyqtSignal()  # don't expect to receive anymore
+    newfile = QtCore.pyqtSignal(str)
+
+    def __init__(self, path, nC, nT, **kwargs):
+        super(ActiveHandler, self).__init__(**kwargs)
+        self.path = path
+        self.nC = nC
+        self.nT = nT
+        # this assumes the experiment hasn't been stopped mid-stream
+        self.counter = np.zeros(self.nT)
+
+    def check_for_existing_files(self):
+        # this is here in case files already exist in the directory...
+        # we don't want the handler to miss them
+        # this is called by the parent after connecting the tReady signal
+        for f in os.listdir(self.path):
+            if fnmatch.fnmatch(f, '*tif'):
+                self.register_file(osp.join(self.path, f))
 
     def on_created(self, event):
         # Called when a file or directory is created.
-        p = llspy.parse.parse_filename(osp.basename(event.src_path))
-        self.tiffAdded.emit((p['channel'], p['stack'], p['reltime']))
+        self.register_file(event.src_path)
+
+    def register_file(self, path):
+        self.newfile.emit(path)
+        p = llspy.parse.parse_filename(osp.basename(path))
+        self.counter[p['stack']] += 1
+        ready = np.where(self.counter == self.nC)[0]
+        # break counter for those timepoints
+        self.counter[ready] = np.nan
+        # can use <100 as a sign of timepoints still not finished
+        if len(ready):
+            # try to see if file has finished writing... does this work?
+            wait_for_file_close(path)
+            [self.tReady.emit(t) for t in ready]
+
+        # once all nC * nT has been seen emit allReceived
+        if all(np.isnan(self.counter)):
+            print("All Timepoints Received")
+            self.allReceived.emit()
 
 
 class ActiveWatcher(QtCore.QObject):
     """docstring for ActiveWatcher"""
 
-    queueStalled = QtCore.pyqtSignal()
-    acquisitionFinished = QtCore.pyqtSignal()
+    finished = QtCore.pyqtSignal()
+    stalled = QtCore.pyqtSignal()
+    log_update = QtCore.pyqtSignal(str)
+    status_update = QtCore.pyqtSignal(str, int)
 
-    def __init__(self, path, timeout=600):
+    def __init__(self, path, timeout=30):
         super(ActiveWatcher, self).__init__()
         self.path = path
         self.timeout = timeout  # seconds to wait for new file before giving up
-
+        self.inProcess = False
+        settext = llspy.util.find_filepattern(path, '*Settings.txt')
+        wait_for_file_close(settext)
+        time.sleep(1)  # give the settings file a minute to write
         self.E = llspy.LLSdir(path, False)
-        self.nc = self.E.parameters.nc
-        self.nt = self.E.parameters.nt
-        self.tRange = list(range(self.nt))  # for now, assume no decimated acquisition
-        self.tReady = []
-        self.tCount = 0
+        # TODO:  probably need to check for files that are already there
+        self.tQueue = []
+        self.allReceived = False
+        self.worker = None
+
         try:
             self.opts = mainGUI.getValidatedOptions()
         except Exception:
             raise
 
-        # self.fileQueue = []
+        # timeout clock to make sure this directory doesn't stagnate
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.stall)
+        self.timer.start(self.timeout * 1000)
 
         # Too strict?
         fpattern = '^.+_ch\d_stack\d{4}_\D*\d+.*_\d{7}msec_\d{10}msecAbs.*.tif'
         # fpattern = '.*.tif'
-        self.handler = ActiveHandler(regexes=[fpattern], ignore_directories=True)
-        self.handler.tiffAdded.connect(self.receive_item)
-        self.observer = Observer()
-        self.observer.schedule(self.handler, self.path, recursive=False)
-        self.observer.start()
+        handler = ActiveHandler(self.E.path,
+            self.E.parameters.nc, self.E.parameters.nt,
+            regexes=[fpattern], ignore_directories=True)
+        handler.tReady.connect(self.add_ready)
+        handler.allReceived.connect(self.all_received)
+        handler.newfile.connect(self.newfile)
+        handler.check_for_existing_files()
 
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.queueStalled.emit)
-        self.timer.start(self.timeout * 1000)
+        self.observer = Observer()
+        self.observer.schedule(handler, self.path, recursive=False)
+        self.observer.start()
 
         print("New LLS directory now being watched: " + self.path)
 
-    @QtCore.pyqtSlot(tuple)
-    def receive_item(self, tup):
-        # tup = (channel, stacknum, reltime)
-        # self.fileQueue.append(tup)
-        self.tCount += 1
-        if self.tCount >= self.nc:
-            self.tReady.append(self.tRange.pop(0))
-        if len(self.tReady):
-            self.process_ready()
+    @QtCore.pyqtSlot(str)
+    def newfile(self, path):
+        self.restart_clock()
+        self.status_update.emit(shortname(path), 2000)
 
-    def process_ready(self):
-        # TODO: safe?
+    def all_received(self):
+        self.allReceived = True
+        if not self.inProcess and len(self.tQueue):
+            self.terminate()
 
-        w, thread = newWorkerThread(TimePointWorker, self.path, self.tReady,
-                                    self.opts, False, workerConnect={'previewReady': self.writeFile},
-                                    start=True)
-        self.worker = (w, thread)
+    def restart_clock(self):
+        # restart the kill timer, since the handler is still alive
+        self.timer.start(self.timeout * 1000)
+
+    def add_ready(self, t):
+        # add the new timepoint to the Queue
+        self.tQueue.append(t)
+        print(self.tQueue)
+        # start processing
+        self.process()
+
+    def process(self):
+        if not self.inProcess and len(self.tQueue):
+            self.inProcess = True
+            timepoints = []
+            while len(self.tQueue):
+                timepoints.append(self.tQueue.pop())
+            timepoints = sorted(timepoints)
+            print("Processing: {}".format(timepoints))
+            self.tQueue = []
+            w, thread = newWorkerThread(TimePointWorker, self.path, timepoints,
+                self.opts, False, workerConnect={'previewReady': self.writeFile},
+                start=True)
+            self.worker = (timepoints, w, thread)
+        elif not any((self.inProcess, len(self.tQueue), not self.allReceived)):
+            self.terminate()
 
     @QtCore.pyqtSlot(np.ndarray)
     def writeFile(self, stack):
+        timepoints, worker, thread = self.worker
+
+        def write_stack(s, c=0, t=0):
+            filename = "{}_ch{}_t{}.tif".format(self.E.basename, c, t)
+            outpath = str(self.E.path.joinpath(filename))
+            llspy.util.imsave(llspy.util.reorderstack(np.squeeze(s), 'zyx'),
+                outpath, dx=self.E.parameters.dx, dz=self.E.parameters.dzFinal)
+
         if stack.ndim == 5:
-            pass
+            if not stack.shape[0] == len(timepoints):
+                raise ValueError('Processed stacks length not equal to requested'
+                    ' number of timepoints processed')
+            for t in range(stack.shape[0]):
+                for c in range(stack.shape[1]):
+                    s = stack[t][c]
+                    write_stack(s, c, timepoints[t])
         elif stack.ndim == 4:
             for c in range(stack.shape[0]):
                 s = stack[c]
-                llspy.util.imsave(llspy.util.reorderstack(np.squeeze(s), 'zyx'),
-                                  str(self.E.path.joinpath('file_' + str(c) + '.tif')),
-                                  dx=self.E.parameters.dx, dz=self.E.parameters.dzFinal)
+                write_stack(s, c, timepoints[0])
         else:
-            llspy.util.imsave(llspy.util.reorderstack(np.squeeze(stack), 'zyx'),
-                              str(self.E.path.joinpath('file')),
-                              dx=self.E.parameters.dx, dz=self.E.parameters.dzFinal)
+            write_stack(stack, t=timepoints[0])
+        thread.quit()
+        thread.wait()
+        self.inProcess = False
+        self.process()  # check to see if there's more waiting in the queue
 
-    def stop(self):
+    def stall(self):
+        self.stalled.emit()
+        print('WATCHER TIMEOUT REACHED!')
+        self.terminate()
+
+    @QtCore.pyqtSlot()
+    def terminate(self):
+        print('TERMINATING')
         self.observer.stop()
         self.observer.join()
+        self.finished.emit()
 
 
 class MainHandler(FileSystemEventHandler, QtCore.QObject):
@@ -921,12 +1057,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.setupUi(self)  # method inherited from form_class to init UI
         self.setWindowTitle("Lattice Light Sheet")
         self.LLSItemThreads = []
+        self.compressionThreads = []
         self.argQueue = []  # holds all argument lists that will be sent to threads
         self.aborted = False  # current abort status
         self.inProcess = False
         self.observer = None  # for watching the watchdir
         self.activeWatchers = {}
-        self.watchMode = 1  # 1 is active mode, 0 means folders are 'done' when dropped
 
         # delete  reintroduce custom LLSDragDropTable
         self.listbox.setParent(None)
@@ -1000,39 +1136,27 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         # Restore settings from previous session and show ready status
         guirestore(self, sessionSettings)
 
+        self.clock.display("00:00:00")
+        self.statusBar.showMessage('Ready')
+
         self.watcherStatus = QtW.QLabel()
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
         if self.watchDirCheckBox.isChecked():
             self.startWatcher()
-
-        self.clock.display("00:00:00")
-        self.statusBar.showMessage('Ready')
 
     @QtCore.pyqtSlot()
     def startWatcher(self):
         self.watchdir = self.watchDirLineEdit.text()
         if osp.isdir(self.watchdir):
             self.log.append('Starting watcher on {}'.format(self.watchdir))
+            # TODO: check to see if we need to save watchHandler
             self.watcherStatus.setText("👁 {}".format(osp.basename(self.watchdir)))
-            self.watchHandler = MainHandler()
-            self.watchHandler.foundLLSdir.connect(self.on_watcher_found_item)
-            self.watchHandler.lostListItem.connect(self.listbox.removePath)
+            watchHandler = MainHandler()
+            watchHandler.foundLLSdir.connect(self.on_watcher_found_item)
+            watchHandler.lostListItem.connect(self.listbox.removePath)
             self.observer = Observer()
-            self.observer.schedule(self.watchHandler, self.watchdir, recursive=True)
+            self.observer.schedule(watchHandler, self.watchdir, recursive=True)
             self.observer.start()
-
-    @QtCore.pyqtSlot(str)
-    def on_watcher_found_item(self, path):
-        if self.watchMode > 0:
-            # in this mode, we assume more is coming (like during live acquisition)
-            activeWatcher = ActiveWatcher(path)
-            activeWatcher.queueStalled.connect(activeWatcher.deleteLater)
-            activeWatcher.acquisitionFinished.connect(activeWatcher.deleteLater)
-            self.activeWatchers[path] = activeWatcher
-        else:
-            # watchMode 0 assumes folders are completely finished when dropped
-            self.listbox.addPath(path)
-            self.onProcess()
 
     @QtCore.pyqtSlot()
     def stopWatcher(self):
@@ -1044,6 +1168,22 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.watchdir = None
         if not self.observer:
             self.watcherStatus.setText("")
+        for watcher in self.activeWatchers.values():
+            watcher.terminate()
+
+    @QtCore.pyqtSlot(str)
+    def on_watcher_found_item(self, path):
+        if self.watchModeAcquisitionRadio.isChecked():
+            # assume more files are coming (like during live acquisition)
+            activeWatcher = ActiveWatcher(path)
+            activeWatcher.finished.connect(activeWatcher.deleteLater)
+            activeWatcher.log_update.connect(self.log.append)
+            activeWatcher.status_update.connect(self.statusBar.showMessage)
+            self.activeWatchers[path] = activeWatcher
+        elif self.watchModeServerRadio.isChecked():
+            # assumes folders are completely finished when dropped
+            self.listbox.addPath(path)
+            self.onProcess()
 
     @QtCore.pyqtSlot()
     def changeWatchDir(self):
@@ -1088,6 +1228,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             QtW.QMessageBox.warning(self, "Nothing Added!",
                 'Nothing to preview! Drop LLS experiment folders into the list',
                 QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
+            self.previewButton.setEnabled(True)
             return
 
         # if there's only one item on the list show it
@@ -1100,6 +1241,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 QtW.QMessageBox.warning(self, "Nothing Selected!",
                     "Please select an item (row) from the table to preview",
                     QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
+                self.previewButton.setEnabled(True)
                 return
             else:
                 # if they select multiple, chose the first one
@@ -1294,12 +1436,17 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             'bReprocess': False,
             'width': self.cropWidthSpinBox.value(),
             'shift': self.cropShiftSpinBox.value(),
+            'cropPad': self.autocropPadSpinBox.value(),
             'bAutoBackground': self.backgroundAutoRadio.isChecked(),
             'background': self.backgroundFixedSpinBox.value(),
 
             # 'bRollingBall': self.backgroundRollingRadio.isChecked(),
             # 'rollingBall': self.backgroundRollingSpinBox.value()
         }
+
+        # otherwise a cudaDeconv error occurs... could FIXME in cudadeconv
+        if not options['saveDeskewedRaw']:
+            options['rMIP'] = (0, 0, 0)
 
         if options['bFlashCorrect']:
             options['camparamsPath'] = self.camParamTiffLineEdit.text()
@@ -1331,10 +1478,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                              'not a directory.\n\nCheck registration settings, or default '
                              'registration folder in config tab.')
 
-        if self.cropAutoRadio.isChecked():
-            options['cropMode'] = 'auto'
-        elif self.cropManualRadio.isChecked():
-            options['cropMode'] = 'manual'
+        if self.croppingGroupBox.isChecked():
+            if self.cropAutoRadio.isChecked():
+                options['cropMode'] = 'auto'
+            elif self.cropManualRadio.isChecked():
+                options['cropMode'] = 'manual'
         else:
             options['cropMode'] = 'none'
 
@@ -1354,15 +1502,45 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     def reduceSelected(self):
         for item in self.listbox.selectedPaths():
-            llspy.LLSdir(item).reduce_to_raw()
+            llspy.LLSdir(item).reduce_to_raw(keepmip=self.saveMIPsDuringReduceCheckBox.isChecked())
 
     def compressSelected(self):
+        def has_tiff(path):
+            for f in os.listdir(path):
+                if f.endswith('.tif'):
+                    return True
+            return False
+
         for item in self.listbox.selectedPaths():
-            llspy.LLSdir(item).compress()
+            # figure out what type of folder this is
+            if not has_tiff(item):
+                self.statusBar.showMessage(
+                    'No tiffs to compress in ' + shortname(item), 4000)
+                continue
+
+            w, thread = newWorkerThread(CompressionWorker, item, 'compress',
+                workerConnect={
+                    'log_update': self.log.append,
+                    'status_update': self.statusBar.showMessage,
+                },
+                start=True)
+            self.compressionThreads.append((w, thread))
+            print(self.compressionThreads)
 
     def decompressSelected(self):
         for item in self.listbox.selectedPaths():
-            llspy.LLSdir(item).decompress()
+            if not llspy.util.find_filepattern(item, '*.tar*'):
+                self.statusBar.showMessage(
+                    'No .tar file found in ' + shortname(item), 4000)
+                continue
+
+            w, thread = newWorkerThread(CompressionWorker, item, 'decompress',
+                workerConnect={
+                    'log_update': self.log.append,
+                    'status_update': self.statusBar.showMessage,
+                },
+                start=True)
+            self.compressionThreads.append((w, thread))
 
     def concatenateSelected(self):
         selectedPaths = self.listbox.selectedPaths()
