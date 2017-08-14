@@ -60,6 +60,13 @@
             <height>16777215</height>
            </size>
           </property>
+          <property name="toolTip">
+           <string>Drag and drop LLS experiment folders
+(containing a Settings.txt file) here, to
+add to the processing queue. Select
+and press delete to remove. 
+Press process button below when ready.</string>
+          </property>
           <property name="dragEnabled">
            <bool>true</bool>
           </property>
@@ -141,7 +148,7 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
@@ -149,7 +156,7 @@
              <x>0</x>
              <y>0</y>
              <width>547</width>
-             <height>265</height>
+             <height>256</height>
             </rect>
            </property>
            <attribute name="label">
@@ -176,6 +183,11 @@
                </property>
                <item>
                 <widget class="QCheckBox" name="camcorCheckBox">
+                 <property name="toolTip">
+                  <string>Perform per-pixel residual electron correction for
+Flash4.0 using CamaraParam Tiff file selected on
+config tab.  See help for details</string>
+                 </property>
                  <property name="text">
                   <string>Do Flash Correction</string>
                  </property>
@@ -185,6 +197,9 @@
                 <widget class="QComboBox" name="camcorTargetCombo">
                  <property name="enabled">
                   <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Target for camera correction (performace may vary from system to system)</string>
                  </property>
                  <item>
                   <property name="text">
@@ -208,6 +223,11 @@
                  <property name="mouseTracking">
                   <bool>true</bool>
                  </property>
+                 <property name="toolTip">
+                  <string>Perform selective median filter correction
+on particularly noisy pixels.
+As done in Amat et al 2015</string>
+                 </property>
                  <property name="text">
                   <string>Do Median Filter</string>
                  </property>
@@ -217,6 +237,10 @@
                 <widget class="QCheckBox" name="saveCamCorrectedCheckBox">
                  <property name="enabled">
                   <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Save the Raw-Corrected files after processing
+(otherwise corrected files will be deleted)</string>
                  </property>
                  <property name="text">
                   <string>Save Corrected</string>
@@ -231,6 +255,11 @@
             </item>
             <item>
              <widget class="QGroupBox" name="trimEdgesGroupBox">
+              <property name="toolTip">
+               <string>Trims N pixels from the corresponding volume edge.
+This is BEFORE processing, mostly to eliminate
+bright-edge camera artifacts prior to deskewing</string>
+              </property>
               <property name="styleSheet">
                <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
               </property>
@@ -428,6 +457,10 @@
                </property>
                <item>
                 <widget class="QRadioButton" name="backgroundAutoRadio">
+                 <property name="toolTip">
+                  <string>Use the mode intensity value from the second plane in
+the Z stack for each channel for background subtraction.</string>
+                 </property>
                  <property name="text">
                   <string>Autodetect</string>
                  </property>
@@ -451,6 +484,9 @@
                </item>
                <item>
                 <widget class="QRadioButton" name="backgroundFixedRadio">
+                 <property name="toolTip">
+                  <string>Use specified intensity value for background subtraction.</string>
+                 </property>
                  <property name="text">
                   <string>Fixed value</string>
                  </property>
@@ -489,6 +525,9 @@
                 <widget class="QRadioButton" name="backgroundRollingRadio">
                  <property name="enabled">
                   <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Not implemented</string>
                  </property>
                  <property name="text">
                   <string>Rolling Ball Radius:</string>
@@ -529,7 +568,7 @@
              <x>0</x>
              <y>0</y>
              <width>547</width>
-             <height>265</height>
+             <height>256</height>
             </rect>
            </property>
            <attribute name="label">
@@ -538,6 +577,9 @@
            <layout class="QVBoxLayout" name="verticalLayout_14">
             <item>
              <widget class="QGroupBox" name="doDeconGroupBox">
+              <property name="toolTip">
+               <string/>
+              </property>
               <property name="styleSheet">
                <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
               </property>
@@ -576,6 +618,9 @@
                    <property name="enabled">
                     <bool>true</bool>
                    </property>
+                   <property name="toolTip">
+                    <string>Number of deconvolution iterations</string>
+                   </property>
                    <property name="text">
                     <string>Iterations:</string>
                    </property>
@@ -585,6 +630,9 @@
                   <widget class="QSpinBox" name="iterationsSpinBox">
                    <property name="enabled">
                     <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string>Number of deconvolution iterations</string>
                    </property>
                    <property name="maximum">
                     <number>20</number>
@@ -615,6 +663,9 @@
                    <property name="enabled">
                     <bool>true</bool>
                    </property>
+                   <property name="toolTip">
+                    <string># of pixels to soften edge with prior to deconvolution</string>
+                   </property>
                    <property name="text">
                     <string>nApodize:</string>
                    </property>
@@ -624,6 +675,9 @@
                   <widget class="QSpinBox" name="apodizeSpinBox">
                    <property name="enabled">
                     <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string># of pixels to soften edge with prior to deconvolution</string>
                    </property>
                    <property name="maximum">
                     <number>40</number>
@@ -654,6 +708,10 @@
                    <property name="enabled">
                     <bool>true</bool>
                    </property>
+                   <property name="toolTip">
+                    <string># of top and bottom sections to blend in 
+to reduce axial ringing</string>
+                   </property>
                    <property name="text">
                     <string>nZblend</string>
                    </property>
@@ -663,6 +721,10 @@
                   <widget class="QSpinBox" name="zblendSpinBox">
                    <property name="enabled">
                     <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string># of top and bottom sections to blend in 
+to reduce axial ringing</string>
                    </property>
                    <property name="maximum">
                     <number>20</number>
@@ -709,6 +771,10 @@
                   <widget class="QFrame" name="deconvolvedMIPFrame">
                    <property name="enabled">
                     <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string>Save maximum-intensity-projection
+images along the specified axis</string>
                    </property>
                    <property name="frameShape">
                     <enum>QFrame::Panel</enum>
@@ -802,6 +868,9 @@
                      <height>16777215</height>
                     </size>
                    </property>
+                   <property name="toolTip">
+                    <string>Bit depth of resulting deconvolved images.</string>
+                   </property>
                    <property name="currentText">
                     <string>16-bit</string>
                    </property>
@@ -877,6 +946,10 @@
                </item>
                <item row="0" column="2">
                 <widget class="QFrame" name="deskewedMIPFrame">
+                 <property name="toolTip">
+                  <string>Save maximum-intensity-projection
+images along the specified axis</string>
+                 </property>
                  <property name="frameShape">
                   <enum>QFrame::Panel</enum>
                  </property>
@@ -932,6 +1005,9 @@
                </item>
                <item row="0" column="0">
                 <widget class="QCheckBox" name="saveDeskewedCheckBox">
+                 <property name="toolTip">
+                  <string>Save raw deskewed data.</string>
+                 </property>
                  <property name="text">
                   <string>Save Deskwed</string>
                  </property>
@@ -974,6 +1050,11 @@
               <property name="enabled">
                <bool>true</bool>
               </property>
+              <property name="toolTip">
+               <string>Join maximum intensity projection images
+into a single multi-dimensional (XYZCT)
+file that can be viewed easily in Fiji/ImageJ</string>
+              </property>
               <property name="layoutDirection">
                <enum>Qt::LeftToRight</enum>
               </property>
@@ -1006,7 +1087,7 @@
              <x>0</x>
              <y>0</y>
              <width>547</width>
-             <height>288</height>
+             <height>292</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1019,7 +1100,13 @@
                <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
               </property>
               <property name="title">
-               <string>Cropping</string>
+               <string>Crop Result</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0,0,0,0">
                <property name="leftMargin">
@@ -1032,35 +1119,63 @@
                 <number>5</number>
                </property>
                <item>
-                <widget class="QRadioButton" name="cropNoneRadio">
-                 <property name="text">
-                  <string>None</string>
-                 </property>
-                 <property name="checked">
-                  <bool>false</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="cropspacer1">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
                 <widget class="QRadioButton" name="cropAutoRadio">
+                 <property name="toolTip">
+                  <string>Auto-detect features in the image and
+crop to center around features.  Pad
+value adds extra space around features.</string>
+                 </property>
                  <property name="text">
                   <string>AutoCrop</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="autocropPadLabel">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="text">
+                  <string>Pad</string>
+                 </property>
+                 <property name="scaledContents">
+                  <bool>false</bool>
+                 </property>
+                 <property name="buddy">
+                  <cstring>autocropPadSpinBox</cstring>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="autocropPadSpinBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>48</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Auto-detect features in the image and
+crop to center around features.  Pad
+value adds extra space around features.</string>
+                 </property>
+                 <property name="maximum">
+                  <number>500</number>
+                 </property>
+                 <property name="value">
+                  <number>50</number>
                  </property>
                 </widget>
                </item>
@@ -1079,6 +1194,12 @@
                </item>
                <item>
                 <widget class="QRadioButton" name="cropManualRadio">
+                 <property name="toolTip">
+                  <string>Manually specify the width of the resulting
+image after deskewing.  Use shift to change
+the middle position.  Use preview button
+below to check result.</string>
+                 </property>
                  <property name="text">
                   <string>Manual</string>
                  </property>
@@ -1088,6 +1209,12 @@
                 <widget class="QGroupBox" name="cropManualGroupBox">
                  <property name="enabled">
                   <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Manually specify the width of the resulting
+image after deskewing.  Use shift to change
+the middle position.  Use preview button
+below to check result.</string>
                  </property>
                  <property name="title">
                   <string/>
@@ -1126,6 +1253,12 @@
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>50</width>
+                      <height>0</height>
+                     </size>
+                    </property>
                     <property name="maximum">
                      <number>2000</number>
                     </property>
@@ -1146,11 +1279,17 @@
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>48</width>
+                      <height>0</height>
+                     </size>
+                    </property>
                     <property name="minimum">
-                     <number>-300</number>
+                     <number>-1000</number>
                     </property>
                     <property name="maximum">
-                     <number>300</number>
+                     <number>1000</number>
                     </property>
                    </widget>
                   </item>
@@ -1164,6 +1303,12 @@
              <widget class="QGroupBox" name="rotateGroupBox">
               <property name="enabled">
                <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Transform final image around the
+Y-axis so that the Z-axis in the
+image is orthogonal to the coverslip.
+This entails interpolation.</string>
               </property>
               <property name="styleSheet">
                <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
@@ -1194,6 +1339,11 @@
                 <widget class="QCheckBox" name="rotateReverseCheckBox">
                  <property name="enabled">
                   <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Specify that direction of stage travel
+during stage-scanning is reversed
+from conventional.</string>
                  </property>
                  <property name="text">
                   <string>Reverse</string>
@@ -1241,6 +1391,11 @@
                  <property name="enabled">
                   <bool>true</bool>
                  </property>
+                 <property name="toolTip">
+                  <string>Override the angle of rotation.  Otherwise,
+use the angle value detected in the settings
+file (the same value used for deskewing).</string>
+                 </property>
                  <property name="text">
                   <string>Override angle:</string>
                  </property>
@@ -1256,6 +1411,11 @@
                    <width>70</width>
                    <height>16777215</height>
                   </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Override the angle of rotation.  Otherwise,
+use the angle value detected in the settings
+file (the same value used for deskewing).</string>
                  </property>
                  <property name="minimum">
                   <double>-180.000000000000000</double>
@@ -1276,6 +1436,12 @@
             </item>
             <item>
              <widget class="QGroupBox" name="doRegistrationGroupBox">
+              <property name="toolTip">
+               <string>Use provided fiducial-based calibration
+dataset (e.g. tetraspeck bead images)
+to register different channels of a
+multi-channel dataset.</string>
+              </property>
               <property name="styleSheet">
                <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
               </property>
@@ -1311,6 +1477,10 @@
                    <property name="enabled">
                     <bool>true</bool>
                    </property>
+                   <property name="toolTip">
+                    <string>Reference channel to which to register
+(this channel will not change)</string>
+                   </property>
                    <property name="text">
                     <string>Reference Channel:</string>
                    </property>
@@ -1326,6 +1496,10 @@
                      <width>70</width>
                      <height>16777215</height>
                     </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Reference channel to which to register
+(this channel will not change)</string>
                    </property>
                    <property name="currentText">
                     <string>405</string>
@@ -1372,6 +1546,16 @@
                  </item>
                  <item alignment="Qt::AlignRight">
                   <widget class="QLabel" name="channelRefModeLabel">
+                   <property name="toolTip">
+                    <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+                   </property>
                    <property name="text">
                     <string>Mode:</string>
                    </property>
@@ -1393,6 +1577,16 @@
                      <width>70</width>
                      <height>16777215</height>
                     </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
                    </property>
                    <property name="currentText">
                     <string>Translation</string>
@@ -1453,6 +1647,10 @@
                  </property>
                  <item>
                   <widget class="QLabel" name="RegCalibPathLabel">
+                   <property name="toolTip">
+                    <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+                   </property>
                    <property name="text">
                     <string>Calibration:</string>
                    </property>
@@ -1462,6 +1660,10 @@
                   <widget class="QLineEdit" name="RegCalibPathLineEdit">
                    <property name="enabled">
                     <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
                    </property>
                    <property name="placeholderText">
                     <string>Default: &quot;Registration&quot; folder in parent directory</string>
@@ -1487,6 +1689,10 @@
               </property>
               <item>
                <widget class="QCheckBox" name="bleachCorrectionCheckBox">
+                <property name="toolTip">
+                 <string>Modify intensity values of timelapse data to
+minimize the appearance of photobleaching.</string>
+                </property>
                 <property name="text">
                  <string>Do Bleach Correction</string>
                 </property>
@@ -1494,6 +1700,10 @@
               </item>
               <item>
                <widget class="QCheckBox" name="compressRawCheckBox">
+                <property name="toolTip">
+                 <string>Compress the raw data files
+after processing to save space.</string>
+                </property>
                 <property name="text">
                  <string>Compress Raw Data</string>
                 </property>
@@ -1525,6 +1735,23 @@
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
+        <item row="5" column="2">
+         <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Save MIP folder during &quot;Reduce to Raw&quot;</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="cudaDeconvPathLabel">
           <property name="text">
@@ -1581,7 +1808,7 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="2">
+        <item row="7" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -1597,7 +1824,7 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="6">
+        <item row="7" column="6">
          <widget class="QToolButton" name="watchDirToolButton">
           <property name="enabled">
            <bool>false</bool>
@@ -1607,7 +1834,7 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="2">
+        <item row="6" column="2">
          <spacer name="configTabVertSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -1620,7 +1847,7 @@
           </property>
          </spacer>
         </item>
-        <item row="6" column="0">
+        <item row="7" column="0">
          <widget class="QCheckBox" name="watchDirCheckBox">
           <property name="text">
            <string>Watch Directory:</string>
@@ -1708,6 +1935,78 @@
           <property name="buddy">
            <cstring>defaultRegCalibPathLineEdit</cstring>
           </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Watch Mode:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2">
+         <widget class="QGroupBox" name="watchModeGroupBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>4</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>6</number>
+           </property>
+           <item>
+            <widget class="QRadioButton" name="watchModeAcquisitionRadio">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="toolTip">
+              <string>Use this mode on the acquisition computer
+to watch a given folder for new LLS folders,
+and process new images as they arrive.</string>
+             </property>
+             <property name="text">
+              <string>Acquisition</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="watchModeServerRadio">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="toolTip">
+              <string>This mode assumes that LLS folders are
+&quot;finished&quot; when they are dropped into the
+watched folder.  Newly detected folders
+are added to the regular processing queue
+in the main window, and processed in turn.</string>
+             </property>
+             <property name="text">
+              <string>Server</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
@@ -2013,7 +2312,17 @@ QProgressBar::chunk:horizontal {
    <addaction name="actionConcatenate"/>
    <addaction name="actionRename_Scripted"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>30</height>
+    </size>
+   </property>
+   <property name="sizeGripEnabled">
+    <bool>true</bool>
+   </property>
+  </widget>
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
@@ -2078,7 +2387,9 @@ QProgressBar::chunk:horizontal {
     <string>Reduce to Raw</string>
    </property>
    <property name="toolTip">
-    <string>Remove all processed data from selected folder and restore folder to it's original state after acquisition</string>
+    <string>Remove all processed data from selected folder
+and restore folder to it's original state
+(immediately after acquisition)</string>
    </property>
   </action>
   <action name="actionCompress_Folder">
@@ -2137,12 +2448,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>490</x>
-     <y>511</y>
+     <x>500</x>
+     <y>545</y>
     </hint>
     <hint type="destinationlabel">
-     <x>544</x>
-     <y>512</y>
+     <x>554</x>
+     <y>546</y>
     </hint>
    </hints>
   </connection>
@@ -2153,12 +2464,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>262</x>
-     <y>511</y>
+     <x>267</x>
+     <y>545</y>
     </hint>
     <hint type="destinationlabel">
-     <x>330</x>
-     <y>512</y>
+     <x>335</x>
+     <y>546</y>
     </hint>
    </hints>
   </connection>
@@ -2169,12 +2480,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>352</y>
+     <x>330</x>
+     <y>458</y>
     </hint>
     <hint type="destinationlabel">
-     <x>435</x>
-     <y>354</y>
+     <x>451</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -2185,12 +2496,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>352</y>
+     <x>330</x>
+     <y>458</y>
     </hint>
     <hint type="destinationlabel">
-     <x>543</x>
-     <y>354</y>
+     <x>549</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -2201,12 +2512,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>352</y>
+     <x>330</x>
+     <y>458</y>
     </hint>
     <hint type="destinationlabel">
-     <x>367</x>
-     <y>354</y>
+     <x>393</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -2217,12 +2528,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>304</x>
-     <y>352</y>
+     <x>330</x>
+     <y>458</y>
     </hint>
     <hint type="destinationlabel">
-     <x>477</x>
-     <y>354</y>
+     <x>493</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -2233,12 +2544,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>477</x>
-     <y>420</y>
+     <x>487</x>
+     <y>526</y>
     </hint>
     <hint type="destinationlabel">
-     <x>552</x>
-     <y>422</y>
+     <x>558</x>
+     <y>528</y>
     </hint>
    </hints>
   </connection>
@@ -2249,12 +2560,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>178</x>
-     <y>348</y>
+     <x>201</x>
+     <y>382</y>
     </hint>
     <hint type="destinationlabel">
-     <x>301</x>
-     <y>352</y>
+     <x>311</x>
+     <y>386</y>
     </hint>
    </hints>
   </connection>
@@ -2266,11 +2577,11 @@ QProgressBar::chunk:horizontal {
    <hints>
     <hint type="sourcelabel">
      <x>71</x>
-     <y>655</y>
+     <y>619</y>
     </hint>
     <hint type="destinationlabel">
      <x>581</x>
-     <y>656</y>
+     <y>620</y>
     </hint>
    </hints>
   </connection>
@@ -2281,12 +2592,12 @@ QProgressBar::chunk:horizontal {
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>142</x>
-     <y>655</y>
+     <x>71</x>
+     <y>619</y>
     </hint>
     <hint type="destinationlabel">
-     <x>354</x>
-     <y>655</y>
+     <x>194</x>
+     <y>619</y>
     </hint>
    </hints>
   </connection>
@@ -2297,12 +2608,12 @@ QProgressBar::chunk:horizontal {
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>172</x>
-     <y>98</y>
+     <x>199</x>
+     <y>106</y>
     </hint>
     <hint type="destinationlabel">
-     <x>194</x>
-     <y>129</y>
+     <x>190</x>
+     <y>133</y>
     </hint>
    </hints>
   </connection>
@@ -2313,12 +2624,12 @@ QProgressBar::chunk:horizontal {
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>345</x>
-     <y>98</y>
+     <x>199</x>
+     <y>106</y>
     </hint>
     <hint type="destinationlabel">
-     <x>58</x>
-     <y>125</y>
+     <x>62</x>
+     <y>134</y>
     </hint>
    </hints>
   </connection>
@@ -2329,12 +2640,172 @@ QProgressBar::chunk:horizontal {
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>491</x>
-     <y>97</y>
+     <x>199</x>
+     <y>106</y>
     </hint>
     <hint type="destinationlabel">
-     <x>565</x>
-     <y>123</y>
+     <x>581</x>
+     <y>134</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropAutoRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>autocropPadLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>458</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>172</x>
+     <y>463</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropAutoRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>autocropPadSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>458</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>459</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deconSaveMIPSLabel_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>91</x>
+     <y>516</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>276</x>
+     <y>520</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deskewedXMIPCheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>125</x>
+     <y>519</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>309</x>
+     <y>520</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deskewedYMIPCheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>122</x>
+     <y>512</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>345</x>
+     <y>519</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deskewedZMIPCheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>132</x>
+     <y>517</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>393</x>
+     <y>517</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>107</x>
+     <y>607</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>141</x>
+     <y>649</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchModeGroupBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>100</x>
+     <y>604</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>299</x>
+     <y>638</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchModeAcquisitionRadio</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>53</x>
+     <y>614</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>220</x>
+     <y>653</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchModeServerRadio</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>109</x>
+     <y>605</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>403</x>
+     <y>655</y>
     </hint>
    </hints>
   </connection>
