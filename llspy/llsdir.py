@@ -446,11 +446,11 @@ class LLSdir(object):
 		else:
 			return False
 
-	def compress(self, subfolder='.', **kwargs):
-		return compress.make_tar(str(self.path.joinpath(subfolder)), **kwargs)
+	def compress(self, subfolder='.'):
+		return compress.compress(str(self.path.joinpath(subfolder)))
 
 	def decompress(self, subfolder='.', **kwargs):
-		o = compress.untar(str(self.path.joinpath(subfolder)), **kwargs)
+		o = compress.decompress(str(self.path.joinpath(subfolder)))
 		if self.get_all_tiffs():
 			self.ditch_partial_tiffs()
 			self.detect_parameters()
@@ -550,7 +550,7 @@ class LLSdir(object):
 			S.background = [S.background] * len(list(S.cRange))
 
 		if S.cropMode == 'auto':
-			wd = self.get_feature_width()
+			wd = self.get_feature_width(pad=S.cropPad)
 			S.width = wd['width']
 			S.shift = wd['offset']
 		elif S.cropMode == 'none':
