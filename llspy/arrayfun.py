@@ -46,7 +46,7 @@ def imcontentbounds(im, sigma=2):
 	return [left, right, fullwidth]
 
 
-def feature_width(E, background=None, pad=50, sigma=2):
+def feature_width(E, background=None, pad=50):
 	"""automated detection of post-deskew image content width.
 
 	the width can be used during deskewing to crop the final image to
@@ -64,13 +64,13 @@ def feature_width(E, background=None, pad=50, sigma=2):
 		deskewed_stacks = raw_stacks
 
 	# then get minimum bounding box of features
-	bounds = np.array([imcontentbounds(d, sigma) for d in deskewed_stacks])
-	topmax = np.max(bounds[:, 1])
-	topmin = np.min(bounds[:, 0])
+	bounds = np.array([imcontentbounds(d) for d in deskewed_stacks])
+	rightbound = np.max(bounds[:, 1])
+	leftbound = np.min(bounds[:, 0])
 	deskewedWidth = bounds[0, 2]
-	width = int(topmax - topmin + pad)
-	middle = np.floor(topmax - width / 2)
-	offset = int(np.floor(middle - deskewedWidth / 2))
+	width = int(rightbound - leftbound + pad)
+	middle = np.floor((rightbound + leftbound) / 2)
+	offset = int(np.floor(middle - (deskewedWidth / 2)))
 
 	return {'width': width, 'offset': offset, 'deskewed_nx': deskewedWidth}
 
