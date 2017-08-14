@@ -1,12 +1,7 @@
-from __future__ import print_function, division
-from . import config
-from . import util
-
+import tarfile
 import os
-import fnmatch
 import subprocess
-import glob
-
+from . import util
 
 EXTENTIONS = {
 	'.bz2': 'lbzip2',
@@ -22,180 +17,65 @@ archive_extension = {
 }
 
 
-def findtar(path):
-	for file in os.listdir(path):
-		if fnmatch.fnmatch(file, '*.tar*'):
-			return os.path.join(path, file)
-	return None
-
-
-def decompress(fpath):
-	# find tarball
-	tarball = findtar(fpath)
-	if not tarball:
-		print('did not find .tar file in {}!'.format(fpath))
-		return
-
-	# get compression binary by extension
-	arch_ext = os.path.splitext(tarball)[1]
-	compression_program = EXTENTIONS.get(arch_ext, None)
-	if not compression_program:
-		raise ValueError('Unrecognized compression extension: {}'.format())
-
-	# decompress the tar file
-	subprocess.call([compression_program, '-d', '-v', tarball])
-
-	# extract the contents of the tarball
-	tarball = tarball.strip(arch_ext)
-	try:
-		subprocess.call(['tar', '-xvf', tarball, '-C', fpath])
-		# remove the tarball
-		os.remove(tarball)
-	except subprocess.CalledProcessError:
-		print('did not delete {}... '
-			'unclear whether it was extracted correctly'.format(tarball))
-
-
-def untar(fpath, verbose=True):
-	"""look for and decompress tarball in folder"""
-
-	# find the tarball
-	tarball = glob.glob(os.path.join(fpath, '*.tar*'))
-	if not len(tarball):
-		if verbose:
-			print('did not find .tar file!')
-		return 0
-	else:
-		tarball = tarball[0]
-
-	if verbose:
-		print('thawing {}...'.format(fpath))
-
-	# TODO: allow user adjustment of this
-	if tarball.endswith('.bz2'):
-		archive_extension = '.bz2'
-		compression_program = 'lbzip2'
-	elif tarball.endswith('.gz'):
-		archive_extension = '.gz'
-		compression_program = 'pigz'
-	else:
-		print("ERROR: unknown compression type")
-		return 0
-
-	cmdlist = [compression_program, '-d', tarball]
-	if verbose:
-		cmdlist.extend(['-v'])
-		subprocess.call(cmdlist)
-	else:
-		subprocess.check_output(cmdlist, stderr=subprocess.STDOUT)
-
-	tarball = tarball.strip(archive_extension)
-	cmdlist = ['tar', '-x']
-	if verbose:
-		cmdlist.extend(['-v'])
-	cmdlist.extend(['-f', tarball])
-	cmdlist.extend(['-C', fpath])
-
-	try:
-		if verbose:
-			subprocess.call(cmdlist)
-		else:
-			subprocess.check_output(cmdlist, stderr=subprocess.STDOUT)
-		os.remove(tarball)
-		return 1
-	except subprocess.CalledProcessError:
-			# raise subprocess.CalledProcessError(e.cmd, e.returncode, e.output)
-			if verbose:
-				print('did not delete {}...'
-					'unclear whether it was extracted correctly'.format(tarball))
-			return 0
-
-
-def checktar():
-	o = subprocess.check_output(['tar', '--help'])
-	if '--remove-files' not in str(o):
-		print('tar compression requires GNU-tar, see readme for installation instructions')
-		return 0
-	return 1
-
-
-def make_tar(rawpath, compression='lbzip2', verbose=True):
-	'''
-	compress all of the tiff files in rawpath into single .tar.bz2/gz file
-
-	compression options:
-		lbzip2
-		bzip2
-		pbzip2
-		pigz
-		gzip
-	'''
-	if not checktar():
-		return 0
-
-	if not util.which(compression):
-		raise IOError('could not find compression program: {}'.format(compression))
-		return 0
-
-	if not os.path.exists(rawpath):
-		return 0
-
-	# make sure there are tiff files in the folder
-	tifflist = [f for f in os.listdir(rawpath) if f.endswith('.tif')]
-	if not len(tifflist):
-		if verbose:
-			print("No tiff files to compress in {}".format(rawpath))
-		return 0
-	basename = tifflist[0].split('_')[0]
-
+def tartiffs(path, delete=True):
+	tifflist = [f for f in os.listdir(path) if f.endswith('.tif')]
 	# figure out what type of folder this is
+	if not len(tifflist):
+		print('No tiffs found in folder {}'.format(path))
+		return None
+
+	# generate output file name
+	folder_type = 'RAW'
 	if '_deskewed' in tifflist[0]:
 		folder_type = 'DESKEWED'
 	elif '_decon' in tifflist[0]:
 		folder_type = 'DECON'
-	else:
-		folder_type = 'RAW'
+	basename = "_".join([tifflist[0].split('_ch')[0], folder_type])
+	outtar = os.path.join(path, basename + '.tar')
 
-	if verbose:
-		print('compressing {} files in {}...'.format(folder_type, rawpath))
+	# create the tarfile
+	with tarfile.open(outtar, 'w') as tar:
+		[tar.add(os.path.join(path, i), arcname=i) for i in tifflist]
+	if delete:
+		[os.remove(os.path.join(path, i)) for i in tifflist]
+	return outtar
 
-	# determine compression type
-	archive_extension = {
-		'lbzip2': 'bz2',
-		'bzip2': 'bz2',
-		'pbzip2': 'bz2',
-		'pigz': 'gz',
-		'gzip': 'gz',
-	}
 
-	# build command
-	cmdlist = ['tar', '-c', '--use-compress-program={}'.format(compression)]
+def untar(tarball, delete=True):
+	assert tarball.endswith('.tar'), 'File {} is not a tarball'.format(tarball)
+	with tarfile.open(tarball) as tar:
+		tar.extractall(path=os.path.dirname(tarball))
+	if delete:
+		os.remove(tarball)
+	return os.path.dirname(tarball)
 
-	# don't include these files/folders
-	excludelist = ['*Settings.txt', '*MIP*', '*.DS_Store',
-					'*' + config.__OUTPUTLOG__ + '*']
-	for item in excludelist:
-		cmdlist.extend(["--exclude=%s" % item])
-		tifflist = [t for t in tifflist if item.strip('*') not in t]
 
-	# if the exlusions obliterated the list of files, abort
-	if not len(tifflist):
-		if verbose:
-			print("No tiff files to compress in {}".format(rawpath))
-		return 0
+def zipit(fname, compression='lbzip2'):
+	# check if it exists and is not already compressed
+	assert os.path.exists(fname), 'File does not exist: {}'.format(fname)
+	assert os.path.splitext(fname)[1] not in ('.bz2',), 'File already compressed: ' + fname
+	subprocess.call([compression, '-zv', fname])
+	return fname + '.bz2'
 
-	cmdlist.extend(["--exclude=*.tar.%s" % archive_extension[compression]])
-	if verbose:
-		cmdlist.extend(['-v'])
-	cmdlist.extend(['--remove-files'])
-	archive_name = os.path.join(rawpath, '%s_%s.tar.%s' %
-		(basename, folder_type, archive_extension[compression]))
-	cmdlist.extend(['-f', archive_name])
-	cmdlist.extend(['-C', rawpath])
-	cmdlist.extend(tifflist)
 
-	if verbose:
-		subprocess.call(cmdlist)
-	else:
-		subprocess.check_output(cmdlist, stderr=subprocess.STDOUT)
-	return 1
+def unzipit(fname, compression='lbzip2'):
+	# check if it exists and is compressed type
+	assert os.path.exists(fname), 'File does not exist: {}'.format(fname)
+	assert os.path.splitext(fname)[1] in ('.bz2',), 'File not compressed: ' + fname
+	subprocess.call([compression, '-dv', fname])
+	return fname.strip('.bz2')
+
+
+def compress(path):
+	tar = tartiffs(path)
+	return zipit(tar) if tar is not None and os.path.isfile(tar) else None
+
+
+def decompress(file):
+	# if it's not a tar.bz2, assume it's a directory that contains one
+	compressedtar = util.find_filepattern(file, '*.tar*') if os.path.isdir(file) else file
+	if compressedtar is None or not compressedtar.endswith(('.bz2',)):
+		print('No compressed files found in ' + file)
+		return None
+	tarball = unzipit(compressedtar)
+	return untar(tarball)
