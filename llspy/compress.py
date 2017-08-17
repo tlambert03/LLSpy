@@ -36,6 +36,7 @@ def tartiffs(path, delete=True):
 	# create the tarfile
 	with tarfile.open(outtar, 'w') as tar:
 		[tar.add(os.path.join(path, i), arcname=i) for i in tifflist]
+
 	if delete:
 		[os.remove(os.path.join(path, i)) for i in tifflist]
 	return outtar
