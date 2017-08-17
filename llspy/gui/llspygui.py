@@ -6,11 +6,8 @@ import os.path as osp
 import fnmatch
 import shutil
 import logging
-import inspect
 import sys
 import numpy as np
-import traceback
-import re
 import multiprocessing
 import tarfile
 import time
@@ -19,7 +16,11 @@ thisDirectory = osp.dirname(osp.abspath(__file__))
 sys.path.append(osp.join(thisDirectory, os.pardir, os.pardir))
 import llspy
 from llspy.gui.main_gui import Ui_Main_GUI
+from llspy.gui.camcalibgui import CamCalibDialog
 from llspy.gui.imdisplay import imshow3D
+from llspy.gui.helpers import (newWorkerThread, ExceptionHandler,
+    wait_for_file_close, wait_for_folder_finished, byteArrayToString,
+    shortname, string_to_iterable, guisave, guirestore)
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
@@ -51,6 +52,11 @@ if getattr(sys, 'frozen', False):
 
 
 def getCudaDeconvBinary():
+    """returns path to platform-specific cudaDeconv.
+    This function aware of whether program is running in frozen (pyinstaller)
+    state, and whether the user has clicked the "use bundles binary" checkbox
+    in the config tab.
+    """
     if mainGUI.useBundledBinariesCheckBox.isChecked():
         if FROZEN:
             binPath = sys._MEIPASS
@@ -75,158 +81,6 @@ def getCudaDeconvBinary():
         return binary
     else:
         raise Exception('cudaDeconv binary not found or not executable: {}'.format(binary))
-
-
-class ExceptionHandler(QtCore.QObject):
-    errorSignal = QtCore.pyqtSignal()
-    silentSignal = QtCore.pyqtSignal()
-    errorMessage = QtCore.pyqtSignal(str, str)
-
-    def __init__(self):
-        super(ExceptionHandler, self).__init__()
-
-    def handler(self, errorType, errValue, tback):
-        self.errorSignal.emit()
-        self.trap_exc_during_debug(errorType, errValue, tback)
-
-    def trap_exc_during_debug(self, errorType, errValue, tback):
-        # when app raises uncaught exception, print info
-        # traceback.print_exc()
-        if errorType.__module__ == 'voluptuous.error':
-            msgSplit = str(errValue).split('for dictionary value @ data')
-            customMsg = msgSplit[0].strip()
-            if len(customMsg) and customMsg != 'not a valid value':
-                self.errorMessage.emit(customMsg, '')
-            else:
-                errorKey = msgSplit[1].split("'")[1]
-                gotValue = msgSplit[1].split("'")[3]
-                schemaDefaults = llspy.schema.__defaults__
-                itemDescription = schemaDefaults[errorKey][1]
-                report = "Not a valid value for: {}\n\n".format(errorKey)
-                report += "({})".format(itemDescription)
-                self.errorMessage.emit(report, "Got value: {}".format(gotValue))
-        else:
-            self.errorMessage.emit(str(errValue), '')
-
-        print("!" * 50)
-        traceback.print_tb(tback)
-        print(errValue)
-        print("!" * 50)
-
-
-def byteArrayToString(bytearr):
-    if sys.version_info.major < 3:
-        return str(bytearr)
-    else:
-        return str(bytearr, encoding='utf-8')
-
-
-def wait_for_file_close(file, delay=0.05):
-    s_now = 0
-    while True:
-        # check to see if the file is the same size as it was 30 ms ago
-        # if so... we assume it is done being written
-        s_last = s_now
-        try:
-            s_now = os.path.getsize(file)
-            if s_now == s_last and s_now > 0:
-                break
-        except FileNotFoundError:
-            print("WARNING: watched file disappeared: " + file)
-            return
-        time.sleep(delay)
-    return
-
-
-def shortname(path, parents=2):
-    return osp.sep.join(os.path.normpath(path).split(os.path.sep)[-parents:])
-
-
-def string_to_iterable(string):
-    """convert a string into an iterable
-    note: ranges are inclusive
-
-    >>> string_to_iterable('0,3,5-10,15-30-3,40')
-    [0,3,5,6,7,8,9,10,15,18,21,24,27,30,40]
-    """
-    if re.search('[^\d^,^-]', string) is not None:
-        raise ValueError('Iterable string must contain only digits, commas, and dashes')
-    it = []
-    splits = [tuple(s.split('-')) for s in string.split(',')]
-    for item in splits:
-        if len(item) == 1:
-            it.append(int(item[0]))
-        elif len(item) == 2:
-            it.extend(list(range(int(item[0]), int(item[1]) + 1)))
-        elif len(item) == 3:
-            it.extend(list(range(int(item[0]), int(item[1]) + 1, int(item[2]))))
-        else:
-            raise ValueError("Iterable string items must be of length <= 3")
-    return sorted(list(set(it)))
-
-
-def guisave(widget, settings):
-    print("Saving settings: {}".format(settings.fileName()))
-    # Save geometry
-    selfName = widget.objectName()
-    settings.setValue(selfName + '_size', widget.size())
-    settings.setValue(selfName + '_pos', widget.pos())
-    for name, obj in inspect.getmembers(widget):
-        # if type(obj) is QComboBox:  # this works similar to isinstance, but missed some field... not sure why?
-        value = None
-        if isinstance(obj, QtW.QComboBox):
-            index = obj.currentIndex()  # get current index from combobox
-            value = obj.itemText(index)  # get the text for current index
-        if isinstance(obj, QtW.QLineEdit):
-            value = obj.text()
-        if isinstance(obj,
-                      (QtW.QCheckBox, QtW.QRadioButton, QtW.QGroupBox)):
-            value = obj.isChecked()
-        if isinstance(obj, (QtW.QSpinBox, QtW.QSlider)):
-            value = obj.value()
-        if value is not None:
-            settings.setValue(name, value)
-    settings.sync()  # required in some cases to write settings before quit
-
-
-def guirestore(widget, settings):
-    print("Restoring settings: {}".format(settings.fileName()))
-    # Restore geometry
-    selfName = widget.objectName()
-    if 'LLSpyDefaults' not in settings.fileName():
-        widget.resize(settings.value(selfName + '_size', QtCore.QSize(500, 500)))
-        widget.move(settings.value(selfName + '_pos', QtCore.QPoint(60, 60)))
-    for name, obj in inspect.getmembers(widget):
-        try:
-            if isinstance(obj, QtW.QComboBox):
-                value = settings.value(name, defaultSettings.value(name), type=str)
-                if value == "":
-                    continue
-                index = obj.findText(value)  # get the corresponding index for specified string in combobox
-                if index == -1:  # add to list if not found
-                    obj.insertItems(0, [value])
-                    index = obj.findText(value)
-                    obj.setCurrentIndex(index)
-                else:
-                    obj.setCurrentIndex(index)
-            if isinstance(obj, QtW.QLineEdit):
-                value = settings.value(name, defaultSettings.value(name), type=str)
-                obj.setText(value)
-            if isinstance(obj,
-                          (QtW.QCheckBox, QtW.QRadioButton, QtW.QGroupBox)):
-                value = settings.value(name, defaultSettings.value(name), type=bool)
-                if value is not None:
-                    obj.setChecked(value)
-            if isinstance(obj, (QtW.QSlider, QtW.QSpinBox)):
-                value = settings.value(name, defaultSettings.value(name), type=int)
-                if value is not None:
-                    obj.setValue(value)
-            if isinstance(obj, (QtW.QDoubleSpinBox,)):
-                value = settings.value(name, defaultSettings.value(name), type=float)
-                if value is not None:
-                    obj.setValue(value)
-        except Exception:
-            logging.warn('Unable to restore settings for object: {}'.format(name))
 
 
 class QPlainTextEditLogger(logging.Handler):
@@ -318,11 +172,11 @@ class LLSDragDropTable(QtW.QTableWidget):
             return
 
         E = llspy.LLSdir(path)
-        logging.info('Add: {}'.format(shortname(E.path)))
+        logging.info('Add: {}'.format(shortname(str(E.path))))
         rowPosition = self.rowCount()
         self.insertRow(rowPosition)
         item = [path,
-                shortname(E.path),
+                shortname(str(E.path)),
                 str(E.parameters.nc),
                 str(E.parameters.nt),
                 str(E.parameters.nz),
@@ -397,42 +251,27 @@ class LLSDragDropTable(QtW.QTableWidget):
 
 # ################# WORKERS ################
 
-# TODO: add timer?
-def newWorkerThread(workerClass, *args, **kwargs):
-    worker = workerClass(*args)
-    thread = QtCore.QThread()
-    worker.moveToThread(thread)
-    # all workers started using this function must implement work() func
-    thread.started.connect(worker.work)
-    # all workers started using this function must emit finished signal
-    worker.finished.connect(thread.quit)
-    worker.finished.connect(worker.deleteLater)
-    thread.finished.connect(thread.deleteLater)
-
-    # connect dict from calling object to worker signals
-    worker_connections = kwargs.get('workerConnect', None)
-    if worker_connections:
-        [getattr(worker, key).connect(val) for key, val in worker_connections.items()]
-    # optionally, can supply onfinish callable when thread finishes
-    if kwargs.get('onfinish', None):
-        thread.finished.connect(kwargs.get('onfinish'))
-    if kwargs.get('start', False) is True:
-        thread.start()  # usually need to connect stuff before starting
-    return worker, thread
-
-
 class SubprocessWorker(QtCore.QObject):
+    """This worker class encapsulates a QProcess (subprocess) for a given binary.
+
+    It is intended to be subclassed, with new signals added as necessary and
+    methods overwritten.  The work() method is where the subprocess gets started.
+    procReadyRead, and procErrorRead define what to do with the stdout and stderr
+    outputs.
+    """
+
     processStarted = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal()
     log_update = QtCore.pyqtSignal(str)
 
-    def __init__(self, binary, args, wid=1):
+    def __init__(self, binary, args, env=None, wid=1):
         super(SubprocessWorker, self).__init__()
         self.id = int(wid)
         self.binary = binary
         if not llspy.util.which(binary):
             raise OSError('Binary not found or not executable: {}'.format(self.binary))
         self.args = args
+        self.env = env
         self.polling_interval = 100
         self.name = 'Subprocess'
         self.__abort = False
@@ -453,6 +292,12 @@ class SubprocessWorker(QtCore.QObject):
         self.log_update.emit('~' * 20 + '\nRunning {} thread_{} with args: '
             '\n{}\n'.format(self.name, self.id, " ".join(self.args)) + '\n')
         self.process.finished.connect(self.onFinished)
+        if self.env is not None:
+            sysenv = QtCore.QProcessEnvironment.systemEnvironment()
+            sysenv.insert
+            for k, v in self.env.items():
+                sysenv.insert(k, v)
+            self.process.setProcessEnvironment(sysenv)
         self.process.start(self.binary, self.args)
         self.processStarted.emit()
         self.timer = QtCore.QTimer()
@@ -493,12 +338,13 @@ class SubprocessWorker(QtCore.QObject):
         self.log_update.emit('{} #{} notified to abort'.format(self.name, self.id))
         self.__abort = True
 
+
 class CudaDeconvWorker(SubprocessWorker):
     file_finished = QtCore.pyqtSignal()  # worker id, filename
 
-    def __init__(self, args, wid=1):
+    def __init__(self, args, **kwargs):
         binary = getCudaDeconvBinary()
-        super(CudaDeconvWorker, self).__init__(binary, args, wid)
+        super(CudaDeconvWorker, self).__init__(binary, args, **kwargs)
         self.name = 'CudaDeconv'
 
     def procReadyRead(self):
@@ -517,6 +363,8 @@ class CompressionWorker(SubprocessWorker):
     log_update = QtCore.pyqtSignal(str)
 
     def __init__(self, path, mode='compress', binary='lbzip2', wid=1):
+        if not llspy.util.which(binary):
+            binary = 'bzip2'
         super(CompressionWorker, self).__init__(binary, [], wid)
         self.path = path
         self.mode = mode
@@ -563,6 +411,7 @@ class CompressionWorker(SubprocessWorker):
             os.remove(tarball)
         self.finished.emit()
 
+
     @QtCore.pyqtSlot()
     def procErrorRead(self):
         # for some reason, lbzip2 puts its verbose output in stderr
@@ -579,7 +428,6 @@ class CompressionWorker(SubprocessWorker):
 
 
 class LLSitemWorker(QtCore.QObject):
-    NUM_CUDA_THREADS = 1
 
     sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
 
@@ -600,10 +448,12 @@ class LLSitemWorker(QtCore.QObject):
         self.__id = int(wid)
         self.opts = opts
         self.E = llspy.LLSdir(path)
-        self.shortname = shortname(self.E.path)
+        self.shortname = shortname(str(self.E.path))
         self.aborted = False
         self.__argQueue = []  # holds all argument lists that will be sent to threads
         self.__CUDAthreads = []
+        # self.NUM_CUDA_THREADS = llspy.cudabinwrapper.nGPU(getCudaDeconvBinary())
+        self.NUM_CUDA_THREADS = 1
 
     @QtCore.pyqtSlot()
     def work(self):
@@ -614,10 +464,10 @@ class LLSitemWorker(QtCore.QObject):
         if not self.E.ready_to_process:
             if not self.E.has_lls_tiffs:
                 self.log_update.emit(
-                    'No TIFF files to process in {}'.format(self.E.path))
+                    'No TIFF files to process in {}'.format(str(self.E.path)))
             if not self.E.has_settings:
                 self.log_update.emit(
-                    'Could not find Settings.txt file in {}'.format(self.E.path))
+                    'Could not find Settings.txt file in {}'.format(str(self.E.path)))
             return
 
         # this needs to go here instead of __init__ in case folder is compressed
@@ -713,7 +563,9 @@ class LLSitemWorker(QtCore.QObject):
                 return
             args = self.__argQueue.pop(0)
 
-            CUDAworker, thread = newWorkerThread(CudaDeconvWorker, args, wid=idx,
+            CUDAworker, thread = newWorkerThread(CudaDeconvWorker, args,
+                env={"CUDA_VISIBLE_DEVICES": idx},
+                wid=idx,
                 workerConnect={
                      # get progress messages from CUDAworker and pass to parent
                      'file_finished': self.on_file_finished,
@@ -750,7 +602,7 @@ class LLSitemWorker(QtCore.QObject):
     def on_CUDAworker_done(self):
         # a CUDAworker has finished... update the log and check if any are still going
         self.__CUDAworkers_done += 1
-        if self.__CUDAworkers_done == self.NUM_CUDA_THREADS:
+        if self.__CUDAworkers_done == min(self.NUM_CUDA_THREADS, len(self.P.cRange)):
             # all the workers are finished, cleanup thread(s) and start again
             for thread, _ in self.__CUDAthreads:
                 thread.quit()
@@ -929,7 +781,7 @@ class ActiveWatcher(QtCore.QObject):
         # Too strict?
         fpattern = '^.+_ch\d_stack\d{4}_\D*\d+.*_\d{7}msec_\d{10}msecAbs.*.tif'
         # fpattern = '.*.tif'
-        handler = ActiveHandler(self.E.path,
+        handler = ActiveHandler(str(self.E.path),
             self.E.parameters.nc, self.E.parameters.nt,
             regexes=[fpattern], ignore_directories=True)
         handler.tReady.connect(self.add_ready)
@@ -960,7 +812,6 @@ class ActiveWatcher(QtCore.QObject):
     def add_ready(self, t):
         # add the new timepoint to the Queue
         self.tQueue.append(t)
-        print(self.tQueue)
         # start processing
         self.process()
 
@@ -971,7 +822,6 @@ class ActiveWatcher(QtCore.QObject):
             while len(self.tQueue):
                 timepoints.append(self.tQueue.pop())
             timepoints = sorted(timepoints)
-            print("Processing: {}".format(timepoints))
             self.tQueue = []
             w, thread = newWorkerThread(TimePointWorker, self.path, timepoints,
                 self.opts, False, workerConnect={'previewReady': self.writeFile},
@@ -1035,6 +885,7 @@ class MainHandler(FileSystemEventHandler, QtCore.QObject):
             pass
         else:
             if 'Settings.txt' in event.src_path:
+                wait_for_folder_finished(osp.dirname(event.src_path))
                 self.foundLLSdir.emit(osp.dirname(event.src_path))
 
     def on_deleted(self, event):
@@ -1069,9 +920,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.listbox = LLSDragDropTable(self.tab_process)
         self.process_tab_layout.insertWidget(0, self.listbox)
 
+        self.camcorDialog = CamCalibDialog()
+
         # connect buttons
         self.previewButton.clicked.connect(self.onPreview)
         self.processButton.clicked.connect(self.onProcess)
+        self.genFlashParams.clicked.connect(self.camcorDialog.show)
 
         self.watchDirToolButton.clicked.connect(self.changeWatchDir)
         self.watchDirCheckBox.stateChanged.connect(
@@ -1134,7 +988,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.sig_processing_done.connect(self.on_proc_finished)
 
         # Restore settings from previous session and show ready status
-        guirestore(self, sessionSettings)
+        guirestore(self, sessionSettings, defaultSettings)
 
         self.clock.display("00:00:00")
         self.statusBar.showMessage('Ready')
@@ -1210,7 +1064,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 "Default settings have not yet been saved.  Use Save Settings")
             if reply != QtW.QMessageBox.Yes:
                 return
-        guirestore(self, defaultSettings)
+        guirestore(self, defaultSettings, defaultSettings)
 
     def openLLSdir(self):
         path = QtW.QFileDialog.getExistingDirectory(self,
@@ -1518,14 +1372,14 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     'No tiffs to compress in ' + shortname(item), 4000)
                 continue
 
-            w, thread = newWorkerThread(CompressionWorker, item, 'compress',
+            worker, thread = newWorkerThread(CompressionWorker, item, 'compress',
                 workerConnect={
                     'log_update': self.log.append,
                     'status_update': self.statusBar.showMessage,
+                    'finished': lambda: self.statusBar.showMessage('Compression finished', 4000)
                 },
                 start=True)
-            self.compressionThreads.append((w, thread))
-            print(self.compressionThreads)
+            self.compressionThreads.append((worker, thread))
 
     def decompressSelected(self):
         for item in self.listbox.selectedPaths():
@@ -1534,13 +1388,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     'No .tar file found in ' + shortname(item), 4000)
                 continue
 
-            w, thread = newWorkerThread(CompressionWorker, item, 'decompress',
+            worker, thread = newWorkerThread(CompressionWorker, item, 'decompress',
                 workerConnect={
                     'log_update': self.log.append,
                     'status_update': self.statusBar.showMessage,
                 },
                 start=True)
-            self.compressionThreads.append((w, thread))
+            self.compressionThreads.append((worker, thread))
 
     def concatenateSelected(self):
         selectedPaths = self.listbox.selectedPaths()
@@ -1588,8 +1442,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     app = QtW.QApplication(sys.argv)
-    # dlg = LogWindow()
-    # dlg.show()
+    dlg = LogWindow()
+    dlg.show()
     mainGUI = main_GUI()
     mainGUI.show()
     mainGUI.raise_()

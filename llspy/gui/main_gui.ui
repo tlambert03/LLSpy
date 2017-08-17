@@ -36,7 +36,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -567,8 +567,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>256</height>
+             <width>467</width>
+             <height>227</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1086,7 +1086,7 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
+             <width>534</width>
              <height>292</height>
             </rect>
            </property>
@@ -1735,7 +1735,7 @@ after processing to save space.</string>
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="5" column="2">
+        <item row="6" column="2">
          <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
           <property name="toolTip">
            <string>The &quot;reduce to raw&quot; function deletes all
@@ -1808,7 +1808,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="2">
+        <item row="8" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -1824,7 +1824,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="6">
+        <item row="8" column="6">
          <widget class="QToolButton" name="watchDirToolButton">
           <property name="enabled">
            <bool>false</bool>
@@ -1834,7 +1834,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="2">
+        <item row="7" column="2">
          <spacer name="configTabVertSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -1847,7 +1847,7 @@ preview of the dataset for later review.</string>
           </property>
          </spacer>
         </item>
-        <item row="7" column="0">
+        <item row="8" column="0">
          <widget class="QCheckBox" name="watchDirCheckBox">
           <property name="text">
            <string>Watch Directory:</string>
@@ -1907,14 +1907,14 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="6">
+        <item row="5" column="6">
          <widget class="QToolButton" name="defaultRegCalibPathToolButton">
           <property name="text">
            <string>...</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="2">
+        <item row="5" column="2">
          <widget class="QLineEdit" name="defaultRegCalibPathLineEdit">
           <property name="text">
            <string/>
@@ -1924,7 +1924,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="defaultRegCalibPathLabel">
           <property name="text">
            <string>Default Reg Calib</string>
@@ -1937,7 +1937,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
+        <item row="9" column="0">
          <widget class="QLabel" name="label">
           <property name="enabled">
            <bool>false</bool>
@@ -1950,7 +1950,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="2">
+        <item row="9" column="2">
          <widget class="QGroupBox" name="watchModeGroupBox">
           <property name="enabled">
            <bool>false</bool>
@@ -2007,6 +2007,13 @@ in the main window, and processed in turn.</string>
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QPushButton" name="genFlashParams">
+          <property name="text">
+           <string>Generate Camera Calibration File</string>
+          </property>
          </widget>
         </item>
        </layout>
