@@ -2,7 +2,6 @@ from voluptuous import (All, Any, Coerce, Lower, Strip, Length, Range,
 						Schema, Required, PREVENT_EXTRA)
 from voluptuous.humanize import validate_with_humanized_errors
 from .util import dotdict
-from . import config
 import os
 
 intbool = Schema(lambda x: int(bool(x)))
