@@ -25,6 +25,11 @@ def filepath(v):
 	return v
 
 
+def nGPU(binary):
+	output = subprocess.check_output([binary, '-Q'])
+	return int(re.match(b'Detected\s(?P<numGPU>\d+)\sCUDA', output).groups()[0])
+
+
 cudaDeconSchema = Schema({
 	Required('input-dir'): dirpath,
 	Required('otf-file'): filepath,
