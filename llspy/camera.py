@@ -40,22 +40,18 @@ def correctInsensitivePixels(
 	with warnings.catch_warnings():
 		warnings.simplefilter("ignore")
 
-		deviationProjection = np.std(stack, 0, ddof=1)
-		deviationProjectionMedianFiltered = median_filter(deviationProjection,
-			medianRange, mode='constant')
-		deviationDistances = np.abs(np.subtract(deviationProjection,
-			deviationProjectionMedianFiltered))
+		devProj = np.std(stack, 0, ddof=1)
+		devProjMedFiltered = median_filter(devProj, medianRange, mode='constant')
+		deviationDistances = np.abs(devProj - devProjMedFiltered)
 		deviationDistances[deviationDistances == np.inf] = 0
 		deviationThreshold = determineThreshold(sorted(deviationDistances.flatten()))
 
 		deviationMatrix = deviationDistances > deviationThreshold
 
 		if withMean:
-			meanProjection = np.mean(stack, 0) - backgroundValue
-			meanProjectionMedianFiltered = median_filter(meanProjection, medianRange)
-			meanDistances = np.abs(np.divide(np.subtract(
-				meanProjection, meanProjectionMedianFiltered),
-				meanProjectionMedianFiltered))
+			meanProj = np.mean(stack, 0) - backgroundValue
+			meanProjMedFiltered = median_filter(meanProj, medianRange)
+			meanDistances = np.abs(meanProj - meanProjMedFiltered / meanProjMedFiltered)
 			meanDistances[meanDistances == np.inf] = 0
 			meanThreshold = determineThreshold(sorted(meanDistances.flatten()))
 
