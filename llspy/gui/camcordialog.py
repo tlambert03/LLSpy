@@ -78,6 +78,9 @@ class Ui_Dialog(object):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setContentsMargins(-1, 10, -1, -1)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.abortButton = QtWidgets.QPushButton(Dialog)
+        self.abortButton.setObjectName("abortButton")
+        self.horizontalLayout_2.addWidget(self.abortButton)
         self.statusLabel = QtWidgets.QLabel(Dialog)
         self.statusLabel.setObjectName("statusLabel")
         self.horizontalLayout_2.addWidget(self.statusLabel)
@@ -125,5 +128,6 @@ class Ui_Dialog(object):
 "</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;\" bgcolor=\"#ececec\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">The dark image is an average projection of &gt;20,000 images with no light delivered to the camera.  By default, the program will look for an image called Dark_AVG.tif in the Image Folder.  Optionally, a standard deviation projection of the dark iamge stack (i.e. noise map) can be provided in the same folder, named Dark_STD.tif.</span></p></body></html>"))
         self.runButton.setText(_translate("Dialog", "Run"))
+        self.abortButton.setText(_translate("Dialog", "Abort"))
         self.statusLabel.setText(_translate("Dialog", "TextLabel"))
 
