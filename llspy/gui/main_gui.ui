@@ -36,7 +36,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -303,7 +303,11 @@ bright-edge camera artifacts prior to deskewing</string>
                 </spacer>
                </item>
                <item row="0" column="4">
-                <widget class="QSpinBox" name="trimY0SpinBox"/>
+                <widget class="QSpinBox" name="trimY0SpinBox">
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                </widget>
                </item>
                <item row="1" column="0" alignment="Qt::AlignRight">
                 <widget class="QLabel" name="trimX1Label">
@@ -313,7 +317,11 @@ bright-edge camera artifacts prior to deskewing</string>
                 </widget>
                </item>
                <item row="1" column="7">
-                <widget class="QSpinBox" name="trimZ1SpinBox"/>
+                <widget class="QSpinBox" name="trimZ1SpinBox">
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                </widget>
                </item>
                <item row="1" column="1">
                 <widget class="QSpinBox" name="trimX1SpinBox">
@@ -323,13 +331,20 @@ bright-edge camera artifacts prior to deskewing</string>
                    <height>16777215</height>
                   </size>
                  </property>
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
                  <property name="value">
                   <number>1</number>
                  </property>
                 </widget>
                </item>
                <item row="1" column="4">
-                <widget class="QSpinBox" name="trimY1SpinBox"/>
+                <widget class="QSpinBox" name="trimY1SpinBox">
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                </widget>
                </item>
                <item row="0" column="6" alignment="Qt::AlignRight">
                 <widget class="QLabel" name="trimZ0Label">
@@ -349,6 +364,9 @@ bright-edge camera artifacts prior to deskewing</string>
                  <property name="autoFillBackground">
                   <bool>false</bool>
                  </property>
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
                  <property name="value">
                   <number>1</number>
                  </property>
@@ -358,6 +376,9 @@ bright-edge camera artifacts prior to deskewing</string>
                 <widget class="QSpinBox" name="trimZ0SpinBox">
                  <property name="autoFillBackground">
                   <bool>false</bool>
+                 </property>
+                 <property name="maximum">
+                  <number>999</number>
                  </property>
                  <property name="value">
                   <number>1</number>
@@ -567,8 +588,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>467</width>
-             <height>227</height>
+             <width>547</width>
+             <height>256</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1086,7 +1107,7 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>534</width>
+             <width>547</width>
              <height>292</height>
             </rect>
            </property>

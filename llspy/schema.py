@@ -5,7 +5,7 @@ from .util import dotdict
 import os
 
 intbool = Schema(lambda x: int(bool(x)))
-twotupIntRange = Schema(All((All(int, Range(0, 200)),), Length(min=2, max=2)))
+twotupIntRange = Schema(All((All(int, Range(0, 999)),), Length(min=2, max=2)))
 
 
 def CTiterable(v):
