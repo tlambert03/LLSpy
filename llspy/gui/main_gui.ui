@@ -156,7 +156,7 @@ Press process button below when ready.</string>
              <x>0</x>
              <y>0</y>
              <width>547</width>
-             <height>256</height>
+             <height>292</height>
             </rect>
            </property>
            <attribute name="label">
@@ -171,17 +171,8 @@ Press process button below when ready.</string>
               <property name="title">
                <string>Camera Correction</string>
               </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_9">
-               <property name="leftMargin">
-                <number>8</number>
-               </property>
-               <property name="topMargin">
-                <number>8</number>
-               </property>
-               <property name="bottomMargin">
-                <number>8</number>
-               </property>
-               <item>
+              <layout class="QGridLayout" name="gridLayout_2">
+               <item row="0" column="0" colspan="2">
                 <widget class="QCheckBox" name="camcorCheckBox">
                  <property name="toolTip">
                   <string>Perform per-pixel residual electron correction for
@@ -193,7 +184,7 @@ config tab.  See help for details</string>
                  </property>
                 </widget>
                </item>
-               <item>
+               <item row="0" column="2">
                 <widget class="QComboBox" name="camcorTargetCombo">
                  <property name="enabled">
                   <bool>false</bool>
@@ -218,7 +209,7 @@ config tab.  See help for details</string>
                  </item>
                 </widget>
                </item>
-               <item>
+               <item row="0" column="3">
                 <widget class="QCheckBox" name="medianFilterCheckBox">
                  <property name="mouseTracking">
                   <bool>true</bool>
@@ -233,7 +224,7 @@ As done in Amat et al 2015</string>
                  </property>
                 </widget>
                </item>
-               <item>
+               <item row="0" column="4" colspan="2">
                 <widget class="QCheckBox" name="saveCamCorrectedCheckBox">
                  <property name="enabled">
                   <bool>true</bool>
@@ -247,6 +238,39 @@ As done in Amat et al 2015</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="camParamTiffLabel">
+                 <property name="text">
+                  <string>CameraParam Tiff</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="buddy">
+                  <cstring>camParamTiffLineEdit</cstring>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1" colspan="4">
+                <widget class="QLineEdit" name="camParamTiffLineEdit">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="placeholderText">
+                  <string>path to TIFF file with measured camera parameters</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="5">
+                <widget class="QToolButton" name="camParamTiffToolButton">
+                 <property name="text">
+                  <string>...</string>
                  </property>
                 </widget>
                </item>
@@ -276,46 +300,6 @@ bright-edge camera artifacts prior to deskewing</string>
                <property name="bottomMargin">
                 <number>8</number>
                </property>
-               <item row="0" column="5">
-                <spacer name="trimspacer2">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item row="1" column="5">
-                <spacer name="trimspacer4">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item row="0" column="4">
-                <widget class="QSpinBox" name="trimY0SpinBox">
-                 <property name="maximum">
-                  <number>999</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0" alignment="Qt::AlignRight">
-                <widget class="QLabel" name="trimX1Label">
-                 <property name="text">
-                  <string>Trim X Right</string>
-                 </property>
-                </widget>
-               </item>
                <item row="1" column="7">
                 <widget class="QSpinBox" name="trimZ1SpinBox">
                  <property name="maximum">
@@ -426,8 +410,48 @@ bright-edge camera artifacts prior to deskewing</string>
                  </property>
                 </spacer>
                </item>
+               <item row="0" column="4">
+                <widget class="QSpinBox" name="trimY0SpinBox">
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="trimX1Label">
+                 <property name="text">
+                  <string>Trim X Right</string>
+                 </property>
+                </widget>
+               </item>
                <item row="0" column="2">
                 <spacer name="trimspacer1">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="1" column="5">
+                <spacer name="trimspacer4">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="5">
+                <spacer name="trimspacer2">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>
@@ -1756,7 +1780,7 @@ after processing to save space.</string>
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="6" column="2">
+        <item row="7" column="2">
          <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
           <property name="toolTip">
            <string>The &quot;reduce to raw&quot; function deletes all
@@ -1796,26 +1820,6 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="2">
-         <widget class="QLineEdit" name="camParamTiffLineEdit">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-          <property name="placeholderText">
-           <string>path to TIFF file with measured camera parameters</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="6">
-         <widget class="QToolButton" name="camParamTiffToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="otfFolderPathLabel">
           <property name="text">
@@ -1829,7 +1833,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="2">
+        <item row="10" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -1845,7 +1849,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="6">
+        <item row="10" column="6">
          <widget class="QToolButton" name="watchDirToolButton">
           <property name="enabled">
            <bool>false</bool>
@@ -1855,7 +1859,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="2">
+        <item row="9" column="2">
          <spacer name="configTabVertSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -1868,7 +1872,7 @@ preview of the dataset for later review.</string>
           </property>
          </spacer>
         </item>
-        <item row="8" column="0">
+        <item row="10" column="0">
          <widget class="QCheckBox" name="watchDirCheckBox">
           <property name="text">
            <string>Watch Directory:</string>
@@ -1905,19 +1909,6 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="camParamTiffLabel">
-          <property name="text">
-           <string>CameraParam Tiff</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>camParamTiffLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="6">
          <widget class="QToolButton" name="cudaDeconvPathToolButton">
           <property name="text">
@@ -1930,6 +1921,9 @@ preview of the dataset for later review.</string>
         </item>
         <item row="5" column="6">
          <widget class="QToolButton" name="defaultRegCalibPathToolButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>...</string>
           </property>
@@ -1937,6 +1931,9 @@ preview of the dataset for later review.</string>
         </item>
         <item row="5" column="2">
          <widget class="QLineEdit" name="defaultRegCalibPathLineEdit">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -1947,6 +1944,9 @@ preview of the dataset for later review.</string>
         </item>
         <item row="5" column="0">
          <widget class="QLabel" name="defaultRegCalibPathLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Default Reg Calib</string>
           </property>
@@ -1958,7 +1958,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="9" column="0">
+        <item row="11" column="0">
          <widget class="QLabel" name="label">
           <property name="enabled">
            <bool>false</bool>
@@ -1971,7 +1971,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="9" column="2">
+        <item row="11" column="2">
          <widget class="QGroupBox" name="watchModeGroupBox">
           <property name="enabled">
            <bool>false</bool>
@@ -2030,7 +2030,7 @@ in the main window, and processed in turn.</string>
           </layout>
          </widget>
         </item>
-        <item row="4" column="2">
+        <item row="6" column="2">
          <widget class="QPushButton" name="genFlashParams">
           <property name="text">
            <string>Generate Camera Calibration File</string>
@@ -2477,11 +2477,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>500</x>
-     <y>545</y>
+     <y>585</y>
     </hint>
     <hint type="destinationlabel">
      <x>554</x>
-     <y>546</y>
+     <y>586</y>
     </hint>
    </hints>
   </connection>
@@ -2493,11 +2493,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>267</x>
-     <y>545</y>
+     <y>585</y>
     </hint>
     <hint type="destinationlabel">
      <x>335</x>
-     <y>546</y>
+     <y>586</y>
     </hint>
    </hints>
   </connection>
@@ -2604,12 +2604,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>71</x>
-     <y>619</y>
+     <x>86</x>
+     <y>610</y>
     </hint>
     <hint type="destinationlabel">
      <x>581</x>
-     <y>620</y>
+     <y>611</y>
     </hint>
    </hints>
   </connection>
@@ -2620,12 +2620,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>71</x>
-     <y>619</y>
+     <x>86</x>
+     <y>610</y>
     </hint>
     <hint type="destinationlabel">
-     <x>194</x>
-     <y>619</y>
+     <x>316</x>
+     <y>610</y>
     </hint>
    </hints>
   </connection>
@@ -2812,12 +2812,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>53</x>
-     <y>614</y>
+     <x>68</x>
+     <y>610</y>
     </hint>
     <hint type="destinationlabel">
-     <x>220</x>
-     <y>653</y>
+     <x>347</x>
+     <y>652</y>
     </hint>
    </hints>
   </connection>
@@ -2832,8 +2832,8 @@ and restore folder to it's original state
      <y>605</y>
     </hint>
     <hint type="destinationlabel">
-     <x>403</x>
-     <y>655</y>
+     <x>532</x>
+     <y>652</y>
     </hint>
    </hints>
   </connection>
