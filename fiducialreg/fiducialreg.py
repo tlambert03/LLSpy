@@ -766,7 +766,7 @@ class CloudSet(object):
 		show matching points from all sets"""
 		import matplotlib.pyplot as plt
 		if withimage:
-			if filtered:
+			if filtered and self.clouds[0].filtered is not None:
 				im = self.clouds[0].filtered.max(0)
 			else:
 				im = self.clouds[0].max(0)
