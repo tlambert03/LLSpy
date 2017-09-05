@@ -36,6 +36,7 @@ excitation_pattern = re.compile(r"""
 PIXEL_SIZE = {
 	'C11440-22C': 6.5,
 	'C11440': 6.5,
+	'C13440': 6.5,
 }
 
 
