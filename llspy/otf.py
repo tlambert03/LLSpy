@@ -30,9 +30,14 @@ else:
 try:
 	otflib = ctypes.CDLL(libname)
 except OSError:
-	curdir = os.path.dirname(__file__)
-	sharelib = os.path.abspath(os.path.join(curdir, os.pardir, 'lib', libname))
-	otflib = ctypes.CDLL(sharelib)
+	filedir = os.path.dirname(__file__)
+	libdir =  os.path.abspath(os.path.join(filedir, os.pardir, 'lib'))
+	#sharelib = os.path.abspath(os.path.join(filedir, os.pardir, 'lib', libname))
+	cwd = os.getcwd()
+	os.chdir(libdir)
+	otflib = ctypes.CDLL(libname)
+	os.chdir(cwd)
+
 
 
 
@@ -116,6 +121,11 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 	OTF that was collected before 'date' and 'after' returns one that was
 	collected after 'date.'
 	"""
+	print(str(otfpath))
+	if not os.path.isdir(str(otfpath)):
+		print ("OTF path does not exist: {}".format(otfpath))
+		return None
+
 	otf_dict = get_otf_dict(otfpath)
 	otflist = []
 
