@@ -16,6 +16,17 @@ LLSpy: Lattice light-sheet processing scripts
 .. _licenselink: https://opensource.org/licenses/MIT
 
 
+Installation
+------------
+* install anaconda at https://www.anaconda.com/download/  (python 2.7 or 3.6 =should both work)
+* CUDA must be installed (tested on 8.0)
+
+* open anaconda prompt and cd to llspy directory
+* ``conda create --file environment.yml``
+* ``activate llsenv``
+* ``python llspy\gui\llspygui.py``
+
+
 Features
 ---------
 GUI:
