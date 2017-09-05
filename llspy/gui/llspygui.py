@@ -12,8 +12,8 @@ import multiprocessing
 import tarfile
 import time
 
-# thisDirectory = osp.dirname(osp.abspath(__file__))
-# sys.path.append(osp.join(thisDirectory, os.pardir, os.pardir))
+thisDirectory = osp.dirname(osp.abspath(__file__))
+sys.path.append(osp.join(thisDirectory, os.pardir, os.pardir))
 import llspy
 from llspy.gui.main_gui import Ui_Main_GUI
 from llspy.gui.camcalibgui import CamCalibDialog
@@ -516,6 +516,7 @@ class LLSitemWorker(QtCore.QObject):
                     cudaOpts['filename-pattern'] = '_ch{}_stack{}'.format(chan,
                         llspy.util.pyrange_to_perlregex(self.P.tRange))
 
+                print(self.P.otfs)
                 cudaOpts['otf-file'] = self.P.otfs[chan]
                 cudaOpts['background'] = self.P.background[chan] if not self.P.bFlashCorrect else 0
                 cudaOpts['wavelength'] = float(self.P.wavelength[chan]) / 1000
@@ -638,13 +639,26 @@ class LLSitemWorker(QtCore.QObject):
                     subd = self.E.path.joinpath(d)
                     if subd.exists():
                         target = parent.joinpath(d)
-                        if target.exists():
-                            shutil.rmtree(str(target))
-                        shutil.move(str(subd), str(target))
+                        print("TARGET: {}".format(target))
+                        shutil.rmtree(str(target), ignore_errors=True)
+                        t = 0
+                        while subd.exists():
+                            try:
+                                shutil.move(str(subd), str(target))
+                            except:
+                                if t>4:
+                                    break
+                                time.sleep(0.5)
+                                t+=1
+
                     # subd.rename(str(target))
-                if not self.P.bSaveCorrected:
-                    shutil.rmtree(str(self.E.path))
                 self.E.path = parent
+                if not self.P.bSaveCorrected:
+                    # try:
+                    #     shutil.rmtree(str(self.E.path.joinpath('Corrected')))
+                    # except:
+                    #     time.sleep(1)
+                    shutil.rmtree(str(self.E.path.joinpath('Corrected')), ignore_errors=True)
 
         if self.P.bCompress:
             self.status_update.emit(
@@ -830,8 +844,19 @@ class ActiveWatcher(QtCore.QObject):
         timepoints, worker, thread = self.worker
 
         def write_stack(s, c=0, t=0):
-            filename = "{}_ch{}_t{}.tif".format(self.E.basename, c, t)
-            outpath = str(self.E.path.joinpath(filename))
+            if self.opts['nIters'] > 0:
+                outfolder = 'GPUdecon'
+                proctype = '_decon'
+            else:
+                outfolder = 'Deskewed'
+                proctype = '_deskewed'
+            if not self.E.path.joinpath(outfolder).exists():
+                self.E.path.joinpath(outfolder).mkdir()
+
+            corstring = '_COR' if self.opts['bFlashCorrect'] else ''
+            basename = os.path.basename(self.E.get_files(c=c, t=t)[0])
+            filename = basename.replace('.tif', corstring + proctype + '.tif')
+            outpath = str(self.E.path.joinpath(outfolder, filename))
             llspy.util.imsave(llspy.util.reorderstack(np.squeeze(s), 'zyx'),
                 outpath, dx=self.E.parameters.dx, dz=self.E.parameters.dzFinal)
 
@@ -845,10 +870,10 @@ class ActiveWatcher(QtCore.QObject):
                     write_stack(s, c, timepoints[t])
         elif stack.ndim == 4:
             for c in range(stack.shape[0]):
-                s = stack[c]
-                write_stack(s, c, timepoints[0])
+                write_stack(stack[c], c, timepoints[0])
         else:
             write_stack(stack, t=timepoints[0])
+
         thread.quit()
         thread.wait()
         self.inProcess = False
@@ -996,7 +1021,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.sig_processing_done.connect(self.on_proc_finished)
 
         # Restore settings from previous session and show ready status
-        guirestore(self, sessionSettings, defaultSettings)
+        guirestore(self, sessionSettings, programDefaults)
 
         self.clock.display("00:00:00")
         self.statusBar.showMessage('Ready')
@@ -1071,7 +1096,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 "Default settings have not yet been saved.  Use Save Settings")
             if reply != QtW.QMessageBox.Yes:
                 return
-        guirestore(self, defaultSettings, defaultSettings)
+        guirestore(self, defaultSettings, programDefaults)
 
     def openLLSdir(self):
         path = QtW.QFileDialog.getExistingDirectory(self,
@@ -1150,6 +1175,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         # store current options for this processing run.  ??? Unecessary?
         try:
             self.optionsOnProcessClick = self.getValidatedOptions()
+            op = self.optionsOnProcessClick
+            if not (op['nIters'] or
+                    (op['bSaveCorrected'] and (op['bFlashCorrect'] or op['bMedianCorrect'])) or
+                    op['saveDeskewedRaw'] or
+                    op['bDoRegistration']):
+                raise Exception('Nothing done! Check GUI options')
+
         except Exception:
             self.enableProcessButton()
             raise
@@ -1291,7 +1323,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             'bDoRegistration': self.doRegistrationGroupBox.isChecked(),
             'regRefWave': int(self.channelRefCombo.currentText()),
             'regMode': self.channelRefModeCombo.currentText(),
-            'otfDir': self.otfFolderLineEdit.text(),
+            'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
             'bCompress': self.compressRawCheckBox.isChecked(),
             'bReprocess': False,
             'width': self.cropWidthSpinBox.value(),
@@ -1303,6 +1335,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             # 'bRollingBall': self.backgroundRollingRadio.isChecked(),
             # 'rollingBall': self.backgroundRollingSpinBox.value()
         }
+
+        if options['nIters'] > 0 and not options['otfDir']:
+            raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
 
         # otherwise a cudaDeconv error occurs... could FIXME in cudadeconv
         if not options['saveDeskewedRaw']:
@@ -1328,7 +1363,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             else:
                 options['regCalibDir'] = None
 
-        if options['bDoRegistration'] and not options['regCalibDir'] is None:
+        if options['bDoRegistration'] and options['regCalibDir'] is None:
             raise ValueError('Registration requested, but calibration folder '
                              'not provided.\n\nCheck registration settings, or default '
                              'registration folder in config tab.')
