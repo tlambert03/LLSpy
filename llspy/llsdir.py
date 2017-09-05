@@ -423,10 +423,11 @@ class LLSdir(object):
 	def read_tiff_header(self):
 		with warnings.catch_warnings():
 			warnings.simplefilter("ignore")
-			firstTiff = tf.TiffFile(self.tiff.raw[0])
-		self.parameters.shape = firstTiff.series[0].shape
+			with tf.TiffFile(self.tiff.raw[0]) as firstTiff:
+				self.parameters.shape = firstTiff.series[0].shape
+				self.tiff.bit_depth = firstTiff.pages[0].bits_per_sample
 		self.parameters.nz, self.parameters.ny, self.parameters.nx = self.parameters.shape
-		self.tiff.bit_depth = firstTiff.pages[0].bits_per_sample
+
 
 	def is_compressed(self, subdir='.'):
 		return bool(len([s for s in self.path.joinpath(subdir).glob('*.bz2')]))
@@ -532,17 +533,8 @@ class LLSdir(object):
 				warnings.warn('tRange was larger than number of Timepoints! Excluding T > {}'.format(P.nt - 1))
 			S.tRange = sorted([n for n in S.tRange if n < P.nt])
 
-		# FIXME:
-		# shouldn't have to get OTF if not deconvolving... though cudaDeconv
-		# may have an issue with this...
-		otfs = self.get_otfs(otfpath=S.otfDir)
-		S.otfs = [otfs[i] for i in S.cRange]
-		if S.nIters > 0 and any([(otf == '' or otf is None) for otf in S.otfs]):
-			raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
-
 		# note: background should be forced to 0 if it is getting corrected
 		# in the camera correction step
-
 		if S.bAutoBackground and self.has_lls_tiffs:
 			B = self.get_background()
 			S.background = [B[i] for i in S.cRange]
@@ -570,7 +562,19 @@ class LLSdir(object):
 		S.dzFinal = P.dzFinal
 		S.wavelength = P.wavelength
 		S.deskew = P.angle if P.samplescan else 0
+		if not P.samplescan:
+			S.rMIP = (0, 0, 0)
 		S.saveDeskewedRaw = S.saveDeskewedRaw if P.samplescan else False
+
+		# FIXME:
+		# shouldn't have to get OTF if not deconvolving... though cudaDeconv
+		# may have an issue with this...
+		if S.nIters > 0 or (S.deskew > 0 and S.saveDeskewedRaw):
+			otfs = self.get_otfs(otfpath=S.otfDir)
+			S.otfs = [otfs[i] for i in S.cRange]
+			if S.nIters > 0 and any([(otf == '' or otf is None) for otf in S.otfs]):
+				raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
+
 		if S.bRotate:
 			S.rotate = S.rotate if S.rotate is not None else P.angle
 		else:
@@ -708,9 +712,10 @@ class LLSdir(object):
 			# 	[p.start() for p in proccessGroup]
 			# 	[p.join() for p in proccessGroup]
 
-			pool = Pool(processes=cpu_count())
-			g = [(t, camparams, outpath, median) for t in timegroups]
-			pool.map(unwrapper, g)
+			with Pool(processes=cpu_count()) as pool:
+				g = [(t, camparams, outpath, median) for t in timegroups]
+				pool.map(unwrapper, g)
+
 
 		elif target == 'cpu':
 			for t in timegroups:
