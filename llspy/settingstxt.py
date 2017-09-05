@@ -19,7 +19,7 @@ numstack_pattern = re.compile(r"""
 waveform_pattern = re.compile(r"""
 	^(?P<waveform>.*)\sOffset,	# Waveform type, newline followed by description
 	.*\((?P<channel>\d+)\)\s	# get channel number inside of parentheses
-	:\s*(?P<offset>\d*\.?\d*)	# float offset value after colon
+	:\s*(?P<offset>[-\d]*\.?\d*)	# float offset value after colon
 	\s*(?P<interval>[-\d]*\.?\d*)	# float interval value next
 	\s*(?P<numpix>\d+)			# integer number of pixels last
 	""", re.MULTILINE | re.VERBOSE)
