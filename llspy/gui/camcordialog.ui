@@ -206,6 +206,13 @@ p, li { white-space: pre-wrap; }
       <number>10</number>
      </property>
      <item>
+      <widget class="QPushButton" name="abortButton">
+       <property name="text">
+        <string>Abort</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="statusLabel">
        <property name="text">
         <string>TextLabel</string>

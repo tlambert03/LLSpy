@@ -5,7 +5,7 @@ from .util import dotdict
 import os
 
 intbool = Schema(lambda x: int(bool(x)))
-twotupIntRange = Schema(All((All(int, Range(0, 200)),), Length(min=2, max=2)))
+twotupIntRange = Schema(All((All(int, Range(0, 999)),), Length(min=2, max=2)))
 
 
 def CTiterable(v):
@@ -123,10 +123,10 @@ __validator__ = {
 		msg='tRange must be int or iterable of integers >= 0'),
 	'cRange'			: Any(None, CTiterable,
 		msg='cRange must be int or iterable of integers >= 0'),
-	'otfDir'			: Any(None, dirpath,
-		msg='Unable to find OTF path. Check filepath'),
+	'otfDir'			: Any(None, '', dirpath,
+		msg='Unable to find OTF path. Check filepath in config'),
 	'camparamsPath'		: Any(None, filepath,
-		msg='Unable to find Camera Paramaters path.  Check filepath'),
+		msg='Unable to find Camera Paramaters path.  Check filepath in config'),
 	'verbose'			: Any(0, 1, 2,
 		msg='verbosity level must be 0, 1, or 2'),
 	'cropMode' 			: All(Coerce(str), Lower, Strip, Any('none', 'auto', 'manual')),

@@ -39,17 +39,21 @@ class CamCalibWorker(QtCore.QObject):
 
             self.setStatus.emit('Calculating correction image... This will take a while')
             results = camcalib.parallel_fit(pre, post, self.progress.emit)
+
+            # add dark images to the results
             results = np.vstack((results, self.darkSTD[None, :, :]))
             if self.darkSTD is not None:
                 results = np.vstack((results, self.darkSTD[None, :, :]))
-            results = llspy.util.reorderstack(results, 'zyx')
 
+            # create name
             E = llspy.LLSdir(self.folder)
             outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
                 E.settings.camera.serial,
                 "-".join([str(i) for i in E.settings.camera.roi]),
                 E.date.strftime('%Y%m%d'))
 
+            # reorder and write
+            results = llspy.util.reorderstack(results, 'zyx')
             tf.imsave(os.path.join(self.folder, outname), results, imagej=True,
                 resolution=(1 / E.parameters.dx, 1 / E.parameters.dx),
                 metadata={
@@ -72,6 +76,7 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
         super(CamCalibDialog, self).__init__(parent)
         self.setupUi(self)  # method inherited from form_class to init UI
         self.setWindowTitle("Flash4.0 Charge Carryover Correction")
+        self.abortButton.hide()
         self.picture.setPixmap(QtGui.QPixmap(os.path.join(thisDirectory, "before_after.png")))
         self.progressBar.setValue(0)
         self.statusLabel.setText('Select folder and press run...')
@@ -113,8 +118,11 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
             workerConnect={
                 'progress': self.incrementProgress,
                 'setProgMax': self.progressBar.setMaximum,
-                'setStatus': self.statusLabel.setText
+                'setStatus': self.statusLabel.setText,
+                'finished': self.abortButton.hide,
             }, start=True)
+        # self.abortButton.clicked.connect(self.thread.quit)
+        # self.abortButton.show()
 
     def incrementProgress(self):
         self.progressBar.setValue(self.progressBar.value() + 1)

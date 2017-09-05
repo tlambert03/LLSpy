@@ -234,7 +234,6 @@ def RL_init(rawdata_shape, otfpath, drdata=0.104, dzdata=0.5, drpsf=0.104,
 
 def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
 	rescale=False, **kwargs):
-	print('libcudaRL_decon called')
 	nz, ny, nx = im.shape
 	decon_result = np.empty((get_output_nz(), get_output_ny(),
 			get_output_nx()), dtype=np.float32)
