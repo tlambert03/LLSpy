@@ -121,7 +121,6 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 	OTF that was collected before 'date' and 'after' returns one that was
 	collected after 'date.'
 	"""
-	print(str(otfpath))
 	if not os.path.isdir(str(otfpath)):
 		print ("OTF path does not exist: {}".format(otfpath))
 		return None
