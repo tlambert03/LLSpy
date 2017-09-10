@@ -11,6 +11,7 @@ import numpy as np
 import multiprocessing
 import tarfile
 import time
+import json
 
 thisDirectory = osp.dirname(osp.abspath(__file__))
 sys.path.append(osp.join(thisDirectory, os.pardir, os.pardir))
@@ -57,7 +58,10 @@ def getCudaDeconvBinary():
     state, and whether the user has clicked the "use bundles binary" checkbox
     in the config tab.
     """
-    if mainGUI.useBundledBinariesCheckBox.isChecked():
+    app = QtCore.QCoreApplication.instance()
+    gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
+
+    if gui.useBundledBinariesCheckBox.isChecked():
         if FROZEN:
             binPath = sys._MEIPASS
         else:
@@ -75,7 +79,7 @@ def getCudaDeconvBinary():
         else:
             binary = osp.join(binPath, 'cudaDeconv')
     else:
-        binary = mainGUI.cudaDeconvPathLineEdit.text()
+        binary = gui.cudaDeconvPathLineEdit.text()
 
     if llspy.util.which(binary):
         return binary
@@ -270,7 +274,7 @@ class SubprocessWorker(QtCore.QObject):
         self.timer.start(self.polling_interval)
 
     def check_events(self):
-        app.processEvents()
+        QtCore.QCoreApplication.instance().processEvents()
         if self.__abort:
             # self.process.terminate() # didn't work on Windows
             self.process.kill()
@@ -391,32 +395,32 @@ class CompressionWorker(SubprocessWorker):
                 logging.info(line.rstrip())
 
 
-class CorrectionWorker(QtCore.QObject):
-    """docstring for ImCorrector"""
+# class CorrectionWorker(QtCore.QObject):
+#     """docstring for ImCorrector"""
 
-    finished = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal()
+#     finished = QtCore.pyqtSignal()
+#     error = QtCore.pyqtSignal()
 
-    def __init__(self, path, tRange, camparams, median, target):
-        super(CorrectionWorker, self).__init__()
-        self.path = path
-        self.tRange = tRange
-        self.camparams = camparams
-        self.median = median
-        self.target = target
-        self.E = llspy.LLSdir(self.path)
+#     def __init__(self, path, tRange, camparams, median, target):
+#         super(CorrectionWorker, self).__init__()
+#         self.path = path
+#         self.tRange = tRange
+#         self.camparams = camparams
+#         self.median = median
+#         self.target = target
+#         self.E = llspy.LLSdir(self.path)
 
-    @QtCore.pyqtSlot()
-    def work(self):
-        try:
-            self.E.correct_flash(trange=self.tRange, camparams=self.camparams,
-                                 median=self.median, target=self.target)
-        except Exception:
-            (excepttype, value, traceback) = sys.exc_info()
-            sys.excepthook(excepttype, value, traceback)
-            self.error.emit()
+#     @QtCore.pyqtSlot()
+#     def work(self):
+#         try:
+#             self.E.correct_flash(trange=self.tRange, camparams=self.camparams,
+#                                  median=self.median, target=self.target)
+#         except Exception:
+#             (excepttype, value, traceback) = sys.exc_info()
+#             sys.excepthook(excepttype, value, traceback)
+#             self.error.emit()
 
-        self.finished.emit()
+#         self.finished.emit()
 
 
 class LLSitemWorker(QtCore.QObject):
@@ -478,11 +482,14 @@ class LLSitemWorker(QtCore.QObject):
         logging.info('Processing {}'.format(self.E.basename))
         logging.info('#' * 50 + '\n')
 
-        if self.P.bFlashCorrect:
+        if self.P.correctFlash:
             self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
-            self.E.correct_flash(trange=self.P.tRange, camparams=self.P.camparamsPath,
-                                 median=self.P.bMedianCorrect, target=self.P.flashCorrectTarget)
-            self.E.path = self.E.path.joinpath('Corrected')
+            self.E.path = self.E.correct_flash(**self.P)
+        # if not flash correcting but there is trimming/median filter requested
+        elif (self.P.medianFilter or
+              any([any(i) for i in (self.P.trimX, self.P.trimY, self.P.trimZ)])):
+            self.E.path = self.E.median_and_trim(**self.P)
+
 
         self.nFiles_done = 0
         self.progressValue.emit(0)
@@ -518,7 +525,7 @@ class LLSitemWorker(QtCore.QObject):
 
                 print(self.P.otfs)
                 cudaOpts['otf-file'] = self.P.otfs[chan]
-                cudaOpts['background'] = self.P.background[chan] if not self.P.bFlashCorrect else 0
+                cudaOpts['background'] = self.P.background[chan] if not self.P.correctFlash else 0
                 cudaOpts['wavelength'] = float(self.P.wavelength[chan]) / 1000
 
                 args = binary.assemble_args(**cudaOpts)
@@ -611,12 +618,16 @@ class LLSitemWorker(QtCore.QObject):
 
     def post_process(self):
 
-        if self.P.bDoRegistration:
+        if self.P.doReg:
             self.status_update.emit(
                 'Doing Channel Registration: {}'.format(self.E.basename))
-            self.E.register(self.P.regRefWave, self.P.regMode, self.P.regCalibDir)
+            try:
+                self.E.register(self.P.regRefWave, self.P.regMode, self.P.regCalibDir)
+            except Exception:
+                logging.warn("REGISTRATION FAILED")
+                raise
 
-        if self.P.bMergeMIPs:
+        if self.P.mergeMIPs:
             self.status_update.emit(
                 'Merging MIPs: {}'.format(self.E.basename))
             self.E.mergemips()
@@ -624,7 +635,7 @@ class LLSitemWorker(QtCore.QObject):
             for mipfile in self.E.path.glob('**/*comboMIP_*'):
                 mipfile.unlink()  # clean up any combo MIPs from previous runs
 
-        # if self.P.bMergeMIPsraw:
+        # if self.P.mergeMIPsraw:
         #   if self.E.path.joinpath('Deskewed').is_dir():
         #       self.status_update.emit(
         #           'Merging raw MIPs: {}'.format(self.E.basename))
@@ -632,38 +643,23 @@ class LLSitemWorker(QtCore.QObject):
 
         # if we did camera correction, move the resulting processed folders to
         # the parent folder, and optionally delete the corrected folder
-        if self.P.bFlashCorrect:
-            if self.E.path.name == 'Corrected':
-                parent = self.E.path.parent
-                for d in ['GPUdecon', 'Deskewed', 'CPPdecon']:
-                    subd = self.E.path.joinpath(d)
-                    if subd.exists():
-                        target = parent.joinpath(d)
-                        print("TARGET: {}".format(target))
-                        shutil.rmtree(str(target), ignore_errors=True)
-                        t = 0
-                        while subd.exists():
-                            try:
-                                shutil.move(str(subd), str(target))
-                            except:
-                                if t>4:
-                                    break
-                                time.sleep(0.5)
-                                t+=1
+        if self.P.moveCorrected and self.E.path.name == 'Corrected':
+            llspy.llsdir.move_corrected(self.E.path)
+            self.E.path = self.E.path.parent
 
-                    # subd.rename(str(target))
-                self.E.path = parent
-                if not self.P.bSaveCorrected:
-                    # try:
-                    #     shutil.rmtree(str(self.E.path.joinpath('Corrected')))
-                    # except:
-                    #     time.sleep(1)
-                    shutil.rmtree(str(self.E.path.joinpath('Corrected')), ignore_errors=True)
+        if not self.P.keepCorrected:
+            shutil.rmtree(str(self.E.path.joinpath('Corrected')), ignore_errors=True)
 
-        if self.P.bCompress:
+        if self.P.compressRaw:
             self.status_update.emit(
                 'Compressing Raw: {}'.format(self.E.basename))
             self.E.compress()
+
+        if self.P.writeLog:
+            outname = str(self.E.path.joinpath('{}_{}'.format(self.E.basename,
+                                llspy.config.__OUTPUTLOG__)))
+            with open(outname, 'w') as outfile:
+                json.dump(self.P, outfile, cls=llspy.util.paramEncoder)
 
         self.finished.emit()
 
@@ -700,9 +696,11 @@ class TimePointWorker(QtCore.QObject):
             self.previewReady.emit(previewStack)
 
             if self.opts['cropMode'] == 'auto':
+                app = QtCore.QCoreApplication.instance()
+                gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
                 wd = self.E.get_feature_width(pad=self.opts['cropPad'])
-                mainGUI.cropWidthSpinBox.setValue(wd['width'])
-                mainGUI.cropShiftSpinBox.setValue(wd['offset'])
+                gui.cropWidthSpinBox.setValue(wd['width'])
+                gui.cropShiftSpinBox.setValue(wd['offset'])
 
         except Exception:
             (excepttype, value, traceback) = sys.exc_info()
@@ -778,7 +776,9 @@ class ActiveWatcher(QtCore.QObject):
         self.worker = None
 
         try:
-            self.opts = mainGUI.getValidatedOptions()
+            app = QtCore.QCoreApplication.instance()
+            gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
+            self.opts = gui.getValidatedOptions()
         except Exception:
             raise
 
@@ -853,7 +853,7 @@ class ActiveWatcher(QtCore.QObject):
             if not self.E.path.joinpath(outfolder).exists():
                 self.E.path.joinpath(outfolder).mkdir()
 
-            corstring = '_COR' if self.opts['bFlashCorrect'] else ''
+            corstring = '_COR' if self.opts['correctFlash'] else ''
             basename = os.path.basename(self.E.get_files(c=c, t=t)[0])
             filename = basename.replace('.tif', corstring + proctype + '.tif')
             outpath = str(self.E.path.joinpath(outfolder, filename))
@@ -911,8 +911,11 @@ class MainHandler(FileSystemEventHandler, QtCore.QObject):
     def on_deleted(self, event):
         # Called when a file or directory is created.
         if event.is_directory:
+            app = QtCore.QCoreApplication.instance()
+            gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
+
             # TODO:  Is it safe to directly access main gui listbox here?
-            if len(mainGUI.listbox.findItems(event.src_path, QtCore.Qt.MatchExactly)):
+            if len(gui.listbox.findItems(event.src_path, QtCore.Qt.MatchExactly)):
                 self.lostListItem.emit(event.src_path)
 
 
@@ -950,7 +953,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         # You can control the logging level
         logging.getLogger().setLevel(logging.DEBUG)
         self.verticalLayout_2.insertWidget(0, self.log.widget)
-
 
         self.camcorDialog = CamCalibDialog()
 
@@ -1177,9 +1179,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.optionsOnProcessClick = self.getValidatedOptions()
             op = self.optionsOnProcessClick
             if not (op['nIters'] or
-                    (op['bSaveCorrected'] and (op['bFlashCorrect'] or op['bMedianCorrect'])) or
+                    (op['keepCorrected'] and (op['correctFlash'] or op['medianFilter'])) or
                     op['saveDeskewedRaw'] or
-                    op['bDoRegistration']):
+                    op['doReg']):
                 raise Exception('Nothing done! Check GUI options')
 
         except Exception:
@@ -1198,6 +1200,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         # get path from first row and create a new LLSdir object
         self.currentItem = self.listbox.item(0, 1).text()
         self.currentPath = self.listbox.item(0, 0).text()
+
         idx = 0  # might use this later to spawn more threads
         opts = self.optionsOnProcessClick
         LLSworker, thread = newWorkerThread(LLSitemWorker, idx, self.currentPath,
@@ -1292,13 +1295,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     def getValidatedOptions(self):
         options = {
-            'bFlashCorrect': self.camcorCheckBox.isChecked(),
+            'correctFlash': self.camcorCheckBox.isChecked(),
             'flashCorrectTarget': self.camcorTargetCombo.currentText(),
-            'bMedianCorrect': self.medianFilterCheckBox.isChecked(),
-            'bSaveCorrected': self.saveCamCorrectedCheckBox.isChecked(),
-            'edgeTrim': ((self.trimZ0SpinBox.value(), self.trimZ1SpinBox.value()),
-                         (self.trimY0SpinBox.value(), self.trimY1SpinBox.value()),
-                         (self.trimX0SpinBox.value(), self.trimX1SpinBox.value())),
+            'medianFilter': self.medianFilterCheckBox.isChecked(),
+            'keepCorrected': self.saveCamCorrectedCheckBox.isChecked(),
+            'trimZ': (self.trimZ0SpinBox.value(), self.trimZ1SpinBox.value()),
+            'trimY': (self.trimY0SpinBox.value(), self.trimY1SpinBox.value()),
+            'trimX': (self.trimX0SpinBox.value(), self.trimX1SpinBox.value()),
             'nIters': self.iterationsSpinBox.value() if self.doDeconGroupBox.isChecked() else 0,
             'nApodize': self.apodizeSpinBox.value(),
             'nZblend': self.zblendSpinBox.value(),
@@ -1315,22 +1318,23 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             'rMIP': tuple([int(i) for i in (self.deskewedXMIPCheckBox.isChecked(),
                                             self.deskewedYMIPCheckBox.isChecked(),
                                             self.deskewedZMIPCheckBox.isChecked())]),
-            'bMergeMIPs': self.deconJoinMIPCheckBox.isChecked(),
-            # 'bMergeMIPsraw': self.deskewedJoinMIPCheckBox.isChecked(),
+            'mergeMIPs': self.deconJoinMIPCheckBox.isChecked(),
+            # 'mergeMIPsraw': self.deskewedJoinMIPCheckBox.isChecked(),
             'uint16': ('16' in self.deconvolvedBitDepthCombo.currentText()),
             'uint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
             'bleachCorrection': self.bleachCorrectionCheckBox.isChecked(),
-            'bDoRegistration': self.doRegistrationGroupBox.isChecked(),
+            'doReg': self.doRegistrationGroupBox.isChecked(),
             'regRefWave': int(self.channelRefCombo.currentText()),
             'regMode': self.channelRefModeCombo.currentText(),
             'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
-            'bCompress': self.compressRawCheckBox.isChecked(),
-            'bReprocess': False,
+            'compressRaw': self.compressRawCheckBox.isChecked(),
+            'reprocess': False,
             'width': self.cropWidthSpinBox.value(),
             'shift': self.cropShiftSpinBox.value(),
             'cropPad': self.autocropPadSpinBox.value(),
-            'bAutoBackground': self.backgroundAutoRadio.isChecked(),
-            'background': self.backgroundFixedSpinBox.value(),
+            'reprocess': self.reprocessCheckBox.isChecked(),
+            'background': (-1 if self.backgroundAutoRadio.isChecked()
+                           else self.backgroundFixedSpinBox.value())
 
             # 'bRollingBall': self.backgroundRollingRadio.isChecked(),
             # 'rollingBall': self.backgroundRollingSpinBox.value()
@@ -1343,7 +1347,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         if not options['saveDeskewedRaw']:
             options['rMIP'] = (0, 0, 0)
 
-        if options['bFlashCorrect']:
+        if options['correctFlash']:
             options['camparamsPath'] = self.camParamTiffLineEdit.text()
             if not osp.isfile(options['camparamsPath']):
                 raise ValueError('Flash pixel correction requested, camera parameters Tiff '
@@ -1363,12 +1367,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             else:
                 options['regCalibDir'] = None
 
-        if options['bDoRegistration'] and options['regCalibDir'] is None:
+        if options['doReg'] and options['regCalibDir'] is None:
             raise ValueError('Registration requested, but calibration folder '
                              'not provided.\n\nCheck registration settings, or default '
                              'registration folder in config tab.')
 
-        if options['bDoRegistration'] and not osp.isdir(options['regCalibDir']):
+        if options['doReg'] and not osp.isdir(options['regCalibDir']):
             raise ValueError('Registration requested, but calibration folder '
                              'not a directory.\n\nCheck registration settings, or default '
                              'registration folder in config tab.')
@@ -1480,7 +1484,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    app = QtW.QApplication(sys.argv)
+    APP = QtW.QApplication(sys.argv)
     #dlg = LogWindow()
     #dlg.show()
     mainGUI = main_GUI()
@@ -1491,4 +1495,4 @@ if __name__ == "__main__":
     sys.excepthook = exceptionHandler.handler
     exceptionHandler.errorMessage.connect(mainGUI.show_general_error)
 
-    sys.exit(app.exec_())
+    sys.exit(APP.exec_())
