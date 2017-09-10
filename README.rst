@@ -18,14 +18,29 @@ LLSpy: Lattice light-sheet processing scripts
 
 Installation
 ------------
-* install anaconda at https://www.anaconda.com/download/  (python 2.7 or 3.6 =should both work)
-* CUDA must be installed (tested on 8.0)
 
-* open anaconda prompt and cd to llspy directory
-* ``conda create --file environment.yml``
-* ``activate llsenv``
-* ``python llspy\gui\llspygui.py``
+Install CUDA (tested on 8.0)
 
+Download LLSpy and set up an environment with the appropriate dependencies. LLSpy depends on:
+
+    - python=3.6
+    - numpy
+    - scipy
+    - tifffile
+    - numba
+    - scikit-image
+    - voluptuous
+    - watchdog
+    - pyqt
+
+It is recommended to install `Anaconda <https://www.anaconda.com/download/>`_.  (LLSpy is designed to be compatible with both python 2 and python 3, so chose whichever python version you prefer.)  In which case you can easily install the dependencies by running  ``conda env create --file environment.yml`` at the anaconda prompt
+
+.. code:: bash
+
+    $ cd llspy2
+    $ conda env create --file environment.yml
+    $ source activate llsenv
+    $ python llspy/gui/llspygui.py
 
 Features
 ---------
@@ -64,24 +79,8 @@ Python:
 * ctypes wrapper for libcudaDeconv functions including decon, transforms, and camera corrections
 
 
-Installation
-------------
-
-Install `Anaconda <https://www.continuum.io/downloads>`_.
-LLSpy is designed to be compatible with both python 2 and python 3, so chose whichever version you prefer.
-
-Download LLSpy and set up an environment with the appropriate dependencies:
-
-.. code:: bash
-
-    $ git clone git@github.com:tlambert03/llspy2.git
-    $ cd llspy2
-    $ conda env create --file environment.yml
-    $ source activate llsenv
-    $ ipython
-
-Usage
------
+Interactive Usage
+-----------------
 
 .. code:: python
 
@@ -117,12 +116,20 @@ Usage
 
 To Do:
 ------
-* progress bar for cudaDeconv processes
-* batch processing
+* batch processing (cli, and add all LLSdirs in folder)
 * pretty-print info on directory
 * add ProcessingLog.txt and possibly pickle LLSdir object for state maintenance
-* multithreading, multi-GPU support
+* add flag for skip-processed/reprocess
+* multithreading, multi-GPU support in GUI
 * export for bigDataViewer/.ims/.hdf5 format?
 * docs
 * logging module instead of print() and warnings
-* more user-friendly settings.ini
+* flash correction for twin-cam mode
+* allow rotation without deconvolution
+* allow median filter without flash correction
+* trim edges outside of flash correction
+* look into numexpr for cameracalibration
+
+To Fix:
+-------
+* setting objects with cli.py config --set removes disabled (commented) keys
