@@ -1,5 +1,5 @@
 from voluptuous import (All, Any, Coerce, Lower, Strip, Length, Range,
-						Schema, Required, PREVENT_EXTRA)
+						Schema, Required, PREVENT_EXTRA, MultipleInvalid)
 from voluptuous.humanize import validate_with_humanized_errors
 from .util import dotdict
 import os
@@ -37,77 +37,82 @@ def intRange(m, n):
 
 
 __defaults__ = {
-	'bFlashCorrect'		: (False,         'do Flash residual correction'),
+	'correctFlash'		: (False,         'do Flash residual correction'),
+	'moveCorrected'		: (True,          'move processed corrected files to original LLSdir'),
 	'flashCorrectTarget': ('cpu',         '{"cpu", "cuda", "parallel"} for FlashCor'),
-	'bMedianCorrect'	: (False,         'do Keller median filter'),
-	'bSaveCorrected' 	: (False,         'save corrected images after processing'),
-	'edgeTrim'			: (((0, 0),) * 3, 'num ZYX pix to trim off raw data before processing'),
+	'medianFilter'		: (False,         'do Keller median filter'),
+	'keepCorrected'		: (False,         'save corrected images after processing'),
+	'trimZ'				: ((0, 0),        'num Z pix to trim off raw data before processing'),
+	'trimY'				: ((0, 0),        'num Y pix to trim off raw data before processing'),
+	'trimX'				: ((0, 0),        'num X pix to trim off raw data before processing'),
 	'nIters'			: (10,            'deconvolution iters'),
 	'nApodize'			: (15,            'num pixels to soften edge with for decon'),
 	'nZblend'			: (0,             'num top/bot Z sections to blend to reduce axial ringing'),
 	'bRotate'			: (False,         'do Rotation to coverslip coordinates'),
 	'rotate'			: (None,          'angle to use for rotation'),
 	'saveDeskewedRaw'	: (False,         'whether to save raw deskewed'),
-	'bSaveDecon'		: (True,          'whether to save decon stacks'),
-	'MIP'				: ((0, 0, 1),     'whether to save XYZ decon MIPs'),
-	'rMIP'			: ((0, 0, 0),     'whether to save XYZ raw MIPs'),
-	'bMergeMIPs'		: (True,          'do MIP merge into single file (decon)'),
-	'bMergeMIPsraw' 	: (True,          'do MIP merge into single file (deskewed)'),
+	'saveDecon'			: (True,          'whether to save decon stacks'),
+	'MIP'				: ((False, False, True),     'whether to save XYZ decon MIPs'),
+	'rMIP'				: ((False, False, False),     'whether to save XYZ raw MIPs'),
+	'mergeMIPs'			: (True,          'do MIP merge into single file (decon)'),
+	'mergeMIPsraw' 		: (True,          'do MIP merge into single file (deskewed)'),
 	'uint16'			: (True,          'save decon as unsigned int16'),
-	'uint16raw'		: (True,          'save deskewed raw as unsigned int16'),
-	'bleachCorrection'		: (False,         'do photobleach correction'),
-	'bDoRegistration'  	: (False,         'do channel registration'),
+	'uint16raw'			: (True,          'save deskewed raw as unsigned int16'),
+	'bleachCorrection'	: (False,         'do photobleach correction'),
+	'doReg'  			: (False,         'do channel registration'),
 	'regRefWave'		: (488,           'reference wavelength when registering'),
 	'regMode'			: ('2step',       'transformation mode when registering'),
 	'regCalibDir'		: (None,          'directory with registration calibration data'),
 	'mincount'			: (10,            'minimum number of beads expected in regCal data'),
-	'bReprocess'		: (False,         'reprocess already-done data when processing'),
+	'reprocess'			: (False,         'reprocess already-done data when processing'),
 	'tRange'			: (None,          'time range to process (None means all)'),
 	'cRange'			: (None,          'channel range to process (None means all)'),
-	'otfDir'			: (None,
-											'directory to look in for PSFs/OTFs'),
-	'camparamsPath'		: (None,
-											'file path to camera Parameters .tif'),
+	'otfDir'			: (None,          'directory to look in for PSFs/OTFs'),
+	'camparamsPath'		: (None,          'file path to camera Parameters .tif'),
 	'verbose'			: (0,             'verbosity level when processing {0,1,2}'),
 	'cropMode' 			: ('none',        '{manual, auto, none} - auto-cropping based on image content'),
 	'autoCropSigma'		: (2,             'gaussian blur sigma when autocropping'),
-	'autoCropPad' 		: (50,            'number of extra pixels on edges when autocropping'),
 	'width' 			: (0,             'final width when not autocropping (0 = full)'),
 	'shift' 			: (0,             'crop shift when not autocropping'),
 	'cropPad'			: (50,            'additional pixels to keep when autocropping'),
-	'bAutoBackground' 	: (True,          'do automatic background detection'),
-	'background'		: (90,            'background to subtract when not autobgrd'),
-	'bCompress'			: (False,         'do compression of raw data after processing'),
-	'compressionType'	: ('lbzip2',      'compression binary {lbzip2, bzip2, pbzip2, pigz, gzip}')
+	'background'		: (-1,            'background to subtract. -1 = autodetect'),
+	'compressRaw'		: (False,         'do compression of raw data after processing'),
+	'compressionType'	: ('lbzip2',      'compression binary {lbzip2, bzip2, pbzip2, pigz, gzip}'),
+	'writeLog'			: (True,          'write settings to processinglog.txt'),
 }
 
 __validator__ = {
-	'bFlashCorrect'		: Coerce(bool),
+	'correctFlash'		: Coerce(bool),
+	'moveCorrected'		: Coerce(bool),
 	'flashCorrectTarget': All(Coerce(str), Lower, Strip, Any('cpu', 'parallel', 'cuda'),
 		msg='flashCorrectTarget must be {cpu, parallel, cuda}'),
-	'bMedianCorrect'	: Coerce(bool),
-	'bSaveCorrected'	: Coerce(bool),
-	'edgeTrim'			: All((twotupIntRange,), Length(min=3, max=3),
-		msg='edgeTrim argument must be a 3tuple of 2tuples of ints from 0-200'),
-	'nIters'			: All(int, Range(0, 30),
+	'medianFilter'		: Coerce(bool),
+	'keepCorrected'		: Coerce(bool),
+	'trimZ'				: All(twotupIntRange,
+		msg='trimZ argument must be a 2tuples of ints from 0-999'),
+	'trimY'				: All(twotupIntRange,
+		msg='trimY argument must be a 2tuples of ints from 0-999'),
+	'trimX'				: All(twotupIntRange,
+		msg='trimX argument must be a 2tuples of ints from 0-999'),
+	'nIters'			: All(Coerce(int), Range(0, 30),
 		msg='Number of Deconvolution iterations must be int between 0-30'),
-	'nApodize'			: All(int, Range(0, 50),
+	'nApodize'			: All(Coerce(int), Range(0, 50),
 		msg='Number of apodize pixels must be int between 0-50'),
-	'nZblend'			: All(int, Range(0, 30),
+	'nZblend'			: All(Coerce(int), Range(0, 30),
 		msg='Number of Z slices to blend must be int between 0-30'),
 	'bRotate'			: Coerce(bool),
 	'rotate'			: Any(None, All(Coerce(float), Range(-180, 180),
 		msg='Rotation angle must be float between -180 and 180')),
 	'saveDeskewedRaw'	: Coerce(bool),
-	'bSaveDecon'		: Coerce(bool),
+	'saveDecon'			: Coerce(bool),
 	'MIP'				: All((intbool,), Length(min=3, max=3)),
 	'rMIP'				: All((intbool,), Length(min=3, max=3)),
-	'bMergeMIPs'		: Coerce(bool),
-	'bMergeMIPsraw' 	: Coerce(bool),
+	'mergeMIPs'			: Coerce(bool),
+	'mergeMIPsraw' 		: Coerce(bool),
 	'uint16'			: Coerce(bool),
-	'uint16raw'		: Coerce(bool),
+	'uint16raw'			: Coerce(bool),
 	'bleachCorrection'	: Coerce(bool),
-	'bDoRegistration'  	: Coerce(bool),
+	'doReg'  			: Coerce(bool),
 	'regRefWave'		: intRange(300, 1000),
 	'regMode'			: All(Coerce(str), Lower, Strip,
 		Any('translation', 'translate', 'affine', 'rigid', 'similarity', '2step',
@@ -116,9 +121,9 @@ __validator__ = {
 			'cpd_affine, cpd_rigid, cpd_similarity, cpd_2step}'),
 	'regCalibDir'		: Any(None, dirpath,
 		msg='Unable to find Registration Calibration directory.  Check filepath'),
-	'mincount'			: All(int, Range(0, 500),
+	'mincount'			: All(Coerce(int), Range(0, 500),
 		msg='mincount (min number of beads to detect) must be between 0-500'),
-	'bReprocess'		: Coerce(bool),
+	'reprocess'		: Coerce(bool),
 	'tRange'			: Any(None, CTiterable,
 		msg='tRange must be int or iterable of integers >= 0'),
 	'cRange'			: Any(None, CTiterable,
@@ -131,21 +136,21 @@ __validator__ = {
 		msg='verbosity level must be 0, 1, or 2'),
 	'cropMode' 			: All(Coerce(str), Lower, Strip, Any('none', 'auto', 'manual')),
 	'autoCropSigma'		: All(Coerce(float), Range(0, 15)),
-	'autoCropPad' 		: intRange(0, 200),
 	'width' 			: intRange(0, 3000),
 	'shift' 			: intRange(-1500, 1500),
 	'cropPad'			: intRange(0, 500),
-	'bAutoBackground' 	: Coerce(bool),
-	'background'		: Any([intRange(0, 10000)], intRange(0, 10000)),
-	'bCompress'			: Coerce(bool),
+	'background'		: Any(intRange(-1, 20000), [intRange(0, 20000)]),
+	'compressRaw'		: Coerce(bool),
 	'compressionType'	: Any('lbzip2', 'bzip2', 'pbzip2', 'pigz', 'gzip',
-		msg='Currently allowed compression types: {lbzip2, bzip2, pbzip2, pigz, gzip}')
+		msg='Currently allowed compression types: {lbzip2, bzip2, pbzip2, pigz, gzip}'),
+	'writeLog'  		: Coerce(bool),
 }
 
 
 __schema__ = Schema({
 	Required(k, default=__defaults__[k][0]): v for k, v in __validator__.items()},
 	extra=PREVENT_EXTRA)
+
 
 __localSchema__ = __schema__.extend({
 	'otfs' 		: [Any(None, filepath)],
@@ -187,10 +192,23 @@ def procParams(*args, **kwargs):
 	>>> 'regMode' in procParams()
 
 	"""
+	# accept a single dict as well as expanded options
 	if len(args) == 1 and isinstance(args[0], dict):
 		kwargs = args[0]
+
 	S = validate_with_humanized_errors(kwargs, __schema__)
+	if S['nIters'] > 0 and S['otfDir'] is None:
+		raise ValueError('oftDir cannot be type None with nIters > 0')
 	return dotdict(S)
+
+
+def validateItems(**kwargs):
+	for k in kwargs.keys():
+		if k not in __validator__:
+			print("ERROR! got unrecognized key: {}".format(k))
+			return 0
+	S = Schema({k: v for k, v in __validator__.items()}, extra=PREVENT_EXTRA)
+	return validate_with_humanized_errors(kwargs, S)
 
 
 def printOptions():
