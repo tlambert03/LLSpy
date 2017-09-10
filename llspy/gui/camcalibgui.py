@@ -46,14 +46,14 @@ class CamCalibWorker(QtCore.QObject):
                 results = np.vstack((results, self.darkSTD[None, :, :]))
 
             # create name
-            E = llspy.LLSdir(self.folder)
+            E = llspy.LLSdir(self.folder, ditch_partial=False)
             outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
                 E.settings.camera.serial,
                 "-".join([str(i) for i in E.settings.camera.roi]),
                 E.date.strftime('%Y%m%d'))
 
             # reorder and write
-            results = llspy.util.reorderstack(results, 'zyx')
+            results = llspy.util.reorderstack(results, 'zyx').astype(np.float32)
             tf.imsave(os.path.join(self.folder, outname), results, imagej=True,
                 resolution=(1 / E.parameters.dx, 1 / E.parameters.dx),
                 metadata={
