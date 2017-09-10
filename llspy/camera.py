@@ -28,7 +28,7 @@ def calc_correction(stack, a, b, offset):
 	return res
 
 
-def correctInsensitivePixels(
+def selectiveMedianFilter(
 	stack, backgroundValue, medianRange=3, verbose=False, withMean=False):
 	"""correct bad pixels on sCMOS camera.
 	based on MATLAB code by Philipp J. Keller,
@@ -193,8 +193,8 @@ class CameraParameters(object):
 	def init_CUDAcamcor(self, shape):
 		libcu.camcor_init(shape, self.data[:3])
 
-	def correct_stacks(self, stacks, dampening=0.88, median=False,
-		trim=((0, 0), (0, 0), (0, 0)), target='cpu'):
+	def correct_stacks(self, stacks, medianFilter=False,
+		trim=((0, 0), (0, 0), (0, 0)), flashCorrectTarget='cpu', dampening=0.88):
 		"""interleave stacks and apply correction for "sticky" Flash pixels.
 
 		Expects a list of 3D np.ndarrays ordered in order of acquisition:
@@ -206,6 +206,7 @@ class CameraParameters(object):
 		from the ((1stplane,lastplane),(top,bottom), (left, right))
 		by default: trim first Z plane and single pixel from X-edges
 		"""
+
 		if not len(stacks):
 			raise ValueError('Empty list of stacks received: {}'.format(stacks))
 		if len({S.shape for S in stacks}) > 1:
@@ -219,7 +220,7 @@ class CameraParameters(object):
 		numStacks = len(stacks)
 		typ = stacks[0].dtype
 
-		if target == 'cuda' or target == 'gpu':
+		if flashCorrectTarget == 'cuda' or flashCorrectTarget == 'gpu':
 			# this must be called before! but better to do it outside of this function
 			# libcu.camcor_init(interleaved.shape, self.a, self.b, self.offset)
 			interleaved = np.stack(stacks, 1).reshape((-1, ny, nx))
@@ -227,10 +228,10 @@ class CameraParameters(object):
 		else:
 			interleaved = np.stack(stacks, 1).reshape((-1, ny, nx))
 
-			if target == 'cpu':
+			if flashCorrectTarget == 'cpu':
 				# JIT VERSION
 				interleaved = calc_correction(interleaved, self.a, self.b, self.offset)
-			elif target == 'numpy':
+			elif flashCorrectTarget == 'numpy':
 				# NUMPY VERSION
 				interleaved = np.subtract(interleaved, self.offset)
 				correction = self.a * (1 - np.exp(-self.b * interleaved[:-1, :, :]))
@@ -238,22 +239,23 @@ class CameraParameters(object):
 				interleaved[interleaved < 0] = 0
 			else:
 				raise ValueError(
-					'unrecognized value for target parameter: {}'.format(target))
+					'unrecognized value for flashCorrectTarget '
+					'parameter: {}'.format(flashCorrectTarget))
 
 			# interleaved = np.subtract(interleaved, self.offset)
 			# correction = self.a * (1 - np.exp(-self.b * interleaved[:-1, :, :]))
 			# interleaved[1:, :, :] -= dampening * correction
 			# interleaved[interleaved < 0] = 0
 
-		# do Philpp Keller Median Filter
-		if median:
-			interleaved, pixCorrection = correctInsensitivePixels(interleaved, 0)
+		# do Philpp Keller medianFilter Filter
+		if medianFilter:
+			interleaved, pixCorrection = selectiveMedianFilter(interleaved, 0)
 
 		# sometimes the columns on the very edge are brighter than the rest
 		# (particularly if an object is truncated and there's more content
 		# just off to the side of the camera ROI)
 		# this will delete the edge columns
-		if trim is not None and any(trim):
+		if any([any(i) for i in trim]):
 			interleaved = arrayfun.trimedges(interleaved, trim, numStacks)
 
 		if not np.issubdtype(interleaved.dtype, typ):
@@ -290,13 +292,13 @@ if __name__ == '__main__':
 	import time
 	start = time.time()
 	for _ in range(niters):
-		d1 = corrector.correct_stacks(stacks, median=False, target='cpu')
+		d1 = corrector.correct_stacks(stacks, medianFilter=False, flashCorrectTarget='cpu')
 	end = time.time()
 	print("JitCPU Time: " + str((end - start) / niters))
 
 	start = time.time()
 	for _ in range(niters):
-		d2 = corrector.correct_stacks(stacks, median=False, target='numpy')
+		d2 = corrector.correct_stacks(stacks, medianFilter=False, flashCorrectTarget='numpy')
 	end = time.time()
 	print("NumpyCPU Time: " + str((end - start) / niters))
 	print("Equal? = " + str(np.mean(d1[0] - d2[0])))
@@ -306,7 +308,7 @@ if __name__ == '__main__':
 	start = time.time()
 	corrector.init_CUDAcamcor(stacks[0].shape * np.array([len(stacks), 1, 1]))
 	for _ in range(niters):
-		d3 = corrector.correct_stacks(stacks, median=False, target='cuda')
+		d3 = corrector.correct_stacks(stacks, medianFilter=False, flashCorrectTarget='cuda')
 	end = time.time()
 	print("CUDA Time: " + str((end - start) / niters))
 	print("Equal? = " + str(np.mean(d3[0] - d1[0])))
