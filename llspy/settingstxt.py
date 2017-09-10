@@ -154,6 +154,10 @@ class LLSsettings(object):
 		self.camera.name = self.SPIMproject.get('General', 'Camera type')
 		self.camera.trigger_mode = self.SPIMproject.get(
 			'General', 'Cam Trigger mode')
+		self.camera.twincam = self.SPIMproject.get(
+			'General', 'Twin cam mode?') in ['TRUE', 'True', 1, 'YES', 'Yes']
+		self.camera.cam2name = self.SPIMproject.get(
+			'General', '2nd Camera type')
 		self.pixel_size = round(self.camera.pixel / self.mag, 4)
 
 		# not everyone will have added Annular mask to their settings ini
