@@ -10,6 +10,7 @@ import warnings
 # declare the filename template... could go in config file
 # this only is used for generating filenames (gen_filename)...
 # which isn't really used
+# example: cell5_ch0_stack0000_488nm_0000000msec_0020931273msecAbs.tif
 DELIM = '_'
 FNAME_TEMPLATE = ('{basename}' +
 					DELIM + 'ch{channel}' +
