@@ -1,5 +1,5 @@
 from . import config
-from llspy import plib
+from . import plib
 import re
 import ctypes
 import sys
@@ -72,12 +72,17 @@ default_otf_pattern = re.compile(r"""
 	(_otf.tif|.otf)$""", re.VERBOSE)
 
 
+def dir_has_otfs(dirname):
+	return any([psffile_pattern.search(t) or default_otf_pattern.search(t) for t in os.listdir(dirname)])
+
+
 def get_otf_dict(otfdir):
 	""" The otf_dict is a dict with
 	"""
 	otf_dict = {}
 	otfdir = plib.Path(otfdir)
-	for t in list(otfdir.glob('*tif')):
+
+	for t in otfdir.glob('*tif'):
 		M = psffile_pattern.search(str(t.name))
 		if M:
 			M = M.groupdict()
@@ -122,14 +127,16 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 	collected after 'date.'
 	"""
 	if not os.path.isdir(str(otfpath)):
-		print ("OTF path does not exist: {}".format(otfpath))
+		raise ("OTF path does not exist: {}".format(otfpath))
 		return None
 
 	otf_dict = get_otf_dict(otfpath)
 	otflist = []
 
 	if wave not in otf_dict:
-		raise KeyError('Wave: {} not in otfdict: {}'.format(wave, otf_dict))
+		# raise KeyError('Wave: {} not in otfdict: {}'.format(wave, otf_dict))
+		return None
+
 	# the mask NA has been provided, check to see if it's in the name of any of
 	# files in the otf folder
 	if mask is not None:
@@ -143,7 +150,10 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 				[otflist.append(i) for i in otf_dict[wave][k]]
 
 	if not otflist:
-		return otf_dict[wave]['default']
+		if os.path.isfile(otf_dict[wave]['default']):
+			return otf_dict[wave]['default']
+		else:
+			return None
 
 	if direction == 'nearest':
 		minIdx = np.argmin([np.abs(i['date'] - date) for i in otflist])
@@ -159,19 +169,30 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
 		raise ValueError('Unkown direction argument: {}'.format(direction))
 
 	if minIdx is None:
-		return otf_dict[wave]['default']
+		if os.path.isfile(otf_dict[wave]['default']):
+			return otf_dict[wave]['default']
+		else:
+			return None
 
 	matching_otfs = [i for i in otflist
 		if i['date'] == otflist[minIdx]['date'] and i['form'] == 'otf']
 	if len(matching_otfs):
-		return matching_otfs[0]['path']
+		if os.path.isfile(matching_otfs[0]['path']):
+			return matching_otfs[0]['path']
+		else:
+			return None
 	else:
 		matching_psfs = [i for i in otflist
 			if i['date'] == otflist[minIdx]['date'] and i['form'] == 'psf']
 		if matching_psfs:
 			# generate new OTF from PSF
 			path = matching_psfs[0]['path']
-			return makeotf(path, lambdanm=int(wave), bDoCleanup=False)
+			otf = makeotf(path, lambdanm=int(wave), bDoCleanup=False)
+
+			if os.path.isfile(otf):
+				return otf
+			else:
+				return None
 
 
 # class OTFbin(CUDAbin):
