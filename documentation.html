@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>documentation.rst—/Users/talley/Dropbox (HMS)/Python/llspy2</title>
+    <style type="text/css">
+
+      html {
+        font-family: sans-serif;
+        -ms-text-size-adjust: 100%;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary {
+        display: block;
+      }
+
+      audio,canvas,progress,video {
+        display: inline-block;
+        vertical-align: baseline;
+      }
+
+      audio:not([controls]) {
+        display: none;
+        height: 0;
+      }
+
+      [hidden],template {
+        display: none;
+      }
+
+      a {
+        background: transparent;
+      }
+
+      a:active,a:hover {
+        outline: 0;
+      }
+
+      abbr[title] {
+        border-bottom: 1px dotted;
+      }
+
+      b,strong {
+        font-weight: bold;
+      }
+
+      dfn {
+        font-style: italic;
+      }
+
+      h1 {
+        font-size: 2em;
+        margin: 0.67em 0;
+      }
+
+      mark {
+        background: #ff0;
+        color: #000;
+      }
+
+      small {
+        font-size: 80%;
+      }
+
+      sub,sup {
+        font-size: 75%;
+        line-height: 0;
+        position: relative;
+        vertical-align: baseline;
+      }
+
+      sup {
+        top: -0.5em;
+      }
+
+      sub {
+        bottom: -0.25em;
+      }
+
+      img {
+        border: 0;
+      }
+
+      svg:not(:root) {
+        overflow: hidden;
+      }
+
+      figure {
+        margin: 1em 40px;
+      }
+
+      hr {
+        box-sizing: content-box;
+        height: 0;
+      }
+
+      pre {
+        overflow: auto;
+      }
+
+      code,kbd,pre,samp {
+        font-family: monospace, monospace;
+        font-size: 1em;
+      }
+
+      button,input,optgroup,select,textarea {
+        color: inherit;
+        font: inherit;
+        margin: 0;
+      }
+
+      button {
+        overflow: visible;
+      }
+
+      button,select {
+        text-transform: none;
+      }
+
+      button,html input[type="button"],input[type="reset"],input[type="submit"] {
+        -webkit-appearance: button;
+        cursor: pointer;
+      }
+
+      button[disabled],html input[disabled] {
+        cursor: default;
+      }
+
+      button::-moz-focus-inner,input::-moz-focus-inner {
+        border: 0;
+        padding: 0;
+      }
+
+      input {
+        line-height: normal;
+      }
+
+      input[type="checkbox"],input[type="radio"] {
+        box-sizing: border-box;
+        padding: 0;
+      }
+
+      input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button {
+        height: auto;
+      }
+
+      input[type="search"] {
+        -webkit-appearance: textfield;
+        box-sizing: content-box;
+      }
+
+      input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration {
+        -webkit-appearance: none;
+      }
+
+      fieldset {
+        border: 1px solid #c0c0c0;
+        margin: 0 2px;
+        padding: 0.35em 0.625em 0.75em;
+      }
+
+      legend {
+        border: 0;
+        padding: 0;
+      }
+
+      textarea {
+        overflow: auto;
+      }
+
+      optgroup {
+        font-weight: bold;
+      }
+
+      table {
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
+
+      td,th {
+        padding: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      input,select,textarea,button {
+        font: 13px/1.4 Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+      }
+
+      body {
+        min-width: 1020px;
+        font: 13px/1.4 Helvetica, arial, freesans, clean, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+        color: #333;
+        background-color: #fff;
+      }
+
+      a {
+        color: #4183c4;
+        text-decoration: none;
+      }
+
+      a:hover,a:active {
+        text-decoration: underline;
+      }
+
+      hr,.rule {
+        height: 0;
+        margin: 15px 0;
+        overflow: hidden;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid #ddd;
+      }
+
+      hr:before,.rule:before {
+        display: table;
+        content: "";
+      }
+
+      hr:after,.rule:after {
+        display: table;
+        clear: both;
+        content: "";
+      }
+
+      h1,h2,h3,h4,h5,h6 {
+        margin-top: 15px;
+        margin-bottom: 15px;
+        line-height: 1.1;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      h2 {
+        font-size: 21px;
+      }
+
+      h3 {
+        font-size: 16px;
+      }
+
+      h4 {
+        font-size: 14px;
+      }
+
+      h5 {
+        font-size: 12px;
+      }
+
+      h6 {
+        font-size: 11px;
+      }
+
+      small {
+        font-size: 90%;
+      }
+
+      blockquote {
+        margin: 0;
+      }
+
+      .lead {
+        margin-bottom: 30px;
+        font-size: 20px;
+        font-weight: 300;
+        color: #555;
+      }
+
+      .text-muted {
+        color: #999;
+      }
+
+      .text-danger {
+        color: #bd2c00;
+      }
+
+      .text-emphasized {
+        font-weight: bold;
+        color: #333;
+      }
+
+      ul,ol {
+        padding: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+
+      ol ol,ul ol {
+        list-style-type: lower-roman;
+      }
+
+      ul ul ol,ul ol ol,ol ul ol,ol ol ol {
+        list-style-type: lower-alpha;
+      }
+
+      dd {
+        margin-left: 0;
+      }
+
+      tt,code {
+        font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        font-size: 12px;
+      }
+
+      pre {
+        margin-top: 0;
+        margin-bottom: 0;
+        font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      }
+
+      #realtime .status {
+        overflow: visible;
+        position: absolute;
+        top: -5px;
+        left: 0;
+        background: url("/public/images/github-status.png");
+        width: 26px;
+        height: 26px;
+        display: block;
+        margin: 0 5px 0 0;
+      }
+
+      #realtime .up {
+        background-position: 0 0;
+      }
+
+      #realtime .problem {
+        background-position: 0 -53px;
+      }
+
+      #realtime .down {
+        background-position: 0 -26px;
+      }
+
+      .container {
+          max-width: 920px;
+          margin: 0 auto 20px auto;
+      }
+
+      #header {
+          background: #FAFAFA;
+          background: -moz-linear-gradient(#FAFAFA, #EAEAEA);
+          background: -webkit-linear-gradient(#FAFAFA, #EAEAEA);
+          -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='#fafafa', endColorstr='#eaeaea')";
+          border-bottom: 1px solid #CACACA;
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4),0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #markup {
+          padding: 3px;
+      }
+
+      #markup article {
+          padding-top: 30px;
+      }
+
+      .markdown-body {
+        overflow: hidden;
+        font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        word-wrap: break-word;
+      }
+
+      .markdown-body>*:first-child {
+        margin-top: 0 !important;
+      }
+
+      .markdown-body>*:last-child {
+        margin-bottom: 0 !important;
+      }
+
+      .markdown-body .absent {
+        color: #c00;
+      }
+
+      .markdown-body .anchor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: block;
+        padding-right: 6px;
+        padding-left: 30px;
+        margin-left: -30px;
+      }
+
+      .markdown-body .anchor:focus {
+        outline: none;
+      }
+
+      .markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6 {
+        position: relative;
+        margin-top: 1em;
+        margin-bottom: 16px;
+        font-weight: bold;
+        line-height: 1.4;
+      }
+
+      .markdown-body h1 .octicon-link,.markdown-body h2 .octicon-link,.markdown-body h3 .octicon-link,.markdown-body h4 .octicon-link,.markdown-body h5 .octicon-link,.markdown-body h6 .octicon-link {
+        display: none;
+        color: #000;
+        vertical-align: middle;
+      }
+
+      .markdown-body h1:hover .anchor,.markdown-body h2:hover .anchor,.markdown-body h3:hover .anchor,.markdown-body h4:hover .anchor,.markdown-body h5:hover .anchor,.markdown-body h6:hover .anchor {
+        padding-left: 8px;
+        margin-left: -30px;
+        text-decoration: none;
+      }
+
+      .markdown-body h1:hover .anchor .octicon-link,.markdown-body h2:hover .anchor .octicon-link,.markdown-body h3:hover .anchor .octicon-link,.markdown-body h4:hover .anchor .octicon-link,.markdown-body h5:hover .anchor .octicon-link,.markdown-body h6:hover .anchor .octicon-link {
+        display: inline-block;
+      }
+
+      .markdown-body h1 tt,.markdown-body h1 code,.markdown-body h2 tt,.markdown-body h2 code,.markdown-body h3 tt,.markdown-body h3 code,.markdown-body h4 tt,.markdown-body h4 code,.markdown-body h5 tt,.markdown-body h5 code,.markdown-body h6 tt,.markdown-body h6 code {
+        font-size: inherit;
+      }
+
+      .markdown-body h1 {
+        padding-bottom: 0.3em;
+        font-size: 2.25em;
+        line-height: 1.2;
+        border-bottom: 1px solid #eee;
+      }
+
+      .markdown-body h1 .anchor {
+        line-height: 1;
+      }
+
+      .markdown-body h2 {
+        padding-bottom: 0.3em;
+        font-size: 1.75em;
+        line-height: 1.225;
+        border-bottom: 1px solid #eee;
+      }
+
+      .markdown-body h2 .anchor {
+        line-height: 1;
+      }
+
+      .markdown-body h3 {
+        font-size: 1.5em;
+        line-height: 1.43;
+      }
+
+      .markdown-body h3 .anchor {
+        line-height: 1.2;
+      }
+
+      .markdown-body h4 {
+        font-size: 1.25em;
+      }
+
+      .markdown-body h4 .anchor {
+        line-height: 1.2;
+      }
+
+      .markdown-body h5 {
+        font-size: 1em;
+      }
+
+      .markdown-body h5 .anchor {
+        line-height: 1.1;
+      }
+
+      .markdown-body h6 {
+        font-size: 1em;
+        color: #777;
+      }
+
+      .markdown-body h6 .anchor {
+        line-height: 1.1;
+      }
+
+      .markdown-body p,.markdown-body blockquote,.markdown-body ul,.markdown-body ol,.markdown-body dl,.markdown-body table,.markdown-body pre {
+        margin-top: 0;
+        margin-bottom: 16px;
+      }
+
+      .markdown-body hr {
+        height: 4px;
+        padding: 0;
+        margin: 16px 0;
+        background-color: #e7e7e7;
+        border: 0 none;
+      }
+
+      .markdown-body ul,.markdown-body ol {
+        padding-left: 2em;
+      }
+
+      .markdown-body ul.no-list,.markdown-body ol.no-list {
+        padding: 0;
+        list-style-type: none;
+      }
+
+      .markdown-body ul ul,.markdown-body ul ol,.markdown-body ol ol,.markdown-body ol ul {
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+
+      .markdown-body li>p {
+        margin-top: 16px;
+      }
+
+      .markdown-body dl {
+        padding: 0;
+      }
+
+      .markdown-body dl dt {
+        padding: 0;
+        margin-top: 16px;
+        font-size: 1em;
+        font-style: italic;
+        font-weight: bold;
+      }
+
+      .markdown-body dl dd {
+        padding: 0 16px;
+        margin-bottom: 16px;
+      }
+
+      .markdown-body blockquote {
+        padding: 0 15px;
+        color: #777;
+        border-left: 4px solid #ddd;
+      }
+
+      .markdown-body blockquote>:first-child {
+        margin-top: 0;
+      }
+
+      .markdown-body blockquote>:last-child {
+        margin-bottom: 0;
+      }
+
+      .markdown-body table {
+        display: block;
+        width: 100%;
+        overflow: auto;
+        word-break: normal;
+        word-break: keep-all;
+      }
+
+      .markdown-body table th {
+        font-weight: bold;
+      }
+
+      .markdown-body table th,.markdown-body table td {
+        padding: 6px 13px;
+        border: 1px solid #ddd;
+      }
+
+      .markdown-body table tr {
+        background-color: #fff;
+        border-top: 1px solid #ccc;
+      }
+
+      .markdown-body table tr:nth-child(2n) {
+        background-color: #f8f8f8;
+      }
+
+      .markdown-body img {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      .markdown-body span.frame {
+        display: block;
+        overflow: hidden;
+      }
+
+      .markdown-body span.frame>span {
+        display: block;
+        float: left;
+        width: auto;
+        padding: 7px;
+        margin: 13px 0 0;
+        overflow: hidden;
+        border: 1px solid #ddd;
+      }
+
+      .markdown-body span.frame span img {
+        display: block;
+        float: left;
+      }
+
+      .markdown-body span.frame span span {
+        display: block;
+        padding: 5px 0 0;
+        clear: both;
+        color: #333;
+      }
+
+      .markdown-body span.align-center {
+        display: block;
+        overflow: hidden;
+        clear: both;
+      }
+
+      .markdown-body span.align-center>span {
+        display: block;
+        margin: 13px auto 0;
+        overflow: hidden;
+        text-align: center;
+      }
+
+      .markdown-body span.align-center span img {
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .markdown-body span.align-right {
+        display: block;
+        overflow: hidden;
+        clear: both;
+      }
+
+      .markdown-body span.align-right>span {
+        display: block;
+        margin: 13px 0 0;
+        overflow: hidden;
+        text-align: right;
+      }
+
+      .markdown-body span.align-right span img {
+        margin: 0;
+        text-align: right;
+      }
+
+      .markdown-body span.float-left {
+        display: block;
+        float: left;
+        margin-right: 13px;
+        overflow: hidden;
+      }
+
+      .markdown-body span.float-left span {
+        margin: 13px 0 0;
+      }
+
+      .markdown-body span.float-right {
+        display: block;
+        float: right;
+        margin-left: 13px;
+        overflow: hidden;
+      }
+
+      .markdown-body span.float-right>span {
+        display: block;
+        margin: 13px auto 0;
+        overflow: hidden;
+        text-align: right;
+      }
+
+      .markdown-body code,.markdown-body tt {
+        padding: 0;
+        padding-top: 0.2em;
+        padding-bottom: 0.2em;
+        margin: 0;
+        font-size: 85%;
+        background-color: rgba(0,0,0,0.04);
+        border-radius: 3px;
+      }
+
+      .markdown-body code:before,.markdown-body code:after,.markdown-body tt:before,.markdown-body tt:after {
+        letter-spacing: -0.2em;
+        content: "\00a0";
+      }
+
+      .markdown-body code br,.markdown-body tt br {
+        display: none;
+      }
+
+      .markdown-body del code {
+        text-decoration: inherit;
+      }
+
+      .markdown-body pre>code {
+        padding: 0;
+        margin: 0;
+        font-size: 100%;
+        word-break: normal;
+        white-space: pre;
+        background: transparent;
+        border: 0;
+      }
+
+      .markdown-body .highlight {
+        margin-bottom: 16px;
+      }
+
+      .markdown-body .highlight pre,.markdown-body pre {
+        padding: 16px;
+        overflow: auto;
+        font-size: 85%;
+        line-height: 1.45;
+        background-color: #f7f7f7;
+        border-radius: 3px;
+      }
+
+      .markdown-body .highlight pre {
+        margin-bottom: 0;
+        word-break: normal;
+      }
+
+      .markdown-body pre {
+        word-wrap: normal;
+      }
+
+      .markdown-body pre code,.markdown-body pre tt {
+        display: inline;
+        max-width: initial;
+        padding: 0;
+        margin: 0;
+        overflow: initial;
+        line-height: inherit;
+        word-wrap: normal;
+        background-color: transparent;
+        border: 0;
+      }
+
+      .markdown-body pre code:before,.markdown-body pre code:after,.markdown-body pre tt:before,.markdown-body pre tt:after {
+        content: normal;
+      }
+
+      .markdown-body kbd {
+        display: inline-block;
+        padding: 3px 5px;
+        font-size: 11px;
+        line-height: 10px;
+        color: #555;
+        vertical-align: middle;
+        background-color: #fcfcfc;
+        border: solid 1px #ccc;
+        border-bottom-color: #bbb;
+        border-radius: 3px;
+        box-shadow: inset 0 -1px 0 #bbb;
+      }
+
+      /* Syntax highlight */
+      .codehilite  { background: #ffffff; }
+      .codehilite .c { color: #999988; font-style: italic } /* Comment */
+      .codehilite .err { color: #a61717; background-color: #e3d2d2 } /* Error */
+      .codehilite .k { color: #000000; font-weight: bold } /* Keyword */
+      .codehilite .o { color: #000000; font-weight: bold } /* Operator */
+      .codehilite .cm { color: #999988; font-style: italic } /* Comment.Multiline */
+      .codehilite .cp { color: #999999; font-weight: bold } /* Comment.Preproc */
+      .codehilite .c1 { color: #999988; font-style: italic } /* Comment.Single */
+      .codehilite .cs { color: #999999; font-weight: bold; font-style: italic } /* Comment.Special */
+      .codehilite .gd { color: #000000; background-color: #ffdddd } /* Generic.Deleted */
+      .codehilite .gd .x { color: #000000; background-color: #ffaaaa } /* Generic.Deleted.Specific */
+      .codehilite .ge { color: #000000; font-style: italic } /* Generic.Emph */
+      .codehilite .gr { color: #aa0000 } /* Generic.Error */
+      .codehilite .gh { color: #999999 } /* Generic.Heading */
+      .codehilite .gi { color: #000000; background-color: #ddffdd } /* Generic.Inserted */
+      .codehilite .gi .x { color: #000000; background-color: #aaffaa } /* Generic.Inserted.Specific */
+      .codehilite .go { color: #888888 } /* Generic.Output */
+      .codehilite .gp { color: #555555 } /* Generic.Prompt */
+      .codehilite .gs { font-weight: bold } /* Generic.Strong */
+      .codehilite .gu { color: #aaaaaa } /* Generic.Subheading */
+      .codehilite .gt { color: #aa0000 } /* Generic.Traceback */
+      .codehilite .kc { color: #000000; font-weight: bold } /* Keyword.Constant */
+      .codehilite .kd { color: #000000; font-weight: bold } /* Keyword.Declaration */
+      .codehilite .kp { color: #000000; font-weight: bold } /* Keyword.Pseudo */
+      .codehilite .kr { color: #000000; font-weight: bold } /* Keyword.Reserved */
+      .codehilite .kt { color: #445588; font-weight: bold } /* Keyword.Type */
+      .codehilite .m { color: #009999 } /* Literal.Number */
+      .codehilite .s { color: #d14 } /* Literal.String */
+      .codehilite .na { color: #008080 } /* Name.Attribute */
+      .codehilite .nb { color: #0086B3 } /* Name.Builtin */
+      .codehilite .nc { color: #445588; font-weight: bold } /* Name.Class */
+      .codehilite .no { color: #008080 } /* Name.Constant */
+      .codehilite .ni { color: #800080 } /* Name.Entity */
+      .codehilite .ne { color: #990000; font-weight: bold } /* Name.Exception */
+      .codehilite .nf { color: #990000; font-weight: bold } /* Name.Function */
+      .codehilite .nn { color: #555555 } /* Name.Namespace */
+      .codehilite .nt { color: #000080 } /* Name.Tag */
+      .codehilite .nv { color: #008080 } /* Name.Variable */
+      .codehilite .ow { color: #000000; font-weight: bold } /* Operator.Word */
+      .codehilite .w { color: #bbbbbb } /* Text.Whitespace */
+      .codehilite .mf { color: #009999 } /* Literal.Number.Float */
+      .codehilite .mh { color: #009999 } /* Literal.Number.Hex */
+      .codehilite .mi { color: #009999 } /* Literal.Number.Integer */
+      .codehilite .mo { color: #009999 } /* Literal.Number.Oct */
+      .codehilite .sb { color: #d14 } /* Literal.String.Backtick */
+      .codehilite .sc { color: #d14 } /* Literal.String.Char */
+      .codehilite .sd { color: #d14 } /* Literal.String.Doc */
+      .codehilite .s2 { color: #d14 } /* Literal.String.Double */
+      .codehilite .se { color: #d14 } /* Literal.String.Escape */
+      .codehilite .sh { color: #d14 } /* Literal.String.Heredoc */
+      .codehilite .si { color: #d14 } /* Literal.String.Interpol */
+      .codehilite .sx { color: #d14 } /* Literal.String.Other */
+      .codehilite .sr { color: #009926 } /* Literal.String.Regex */
+      .codehilite .s1 { color: #d14 } /* Literal.String.Single */
+      .codehilite .ss { color: #990073 } /* Literal.String.Symbol */
+      .codehilite .bp { color: #999999 } /* Name.Builtin.Pseudo */
+      .codehilite .vc { color: #008080 } /* Name.Variable.Class */
+      .codehilite .vg { color: #008080 } /* Name.Variable.Global */
+      .codehilite .vi { color: #008080 } /* Name.Variable.Instance */
+      .codehilite .il { color: #009999 } /* Literal.Number.Integer.Long */
+
+
+
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="markup">
+        <article id="content" class="markdown-body">
+          <div class="document">
+<div class="section" id="llspy-documentation">
+<h1>LLSpy Documentation</h1>
+<p><em>LLSpy is a graphical and command line interface for lattice light sheet post-processing. It depends on the cudaDeconv binary created in the Betzig lab at Janelia Research Campus, and adds additional features that minimize user parameter input, perform image corrections and manipulations, and facilitate file handling</em></p>
+<div class="section" id="features-of-llspy">
+<h2>Features of LLSpy</h2>
+<ul>
+<li><p class="first">graphical user interface with persistent/saveable processing settings</p>
+</li>
+<li><p class="first">command line interface for remote/server usage (coming)</p>
+</li>
+<li><p class="first">preview processed image to verify settings prior to processing full experiment</p>
+</li>
+<li><p class="first"><em>Pre-processing corrections</em>:</p>
+</li>
+<li><p class="first">correct &quot;residual electron&quot; issue on Flash4.0 when using overlap synchronous mode.  Includes CUDA and parallel CPU processing as well as GUI for generation of calibration file.</p>
+</li>
+<li><p class="first">apply selective median filter to particularly noisy pixels</p>
+</li>
+<li><p class="first">trim image edges prior to deskewing (helps with CMOS edge row artifacts)</p>
+</li>
+<li><p class="first">auto-detect background</p>
+</li>
+<li><dl class="first docutils">
+<dt>Processing:</dt>
+<dd><ul class="first last simple">
+<li>select subset of acquired images (C or T) for processing</li>
+<li>automatic parameter detection based on auto-parsing of Settings.txt</li>
+<li>automatic OTF generation/selection from folder of raw PSF files, based on date of acquisition, mask used (if entered into SPIMProject.ini), and wavelength.</li>
+<li>graphical progress bar and time estimation</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Post-processing:</dt>
+<dd><ul class="first last simple">
+<li>proper voxel-size metadata embedding (newer version of Cimg)</li>
+<li>join MIP files into single hyperstack viewable in ImageJ/Fiji</li>
+<li>automatic width/shift selection based on image content (&quot;auto crop to features&quot;)</li>
+<li>automatic fiducial-based image registration (provided tetraspeck bead stack)</li>
+<li>compress raw data after processing</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Watched-folder autoprocessing (experimental):</dt>
+<dd><ul class="first last simple">
+<li>Server mode: designate a folder to watch for incoming <em>finished</em> LLS folders (with Settings.txt file).  When new folders are detected, they are added to the processing queue and the queue is started if not already in progress.</li>
+<li>Aquisition mode: designed to be used on the aquisition computer.  Designate folder to watch for new LLS folders, and process new files as they arrive.  Similar to built in GPU processing tab in Lattice Scope software, but with the addition of all the corrections and parameter selection in the GUI.</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first">easily return LLS folder to original (pre-processed) state</p>
+</li>
+<li><p class="first">compress and decompress folders and subfolders with lbzip2 (not working on windows)</p>
+</li>
+<li><p class="first">concatenate two experiments - renaming files with updated relative timestamps and stack numbers</p>
+</li>
+<li><p class="first">rename files acquired in script-editor mode with <tt class="docutils literal">Iter_</tt> in the name to match standard naming with positions (work in progress)</p>
+</li>
+<li><p class="first">cross-platform: includes precompiled binaries and shared libraries that should work on all systems.</p>
+</li>
+</ul>
+<div class="section" id="known-issues-bugs">
+<h3><em>Known Issues &amp; Bugs</em></h3>
+<ul class="simple">
+<li>When unexpected errors occur mid-processing, sometimes the &quot;cancel&quot; button does nothing, forcing a restart.</li>
+</ul>
+<p>Bug reports are very much appreciated: <a class="reference external" href="mailto:talley&#37;&#52;&#48;hms&#46;harvard&#46;edu">talley<span>&#64;</span>hms<span>&#46;</span>harvard<span>&#46;</span>edu</a></p>
+</div>
+</div>
+</div>
+<div class="section" id="installation-and-setup">
+<h1>Installation and Setup</h1>
+<div class="section" id="installation">
+<h2>Installation</h2>
+<p>Install CUDA (tested on 8.0)</p>
+<p>Download LLSpy and set up an environment with the appropriate dependencies. LLSpy depends on:</p>
+<blockquote>
+<ul class="simple">
+<li>python=3.6</li>
+<li>numpy</li>
+<li>scipy</li>
+<li>tifffile</li>
+<li>numba</li>
+<li>scikit-image</li>
+<li>voluptuous</li>
+<li>watchdog</li>
+<li>pyqt</li>
+</ul>
+</blockquote>
+<p>It is recommended to install <a class="reference external" href="https://www.anaconda.com/download/">Anaconda</a>.  (LLSpy is designed to be compatible with both python 2 and python 3, so chose whichever python version you prefer.)  In which case you can easily install the dependencies by running  <tt class="docutils literal">conda env create <span class="pre">--file</span> environment.yml</tt> at the anaconda prompt</p>
+<pre class="codehilite" lang="bash">
+<span class="nv">$ </span><span class="nb">cd </span>llspy2
+<span class="nv">$ </span>conda env create --file environment.yml
+<span class="nv">$ </span><span class="nb">source </span>activate llsenv
+<span class="nv">$ </span>python llspy/gui/llspygui.py
+</pre>
+</div>
+<div class="section" id="setup">
+<h2>Setup</h2>
+<p><em>There are a few things that must be configured properly in order for LLSpy to work.</em></p>
+<p><strong>OTF Directory</strong></p>
+<p>LLSpy assumes that you have a directory somewhere with all of your PSF and OTF files.  You must enter this directory on the config tab of the LLSpy gui or by using <tt class="docutils literal">lls config <span class="pre">--set</span> otfDir PATH</tt> in the command line interface.</p>
+<p>The simplest setup is to create a directory and include an OTF for each wavelength you wish to process, for instance:</p>
+<pre class="code codehilite">
+/home/myOTFs/
+|-- 405_otf.tif
+|-- 488_otf.tif
+|-- 560_otf.tif
+|-- 642_otf.tif
+</pre>
+<p><em>Note: you may also just name them 488.otf, 560.otf, etc...</em></p>
+<p>The number in the filenames comes from the wavelength of the laser used for that channel.  This is parsed directly from the filenames, which in turn are generated based on the name of the laser lines specified in the <tt class="docutils literal">SPIMProject AOTF.mcf</tt> file in the  <tt class="docutils literal">SPIM Support Files</tt> directory of the Lattice Scope software.  For instance, if an AOTF channel is named &quot;488nm-SB&quot;, then an example file generated with that wavelength might be called:</p>
+<p><tt class="docutils literal"><span class="pre">cell5_ch0_stack0000_488nm-SB_0000000msec_0020931273msecAbs.tif</span></tt></p>
+<p>The parsed wavelength will be the <em>digits only</em> from the segment between the stack number and the relative timestamp.  In this case: &quot;488nm-SB&quot; --&gt; &quot;488&quot;.  For more detail on filename parsing see filename <a class="reference internal" href="#parsing">parsing</a> below.</p>
+<p>For greater convenience and sophistication, you can also place raw PSF files in this directory with the following naming convention:</p>
+<p><tt class="docutils literal"><span class="pre">[date]_[wave]_[psf-type][outerNA]-[innerNA].tif</span></tt></p>
+<p>... where <tt class="docutils literal">outerNA</tt> and <tt class="docutils literal">innerNA</tt> use 'p' instead of decimal points, for instance:</p>
+<p><tt class="docutils literal"><span class="pre">20160825_488_totPSF_mb0p5-0p42.tif</span></tt></p>
+<p>If the SPIMProject.ini file also contains information about the <tt class="docutils literal">[Annular Mask]</tt> pattern being used (as demonstrated below), then LLSpy will find the PSF in the OTF directory that most closely matches the date of acquisition of the data, and the annular mask pattern used, and generate an OTF from that file that will be used for deconvolution.</p>
+<pre class="codehilite" lang="ini">
+<span class="k">[Annular Mask]</span>
+<span class="na">outerNA</span> <span class="o">=</span> <span class="s">0.5</span>
+<span class="na">innerNA</span> <span class="o">=</span> <span class="s">0.42</span>
+</pre>
+<p>see more in the <a class="reference internal" href="#otf-directory">OTF directory</a> section below.</p>
+<p><strong>Flash4.0 Calibration</strong></p>
+<p>In order to take advantage of the Flash synchronous trigger mode correction included in LLSpy, you must first characterize your camera by collecting a calibration dataset as described below in <a class="reference internal" href="#generate-camera-calibration-file">Generate Camera Calibration File</a>, then direct LLSpy to that file on the Config Tab of the GUI, or using <tt class="docutils literal">lls config <span class="pre">--set</span> camparamsPath PATH</tt> in the command line interface.  Support for more than one camera is in development.</p>
+<p><strong>Channel Registration</strong></p>
+<p>Transformation matrices for registering multichannel datasets can be generated using a calibration dataset of multi-color fiducials such as <a class="reference external" href="https://www.thermofisher.com/order/catalog/product/T7280">tetraspeck beads</a>.  The path to this dataset must be provided to LLSpy in the Post-Processing tab.  See more in the section on <a class="reference internal" href="#channel-registration">channel registration</a>.</p>
+</div>
+</div>
+<div class="section" id="general-information">
+<h1>General Information</h1>
+<div class="section" id="filename-parsing">
+<span id="parsing"></span><h2>Filename parsing</h2>
+<p><em>Filenames are parsed according to the following regex:</em></p>
+<pre class="codehilite" lang="python">
+<span class="n">filename_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&quot;&quot;&quot;
+  ^(?P&lt;basename&gt;.+)
+  _ch(?P&lt;channel&gt;\d)
+  _stack(?P&lt;stack&gt;\d{4})
+  _\D*(?P&lt;wave&gt;\d+).*
+  _(?P&lt;reltime&gt;\d{7})msec
+  _(?P&lt;abstime&gt;\d{10})msecAbs
+  &quot;&quot;&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span><span class="p">)</span>
+</pre>
+<p>if you need something different, you can <a class="reference external" href="mailto:talley&#46;lambert&#37;&#52;&#48;gmail&#46;com">contact Talley</a> with an example filename, or change it directly in the <tt class="docutils literal">parse.py</tt> file</p>
+</div>
+</div>
+<div class="section" id="menu-bar">
+<h1>Menu Bar</h1>
+<div class="section" id="asdfdsa">
+<h2>asdfdsa</h2>
+<p><strong>File Menu</strong></p>
+<ul class="simple">
+<li><strong>Quit</strong> <em>(ctrl-Q)</em>: Quit the program</li>
+<li><strong>Open LLSdir</strong> <em>(ctrl-O)</em>: Opens file dialog to add an LLSdir to the queue</li>
+<li><strong>Save Settings as Default</strong> <em>(ctrl-S)</em>: Saves the current GUI state as default</li>
+<li><strong>Load Default Settings</strong> <em>(ctrl-D)</em>: Loads the default GUI state</li>
+</ul>
+<p>NOTE: the program starts up not with the &quot;default&quot; settings, but with the GUI state
+from the previous session.</p>
+<p><strong>Process Menu</strong></p>
+<ul class="simple">
+<li><strong>Preview</strong> <em>(ctrl-P)</em>: Preview the highlighted item in the list with the current settings</li>
+<li><strong>Run</strong> <em>(ctrl-R)</em>: Start the processing queue</li>
+</ul>
+</div>
+</div>
+<div class="section" id="toolbar">
+<h1>Toolbar</h1>
+<p><em>The toolbar provides shortcuts to some file-handling routines.</em></p>
+<p><strong>Reduce to Raw</strong></p>
+<p>Deletes any GPUdecon, Deskwed, Corrected, and MIP folders, restoring folder to state immediately after aquisition.  Note, in the config tab, there is an option to &quot;Save MIP folder during reduce to raw&quot;.  This alters the behavior of this function to leave any MIP folders for easy preview in the future.</p>
+<p><strong>Compress Raw</strong></p>
+<p>Uses lbzip2 (fast parallel compression) to compress the raw data of selected folders to save space.  Note, this currently only works on Linux and OS X, as I have not yet been able to compile lbzip2 or pbzip for Windows.  Alternatives exist (pigz), but bzip2 compression has a nice tradeoff between speed and compression ratio.</p>
+<p><strong>Decompress Raw</strong></p>
+<p>Decompress any compressed raw.tar.bz files in the selected folders.</p>
+<p><strong>Concatenate</strong></p>
+<p>Combine selected folders as if they had been acquired in a single acquisition.  Files are renamed such that the relative timestamp and stack number of the 'appended' dataset starts off where the first dataset ends.</p>
+<p><strong>Rename Scripted</strong></p>
+<p>In progress: Rename &quot;Iter&quot; files acquired in script editor mode to fit standard naming convention.</p>
+</div>
+<div class="section" id="process-tab">
+<h1>Process Tab</h1>
+<p><em>This tab has all of the settings for cudaDeconv and associated processing routines.</em></p>
+<div class="section" id="folder-queue-listbox">
+<h2>Folder Queue ListBox</h2>
+<p>Drag and drop LLS folders into the table (blank) area towards the top of the process tab to add them to the processing queue.  Folders without a settings.txt file will be ignored.  Basic experimental parameters are parsed from Settings.txt and folder structure and displayed.
+Future option may allow overwriting angle, dz, and dx in this list.</p>
+</div>
+<div class="section" id="pre-processing">
+<h2>Pre-Processing</h2>
+<p><em>Most of these options pertain to image corrections or modifications prior to processing with cudaDeconv.</em></p>
+<p><strong>Camera Corrections</strong></p>
+<p>Checking the &quot;Do Flash Correction&quot; button to enable correction of the residual electron artifact seen in the Flash4.0 when using overlap/synchronous readout mode as is commonly done in the Lattice Scope software.  In this readout mode, pixels in the chip are not reset between exposures causing &quot;carryover&quot; charge from the previous exposure in the next exposure.  This can be seen as a noisy ghosting artifact in the second image in regions that were bright in the first image, which becomes particularly noticeable in deskewed and max projected images.</p>
+<p>For correction, a calibration image must be specified in the &quot;Camparam Tiff&quot; field. This file is a tiff that holds parameters that describe the probability of carryover charge for each pixel (as a function of the intensity of that pixel in the previous image), along with the pixels specific offset (and optionally, noise).  This can be used to subtract the predicted carryover charge, minimizing the artifact.  For more information, see the <a class="reference internal" href="#generate-camera-calibration-file">Generate Camera Calibration File</a> in the config tab.  This calibration file also includes an offset and noise map that can be further utilized for various corrections (#todo).  The program will use the ROI metadata in file Settings.txt file to crop the calibration image to the corresponding region used for the given experiment.</p>
+<p>Camera correction can be done serially in a single thread on the CPU (CPU), with multithreading (parallel), or on the GPU (CUDA).</p>
+<p>The &quot;Do Median Filter&quot; option will additionally replace particularly noisy pixels with the median value of its 8 neighboring pixels.  For more information see the supplement in <a class="reference external" href="http://www.nature.com/nprot/journal/v10/n11/abs/nprot.2015.111.html">Amat et al. 2015</a>.</p>
+<blockquote>
+Amat, F., Höckendorf, B., Wan, Y., Lemon, W. C., McDole, K., &amp; Keller, P. J. (2015). Efficient processing and analysis of large-scale light-sheet microscopy data. Nature Protocols, 10(11), 1679–1696. <a class="reference external" href="http://doi.org/10.1038/nprot.2015.111">http://doi.org/10.1038/nprot.2015.111</a>
+<a class="reference external" href="http://www.nature.com/nprot/journal/v10/n11/abs/nprot.2015.111.html">http://www.nature.com/nprot/journal/v10/n11/abs/nprot.2015.111.html</a></blockquote>
+<p>If &quot;Save Corrected&quot; is checked, the corrected pre-processed images will be saved.  Otherwise, they are deleted after processing to save space.</p>
+<p><strong>Trim Edges</strong></p>
+<p>These settings allow you crop a number of pixesl from each edge of the raw data volume prior to processing.</p>
+<p>Sometimes when imaging a subregion of the chip on a CMOS camera, the last 1 or 2 rows on the edge will be particularly bright, especially if there is a bright object just outside of the ROI.  After deskewing and max projection, those bright edges often corrupt the image. Use Trim X Left and Trim X Right to crop pixels on the sides of the images prior to processing.</p>
+<p>Sometimes, when the camera has not taken an image in a while, dark current will accumulate in the photodiodes that causes the first image in a stack to appear noisier (this phenomenon again depends on using synchronous/overlap triggering mode).  This noise will corrupt a max-intensity image.  Setting &quot;Trim Z first&quot; to 1 or 2 is usually sufficient to remove the noise (though, obviously, will eliminate any data in those planes as well).</p>
+<p>Trimming in the Y direction is mostly used to simply crop excess pixels from the image to save space.</p>
+<p><strong>Background Subraction</strong></p>
+<p>In addition to a manually set &quot;Fixed Value&quot;, there is an option to &quot;Autodetect&quot; the background for each channel.  In this case, the mode value of the second image in the z stack is used as the background value for that channel.</p>
+</div>
+<div class="section" id="deskew-deconvolution-saving">
+<h2>Deskew/Deconvolution/Saving</h2>
+<p><em>These options dictate what processing should be done, and what should be saved.</em></p>
+<p><strong>Deconvolution</strong></p>
+<p>If &quot;Do Deconvolution&quot; is checked and Iterations is greater than zero, deconvolution will be performed.  nApodize and nZblend directly control the corresponding parameters in cudaDeconv.</p>
+<p>&quot;Save MIPs&quot; check boxes determine which axes will have maximum-intensity-projections generated.</p>
+<p>The 16-bit / 32-bit dropdown menu controls the bit-depth of the resulting deconvolved files.</p>
+<p><strong>Raw Deskewed</strong></p>
+<p>If &quot;Save Deskewed&quot; is checked, the raw (non-deconvolved) deskewed files will be saved.  Note: for experiments acquired in galvo/piezo scanning mode (i.e. not in sample-scan), this section does nothing.</p>
+<p>&quot;Save MIPs&quot; check boxes determine which axes will have maximum-intensity-projections generated.</p>
+<p>The 16-bit / 32-bit dropdown menu controls the bit-depth of the resulting deconvolved files.</p>
+<p><strong>Join MIPS into single hyperstack</strong></p>
+<p>This option applies to both Deskewed and Deconvolved MIP folders, and combines all of the tiff files in each of those folders into a single multichannel/timelapse hyperstack that wil be recognized by ImageJ/Fiji.</p>
+</div>
+<div class="section" id="post-processing">
+<h2>Post-Processing</h2>
+<p><em>While many of these options are technically performed during processing by the cudaDeconv binary, they all fall into the category of things done to the image after deconvolution/deskewing has already been performed.</em></p>
+<p><strong>Cropping</strong></p>
+<p>The &quot;Crop Result&quot; checkbox will crop the resulting deskewed/deconvolved image (in the X direction only).  &quot;AutoCrop&quot; will automatically select a crop region based on image feature content.  This is done by processing all channels from the first and last timepoints, and summing their max-intensity projections prior to heavy gaussian blurring.  That summed &amp; blurred image is segmented and a bounding box is calculated that contains the features in the image.  The &quot;Pad&quot; setting adds additional pixels to both sides of the calculated bounding box.</p>
+<p>Whether or not AutoCrop is chosen, the &quot;Preview&quot; button can be used to preview and evaluate the current settings in the processed image.  If the Preview button is clicked when the AutoCrop option is selected, the autodetected &quot;Width&quot; and &quot;Shift&quot; values will be appear in the &quot;Manual&quot; cropping settings to the right where they can be further tuned and previewed prior to processing.</p>
+<p><strong>Rotate to coverslip</strong></p>
+<p>Rotate and interpolate data so that the Z axis of the image volume is orthogonal to the coverslip (does nothing beyond what cudaDeconv does).</p>
+<p id="channel-registration"><strong>Channel Registration (experimental)</strong></p>
+<p>When &quot;Do Channel Registration&quot; is checked, the deskewed/deconvolved data will be registered using the provided calibration folder, specified in the &quot;Calibration&quot; text field.  This calibration folder should contain at least one Z-stack, for each channel, of a fiducial marker that appears in all channels, such as tetraspeck beads.  The folder must also contain a Settings.txt file (simply acquiring more than one timepoint is an easy way to generate an appropriate folder).</p>
+<p>The beads will be detected and fit to a 3D gaussian to generate a point cloud of XYZ locations.  The algorithm then limits the point cloud to beads that appear in all channels.  This point cloud can then be used to calculate the transformation required to register the various channels in dataset to the specified &quot;Reference Channel&quot; chosen in the dropdown menu.</p>
+<dl class="docutils">
+<dt><em>Modes:</em></dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>Least-squares point cloud registration:</dt>
+<dd><ul class="first last simple">
+<li>Translation: simply corrects for translational shifts between channels</li>
+<li>Rigid: correct for translation and rotation differences</li>
+<li>Similarity: correct for translation, rotation, and scaling (magnifiation) differences.</li>
+<li>Affine: corrects translation, rotation, scaling, and shearing</li>
+<li>2-step: performs affine registration in XY and rigid registraion in Z</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Coherent Point Drift registration</dt>
+<dd><ul class="first last simple">
+<li>These options use the coherent point drift algorithm (Myronenko 2010) instead of least-squares.  This can be a bit more robust with low SNR datasets, when the algorithm fails to correctly limit the fiducial point cloud to strictly one-to-one matching points.</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<p>Note: some of these modes may fail/crash.  Test with preview prior to processing.  Bug reports welcome!</p>
+<p><strong>Bleach Correction</strong></p>
+<p>Enables setting in cudaDeconv to normalize all timepoints to the intensity of the first timepoint, minimizing the appearance of photobleaching over the course of the timelapse, but altering the intensity values of the resulting deskewed/deconvolved images.</p>
+<p><strong>Compress Raw Data</strong></p>
+<p>After processing, compress the raw data using lbzip2 parallel compression.</p>
+</div>
+<div class="section" id="preview-button">
+<h2>Preview Button</h2>
+<p>The Preview button (Ctrl-P) is used to process and show the first timepoint (by default) of the dataset selected in the processing queue, allowing evaluation of the current settings prior to processing of the entire folder.  After clicking &quot;Preview&quot;, a multidimensional image window will appear after a moment of processing.  This window has a number of features (some non-obvious):</p>
+<ul>
+<li><p class="first">hovering over the image will show the coordinate and intensity value of the pixel under the mouse.</p>
+</li>
+<li><p class="first">use the Magnifying glass icon and up/down/left/right icon to zoom and pan, respectively.</p>
+</li>
+<li><p class="first">use the Z slider or the mouse wheel to select the Z plane to show</p>
+</li>
+<li><p class="first">use the C slider to change the currently displayed channel</p>
+</li>
+<li><p class="first">the min/max sliders adjust scaling of the image</p>
+</li>
+<li><p class="first">click on the colorbar to the right, or press the &quot;C&quot; key to cycle the colormap through some LUTs.</p>
+</li>
+<li><p class="first">Press the following keys for various projections.  To return to standard Z-scrolling mode, press the same key again.</p>
+<blockquote>
+<ul class="simple">
+<li>M - Max intensity projection</li>
+<li>N - Min intensity projection</li>
+<li>B - Mean intensity projection</li>
+<li>V - Standard Deviation intensity projection</li>
+<li>, - Median intensity projection</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<p>To preview multiple timepoints, or something other than the first timepoint, use the time subset field, which accepts a comma seperated string of (zero-indexed) timepoints, or ranges with start-stop[-step] syntax.</p>
+<p>For instance:</p>
+<blockquote>
+<ul class="simple">
+<li>0-2,9 - process the first three and 10th timepoints.</li>
+<li>1-5-2 - start-stop-step syntax, processes the 2nd, 4th, and 6th timepoints</li>
+<li>0,2-4,7-15-3 - combination of list, range, and range-with-step syntax</li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="process-button-and-time-channel-subset">
+<h2>Process Button and Time/Channel Subset</h2>
+<p>The Preview button (Ctrl-P) is used to process and show the first timepoint (by default) allowing evaluation of the current settings prior to processing of the entire folder.</p>
+<p>To process a subset of timepoints or channels, use the time subset and channel subset fields, which accept a comma seperated string of (zero-indexed) timepoints, or ranges with start-stop[-step] syntax.</p>
+<p>For instance:</p>
+<blockquote>
+<ul class="simple">
+<li>0-2,9 - process the first three and 10th timepoints.</li>
+<li>1-5-2 - start-stop-step syntax, processes the 2nd, 4th, and 6th timepoints</li>
+<li>0,2-4,7-15-3 - combination of list, range, and range-with-step syntax</li>
+</ul>
+</blockquote>
+</div>
+</div>
+<div class="section" id="config-tab">
+<h1>Config Tab</h1>
+<div class="section" id="use-bundled-cudadeconv-binary">
+<h2>Use bundled cudaDeconv Binary</h2>
+<p>By default the program will use bundled cudaDeconv binaries, autoselecting based on the operating system.  Tested on OS X, Linux, and Windows 7/10.</p>
+</div>
+<div class="section" id="cudadeconv-binary">
+<h2>cudaDeconv binary</h2>
+<p>Unselect the &quot;Use bundled cudaDeconv binary&quot; option to enable this field which will allow you to specify the path to a specific cudaDeconv binary.  Note: many of the features in LLSpy assume that the bundled binary is used.  However, an attempt has been made to accomodate any binary by detecting the available options in the help menu, and disabling any non-matching features from LLSpy.  However, this is still experimental, and may cause unexpected issues.</p>
+</div>
+<div class="section" id="otf-directory-and-otf-auto-selection">
+<span id="otf-directory"></span><h2>OTF directory and OTF auto-selection</h2>
+<p>Path to the folder that holds OTF and PSF files.</p>
+<p>As a fallback, the program will look in this path for an otf file that is labeled [Wavelength]_otf.tif
+For example: 488_otf.tif</p>
+<p>Before using the default otf, the program will attempt to find an appropriate PSF/OTF file to use based on the date of acquisition of the experiment, the mask used (provided the mask has been entered into SPIMProject.ini, see below), and the wavelength.  Currently, files in the OTF directory must have the following format:</p>
+<p><tt class="docutils literal"><span class="pre">[date]_[wave]_[psf-type][outerNA]-[innerNA].tif</span></tt></p>
+<p>for example: <tt class="docutils literal"><span class="pre">20170103_488_totPSFmb0p5-0p42.tif</span></tt> or <tt class="docutils literal"><span class="pre">20170103_488_totPSFmb0p5-0p42_otf.tif</span></tt></p>
+<p>If a matching PSF file is found that does not have an OTF file already generated, it will generate an OTF file and save it with the _otf.tif suffix.  This allows you to simply acquire a PSF file, and drop it in the PSF folder with the appropriate naming convention, and an OTF will automatically be generated when that PSF is used.</p>
+<p>In order to select and OTF based on mask pattern, the mask must be in the Settings.txt file in the experiment.  The easiest way to do this is to add an &quot;Annular Mask&quot; section to the SPIMProject.ini file in the Lattice Scope software, and update the values each time you change the mask.  For instance:</p>
+<pre class="codehilite" lang="ini">
+<span class="k">[Annular Mask]</span>
+<span class="na">outerNA</span> <span class="o">=</span> <span class="s">0.5</span>
+<span class="na">innerNA</span> <span class="o">=</span> <span class="s">0.42</span>
+</pre>
+</div>
+<div class="section" id="default-reg-calib">
+<h2>Default Reg Calib</h2>
+<p>Not used at the moment.  Instead, use the &quot;Calibration&quot; field provided in the &quot;Do Channel Registration&quot; section of the of Post-Processing tab.</p>
+</div>
+<div class="section" id="generating-camera-calibration-file">
+<span id="generate-camera-calibration-file"></span><h2>Generating Camera Calibration File</h2>
+<p>The calibration algorithm assumes that you have aquired a series of 2-channel Zstacks (not actually a 3D stack: set Z galvo range and Z and Sample Piezo range to zero). The first channel should be &quot;bright&quot; (many photons hitting the chip) and even like a flatfield image (such as 488 laser sheet exciting FITC) and the second channel is a &quot;dark&quot; image (I use another wavelength channel with the laser off.  Collect two ~100-plane Z stacks for many different intensities (laser power) in the &quot;bright channel&quot;: start at very low power (0.1% laser) and gradually acquire stacks at higher power.  Due to the exponential relationship of the residual electron effect, it's particularly important to get a lot of low-powered stacks: 1%, 2%, 3% etc... then after 10% you can begin to take bigger steps. (Of course, the exact laser powers will depend on the power and efficiency of your system.</p>
+<p>Upon clicking the &quot;Generate Camera Calibration File&quot; button, select the path to the folder that contains all of the bright/dark images acquired above. By default, the program will look for an image called Dark_AVG.tif in the selected Image Folder, but the average projection image can also be manually selected.  Optionally, a standard deviation projection of the dark image stack (i.e. noise map) can be also provided in the same folder, named Dark_STD.tif, and it will be included in the calibration file.</p>
+<p>Even with parallel processing, this process takes a while: about ~30 minutes for a 1024x512 ROI on a computer with a 4 core, 4 GHz processer (i7-6700K).  However, it should only need to be calculated once.  I have been using the same correction file for about a year, and it continues to be appropriate for my camera.</p>
+<p>The output file will appear in the Image Folder.  Put it somewhere you will remember and enter the path on the Config Tab in the LLSpy GUI.</p>
+</div>
+<div class="section" id="save-mip-folder-during-reduce-to-raw">
+<h2>Save MIP Folder during &quot;Reduce to Raw&quot;</h2>
+<p>The &quot;Reduce to Raw&quot; shortcut in the toolbar deletes any GPUdecon, Deskwed, Corrected, and MIP folders, restoring folder to state immediately after aquisition.  This option in the config tab alters the behavior of the &quot;reduce&quot; function to leave any MIP folders for easy preview in the future.</p>
+</div>
+<div class="section" id="watch-directory-experimental">
+<h2>Watch Directory (experimental)</h2>
+<p>These options designate a folder to watch and auto-process when a new LLS folder appears.</p>
+<dl class="docutils">
+<dt><strong>Watch Modes</strong></dt>
+<dd><ul class="first last simple">
+<li><em>Server mode</em>: designate a folder to watch for incoming <em>finished</em> LLS folders (with Settings.txt) file.  When new folders are detected, they are added to the processing queue and the queue is started if not already in progress.</li>
+<li><em>Aquisition mode</em>: designed to be used on the aquisition computer.  Designate folder to watch for new LLS folders, and process new files as they arrive.  Similar to built in GPU processing tab in Lattice Scope software, but with the addition of all the corrections and parameter selection in the GUI.</li>
+</ul>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="log-tab">
+<h1>Log Tab</h1>
+<p>Any output from cudaDeconv or LLSpy will appear in this tab.</p>
+</div>
+<div class="section" id="progress-and-status-bar">
+<h1>Progress and Status Bar</h1>
+<p>During cudaDeconv processing, the current file number will appear in the status bar at the bottom of the window, and the percent progress is represented by the progress bar.  The timer countdown on the right provides an estimate of the time remaining for the current LLS directory (not for the entire queue).</p>
+</div>
+</div>
+
+        </article>
+      </div>
+    </div>
+  </body>
+  <script type="text/x-omnimarkup-config">
+    window.App.Context = {
+      buffer_id: 701,
+      timestamp: '1505095072.711429',
+      revivable_key: 'L1VzZXJzL3RhbGxleS9Ecm9wYm94IChITVMpL1B5dGhvbi9sbHNweTIvZG9jdW1lbnRhdGlvbi5yc3Q='
+    };
+    window.App.Options = {
+      ajax_polling_interval: 500,
+      mathjax_enabled: false
+    };
+  </script>
+  <script type="text/javascript" src="/public/jquery-2.1.3.min.js"></script>
+  <script type="text/javascript" src="/public/imagesloaded.pkgd.min.js"></script>
+  <script type="text/javascript" src="/public/app.js"></script>
+</html>
+
