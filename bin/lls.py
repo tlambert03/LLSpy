@@ -2,9 +2,10 @@ import os
 import sys
 import click
 import shutil
+import voluptuous
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
-from llspy import llsdir, util, schema
+from llspy import llsdir, util, schema, otf
 
 try:
     import ConfigParser as configparser
@@ -209,20 +210,44 @@ def info(paths, verbose):
 
 
 def check_iters(ctx, param, value):
-    return value
     if value == 0:
         click.echo('You\'ve selected iters=0 ... if you don\'t need deconvolution, '
                    'use the deskew command')
         ctx.exit()
+    elif value > 0:
+        cfg = ctx.ensure_object(Config)
+        fail = False
+        if not (ctx.params['otfDir'] or cfg['otfDir']):
+            click.secho('\nDeconvolution requested, but no OTF directory provided!', bold=True, fg='red')
+            fail = True
+
+        otfdir = None
+        if ctx.params['otfDir'] is not None:
+            otfdir = ctx.params['otfDir']
+        elif cfg['otfDir'] is not None:
+            otfdir = cfg['otfDir']
+
+        if otfdir is not None and not otf.dir_has_otfs(otfdir):
+            click.secho('\nOTF directory has no OTFs! -> %s' % otfdir, bold=True, fg='red')
+            fail = True
+
+        if fail:
+            click.echo('use ', nl=False)
+            click.secho('--otfDir PATH', bold=True, nl=False, fg='cyan')
+            click.echo(' to specify a directory, during deconvolution')
+            click.echo('or use ', nl=False)
+            click.secho('lls config --set otfDir PATH ', bold=True, nl=False, fg='cyan')
+            click.echo('to set a directory in the configuration\n')
+            ctx.exit()
     return value
 
 
 @cli.command()
 @click.argument('path', metavar='LLSDIR', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('-c', '--config', type=click.Path(exists=True, dir_okay=False),
-              callback=read_config, expose_value=False, multiple=True,
+              callback=read_config, expose_value=False, multiple=True, is_eager=True,
               help='Overwrite defaults with values in specified file.')
-@click.option('--otfdir', 'otfDir',
+@click.option('--otfDir', 'otfDir', is_eager=True,
               type=click.Path(exists=True, file_okay=False, resolve_path=True),
               help="Directory with otfs. OTFs should be named (e.g.): 488_otf.tif")
 @click.option('-b', '--background', metavar='INT',
@@ -366,16 +391,14 @@ def decon(config, path, **kwargs):
                 else:
                     click.echo("recreating corrected files...")
 
-
-
         try:
             # try:
             E.autoprocess(**options)
             # logdict = None
             # except Exception as e:
             #     raise click.ClickException(e)
-        except llsdir.LLSpyError as e:
-            click.secho(e, fg='red')
+        except Exception:
+            raise
 
     if kwargs['batch']:
         try:
@@ -385,7 +408,14 @@ def decon(config, path, **kwargs):
             for folder in subfolders:
                 click.secho(folder.split(path)[1], fg='yellow')
             for folder in subfolders:
-                procfolder(folder, config)
+                try:
+                    procfolder(folder, config)
+                except voluptuous.error.MultipleInvalid as e:
+                    e = str(e).replace("@ data['", 'for ')
+                    e = e.strip("'][0]")
+                    click.secho("VALIDATION ERROR: %s" % e, fg='red')
+                except llsdir.LLSpyError as e:
+                    click.secho("ERROR: %s" % e, fg='red')
             sys.exit('\n\nDone batch processing!')
         except Exception:
             raise
@@ -393,8 +423,13 @@ def decon(config, path, **kwargs):
         try:
             procfolder(path, config)
             sys.exit('Done!')
-        except Exception:
-            raise
+        except voluptuous.error.MultipleInvalid as e:
+            e = str(e).replace("@ data['", 'for ')
+            e = e.strip("'][0]")
+            click.secho("VALIDATION ERROR: %s" % e, fg='red')
+        except llsdir.LLSpyError as e:
+            click.secho("ERROR: %s" % e, fg='red')
+
     sys.exit(0)
 
 
