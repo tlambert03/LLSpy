@@ -4,7 +4,7 @@ from . import plib
 from . import config
 from .settingstxt import LLSsettings
 from . import parse, compress, schema
-from .otf import get_otf_by_date
+from . import otf as otfmodule
 from .cudabinwrapper import CUDAbin
 from . import util
 from .camera import CameraParameters, selectiveMedianFilter
@@ -688,6 +688,9 @@ class LLSdir(object):
         if otfpath is None or not os.path.isdir(otfpath):
             return None
 
+        if not otfmodule.dir_has_otfs(otfpath):
+            raise LLSpyError("OTF directory has no OTFs! -> {}".format(otfpath))
+
         otfs = {}
         for c in range(self.parameters.nc):
             wave = self.parameters.wavelength[c]
@@ -696,10 +699,16 @@ class LLSdir(object):
                 outerNA = self.settings.mask.outerNA
                 # find the most recent otf that matches the mask settings
                 # in the PSF directory and append it to the channel dict...
-                otf = get_otf_by_date(self.date, wave, (innerNA, outerNA),
+                try:
+                    otf = otfmodule.get_otf_by_date(self.date, wave, (innerNA, outerNA),
                     otfpath=otfpath, direction='nearest')
+                except Exception:
+                    raise
             else:
                 otf = str(os.path.join(otfpath, str(wave) + '_otf.tif'))
+            if otf is None or not os.path.isfile(otf):
+                raise LLSpyError('Could not find OTF for '
+                    'wave {} in path: {}'.format(wave, otfpath))
             otfs[c] = otf
         return otfs
 
