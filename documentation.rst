@@ -1,8 +1,32 @@
 LLSpy Documentation
 ===================
 
+.. contents:: Table of Contents
 
-*LLSpy is a graphical and command line interface for lattice light sheet post-processing. It depends on the cudaDeconv binary created in the Betzig lab at Janelia Research Campus, and adds additional features that minimize user parameter input, perform image corrections and manipulations, and facilitate file handling*
+
+Introduction
+------------
+
+LLSpy is a graphical and command line interface for lattice light sheet post-processing. It extends the cudaDeconv binary created in the Betzig lab at Janelia Research Campus, and adds additional features that auto-detect experimental parameters (minimizing user input), perform image corrections and manipulations, and facilitate file handling.
+
+The primary goal of the CLI is to abstract away as many parameters as possible, allowing complicated processing with simple commands like:
+
+.. code:: bash
+
+  $ lls decon /path/to/LLSdir/
+
+The GUI provides quick visual access to the same functionality, with a quick way to preview results before commiting to processing.
+
+.. image:: gui.png
+    :height: 825 px
+    :width: 615 px
+    :scale: 100%
+    :alt: alternate text
+    :align: right
+
+
+
+
 
 Features of LLSpy
 -----------------
@@ -36,10 +60,11 @@ Features of LLSpy
 * cross-platform: includes precompiled binaries and shared libraries that should work on all systems.
 
 
-*Known Issues & Bugs*
-*********************
+Known Issues & Bugs
+-------------------
 
 * When unexpected errors occur mid-processing, sometimes the "cancel" button does nothing, forcing a restart.
+* There are still some unsolved segmentation-faults when running cudaDeconv through the GUI.
 
 Bug reports are very much appreciated: talley@hms.harvard.edu
 
@@ -54,7 +79,7 @@ Install CUDA (tested on 8.0)
 
 Download LLSpy and set up an environment with the appropriate dependencies. LLSpy depends on:
 
-    - python=3.6
+    - python>=3.5
     - numpy
     - scipy
     - tifffile
@@ -62,22 +87,36 @@ Download LLSpy and set up an environment with the appropriate dependencies. LLSp
     - scikit-image
     - voluptuous
     - watchdog
-    - pyqt
+    - pyqt (for GUI)
+    - click (for CLI)
 
-It is recommended to install `Anaconda <https://www.anaconda.com/download/>`_.  (LLSpy is designed to be compatible with both python 2 and python 3, so chose whichever python version you prefer.)  In which case you can easily install the dependencies by running  ``conda env create --file environment.yml`` at the anaconda prompt
+It is recommended to install `Anaconda <https://www.anaconda.com/download/>`_.  (LLSpy is designed to be compatible with both python 2 and python 3, however it has been most extensively tested with python 3).  With anaconda, you can easily install the dependencies by running  ``conda env create --file environment.yml`` at the anaconda prompt.
 
 .. code:: bash
 
-    $ cd llspy2
+    $ cd llspy
     $ conda env create --file environment.yml
     $ source activate llsenv
     $ python llspy/gui/llspygui.py
+
+
+You may also install with pip using the included ``setup.py`` file.  It is recommended to use a virtual environment.
+
+.. code:: bash
+
+    $ cd llspy
+    $ pip install virtualenv
+    $ virtualenv venv
+    $ . venv/bin/activate  # venv\scripts\activate on windows
+    $ pip install .
+
 
 Setup
 -----
 *There are a few things that must be configured properly in order for LLSpy to work.*
 
-**OTF Directory**
+*OTF Directory*
+***************
 
 LLSpy assumes that you have a directory somewhere with all of your PSF and OTF files.  You must enter this directory on the config tab of the LLSpy gui or by using ``lls config --set otfDir PATH`` in the command line interface.
 
@@ -118,44 +157,142 @@ If the SPIMProject.ini file also contains information about the ``[Annular Mask]
 see more in the `OTF directory`_ section below.
 
 
-**Flash4.0 Calibration**
+*Flash4.0 Calibration*
+**********************
 
 In order to take advantage of the Flash synchronous trigger mode correction included in LLSpy, you must first characterize your camera by collecting a calibration dataset as described below in `Generate Camera Calibration File`_, then direct LLSpy to that file on the Config Tab of the GUI, or using ``lls config --set camparamsPath PATH`` in the command line interface.  Support for more than one camera is in development.
 
 
-**Channel Registration**
+*Channel Registration*
+**********************
 
 Transformation matrices for registering multichannel datasets can be generated using a calibration dataset of multi-color fiducials such as `tetraspeck beads <https://www.thermofisher.com/order/catalog/product/T7280>`_.  The path to this dataset must be provided to LLSpy in the Post-Processing tab.  See more in the section on `channel registration`_.
 
 
-General Information
-===================
+Command Line Interface
+======================
 
-.. _Parsing:
+*In addition to the QT-based graphical user interface described below, LLSpy includes a command line interface (CLI).*
 
-Filename parsing
-----------------
+If the program has been installed using setuptools (by running ``pip install .`` in the top level llspy directory, where setup.py resides) then setuptools will create an executable that can be triggered by typing ``lls`` at the command prompt.  Alternatively, the CLI can be directly executed by running python ``llspy/lls.py`` at the command prompt.  (For this documentation, it is assumed that the program was installed using ``pip install .`` and run with ``lls``).
 
-*Filenames are parsed according to the following regex:*
+.. code:: bash
 
-.. code:: python
+  $ lls --help
+  Usage: lls [OPTIONS] COMMAND [ARGS]...
 
-  filename_pattern = re.compile(r"""
-    ^(?P<basename>.+)
-    _ch(?P<channel>\d)
-    _stack(?P<stack>\d{4})
-    _\D*(?P<wave>\d+).*
-    _(?P<reltime>\d{7})msec
-    _(?P<abstime>\d{10})msecAbs
-    """, re.VERBOSE)
+    LLSpy
 
-if you need something different, you can `contact Talley`_ with an example filename, or change it directly in the ``parse.py`` file
+    This is the command line interface for the LLSpy library, to facilitate
+    processing of lattice light sheet data using cudaDeconv and other tools.
+
+  Options:
+    --version          Show the version and exit.
+    -c, --config PATH  Config file to use instead of the system config.
+    -h, --help         Show this message and exit.
+
+  Commands:
+    camera    Camera correction calibration
+    compress  Compression & decompression of LLSdir
+    config    Manipulate the system configuration for LLSpy
+    decon     Deskew and deconvolve data in LLSDIR.
+    deskew    Deskewing only (no decon) of LLS data
+    gui       Launch the Graphical User Interface.
+    info      Get info on LLSDIR.
+    reg       Channel registration
+
+
+You can configure the program either by providing a configuration .ini in the command using the ``--config`` flag, or by setting the system configuration using the ``llspy config`` command.  Minimally, you will want to establish the OTF directory by typing:
+
+.. code:: bash
+
+  $ lls config --set otfDir /path/to/OTFs/
+
+To get a full list of keys available for configuration, type:
+
+.. code:: bash
+
+  $ lls config --info
+
+To print the current system configuration, type:
+
+.. code:: bash
+
+  $ lls config --print
+
+**Note**: System configuration values will be superceeded by key-value pairs included in ``config.ini`` files provided at the command prompt with ``--config``, and all configuration values will be superceeded by those privided directly using option flags in the decon command.
+
+You can use ``--help`` to get more information on any specific subcommand.  Many are still under development.  The bulk of the program functionality resides in the ``decon`` subcommand.
+
+.. code:: bash
+
+  $ lls decon --help
+  Usage: lls decon [OPTIONS] LLSDIR
+
+    Deskew and deconvolve data in LLSDIR.
+
+  Options:
+    -c, --config PATH              Overwrite defaults with values in specified
+                                   file.
+    --otfDir DIRECTORY             Directory with otfs. OTFs should be named
+                                   (e.g.): 488_otf.tif
+    -b, --background INT           Background to subtract. -1 = autodetect.
+                                   [default: -1]
+    -i, --iters [INT: 0-30]        Number of RL-deconvolution iterations
+                                   [default: 10]
+    -R, --rotate                   rotate image to coverslip coordinates after
+                                   deconvolution  [default: False]
+    -S, --saveDeskewed             Save raw deskwed files, in addition to
+                                   deconvolved.  [default: False]
+    --cropPad INT                  additional edge pixels to keep when
+                                   autocropping  [default: 50]
+    -w, --width [INT: 0-3000]      Width of image after deskewing. 0 = full
+                                   frame.[default: autocrop based on image
+                                   content]
+    -s, --shift [INT: -1500-1500]  Shift center when cropping  [default: 0]
+    -m, --rMIP <BOOL BOOL BOOL>    Save max-intensity projection after
+                                   deskewing along x, y, or z axis.  Takes 3
+                                   binary numbers separated by spaces.
+                                   [default: False, False, False]
+    -M, --MIP <BOOL BOOL BOOL>     Save max-intensity projection after
+                                   deconvolution along x, y, or z axis. Takes 3
+                                   binary numbers separated by spaces  [default:
+                                   False, False, True]
+    --mergemips / --sepmips        Combine MIP files into single hyperstack (or
+                                   not).  [default: True]
+    --uint16 / --uint32            Save results as 16 (default) or 32- bit
+    -p, --bleachCorrect            Perform bleach correction on timelapse data
+                                   [default: False]
+    --trimX <LEFT RIGHT>           Number of X pixels to trim off raw data
+                                   before processing  [default: 0, 0]
+    --trimY <TOP BOT>              Number of Y pixels to trim off raw data
+                                   before processing  [default: 0, 0]
+    --trimZ <FIRST LAST>           Number of Z pixels to trim off raw data
+                                   before processing  [default: 0, 0]
+    -f, --correctFlash             Correct Flash pixels before processing.
+                                   [default: False]
+    -F, --medianFilter             Correct raw data with selective median
+                                   filter. Note: this occurs after flash
+                                   correction (if requested).  [default: False]
+    --keepCorrected                Process even if the folder already has a
+                                   processingLog JSON file, (otherwise skip)
+    -z, --compress                 Compress raw files after processing
+                                   [default: False]
+    -r, --reprocess                Process even if the folder already has a
+                                   processingLog JSON file, (otherwise skip)
+    --batch                        batch process folder: Recurse through all
+                                   subfolders with a Settings.txt file
+    --yes / --no                   autorespond to prompts
+    -h, --help                     Show this message and exit.
+
+
+Graphical User Interface
+========================
+
+**The following sections all refer to the GUI interface for LLSpy**
 
 Menu Bar
 ========
-
-asdfdsa
-----------------------
 
 **File Menu**
 
@@ -434,5 +571,30 @@ Any output from cudaDeconv or LLSpy will appear in this tab.
 Progress and Status Bar
 =======================
 During cudaDeconv processing, the current file number will appear in the status bar at the bottom of the window, and the percent progress is represented by the progress bar.  The timer countdown on the right provides an estimate of the time remaining for the current LLS directory (not for the entire queue).
+
+
+General Information
+===================
+
+.. _Parsing:
+
+Filename parsing
+----------------
+
+*Filenames are parsed according to the following regex:*
+
+.. code:: python
+
+  filename_pattern = re.compile(r"""
+    ^(?P<basename>.+)
+    _ch(?P<channel>\d)
+    _stack(?P<stack>\d{4})
+    _\D*(?P<wave>\d+).*
+    _(?P<reltime>\d{7})msec
+    _(?P<abstime>\d{10})msecAbs
+    """, re.VERBOSE)
+
+if you need something different, you can `contact Talley`_ with an example filename, or change it directly in the ``parse.py`` file
+
 
 .. _contact Talley: mailto:talley.lambert@gmail.com
