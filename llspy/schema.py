@@ -20,6 +20,24 @@ def CTiterable(v):
     return v
 
 
+def smartbool(v):
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, str):
+        if v.lower() in ['false', 'no', 'none', '', 'f']:
+            return False
+        elif v.lower() in ['true', 'yes', 't', 'y']:
+            return True
+        elif v.isdigit():
+            return float(v) != 0
+        else:
+            raise ValueError('Could not coerce string to bool: {}'.format(v))
+    if isinstance(v, (int, float, complex)):
+        return v != 0
+    else:
+        raise TypeError('Could not coerce value of type {} to bool'.format(type(v)))
+
+
 def dirpath(v):
     if not os.path.isdir(str(v)):
         raise ValueError('Not a valid directory')
@@ -82,12 +100,12 @@ __defaults__ = {
 }
 
 __validator__ = {
-    'correctFlash'      : Coerce(bool),
-    'moveCorrected'     : Coerce(bool),
+    'correctFlash'      : smartbool,
+    'moveCorrected'     : smartbool,
     'flashCorrectTarget': All(Coerce(str), Lower, Strip, Any('cpu', 'parallel', 'cuda'),
         msg='flashCorrectTarget must be {cpu, parallel, cuda}'),
-    'medianFilter'      : Coerce(bool),
-    'keepCorrected'     : Coerce(bool),
+    'medianFilter'      : smartbool,
+    'keepCorrected'     : smartbool,
     'trimZ'             : All(twotupIntRange,
         msg='trimZ argument must be a 2tuples of ints from 0-999'),
     'trimY'             : All(twotupIntRange,
@@ -100,19 +118,19 @@ __validator__ = {
         msg='Number of apodize pixels must be int between 0-50'),
     'nZblend'           : All(Coerce(int), Range(0, 30),
         msg='Number of Z slices to blend must be int between 0-30'),
-    'bRotate'           : Coerce(bool),
+    'bRotate'           : smartbool,
     'rotate'            : Any(None, All(Coerce(float), Range(-180, 180),
         msg='Rotation angle must be float between -180 and 180')),
-    'saveDeskewedRaw'   : Coerce(bool),
-    'saveDecon'         : Coerce(bool),
+    'saveDeskewedRaw'   : smartbool,
+    'saveDecon'         : smartbool,
     'MIP'               : All((intbool,), Length(min=3, max=3)),
     'rMIP'              : All((intbool,), Length(min=3, max=3)),
-    'mergeMIPs'         : Coerce(bool),
-    'mergeMIPsraw'      : Coerce(bool),
-    'uint16'            : Coerce(bool),
-    'uint16raw'         : Coerce(bool),
-    'bleachCorrection'  : Coerce(bool),
-    'doReg'             : Coerce(bool),
+    'mergeMIPs'         : smartbool,
+    'mergeMIPsraw'      : smartbool,
+    'uint16'            : smartbool,
+    'uint16raw'         : smartbool,
+    'bleachCorrection'  : smartbool,
+    'doReg'             : smartbool,
     'regRefWave'        : intRange(300, 1000),
     'regMode'           : All(Coerce(str), Lower, Strip,
         Any('translation', 'translate', 'affine', 'rigid', 'similarity', '2step',
@@ -123,7 +141,7 @@ __validator__ = {
         msg='Unable to find Registration Calibration directory.  Check filepath'),
     'mincount'          : All(Coerce(int), Range(0, 500),
         msg='mincount (min number of beads to detect) must be between 0-500'),
-    'reprocess'     : Coerce(bool),
+    'reprocess'         : smartbool,
     'tRange'            : Any(None, CTiterable,
         msg='tRange must be int or iterable of integers >= 0'),
     'cRange'            : Any(None, CTiterable,
@@ -140,10 +158,10 @@ __validator__ = {
     'shift'             : intRange(-1500, 1500),
     'cropPad'           : intRange(0, 500),
     'background'        : Any(intRange(-1, 20000), [intRange(0, 20000)]),
-    'compressRaw'       : Coerce(bool),
+    'compressRaw'       : smartbool,
     'compressionType'   : Any('lbzip2', 'bzip2', 'pbzip2', 'pigz', 'gzip',
         msg='Currently allowed compression types: {lbzip2, bzip2, pbzip2, pigz, gzip}'),
-    'writeLog'          : Coerce(bool),
+    'writeLog'          : smartbool,
 }
 
 
