@@ -273,7 +273,7 @@ def process(E, binary=None, **kwargs):
     # if we did camera correction, move the resulting processed folders to
     # the parent folder, and optionally delete the corrected folder
     if P.moveCorrected and E.path.name == 'Corrected':
-        move_corrected(E.path)
+        move_corrected(str(E.path))
         E.path = E.path.parent
 
     if not P.keepCorrected:
@@ -876,7 +876,7 @@ class RegDir(LLSdir):
         super(RegDir, self).__init__(path, **kwargs)
         if self.path is not None:
             if self.path.joinpath('cloud.json').is_file():
-                with open(self.path.joinpath('cloud.json')) as json_data:
+                with open(str(self.path.joinpath('cloud.json'))) as json_data:
                     self = self.fromJSON(json.load(json_data))
         self.t = t
         if self.isValid:
