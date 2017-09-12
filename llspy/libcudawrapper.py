@@ -4,9 +4,9 @@ import os
 import sys
 from . import util
 
-
 # get specific library by platform
 if sys.platform.startswith('darwin'):
+	libslug = 'darwin'
 	libname = 'libcudaDeconv.dylib'
 	# this seems to be necessary for pyinstaller to find it?
 	try:
@@ -14,8 +14,10 @@ if sys.platform.startswith('darwin'):
 	except Exception:
 		pass
 elif sys.platform.startswith('win32'):
+	libslug = 'win32'
 	libname = 'libcudaDeconv.dll'
 else:
+	libslug = 'nix'
 	libname = 'libcudaDeconv.so'
 
 # by defatul ctypes uses ctypes.util.find_library() which will search
@@ -32,10 +34,12 @@ else:
 try:
 	cudaLib = ctypes.CDLL(libname)
 except OSError:
-	curdir = os.path.dirname(__file__)
-	sharelib = os.path.abspath(os.path.join(curdir, os.pardir, 'lib', libname))
-	cudaLib = ctypes.CDLL(sharelib)
-
+	filedir = os.path.dirname(__file__)
+	libdir = os.path.abspath(os.path.join(filedir, 'lib', libslug))
+	cwd = os.getcwd()
+	os.chdir(libdir)
+	cudaLib = ctypes.CDLL(libname)
+	os.chdir(cwd)
 
 try:
 	# Deskew is used when no decon is desired
