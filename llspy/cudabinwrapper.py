@@ -43,7 +43,7 @@ def get_bundled_binary():
         binPath = sys._MEIPASS
     else:
         thisDirectory = os.path.dirname(__file__)
-        binPath = os.path.abspath(os.path.join(thisDirectory, os.pardir, 'bin'))
+        binPath = os.path.abspath(os.path.join(thisDirectory, 'bin'))
         if sys.platform.startswith('darwin'):
             binPath = os.path.join(binPath, 'darwin')
         elif sys.platform.startswith('win32'):
@@ -60,8 +60,7 @@ def get_bundled_binary():
     if util.which(binary):
         return binary
     else:
-        raise Exception('Bundled cudaDeconv binary not found or not '
-                        'executable: {}'.format(binary))
+        return None
 
 
 cudaDeconSchema = Schema({
@@ -132,6 +131,8 @@ class CUDAbin(object):
         """
         if binPath is None:
             binPath = get_bundled_binary()
+            if binPath is None:
+                binPath = 'cudaDeconv'
 
         tmpPath = binPath
         if not os.path.isabs(binPath):
