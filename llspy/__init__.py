@@ -15,7 +15,6 @@ except (ImportError, AttributeError):
 
 from . import config
 from . import otf
-from . import samples
 from . import arrayfun
 from .llsdir import LLSdir, preview, process
 from .settingstxt import LLSsettings as Settings
