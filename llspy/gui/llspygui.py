@@ -36,20 +36,15 @@ thisDirectory = osp.dirname(osp.abspath(__file__))
 # form_class = uic.loadUiType('./llspy/gui/main_gui.ui')[0]  # for debugging
 
 # platform independent settings file
-QtCore.QCoreApplication.setOrganizationName("LLSpy")
+QtCore.QCoreApplication.setOrganizationName("llspy")
 QtCore.QCoreApplication.setOrganizationDomain("llspy.com")
-sessionSettings = QtCore.QSettings("LLSpy", "LLSpyGUI")
-defaultSettings = QtCore.QSettings("LLSpy", 'LLSpyDefaults')
+sessionSettings = QtCore.QSettings("llspy", "llspyGUI")
+defaultSettings = QtCore.QSettings("llspy", 'llspyDefaults')
 # programDefaults are provided in guiDefaults.ini as a reasonable starting place
 # this line finds the relative path depending on whether we're running in a
 # pyinstaller bundle or live.
 defaultINI = llspy.util.getAbsoluteResourcePath('gui/guiDefaults.ini')
 programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
-
-FROZEN = False
-if getattr(sys, 'frozen', False):
-    FROZEN = True
-    print("RUNNING FROZEN.  BasePath: {}".format(sys._MEIPASS))
 
 
 def getCudaDeconvBinary():
@@ -62,29 +57,16 @@ def getCudaDeconvBinary():
     gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
 
     if gui.useBundledBinariesCheckBox.isChecked():
-        if FROZEN:
-            binPath = sys._MEIPASS
-        else:
-            binPath = os.path.abspath(osp.join(thisDirectory, os.pardir, os.pardir, 'bin'))
-            if sys.platform.startswith('darwin'):
-                binPath = osp.join(binPath, 'darwin')
-            elif sys.platform.startswith('win32'):
-                binPath = osp.join(binPath, 'win32')
-            else:
-                binPath = osp.join(binPath, 'nix')
-
-        # get specific library by platform
-        if sys.platform.startswith('win32'):
-            binary = osp.join(binPath, 'cudaDeconv.exe')
-        else:
-            binary = osp.join(binPath, 'cudaDeconv')
+        binary = llspy.cudabinwrapper.get_bundled_binary()
+        if binary is None:
+            binary = 'cudaDeconv'
     else:
         binary = gui.cudaDeconvPathLineEdit.text()
 
-    if llspy.util.which(binary):
-        return binary
-    else:
+    binary = llspy.util.which(binary)
+    if not binary:
         raise Exception('cudaDeconv binary not found or not executable: {}'.format(binary))
+    return binary
 
 
 class QPlainTextEditLogger(logging.Handler):
@@ -259,7 +241,7 @@ class SubprocessWorker(QtCore.QObject):
         from GUI (such as abort).
         """
         logging.info('~' * 20 + '\nRunning {} thread_{} with args: '
-            '\n{}\n'.format(self.name, self.id, " ".join(self.args)) + '\n')
+            '\n{}\n'.format(self.binary, self.id, " ".join(self.args)) + '\n')
         self.process.finished.connect(self.onFinished)
         if self.env is not None:
             sysenv = QtCore.QProcessEnvironment.systemEnvironment()
@@ -490,7 +472,6 @@ class LLSitemWorker(QtCore.QObject):
               any([any(i) for i in (self.P.trimX, self.P.trimY, self.P.trimZ)])):
             self.E.path = self.E.median_and_trim(**self.P)
 
-
         self.nFiles_done = 0
         self.progressValue.emit(0)
         self.progressMaxVal.emit(self.nFiles)
@@ -644,7 +625,7 @@ class LLSitemWorker(QtCore.QObject):
         # if we did camera correction, move the resulting processed folders to
         # the parent folder, and optionally delete the corrected folder
         if self.P.moveCorrected and self.E.path.name == 'Corrected':
-            llspy.llsdir.move_corrected(self.E.path)
+            llspy.llsdir.move_corrected(str(self.E.path))
             self.E.path = self.E.path.parent
 
         if not self.P.keepCorrected:
