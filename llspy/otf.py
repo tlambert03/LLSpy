@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 
 # get specific library by platform
 if sys.platform.startswith('darwin'):
-	libslug = 'darwin'
 	libname = 'libradialft.dylib'
 	# this seems to be necessary for pyinstaller to find it?
 	try:
@@ -18,10 +17,8 @@ if sys.platform.startswith('darwin'):
 	except Exception:
 		pass
 elif sys.platform.startswith('win32'):
-	libslug = 'win32'
 	libname = 'libradialft.dll'
 else:
-	libslug = 'nix'
 	libname = 'libradialft.so'
 
 # by defatul ctypes uses ctypes.util.find_library() which will search
@@ -34,7 +31,7 @@ try:
 	otflib = ctypes.CDLL(libname)
 except OSError:
 	filedir = os.path.dirname(__file__)
-	libdir = os.path.abspath(os.path.join(filedir, 'lib', libslug))
+	libdir = os.path.abspath(os.path.join(filedir, 'lib'))
 	cwd = os.getcwd()
 	os.chdir(libdir)
 	otflib = ctypes.CDLL(libname)
