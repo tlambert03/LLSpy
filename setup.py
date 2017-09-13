@@ -8,7 +8,7 @@ import sys
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.txt'), encoding='utf-8') as f:
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     readme = f.read()
 
 with open('LICENSE.txt') as f:
@@ -34,7 +34,12 @@ setup(
     license=license,
     packages=find_packages(exclude=('tests', 'docs')),
     python_requires='>=3.5',
-    package_data={'llspy': [path.join('bin', PLATFORM, '*'), 'lib/*']},
+    package_data={
+        'llspy': [
+            path.join('bin', PLATFORM, '*'),
+            path.join('lib', PLATFORM, '*')
+        ]
+    },
     install_requires=[
         'numpy',
         'scipy',

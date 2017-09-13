@@ -1,0 +1,48 @@
+package:
+  name: llspy
+  version: "0.1.0"
+
+source:
+  path: ..
+
+build:
+  entry_points:
+    - lls = llspy.lls:cli
+    - lls-gui = llspy.gui.llspygui:main
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+    - numpy
+    - scipy
+    - tifffile
+    - numba
+    - scikit-image
+    - ipython
+    - voluptuous
+    - watchdog
+    - pyqt 5
+    - click
+    - configparser # [py2k]
+
+test:
+  imports:
+    - llspy
+  commands:
+    - which lls  # [unix]
+    - where lls  # [win]
+    - lls --help
+    - lls-gui test
+
+about:
+  home: https://github.com/tlambert03/llspy2
+  license: ''
+  license_file: LICENSE.txt
+
+app:
+  entry: lls gui
+  icon: ../_assets/llspy_logo.png
+  summary:  "LLSpy GUI"
