@@ -1,5 +1,6 @@
 import os
 import sys
+import stat
 import fnmatch
 from shutil import copyfile
 
@@ -100,8 +101,11 @@ def install(dirpath):
             fname = file + ext['bin'][PLATFORM]
             src = os.path.join(binpath, fname)
             if os.path.isfile(src):
-                print('Copying {} --> {}'.format(src, os.path.join(dest, fname)))
-                copyfile(src, os.path.join(dest, fname))
+                D = os.path.join(dest, fname)
+                print('Copying {} --> {}'.format(src, D))
+                copyfile(src, D)
+                st = os.stat(D)
+                os.chmod(D, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
 if __name__ == '__main__':
