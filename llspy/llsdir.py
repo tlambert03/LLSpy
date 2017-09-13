@@ -762,12 +762,18 @@ class LLSdir(object):
                 outname = str(outpath.joinpath(os.path.basename(f.replace('.tif', '_COR.tif'))))
                 g.append((f, outname, self.parameters.dx, bgrd, trim, medianFilter))
 
-        with Pool(processes=cpu_count()) as pool:
+        if sys.version_info >= (3, 4):
+            with Pool(processes=cpu_count()) as pool:
+                pool.map(unbundle, g)
+        else:
+            pool = Pool(processes=cpu_count())
             pool.map(unbundle, g)
+            pool.close()
+            pool.join()
 
         return outpath
 
-    def correct_flash(self, tRange=None, camparams=None, flashCorrectTarget='parallel',
+    def correct_flash(self, tRange=None, camparamsPath=None, flashCorrectTarget='parallel',
                       medianFilter=False, trimZ=(0, 0), trimY=(0, 0),
                       trimX=(0, 0), **kwargs):
         """ where tRange is an iterable of timepoints
@@ -775,9 +781,9 @@ class LLSdir(object):
         """
         if not self.has_settings:
             raise LLSpyError('Cannot correct flash pixels without settings.txt file')
-        if not isinstance(camparams, CameraParameters):
-            if isinstance(camparams, str):
-                camparams = CameraParameters(camparams)
+        if not isinstance(camparamsPath, CameraParameters):
+            if isinstance(camparamsPath, str):
+                camparams = CameraParameters(camparamsPath)
             else:
                 camparams = CameraParameters()
 
@@ -812,9 +818,15 @@ class LLSdir(object):
             #   [p.start() for p in proccessGroup]
             #   [p.join() for p in proccessGroup]
 
-            with Pool(processes=cpu_count()) as pool:
-                g = [(t, camparams, outpath, medianFilter, trimZ, trimY, trimX) for t in timegroups]
+            g = [(t, camparams, outpath, medianFilter, trimZ, trimY, trimX) for t in timegroups]
+            if sys.version_info >= (3, 4):
+                with Pool(processes=cpu_count()) as pool:
+                    pool.map(unwrapper, g)
+            else:
+                pool = Pool(processes=cpu_count())
                 pool.map(unwrapper, g)
+                pool.close()
+                pool.join()
 
         elif flashCorrectTarget == 'cpu':
             for t in timegroups:
