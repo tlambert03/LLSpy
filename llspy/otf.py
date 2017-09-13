@@ -30,6 +30,7 @@ else:
 
 try:
     otflib = ctypes.CDLL(libname)
+    logging.debug("Loaded libradialft: " + os.path.abspath(libname))
 except OSError:
     try:
         filedir = os.path.dirname(__file__)
@@ -37,6 +38,7 @@ except OSError:
         cwd = os.getcwd()
         os.chdir(libdir)
         otflib = ctypes.CDLL(libname)
+        logging.debug("Loaded libradialft: " + os.path.abspath(libname))
         os.chdir(cwd)
     except Exception:
         otflib = None
