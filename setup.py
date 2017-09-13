@@ -69,6 +69,7 @@ setup(
         'click',
         'watchdog',
         'pyqt5',
+        'matplotlib'
     ],
     entry_points={
             'console_scripts': [
