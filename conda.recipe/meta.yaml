@@ -43,6 +43,7 @@ about:
   home: https://github.com/tlambert03/llspy2
   license: ''
   license_file: LICENSE.txt
+  summary: Lattice light-sheet processing tools'
 
 app:
   entry: lls gui
