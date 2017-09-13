@@ -3,8 +3,75 @@ from .libcudawrapper import deskewGPU as deskew
 from .util import imread
 
 import numpy as np
-from skimage.filters import gaussian, threshold_li
+from scipy.ndimage.filters import gaussian_filter
 from scipy.stats import mode
+
+
+def threshold_li(image):
+    """Return threshold value based on adaptation of Li's Minimum Cross Entropy method.
+
+    From skimage.filters.threshold_li
+    Parameters
+    ----------
+    image : (N, M) ndarray
+        Input image.
+    Returns
+    -------
+    threshold : float
+        Upper threshold value. All pixels with an intensity higher than
+        this value are assumed to be foreground.
+    References
+    ----------
+    .. [1] Li C.H. and Lee C.K. (1993) "Minimum Cross Entropy Thresholding"
+           Pattern Recognition, 26(4): 617-625
+           DOI:10.1016/0031-3203(93)90115-D
+    .. [2] Li C.H. and Tam P.K.S. (1998) "An Iterative Algorithm for Minimum
+           Cross Entropy Thresholding" Pattern Recognition Letters, 18(8): 771-776
+           DOI:10.1016/S0167-8655(98)00057-9
+    .. [3] Sezgin M. and Sankur B. (2004) "Survey over Image Thresholding
+           Techniques and Quantitative Performance Evaluation" Journal of
+           Electronic Imaging, 13(1): 146-165
+           DOI:10.1117/1.1631315
+    .. [4] ImageJ AutoThresholder code, http://fiji.sc/wiki/index.php/Auto_Threshold
+    """
+    # Make sure image has more than one value
+    if np.all(image == image.flat[0]):
+        raise ValueError("threshold_li is expected to work with images "
+                         "having more than one value. The input image seems "
+                         "to have just one value {0}.".format(image.flat[0]))
+
+    # Copy to ensure input image is not modified
+    image = image.copy()
+    # Requires positive image (because of log(mean))
+    immin = np.min(image)
+    image -= immin
+    imrange = np.max(image)
+    tolerance = 0.5 * imrange / 256
+
+    # Calculate the mean gray-level
+    mean = np.mean(image)
+
+    # Initial estimate
+    new_thresh = mean
+    old_thresh = new_thresh + 2 * tolerance
+
+    # Stop the iterations when the difference between the
+    # new and old threshold values is less than the tolerance
+    while abs(new_thresh - old_thresh) > tolerance:
+        old_thresh = new_thresh
+        threshold = old_thresh + tolerance   # range
+        # Calculate the means of background and object pixels
+        mean_back = image[image <= threshold].mean()
+        mean_obj = image[image > threshold].mean()
+
+        temp = (mean_back - mean_obj) / (np.log(mean_back) - np.log(mean_obj))
+
+        if temp < 0:
+            new_thresh = temp - tolerance
+        else:
+            new_thresh = temp + tolerance
+
+    return threshold + immin
 
 
 def trimedges(im, trim, ninterleaved=1):
@@ -37,13 +104,61 @@ def imcontentbounds(im, sigma=2):
     # from scipy.ndimage.filters import median_filter
     # mm = median_filter(b.astype(float),3)
     mm = im
-    imgaus = gaussian(mm, sigma=sigma)
+    imgaus = gaussian_filter(mm, sigma)
     mask = imgaus > threshold_li(imgaus)
     linesum = np.sum(mask, 0)
     abovethresh = np.where(linesum > 0)[0]
     right = abovethresh[-1]
     left = abovethresh[0]
     return [left, right, fullwidth]
+
+
+def total_pix(image):
+    size = image.shape[0] * image.shape[1]
+    return size
+
+
+def histogramify(image, bins=range(0, 257)):
+    grayscale_array = []
+    for w in range(0, image.shape[0]):
+        for h in range(0, image.shape[1]):
+            intensity = image.getpixel((w, h))
+            grayscale_array.append(intensity)
+    img_histogram = np.histogram(grayscale_array, bins)
+    return img_histogram
+
+
+numbins = 256
+img_histogram = np.histogram(img, numbins)
+thresh = otsu(img_histogram, img.size)
+
+
+def otsu(image, nbins=256):
+    hist = np.histogram(img, nbins)
+    total = image.size
+    current_max, threshold = 0, 0
+    sumT, sumF, sumB = 0, 0, 0
+    for i in range(0, nbins):
+        sumT += i * hist[0][i]
+    weightB, weightF = 0, 0
+    varBetween, meanB, meanF = 0, 0, 0
+    for i in range(0, 256):
+        weightB += hist[0][i]
+        weightF = total - weightB
+        if weightF == 0:
+            break
+        sumB += i*hist[0][i]
+        sumF = sumT - sumB
+        meanB = sumB/weightB
+        meanF = sumF/weightF
+        varBetween = weightB * weightF
+        varBetween *= (meanB-meanF)*(meanB-meanF)
+        if varBetween > current_max:
+            current_max = varBetween
+            threshold = i
+    return threshold
+
+
 
 
 def feature_width(E, background=None, pad=50):
