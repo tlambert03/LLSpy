@@ -130,6 +130,25 @@ To Do:
 * trim edges outside of flash correction
 * look into numexpr for cameracalibration
 
+* replace warnings.warn with logging.warn
+* handle dzPSF and drPSF
+* cudaDeconv generates MIPs folder even when no mips are created
+* calculated psf for deconvolution?
+* break up schema into logical subsections (i.e. deconParams)
+* nT parameters are incorrectly detected on scripted folders with Iter_0
+* make timer countdown during file processing (and correct after each file)
+* progress indicator on camera correction
+* No Settings.txt folder detected, now shows up during camera correction... remove
+* can't yet abort while doing camera correction / compression
+* if someone deletes or moves a folder while it is being processed... it will hang
+* probably best to pull log widget out of mainGUI
+
+* add note about gsettings to readme:
+
+    - sudo mv ~/anaconda3/bin/gsettings ~/anaconda3/bin/gsettingsBAK
+
+
+
 To Fix:
 -------
 * setting objects with cli.py config --set removes disabled (commented) keys
