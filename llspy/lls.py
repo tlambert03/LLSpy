@@ -3,6 +3,9 @@ import sys
 import click
 import shutil
 import voluptuous
+import logging
+if '--debug' in sys.argv:
+    logging.basicConfig(level=logging.DEBUG)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
 from llspy import llsdir, util, schema, otf, libinstall
@@ -162,6 +165,7 @@ def read_config(ctx, param, value):
 @click.option('--config', '-c', type=click.Path(exists=True, dir_okay=False),
               callback=read_config, expose_value=False, multiple=True,
               help='Config file to use instead of the system config.')
+@click.option('--debug', is_flag=True, expose_value=False)
 def cli():
     """LLSpy
 

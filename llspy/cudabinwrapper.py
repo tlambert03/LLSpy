@@ -1,10 +1,8 @@
-from . import config
-
 import os
 import sys
 import re
 import subprocess
-import warnings
+import logging
 from . import util
 
 from voluptuous import (All, Any, Coerce, Length, Range, Exclusive, Schema,
@@ -54,6 +52,8 @@ def get_bundled_binary():
 
     if not util.which(binary):
         raise CUDAbinException('cudaDeconv could not be located or is not executable: ' + binary)
+
+    logging.debug("Found cudaDeconv Binary: " + os.path.abspath(binary))
     return binary
 
 
@@ -284,7 +284,7 @@ class CUDAbin(object):
                 else:
                     arglist.extend(['--' + optname, str(options[o])])
             else:
-                warnings.warn('Warning: option not recognized, ignoring: {}'.format(o))
+                logging.warn('Warning: option not recognized, ignoring: {}'.format(o))
 
         return arglist
 
