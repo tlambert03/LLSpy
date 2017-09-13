@@ -785,7 +785,12 @@ class LLSdir(object):
             if isinstance(camparamsPath, str):
                 camparams = CameraParameters(camparamsPath)
             else:
-                camparams = CameraParameters()
+                # FIXME: Janky py2/3 hack
+                try:
+                    if isinstance(camparamsPath, unicode):
+                        camparams = CameraParameters(camparamsPath)
+                except Exception:
+                    camparams = CameraParameters()
 
         if not np.all(camparams.roi == self.settings.camera.roi):
             try:
