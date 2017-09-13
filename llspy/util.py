@@ -6,6 +6,7 @@ import tifffile
 import numpy as np
 import json
 
+
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get

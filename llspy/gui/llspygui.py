@@ -56,16 +56,10 @@ def getCudaDeconvBinary():
     gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
 
     if gui.useBundledBinariesCheckBox.isChecked():
-        binary = llspy.cudabinwrapper.get_bundled_binary()
-        if binary is None:
-            binary = 'cudaDeconv'
+        binaryPath = llspy.cudabinwrapper.get_bundled_binary()
     else:
-        binary = gui.cudaDeconvPathLineEdit.text()
-
-    binary = llspy.util.which(binary)
-    if not binary:
-        raise Exception('cudaDeconv binary not found or not executable: {}'.format(binary))
-    return binary
+        binaryPath = gui.cudaDeconvPathLineEdit.text()
+    return binaryPath
 
 
 # class QPlainTextEditLogger(logging.Handler):
@@ -295,8 +289,8 @@ class CudaDeconvWorker(SubprocessWorker):
     file_finished = QtCore.pyqtSignal()  # worker id, filename
 
     def __init__(self, args, **kwargs):
-        binary = getCudaDeconvBinary()
-        super(CudaDeconvWorker, self).__init__(binary, args, **kwargs)
+        binaryPath = getCudaDeconvBinary()
+        super(CudaDeconvWorker, self).__init__(binaryPath, args, **kwargs)
         self.name = 'CudaDeconv'
 
     def procReadyRead(self):

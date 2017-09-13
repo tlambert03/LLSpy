@@ -44,6 +44,7 @@ else:
             path.join('lib', 'libradialft.so'),
     ]
 
+PACKAGE_DATA = []
 
 setup(
     name='llspy',

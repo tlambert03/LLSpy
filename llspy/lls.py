@@ -5,7 +5,7 @@ import shutil
 import voluptuous
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
-from llspy import llsdir, util, schema, otf
+from llspy import llsdir, util, schema, otf, libinstall
 
 try:
     import ConfigParser as configparser
@@ -494,6 +494,19 @@ def camera(calibrate):
 def compress():
     """Compression & decompression of LLSdir"""
     print("Not yet implemented")
+
+
+@cli.command(short_help='Install cudaDeconv libraries and binaries')
+@click.argument('path', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+def install(path):
+    """Install cudaDeconv libraries and binaries to LLSPY.
+
+    Provided PATH argument can be a LIB or BIN directory, or a parent
+    directory that contains both the LIB and BIN directories.  The appropriate
+    library and binary files will be installed to the LLSpy installation.
+
+    """
+    libinstall.install(path)
 
 
 def del_sysconfig(ctx, param, value):
