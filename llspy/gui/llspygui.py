@@ -69,15 +69,15 @@ def getCudaDeconvBinary():
     return binary
 
 
-class QPlainTextEditLogger(logging.Handler):
-    def __init__(self, parent=None):
-        super(QPlainTextEditLogger, self).__init__()
-        self.widget = QtW.QPlainTextEdit(parent)
-        self.widget.setReadOnly(True)
+# class QPlainTextEditLogger(logging.Handler):
+#     def __init__(self, parent=None):
+#         super(QPlainTextEditLogger, self).__init__()
+#         self.widget = QtW.QPlainTextEdit(parent)
+#         self.widget.setReadOnly(True)
 
-    def emit(self, record):
-        msg = self.format(record)
-        self.widget.appendPlainText(msg)
+#     def emit(self, record):
+#         msg = self.format(record)
+#         self.widget.appendPlainText(msg)
 
 
 class LLSDragDropTable(QtW.QTableWidget):
@@ -86,6 +86,7 @@ class LLSDragDropTable(QtW.QTableWidget):
 
     # A signal needs to be defined on class level:
     dropSignal = QtCore.pyqtSignal(list, name="dropped")
+    log_update = QtCore.pyqtSignal(str)
 
     # This signal emits when a URL is dropped onto this list,
     # and triggers handler defined in parent widget.
@@ -117,14 +118,14 @@ class LLSDragDropTable(QtW.QTableWidget):
             return
         # If this folder is not on the list yet, add it to the list:
         if not llspy.util.pathHasPattern(path, '*Settings.txt'):
-            logging.warn('No Settings.txt! Ignoring: {}'.format(path))
+            self.log_update.emit('No Settings.txt! Ignoring: {}'.format(path))
             return
         # if it's already on the list, don't add it
         if len(self.findItems(path, QtCore.Qt.MatchExactly)):
             return
 
         E = llspy.LLSdir(path)
-        logging.info('Add: {}'.format(shortname(str(E.path))))
+        self.log_update.emit('Add: {}'.format(shortname(str(E.path))))
         rowPosition = self.rowCount()
         self.insertRow(rowPosition)
         item = [path,
@@ -214,6 +215,7 @@ class SubprocessWorker(QtCore.QObject):
 
     processStarted = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal()
+    log_update = QtCore.pyqtSignal(str)
 
     def __init__(self, binary, args, env=None, wid=1):
         super(SubprocessWorker, self).__init__()
@@ -240,7 +242,7 @@ class SubprocessWorker(QtCore.QObject):
         chance to process events, which means processing signals received
         from GUI (such as abort).
         """
-        logging.info('~' * 20 + '\nRunning {} thread_{} with args: '
+        self.log_update.emit('~' * 20 + '\nRunning {} thread_{} with args: '
             '\n{}\n'.format(self.binary, self.id, " ".join(self.args)) + '\n')
         self.process.finished.connect(self.onFinished)
         if self.env is not None:
@@ -261,32 +263,32 @@ class SubprocessWorker(QtCore.QObject):
             # self.process.terminate() # didn't work on Windows
             self.process.kill()
             # note that "step" value will not necessarily be same for every thread
-            logging.warn('aborting {} #{}'.format(self.name, self.id))
+            self.log_update.emit('aborting {} #{}'.format(self.name, self.id))
             self.process.waitForFinished()
 
     @QtCore.pyqtSlot()
     def procReadyRead(self):
         line = byteArrayToString(self.process.readAllStandardOutput())
         if line is not '':
-            logging.info(line.rstrip())
+            self.log_update.emit(line.rstrip())
 
     @QtCore.pyqtSlot()
     def procErrorRead(self):
-        logging.error("!!!!!! {} Error !!!!!!".format(self.name))
+        self.log_update.emit("!!!!!! {} Error !!!!!!".format(self.name))
         line = byteArrayToString(self.process.readAllStandardError())
         if line is not '':
-            logging.info(line.rstrip())
+            self.log_update.emit(line.rstrip())
 
     @QtCore.pyqtSlot(int, QtCore.QProcess.ExitStatus)
     def onFinished(self, exitCode, exitStatus):
         statusmsg = {0: 'exited normally', 1: 'crashed'}
-        logging.info('{} #{} {} with exit code: {}'.format(
+        self.log_update.emit('{} #{} {} with exit code: {}'.format(
             self.name, self.id, statusmsg[exitStatus], exitCode))
         self.finished.emit()
 
     @QtCore.pyqtSlot()
     def abort(self):
-        logging.info('{} #{} notified to abort'.format(self.name, self.id))
+        self.log_update.emit('{} #{} notified to abort'.format(self.name, self.id))
         self.__abort = True
 
 
@@ -305,12 +307,13 @@ class CudaDeconvWorker(SubprocessWorker):
             if "*** Finished!" in line or "Output:" in line:
                 self.file_finished.emit()
             else:
-                logging.info(line.rstrip())
+                self.log_update.emit(line.rstrip())
 
 
 class CompressionWorker(SubprocessWorker):
 
     status_update = QtCore.pyqtSignal(str, int)
+    log_update = QtCore.pyqtSignal(str)
 
     def __init__(self, path, mode='compress', binary='lbzip2', wid=1):
         if not llspy.util.which(binary):
@@ -340,7 +343,7 @@ class CompressionWorker(SubprocessWorker):
 
         msg = '\nRunning {} thread_{} with args:\n{}\n'.format(
             self.name, self.id, self.binary + " ".join(self.args))
-        logging.info('~' * 20 + msg  + '~' * 20)
+        self.log_update.emit('~' * 20 + msg  + '~' * 20)
 
         self.process.start(self.binary, self.args)
         self.processStarted.emit()
@@ -361,20 +364,19 @@ class CompressionWorker(SubprocessWorker):
             os.remove(tarball)
         self.finished.emit()
 
-
     @QtCore.pyqtSlot()
     def procErrorRead(self):
         # for some reason, lbzip2 puts its verbose output in stderr
         line = byteArrayToString(self.process.readAllStandardError())
         if line is not '':
             if not self.binary == 'lbzip2':
-                logging.error("!!!!!! {} Error !!!!!!".format(self.name))
-                logging.info(line.rstrip())
+                self.log_update.emit("!!!!!! {} Error !!!!!!".format(self.name))
+                self.log_update.emit(line.rstrip())
             else:
                 if 'compression ratio' in line:
                     msg = line.split('compression ratio')[1]
                     self.status_update.emit('Compression ratio' + msg, 4000)
-                logging.info(line.rstrip())
+                self.log_update.emit(line.rstrip())
 
 
 # class CorrectionWorker(QtCore.QObject):
@@ -395,7 +397,7 @@ class CompressionWorker(SubprocessWorker):
 #     @QtCore.pyqtSlot()
 #     def work(self):
 #         try:
-#             self.E.correct_flash(trange=self.tRange, camparams=self.camparams,
+#             self.E.correct_flash(trange=self.tRange, camparamsPath=self.camparams,
 #                                  median=self.median, target=self.target)
 #         except Exception:
 #             (excepttype, value, traceback) = sys.exc_info()
@@ -410,6 +412,7 @@ class LLSitemWorker(QtCore.QObject):
     sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
 
     status_update = QtCore.pyqtSignal(str)  # update mainGUI status®
+    log_update = QtCore.pyqtSignal(str)
     progressUp = QtCore.pyqtSignal()  # set progressbar value
     progressValue = QtCore.pyqtSignal(int)  # set progressbar value
     progressMaxVal = QtCore.pyqtSignal(int)  # set progressbar maximum
@@ -440,10 +443,10 @@ class LLSitemWorker(QtCore.QObject):
 
         if not self.E.ready_to_process:
             if not self.E.has_lls_tiffs:
-                logging.warn(
+                self.log_update.emit(
                     'No TIFF files to process in {}'.format(str(self.E.path)))
             if not self.E.has_settings:
-                logging.warn(
+                self.log_update.emit(
                     'Could not find Settings.txt file in {}'.format(str(self.E.path)))
             return
 
@@ -460,9 +463,9 @@ class LLSitemWorker(QtCore.QObject):
         # so the maximum is the total number of timepoints * channels
         self.nFiles = len(self.P.tRange) * len(self.P.cRange)
 
-        logging.info('\n' + '#' * 50)
-        logging.info('Processing {}'.format(self.E.basename))
-        logging.info('#' * 50 + '\n')
+        self.log_update.emit('\n' + '#' * 50)
+        self.log_update.emit('Processing {}'.format(self.E.basename))
+        self.log_update.emit('#' * 50 + '\n')
 
         if self.P.correctFlash:
             self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
@@ -504,7 +507,6 @@ class LLSitemWorker(QtCore.QObject):
                     cudaOpts['filename-pattern'] = '_ch{}_stack{}'.format(chan,
                         llspy.util.pyrange_to_perlregex(self.P.tRange))
 
-                print(self.P.otfs)
                 cudaOpts['otf-file'] = self.P.otfs[chan]
                 cudaOpts['background'] = self.P.background[chan] if not self.P.correctFlash else 0
                 cudaOpts['wavelength'] = float(self.P.wavelength[chan]) / 1000
@@ -514,7 +516,7 @@ class LLSitemWorker(QtCore.QObject):
 
             # with the argQueue populated, we can now start the workers
             if not len(self.__argQueue):
-                logging.error('ERROR: no channel arguments to process in LLSitem')
+                self.log_update.emit('ERROR: no channel arguments to process in LLSitem')
                 self.finished.emit()
                 return
             self.startCUDAWorkers()
@@ -550,6 +552,7 @@ class LLSitemWorker(QtCore.QObject):
                      # get progress messages from CUDAworker and pass to parent
                      'file_finished': self.on_file_finished,
                      'finished': self.on_CUDAworker_done,
+                     'log_update': self.log_update.emit,
                      # any messages go straight to the log window
                      # 'error': self.errorstring  # implement error signal?
                 })
@@ -605,7 +608,7 @@ class LLSitemWorker(QtCore.QObject):
             try:
                 self.E.register(self.P.regRefWave, self.P.regMode, self.P.regCalibDir)
             except Exception:
-                logging.warn("REGISTRATION FAILED")
+                self.log_update.emit("REGISTRATION FAILED")
                 raise
 
         if self.P.mergeMIPs:
@@ -646,7 +649,7 @@ class LLSitemWorker(QtCore.QObject):
 
     @QtCore.pyqtSlot()
     def abort(self):
-        logging.info('LLSworker #{} notified to abort'.format(self.__id))
+        self.log_update.emit('LLSworker #{} notified to abort'.format(self.__id))
         if len(self.__CUDAthreads):
             self.aborted = True
             self.__argQueue = []
@@ -924,16 +927,16 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.listbox = LLSDragDropTable(self.tab_process)
         self.process_tab_layout.insertWidget(0, self.listbox)
 
-        self.log.setParent(None)
-        self.log = QPlainTextEditLogger(self)
-        # You can format what is printed to text box
-        self.log.setFormatter(logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s',
-            datefmt="%H:%M:%S"))
-        logging.getLogger().addHandler(self.log)
-        # You can control the logging level
-        logging.getLogger().setLevel(logging.DEBUG)
-        self.verticalLayout_2.insertWidget(0, self.log.widget)
+        # self.log.setParent(None)
+        # self.log = QPlainTextEditLogger(self)
+        # # You can format what is printed to text box
+        # self.log.setFormatter(logging.Formatter(
+        #     '%(asctime)s - %(levelname)s - %(message)s',
+        #     datefmt="%H:%M:%S"))
+        # logging.getLogger().addHandler(self.log)
+        # # You can control the logging level
+        # logging.getLogger().setLevel(logging.DEBUG)
+        # self.verticalLayout_2.insertWidget(0, self.log.widget)
 
         self.camcorDialog = CamCalibDialog()
 
@@ -1018,7 +1021,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
     def startWatcher(self):
         self.watchdir = self.watchDirLineEdit.text()
         if osp.isdir(self.watchdir):
-            logging.info('Starting watcher on {}'.format(self.watchdir))
+            self.log.append('Starting watcher on {}'.format(self.watchdir))
             # TODO: check to see if we need to save watchHandler
             self.watcherStatus.setText("👁 {}".format(osp.basename(self.watchdir)))
             watchHandler = MainHandler()
@@ -1034,7 +1037,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.observer.stop()
             self.observer.join()
             self.observer = None
-            logging.info('Stopped watcher on {}'.format(self.watchdir))
+            self.log.append('Stopped watcher on {}'.format(self.watchdir))
             self.watchdir = None
         if not self.observer:
             self.watcherStatus.setText("")
@@ -1175,7 +1178,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.statusBar.showMessage('Starting processing ...')
             self.inProcess = True
         else:
-            logging.info('ignoring request to process, already processing...')
+            self.log.append('ignoring request to process, already processing...')
 
     def process_next_item(self):
         # get path from first row and create a new LLSdir object
@@ -1188,6 +1191,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             opts, workerConnect={
                 'finished': self.on_item_finished,
                 'status_update': self.statusBar.showMessage,
+                'log_update': self.log.append,
                 'progressMaxVal': self.progressBar.setMaximum,
                 'progressValue': self.progressBar.setValue,
                 'progressUp': self.incrementProgress,
@@ -1238,7 +1242,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.inProcess = False
         self.aborted = False
 
-        logging.info("Processing Finished")
+        self.log.append("Processing Finished")
 
     @QtCore.pyqtSlot()
     def on_item_finished(self):
@@ -1251,7 +1255,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.sig_processing_done.emit()
         else:
             itemTime = QtCore.QTime(0, 0).addMSecs(self.timer.elapsed()).toString()
-            logging.info(">" * 4 + " Item {} finished in {} ".format(
+            self.log.append(">" * 4 + " Item {} finished in {} ".format(
                 self.currentItem, itemTime) + "<" * 4)
             self.listbox.removePath(self.currentPath)
             self.currentPath = None
@@ -1264,7 +1268,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
     @QtCore.pyqtSlot()
     def abort_workers(self):
         self.statusBar.showMessage('Aborting ...')
-        logging.info('Message sent to abort ...')
+        self.log.append('Message sent to abort ...')
         if len(self.LLSItemThreads):
             self.aborted = True
             self.sig_abort_LLSworkers.emit()
@@ -1400,6 +1404,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
             worker, thread = newWorkerThread(CompressionWorker, item, 'compress',
                 workerConnect={
+                    'log_update': self.log.append,
                     'status_update': self.statusBar.showMessage,
                     'finished': lambda: self.statusBar.showMessage('Compression finished', 4000)
                 },
@@ -1415,6 +1420,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
             worker, thread = newWorkerThread(CompressionWorker, item, 'decompress',
                 workerConnect={
+                    'log_update': self.log.append,
                     'status_update': self.statusBar.showMessage,
                 },
                 start=True)
@@ -1463,17 +1469,29 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             QtW.QApplication.quit()
 
 
+def main():
+    if 'test' in sys.argv:
+        APP = QtW.QApplication(sys.argv)
+        mainGUI = main_GUI()
+        mainGUI.show()
+        time.sleep(.1)
+        mainGUI.close()
+        sys.exit(0)
+    else:
+        multiprocessing.freeze_support()
+        APP = QtW.QApplication(sys.argv)
+        #dlg = LogWindow()
+        #dlg.show()
+        mainGUI = main_GUI()
+        mainGUI.show()
+        mainGUI.raise_()
+
+        exceptionHandler = ExceptionHandler()
+        sys.excepthook = exceptionHandler.handler
+        exceptionHandler.errorMessage.connect(mainGUI.show_general_error)
+
+        sys.exit(APP.exec_())
+
+
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    APP = QtW.QApplication(sys.argv)
-    #dlg = LogWindow()
-    #dlg.show()
-    mainGUI = main_GUI()
-    mainGUI.show()
-    mainGUI.raise_()
-
-    exceptionHandler = ExceptionHandler()
-    sys.excepthook = exceptionHandler.handler
-    exceptionHandler.errorMessage.connect(mainGUI.show_general_error)
-
-    sys.exit(APP.exec_())
+    main()
