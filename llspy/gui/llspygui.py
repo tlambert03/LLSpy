@@ -5,7 +5,6 @@ import os
 import os.path as osp
 import fnmatch
 import shutil
-import logging
 import sys
 import numpy as np
 import multiprocessing
