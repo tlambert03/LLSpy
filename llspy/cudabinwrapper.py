@@ -44,15 +44,11 @@ def get_bundled_binary():
     else:
         thisDirectory = os.path.dirname(__file__)
         binPath = os.path.abspath(os.path.join(thisDirectory, 'bin'))
-        if sys.platform.startswith('darwin'):
-            binPath = os.path.join(binPath, 'darwin')
-        elif sys.platform.startswith('win32'):
-            binPath = os.path.join(binPath, 'win32')
-        else:
-            binPath = os.path.join(binPath, 'nix')
 
-    # get specific library by platform
-    if sys.platform.startswith('win32'):
+    # get specific binary by platform
+    if sys.platform.startswith('darwin'):
+        binary = os.path.join(binPath, 'cudaDeconv.app')
+    elif sys.platform.startswith('win32'):
         binary = os.path.join(binPath, 'cudaDeconv.exe')
     else:
         binary = os.path.join(binPath, 'cudaDeconv')

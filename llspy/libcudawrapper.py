@@ -2,11 +2,10 @@ import ctypes
 import numpy as np
 import os
 import sys
-from . import util
+
 
 # get specific library by platform
 if sys.platform.startswith('darwin'):
-	libslug = 'darwin'
 	libname = 'libcudaDeconv.dylib'
 	# this seems to be necessary for pyinstaller to find it?
 	try:
@@ -14,10 +13,8 @@ if sys.platform.startswith('darwin'):
 	except Exception:
 		pass
 elif sys.platform.startswith('win32'):
-	libslug = 'win32'
 	libname = 'libcudaDeconv.dll'
 else:
-	libslug = 'nix'
 	libname = 'libcudaDeconv.so'
 
 # by defatul ctypes uses ctypes.util.find_library() which will search
@@ -35,7 +32,7 @@ try:
 	cudaLib = ctypes.CDLL(libname)
 except OSError:
 	filedir = os.path.dirname(__file__)
-	libdir = os.path.abspath(os.path.join(filedir, 'lib', libslug))
+	libdir = os.path.abspath(os.path.join(filedir, 'lib'))
 	cwd = os.getcwd()
 	os.chdir(libdir)
 	cudaLib = ctypes.CDLL(libname)
@@ -182,7 +179,8 @@ def affineGPU(im, tmat):
 
 
 def rotateGPU(im, angle=32.5, xzRatio=0.4253, reverse=False):
-	npad = ((0, 0), (0, 0), (0, 0))  # TODO: crop smarter
+	# TODO: crop smarter
+	npad = ((0, 0), (0, 0), (0, 0))
 	im = np.pad(im, pad_width=npad, mode='constant', constant_values=0)
 
 	theta = angle * np.pi/180
@@ -272,7 +270,6 @@ if __name__ == "__main__":
 					[0, 1, 0, -100],
 					[0, 0, 1, 0],
 					[0, 0, 0, 1]])
-			print(T)
 			q = affineGPU(im, T)
 			tf.imshow(q, vmin=-10, vmax=150)
 			plt.show()
