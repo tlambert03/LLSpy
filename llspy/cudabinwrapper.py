@@ -52,10 +52,9 @@ def get_bundled_binary():
     else:
         binary = os.path.join(binPath, 'cudaDeconv')
 
-    if util.which(binary):
-        return binary
-    else:
-        return None
+    if not util.which(binary):
+        raise CUDAbinException('cudaDeconv could not be located or is not executable: ' + binary)
+    return binary
 
 
 cudaDeconSchema = Schema({
@@ -126,8 +125,6 @@ class CUDAbin(object):
         """
         if binPath is None:
             binPath = get_bundled_binary()
-            if binPath is None:
-                binPath = 'cudaDeconv'
 
         tmpPath = binPath
         if not os.path.isabs(binPath):
