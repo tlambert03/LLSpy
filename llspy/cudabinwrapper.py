@@ -4,7 +4,6 @@ import os
 import sys
 import re
 import subprocess
-import logging
 import warnings
 from . import util
 
