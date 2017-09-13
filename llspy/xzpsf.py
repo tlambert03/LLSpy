@@ -1,7 +1,8 @@
 #! /usr/bin/env python
+from __future__ import print_function
+
 import numpy as np
 import tifffile as tf
-import sys
 import os
 import re
 import fnmatch
