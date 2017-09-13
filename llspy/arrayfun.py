@@ -113,54 +113,6 @@ def imcontentbounds(im, sigma=2):
     return [left, right, fullwidth]
 
 
-def total_pix(image):
-    size = image.shape[0] * image.shape[1]
-    return size
-
-
-def histogramify(image, bins=range(0, 257)):
-    grayscale_array = []
-    for w in range(0, image.shape[0]):
-        for h in range(0, image.shape[1]):
-            intensity = image.getpixel((w, h))
-            grayscale_array.append(intensity)
-    img_histogram = np.histogram(grayscale_array, bins)
-    return img_histogram
-
-
-numbins = 256
-img_histogram = np.histogram(img, numbins)
-thresh = otsu(img_histogram, img.size)
-
-
-def otsu(image, nbins=256):
-    hist = np.histogram(img, nbins)
-    total = image.size
-    current_max, threshold = 0, 0
-    sumT, sumF, sumB = 0, 0, 0
-    for i in range(0, nbins):
-        sumT += i * hist[0][i]
-    weightB, weightF = 0, 0
-    varBetween, meanB, meanF = 0, 0, 0
-    for i in range(0, 256):
-        weightB += hist[0][i]
-        weightF = total - weightB
-        if weightF == 0:
-            break
-        sumB += i*hist[0][i]
-        sumF = sumT - sumB
-        meanB = sumB/weightB
-        meanF = sumF/weightF
-        varBetween = weightB * weightF
-        varBetween *= (meanB-meanF)*(meanB-meanF)
-        if varBetween > current_max:
-            current_max = varBetween
-            threshold = i
-    return threshold
-
-
-
-
 def feature_width(E, background=None, pad=50):
     """automated detection of post-deskew image content width.
 
