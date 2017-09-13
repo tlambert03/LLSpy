@@ -23,7 +23,7 @@ requirements:
     - ipython
     - voluptuous
     - watchdog
-    - pyqt 5
+    - pyqt >=5
     - click
     - configparser # [py2k]
 
