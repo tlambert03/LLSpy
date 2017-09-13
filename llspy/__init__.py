@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 try:
 	import pathlib as plib
-	plib.Path().expanduser()
+	plib.Path()
 except (ImportError, AttributeError):
 	import pathlib2 as plib
 except (ImportError, AttributeError):
