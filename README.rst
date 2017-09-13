@@ -13,7 +13,7 @@ LLSpy: Lattice Light-sheet Data Processing
 
 LLSpy is a graphical and command line interface for lattice light sheet post-processing. It extends the cudaDeconv binary created in the Betzig lab at Janelia Research Campus, and adds additional features that auto-detect experimental parameters (minimizing user input), perform image corrections and manipulations, and facilitate file handling.
 
-Full documentation available at  http://cbmf.hms.harvard.edu/llspy_docs
+Full documentation available at http://llspy.readthedocs.io/
 
 
 .. image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2017/09/gui.png
@@ -100,7 +100,7 @@ Installation
     > lls gui
 
 
-See complete usage notes in the `documentation <http://cbmf.hms.harvard.edu/llspy_docs/>`_.
+See complete usage notes in the `documentation <http://llspy.readthedocs.io/>`_.
 
 
 
