@@ -126,6 +126,8 @@ def reorderstack(arr, inorder, outorder='tzcyx'):
     arr = np.transpose(arr, [inorder.find(n) for n in outorder])
     return arr
 
+def imshow(*args, **kwargs):
+    return tifffile.imshow(*args, **kwargs)
 
 def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
     """sample wrapper for tifffile.imsave imagej=True."""
