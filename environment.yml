@@ -1,17 +1,20 @@
-name: llsenv
+name: llspydev
 channels:
+  - talley
   - conda-forge
   - defaults
 dependencies:
   - python=3.6
   - numpy
   - scipy
-  - matplotlib
+  - matplotlib  # matplotlib from conda tries to install qt 5.6
   - tifffile
   - numba
-  - scikit-image
   - ipython
   - voluptuous
   - watchdog
-  - pyqt
   - click
+  - pip
+  - pyqt
+  - pyopencl
+  - spimagine
