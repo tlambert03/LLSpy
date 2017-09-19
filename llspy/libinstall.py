@@ -90,8 +90,10 @@ def install(dirpath):
             fname = file + ext['lib'][PLATFORM]
             src = os.path.join(libpath, fname)
             if os.path.isfile(src):
-                print('Copying {} --> {}'.format(src, os.path.join(dest, fname)))
-                copyfile(src, os.path.join(dest, fname))
+                D = os.path.join(dest, fname)
+                print('Copying {} --> {}'.format(src, D))
+                if not os.path.exists(D):
+                    copyfile(src, D)
 
     if binpath:
         dest = os.path.join(thispath, 'bin')
@@ -103,7 +105,8 @@ def install(dirpath):
             if os.path.isfile(src):
                 D = os.path.join(dest, fname)
                 print('Copying {} --> {}'.format(src, D))
-                copyfile(src, D)
+                if not os.path.exists(D):
+                    copyfile(src, D)
                 st = os.stat(D)
                 os.chmod(D, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
