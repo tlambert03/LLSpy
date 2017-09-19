@@ -185,8 +185,8 @@ class LLSsettings(object):
 		if self.parameters.samplescan:
 			self.parameters.dz = abs(float(self.channel[0]['S PZT']['interval']))
 			self.parameters.nz = int(self.channel[0]['S PZT']['numpix'])
-			self.parameters.dzFinal = self.parameters.dz * math.sin(
-										self.sheet_angle * math.pi / 180)
+			self.parameters.dzFinal = round(self.parameters.dz * math.sin(
+										self.sheet_angle * math.pi / 180), 4)
 		else:
 			self.parameters.dz = abs(float(self.channel[0]['Z PZT']['interval']))
 			self.parameters.nz = int(self.channel[0]['Z PZT']['numpix'])
