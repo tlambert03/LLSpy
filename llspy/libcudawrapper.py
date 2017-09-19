@@ -45,7 +45,7 @@ except OSError:
         cudaLib = None
 
 if not cudaLib:
-    logging.warn('COULD NOT FIND libcudaDeconv!')
+    logging.warn('COULD NOT LOAD libcudaDeconv!  Confirm that CUDA and FFTW are installed')
 else:
     try:
         # Deskew is used when no decon is desired
