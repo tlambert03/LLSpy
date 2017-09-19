@@ -119,7 +119,7 @@ def move_corrected(path):
                     t += 1
 
 
-def preview(E, tR=0, **kwargs):
+def preview(E, tR=0, cR=None, **kwargs):
     """ process a restricted time range (defaults to t=0) with same settings
     as autoprocess, but without file I/O"""
 
@@ -138,11 +138,12 @@ def preview(E, tR=0, **kwargs):
         return
 
     kwargs['tRange'] = tR
+    kwargs['cRange'] = cR
     P = E.localParams(**kwargs)
 
     out = []
     for timepoint in P.tRange:
-        stacks = [util.imread(f) for f in E.get_t(timepoint)]
+        stacks = [util.imread(f) for f in E.get_files(c=P.cRange, t=timepoint)]
         # print("shape_raw: {}".format(stacks[0].shape))
         if P.correctFlash:
             camparams = CameraParameters(P.camparamsPath)
