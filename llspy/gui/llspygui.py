@@ -22,10 +22,23 @@ from llspy.gui.helpers import (newWorkerThread, ExceptionHandler,
     wait_for_file_close, wait_for_folder_finished, byteArrayToString,
     shortname, string_to_iterable, guisave, guirestore)
 
+from llspy.gui.img_dialog import ImgDialog
+
+
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
 from PyQt5 import QtCore, QtGui
 from PyQt5 import QtWidgets as QtW
+
+try:
+    #raise ImportError("skipping")
+    from spimagine import DataModel, NumpyData
+    from spimagine.models import imageprocessor
+    from spimagine.gui.mainwidget import MainWidget as spimagineWidget
+    SPIMAGINE_IMPORTED = True
+except ImportError:
+    SPIMAGINE_IMPORTED = False
+    print("could not import spimagine!  falling back to matplotlib")
 
 # import sys
 # sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
@@ -194,6 +207,13 @@ class LLSDragDropTable(QtW.QTableWidget):
                 self.removeRow(index.row() - i)
                 i += 1
 
+
+# class myImp(imageprocessor.ImageProcessor):
+#     def __init__(self):
+#         super(myImp,self).__init__("MyImp")
+
+#     def apply(self,data):
+#         return np.random.rand(*data.shape)
 
 # ################# WORKERS ################
 
@@ -656,21 +676,22 @@ class TimePointWorker(QtCore.QObject):
     """docstring for TimePointWorker"""
 
     finished = QtCore.pyqtSignal()
-    previewReady = QtCore.pyqtSignal(np.ndarray)
+    previewReady = QtCore.pyqtSignal(np.ndarray, float, float)
     error = QtCore.pyqtSignal()
 
-    def __init__(self, path, tRange, opts, ditch_partial=True):
+    def __init__(self, path, tRange, cRange, opts, ditch_partial=True):
         super(TimePointWorker, self).__init__()
         self.path = path
         self.tRange = tRange
+        self.cRange = cRange
         self.opts = opts
         self.E = llspy.LLSdir(self.path, ditch_partial)
 
     @QtCore.pyqtSlot()
     def work(self):
         try:
-            previewStack = llspy.llsdir.preview(self.E, self.tRange, **self.opts)
-            self.previewReady.emit(previewStack)
+            previewStack = llspy.llsdir.preview(self.E, self.tRange, self.cRange, **self.opts)
+            self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal)
 
             if self.opts['cropMode'] == 'auto':
                 app = QtCore.QCoreApplication.instance()
@@ -808,16 +829,17 @@ class ActiveWatcher(QtCore.QObject):
             while len(self.tQueue):
                 timepoints.append(self.tQueue.pop())
             timepoints = sorted(timepoints)
+            cRange = None  # TODO: plug this in
             self.tQueue = []
-            w, thread = newWorkerThread(TimePointWorker, self.path, timepoints,
+            w, thread = newWorkerThread(TimePointWorker, self.path, timepoints, cRange,
                 self.opts, False, workerConnect={'previewReady': self.writeFile},
                 start=True)
             self.worker = (timepoints, w, thread)
         elif not any((self.inProcess, len(self.tQueue), not self.allReceived)):
             self.terminate()
 
-    @QtCore.pyqtSlot(np.ndarray)
-    def writeFile(self, stack):
+    @QtCore.pyqtSlot(np.ndarray, float, float)
+    def writeFile(self, stack, dx, dz):
         timepoints, worker, thread = self.worker
 
         def write_stack(s, c=0, t=0):
@@ -914,6 +936,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.inProcess = False
         self.observer = None  # for watching the watchdir
         self.activeWatchers = {}
+        self.spimwins = []
 
         # delete and reintroduce custom LLSDragDropTable
         self.listbox.setParent(None)
@@ -946,6 +969,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.actionOpen_LLSdir.triggered.connect(self.openLLSdir)
         self.actionRun.triggered.connect(self.onProcess)
         self.actionAbort.triggered.connect(self.abort_workers)
+        self.actionClose_All_Previews.triggered.connect(self.close_all_previews)
         self.actionPreview.triggered.connect(self.onPreview)
         self.actionSave_Settings_as_Default.triggered.connect(
             self.saveCurrentAsDefault)
@@ -963,6 +987,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         ctrangeValidator = QtGui.QRegExpValidator(ctrangeRX)
         self.processCRangeLineEdit.setValidator(ctrangeValidator)
         self.processTRangeLineEdit.setValidator(ctrangeValidator)
+        self.previewCRangeLineEdit.setValidator(ctrangeValidator)
         self.previewTRangeLineEdit.setValidator(ctrangeValidator)
 
         # FIXME: this way of doing it clears the text field if you hit cancel
@@ -1009,6 +1034,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
         if self.watchDirCheckBox.isChecked():
             self.startWatcher()
+
+        if not SPIMAGINE_IMPORTED:
+            self.prevBackendMatplotlibRadio.setChecked(True)
+            self.prevBackendSpimagineRadio.setDisabled(True)
+            self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
 
     @QtCore.pyqtSlot()
     def startWatcher(self):
@@ -1113,32 +1143,96 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 firstRowSelected = selectedRows[0].row()
 
         procTRangetext = self.previewTRangeLineEdit.text()
+        procCRangetext = self.previewCRangeLineEdit.text()
+
         if procTRangetext:
             tRange = string_to_iterable(procTRangetext)
         else:
             tRange = 0
 
-        itemPath = self.listbox.item(firstRowSelected, 0).text()
+        if procCRangetext:
+            cRange = string_to_iterable(procCRangetext)
+        else:
+            cRange = None  # means all channels
+
+        self.previewPath = self.listbox.item(firstRowSelected, 0).text()
 
         try:
-            opts = self.getValidatedOptions()
+            self.lastopts = self.getValidatedOptions()
         except Exception:
             self.previewButton.setEnabled(True)
             raise
 
-        w, thread = newWorkerThread(TimePointWorker, itemPath, tRange, opts,
-            workerConnect={'previewReady': self.displayPreview}, start=True)
+        w, thread = newWorkerThread(TimePointWorker, self.previewPath, tRange, cRange, self.lastopts,
+            workerConnect={
+                            'previewReady': self.displayPreview
+                          }, start=True)
 
         w.finished.connect(lambda: self.previewButton.setEnabled(True))
         self.previewthreads = (w, thread)
 
-    @QtCore.pyqtSlot(np.ndarray)
-    def displayPreview(self, array):
-        # FIXME:  pyplot should not be imported in pyqt
-        # use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
-        import matplotlib.pyplot as plt
-        imshow3D(array, cmap='gray', interpolation='nearest')
-        plt.show()
+    @QtCore.pyqtSlot(np.ndarray, float, float)
+    def displayPreview(self, array, dx, dz, df=None):
+        if self.prevBackendSpimagineRadio.isChecked() and SPIMAGINE_IMPORTED:
+
+            if np.squeeze(array).ndim > 4:
+                arrays = [array[:, i] for i in range(array.shape[1])]
+            else:
+                arrays = [np.squeeze(array)]
+
+            for arr in arrays:
+
+                datamax = arr.max()
+                datamin = arr.min()
+                dataRange = datamax - datamin
+                vmin_init = datamin - dataRange * 0.02
+                vmax_init = datamax * 0.8
+
+                win = spimagineWidget()
+                win.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+                win.setModel(DataModel(NumpyData(arr)))
+                win.transform.setStackUnits(dx, dx, dz)
+                win.sliceWidget.checkSlice.setCheckState(2)
+                win.checkSliceView.setChecked(True)
+                win.transform.setGamma(0.9)
+                win.transform.setMax(vmax_init)
+                win.transform.setMin(vmin_init)
+                win.transform.setZoom(1.3)
+                win.sliceWidget.sliderSlice.setValue(int(arr.shape[-3]/2))
+                #win.impListView.add_image_processor(myImp())
+                #win.impListView.add_image_processor(imageprocessor.LucyRichProcessor())
+                win.setLoopBounce(False)
+                win.settingsView.playInterval.setText('100')
+
+                win.resize(1500, 900)
+                win.show()
+                win.volSettingsView.colorCombo.setCurrentIndex(4)
+                #win.rotate()
+                win.raise_()
+                win.setWindowTitle(shortname(self.previewPath))
+                self.spimwins.append(win)
+
+        else:
+            # FIXME:  pyplot should not be imported in pyqt
+            # use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
+
+            win = ImgDialog(array,
+                            info="\n".join(["{} = {}".format(k,v) for k,v in self.lastopts.items()]),
+                            title=shortname(self.previewPath))
+            self.spimwins.append(win)
+
+    @QtCore.pyqtSlot()
+    def close_all_previews(self):
+        if hasattr(self, 'spimwins'):
+            for win in self.spimwins:
+                try:
+                    win.closeMe()
+                except Exception:
+                    try:
+                        win.close()
+                    except Exception:
+                        pass
+        self.spimwins = []
 
     def onProcess(self):
         # prevent additional button clicks which processing
@@ -1448,7 +1542,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             reply = QtW.QMessageBox.question(self, 'Unprocessed items!',
                 "You have unprocessed items.  Are you sure you want to quit?",
                 QtW.QMessageBox.Yes | QtW.QMessageBox.No,
-                QtW.QMessageBox.No)
+                QtW.QMessageBox.Yes)
             if reply != QtW.QMessageBox.Yes:
                 event.ignore()
                 return
