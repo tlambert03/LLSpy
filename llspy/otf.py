@@ -44,7 +44,7 @@ except OSError:
         otflib = None
 
 if not otflib:
-    logging.warn('COULD NOT FIND libradialft!')
+    logging.warn('COULD NOT LOAD libradialft!  Confirm that FFTW is installed')
 else:
     try:
         shared_makeotf = otflib.makeOTF
