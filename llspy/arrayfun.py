@@ -160,7 +160,7 @@ def sub_background(im, background=None):
     return out
 
 
-def deskew_gputools(rawdata, dz=0.3, dx=0.105, angle=31.5, filler=0):
+def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
     try:
         import sys
         # silence gputools error if config file is missing
