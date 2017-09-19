@@ -22,6 +22,7 @@ from .cudabinwrapper import CUDAbin
 from .parse import parse_filename, filter_files
 from .camera import CameraROI, CameraParameters, selectiveMedianFilter
 from .schema import procParams, printOptions
+from .util import imread, imsave, imshow
 
 #libcuda functions
 try:
