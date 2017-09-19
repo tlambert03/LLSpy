@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 from codecs import open
+import os
 from os import path
 import sys
+
+with open('llspy/version.py') as f:
+    exec(f.read())
 
 INCLUDELIBS = False
 HERE = path.abspath(path.dirname(__file__))
@@ -14,13 +18,20 @@ with open(path.join(HERE, 'README.rst'), encoding='utf-8') as f:
 with open('LICENSE.txt') as f:
     LICENSE = f.read()
 
-
-PACKAGE_DATA = ['gui/guiDefaults.ini']
-
-
 if sys.platform.startswith('win32'):
-    PACKAGE_DATA += 'bin/libfftw3f-3.dll'
+    DATA_FILES = [
+        ('Library\\bin', ['llspy\\bin\\libfftw3f-3.dll'])
+    ]
+elif sys.platform.startswith('darwin'):
+    DATA_FILES = [
+        ('lib', [os.path.join('llspy', 'lib', f) for f in
+                 os.listdir('llspy/lib') if f.endswith('dylib')])
+    ]
+else:
+    DATA_FILES = []
 
+PACKAGE_DATA = [path.join('gui', 'guiDefaults.ini'),
+                path.join('gui', 'img_window.ui')]
 
 if INCLUDELIBS:
     # add specific library by platform
@@ -31,8 +42,8 @@ if INCLUDELIBS:
         ]
     elif sys.platform.startswith('win32'):
         PACKAGE_DATA += [
-                'bin/*.exe',
-                'lib/*.dll',
+                path.join('bin', '*.exe'),
+                path.join('lib', '*.dll'),
         ]
     else:
         PACKAGE_DATA += [
@@ -45,18 +56,29 @@ if INCLUDELIBS:
 
 setup(
     name='llspy',
-    version='0.1.0',
+    version=__version__,
     description='Lattice Light Sheet Processing Tools',
     long_description=README,
     author='Talley Lambert',
     author_email='talley.lambert@gmail.com',
     url='https://github.com/tlambert03/LLSpy2',
-    license=LICENSE,
-    packages=find_packages(exclude=('tests', 'docs')),
+    license='',
+    packages=find_packages(exclude=('tests', 'docs', 'pyinstaller')),
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering',
+
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+    ],
+
     python_requires='>=3.5',
     package_data={
         'llspy': PACKAGE_DATA,
     },
+    data_files=DATA_FILES,
     install_requires=[
         'numpy',
         'scipy',
@@ -67,11 +89,13 @@ setup(
         'watchdog',
         'pyqt5',
         'matplotlib'
+        'spimagine',
+        'gputools'
     ],
     entry_points={
             'console_scripts': [
-                'lls=llspy.lls:cli',
-                'lls-gui=llspy.gui.llspygui:main'
+                'lls = llspy.lls:cli',
+                'lls-gui = llspy.gui.llspygui:main'
             ],
     },
 )
