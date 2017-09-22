@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-source activate llsenv35
-rm -rf ./distNIX
-rm -rf ./buildNIX
-pyinstaller  --noconfirm --clean \
-	--distpath=./distNIX \
-	--workpath=./buildNIX \
-	--upx-dir="/usr/bin/" \
-	llspygui.spec
