@@ -243,6 +243,21 @@ def rotateGPU(im, angle=32.5, xzRatio=0.4253, reverse=False):
 
 
 def quickDecon(im, otfpath, savedeskew=False, **kwargs):
+    """Perform deconvolution of im with otf at otfpath
+
+    kwargs can be:
+        drdata      float
+        dzdata      float
+        dzpsf       float
+        drpsf       float
+        wavelength  int
+        deskew      float  (0 is no deskew)
+        nIters      int
+        savedeskew  bool
+        width       int
+        shift       int
+        rotate      float
+    """
     RL_init(im.shape, otfpath, **kwargs)
     if savedeskew:
         decon_result, deskew_result = RL_decon(im, savedeskew=True, **kwargs)
