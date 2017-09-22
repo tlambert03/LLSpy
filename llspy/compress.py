@@ -9,11 +9,11 @@ EXTENTIONS = {
 }
 
 archive_extension = {
-	'lbzip2': 'bz2',
-	'bzip2': 'bz2',
-	'pbzip2': 'bz2',
-	'pigz': 'gz',
-	'gzip': 'gz',
+	'lbzip2': '.bz2',
+	'bzip2': '.bz2',
+	'pbzip2': '.bz2',
+	'pigz': '.gz',
+	'gzip': '.gz',
 }
 
 
@@ -51,32 +51,42 @@ def untar(tarball, delete=True):
 	return os.path.dirname(tarball)
 
 
-def zipit(fname, compression='lbzip2'):
+def zipit(fname, compression=None):
+	if compression is None:
+		compression = 'lbzip2'
 	# check if it exists and is not already compressed
 	assert os.path.exists(fname), 'File does not exist: {}'.format(fname)
-	assert os.path.splitext(fname)[1] not in ('.bz2',), 'File already compressed: ' + fname
-	subprocess.call([compression, '-zv', fname])
-	return fname + '.bz2'
+	assert os.path.splitext(fname)[1] not in (archive_extension[compression],), 'File already compressed: ' + fname
+	if compression == 'pigz':
+		flags = '-v'  # the -z flag means complress to zlib format in pigz
+	else:
+		flags = '-zv'
+	subprocess.call([compression, flags, fname])
+	return fname + archive_extension[compression]
 
 
-def unzipit(fname, compression='lbzip2'):
+def unzipit(fname, compression=None):
+	extension = os.path.splitext(fname)[1]
+	if compression is None:
+		compression = EXTENTIONS[extension]
+	assert archive_extension[compression] == extension, "Format {} cannot be unzipped by program {}".format(extension, compression)
 	# check if it exists and is compressed type
 	assert os.path.exists(fname), 'File does not exist: {}'.format(fname)
-	assert os.path.splitext(fname)[1] in ('.bz2',), 'File not compressed: ' + fname
+	assert extension in (archive_extension[compression],), 'File not compressed: ' + fname
 	subprocess.call([compression, '-dv', fname])
-	return fname.strip('.bz2')
+	return fname.strip(archive_extension[compression])
 
 
-def compress(path):
+def compress(path, compression=None):
 	tar = tartiffs(path)
-	return zipit(tar) if tar is not None and os.path.isfile(tar) else None
+	return zipit(tar, compression) if tar is not None and os.path.isfile(tar) else None
 
 
-def decompress(file):
+def decompress(file, compression=None):
 	# if it's not a tar.bz2, assume it's a directory that contains one
 	compressedtar = util.find_filepattern(file, '*.tar*') if os.path.isdir(file) else file
-	if compressedtar is None or not compressedtar.endswith(('.bz2',)):
+	if compressedtar is None or not compressedtar.endswith(archive_extension[compression]):
 		print('No compressed files found in ' + file)
 		return None
-	tarball = unzipit(compressedtar)
+	tarball = unzipit(compressedtar, compression)
 	return untar(tarball)
