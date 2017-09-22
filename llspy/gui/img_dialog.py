@@ -1,8 +1,10 @@
 import sys
 import os
-
-from PyQt5 import QtWidgets, QtCore, QtGui, uic
 import numpy as np
+
+from PyQt5 import QtWidgets, QtCore
+from llspy.gui.img_window import Ui_Dialog
+
 
 import matplotlib
 matplotlib.use("Qt5Agg")
@@ -11,8 +13,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-here = os.path.dirname(os.path.abspath(__file__))
-form_class = uic.loadUiType(os.path.join(here, 'img_window.ui'))[0]  # for debugging
+# here = os.path.dirname(os.path.abspath(__file__))
+# form_class = uic.loadUiType(os.path.join(here, 'img_window.ui'))[0]  # for debugging
 
 
 class DataModel(QtCore.QObject):
@@ -129,7 +131,7 @@ class MplCanvas(FigureCanvas):
         self.draw()
 
 
-class ImgDialog(QtWidgets.QDialog, form_class):
+class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
         super(ImgDialog, self).__init__(parent)
         self.setupUi(self)
