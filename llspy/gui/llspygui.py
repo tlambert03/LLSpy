@@ -17,7 +17,6 @@ sys.path.append(osp.join(thisDirectory, os.pardir, os.pardir))
 import llspy
 from llspy.gui.main_gui import Ui_Main_GUI
 from llspy.gui.camcalibgui import CamCalibDialog
-from llspy.gui.imdisplay import imshow3D
 from llspy.gui.helpers import (newWorkerThread, ExceptionHandler,
     wait_for_file_close, wait_for_folder_finished, byteArrayToString,
     shortname, string_to_iterable, guisave, guirestore)
@@ -328,9 +327,14 @@ class CompressionWorker(SubprocessWorker):
     status_update = QtCore.pyqtSignal(str, int)
     log_update = QtCore.pyqtSignal(str)
 
-    def __init__(self, path, mode='compress', binary='lbzip2', wid=1):
+    def __init__(self, path, mode='compress', binary=None, wid=1):
         if not llspy.util.which(binary):
-            binary = 'bzip2'
+            if sys.platform.startswith('win32'):
+                binary = 'pigz' if llspy.util.which('pigz') else None
+            else:
+                binary = 'lbzip2' if llspy.util.which('lbzip2') else None
+        if not llspy.util.which(binary):
+            raise FileNotFoundError("No binary found for compression program: {}".format(binary))
         super(CompressionWorker, self).__init__(binary, [], wid)
         self.path = path
         self.mode = mode
@@ -928,7 +932,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
     def __init__(self, parent=None):
         super(main_GUI, self).__init__(parent)
         self.setupUi(self)  # method inherited from form_class to init UI
-        self.setWindowTitle("LLSpy Lattice Light Sheet Processing")
+        self.setWindowTitle("LLSpy :: Lattice Light Sheet Processing")
         self.LLSItemThreads = []
         self.compressionThreads = []
         self.argQueue = []  # holds all argument lists that will be sent to threads
@@ -1572,6 +1576,17 @@ def main():
         mainGUI = main_GUI()
         mainGUI.show()
         mainGUI.raise_()
+
+        if sys.platform.startswith('win32'):
+            appicon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, '_assets', 'llspy1.ico'))
+            import ctypes
+            myappid = 'llspy.LLSpy.' + llspy.__version__
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        else:
+            appicon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, '_assets', 'llspy1.icns'))
+
+        mainGUI.setWindowIcon(appicon)
+        APP.setWindowIcon(appicon)
 
         exceptionHandler = ExceptionHandler()
         sys.excepthook = exceptionHandler.handler
