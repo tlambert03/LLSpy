@@ -115,9 +115,10 @@ def pyrange_to_perlregex(it, digits=4):
     return str("(" + "|".join(L) + ")")
 
 
-def reorderstack(arr, inorder, outorder='tzcyx'):
+def reorderstack(arr, inorder='zyx', outorder='tzcyx'):
     """rearrange order of array, used when resaving a file."""
     inorder = inorder.lower()
+    assert arr.ndim == len(inorder), 'The array dimensions must match the inorder dimensions'
     for _ in range(len(outorder) - arr.ndim):
         arr = np.expand_dims(arr, 0)
     for i in outorder:
@@ -141,6 +142,8 @@ def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
         'loop': 'true',
     }
     bigT = True if arr.nbytes > 3758096384 else False  # > 3.5GB make a bigTiff
+    if arr.ndim == 3:
+        arr = reorderstack(arr)  # assume that 3 dimension array is ZYX
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         tifffile.imsave(outpath, arr, bigtiff=bigT, imagej=True,
@@ -149,7 +152,6 @@ def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
 
 def getAbsoluteResourcePath(relativePath):
     """ Load relative path, in an environment agnostic way"""
-    import sys
 
     try:
         # PyInstaller stores data files in a tmp folder refered to as _MEIPASS
