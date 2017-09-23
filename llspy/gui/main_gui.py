@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'llspy/gui/main_gui.ui'
 #
-# Created by: PyQt5 UI code generator 5.9
+# Created by: PyQt5 UI code generator 5.6
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Main_GUI(object):
     def setupUi(self, Main_GUI):
         Main_GUI.setObjectName("Main_GUI")
-        Main_GUI.resize(617, 813)
+        Main_GUI.resize(617, 826)
         Main_GUI.setMinimumSize(QtCore.QSize(0, 803))
         Main_GUI.setFocusPolicy(QtCore.Qt.TabFocus)
         self.centralWidget = QtWidgets.QWidget(Main_GUI)
@@ -234,7 +234,7 @@ class Ui_Main_GUI(object):
         self.verticalLayout_16.addItem(spacerItem7)
         self.processingToolBox.addItem(self.tool_preprocess, "")
         self.tool_deconvolution = QtWidgets.QWidget()
-        self.tool_deconvolution.setGeometry(QtCore.QRect(0, 0, 467, 227))
+        self.tool_deconvolution.setGeometry(QtCore.QRect(0, 0, 547, 267))
         self.tool_deconvolution.setObjectName("tool_deconvolution")
         self.verticalLayout_14 = QtWidgets.QVBoxLayout(self.tool_deconvolution)
         self.verticalLayout_14.setContentsMargins(11, 11, 11, 11)
@@ -393,7 +393,7 @@ class Ui_Main_GUI(object):
         self.verticalLayout_14.addItem(spacerItem14)
         self.processingToolBox.addItem(self.tool_deconvolution, "")
         self.tool_postprocess = QtWidgets.QWidget()
-        self.tool_postprocess.setGeometry(QtCore.QRect(0, 0, 534, 292))
+        self.tool_postprocess.setGeometry(QtCore.QRect(0, 0, 547, 299))
         self.tool_postprocess.setObjectName("tool_postprocess")
         self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.tool_postprocess)
         self.verticalLayout_12.setContentsMargins(11, 11, 11, 11)
@@ -573,6 +573,15 @@ class Ui_Main_GUI(object):
         self.compressRawCheckBox = QtWidgets.QCheckBox(self.tool_postprocess)
         self.compressRawCheckBox.setObjectName("compressRawCheckBox")
         self.horizontalLayout_4.addWidget(self.compressRawCheckBox)
+        self.comboBox = QtWidgets.QComboBox(self.tool_postprocess)
+        self.comboBox.setEnabled(False)
+        self.comboBox.setMinimumSize(QtCore.QSize(0, 0))
+        self.comboBox.setMaximumSize(QtCore.QSize(100, 16777215))
+        self.comboBox.setEditable(False)
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.horizontalLayout_4.addWidget(self.comboBox)
         self.verticalLayout_12.addLayout(self.horizontalLayout_4)
         spacerItem19 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_12.addItem(spacerItem19)
@@ -588,9 +597,9 @@ class Ui_Main_GUI(object):
         self.previewBackendLabel = QtWidgets.QLabel(self.tab_config)
         self.previewBackendLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.previewBackendLabel.setObjectName("previewBackendLabel")
-        self.gridLayout.addWidget(self.previewBackendLabel, 11, 0, 1, 1)
+        self.gridLayout.addWidget(self.previewBackendLabel, 12, 0, 1, 1)
         spacerItem20 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem20, 12, 2, 1, 1)
+        self.gridLayout.addItem(spacerItem20, 13, 2, 1, 1)
         self.cudaDeconvPathLabel = QtWidgets.QLabel(self.tab_config)
         self.cudaDeconvPathLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.cudaDeconvPathLabel.setObjectName("cudaDeconvPathLabel")
@@ -606,13 +615,13 @@ class Ui_Main_GUI(object):
         self.watchModeLabel.setEnabled(False)
         self.watchModeLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.watchModeLabel.setObjectName("watchModeLabel")
-        self.gridLayout.addWidget(self.watchModeLabel, 14, 0, 1, 1)
+        self.gridLayout.addWidget(self.watchModeLabel, 15, 0, 1, 1)
         self.watchDirLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.watchDirLineEdit.setEnabled(False)
         self.watchDirLineEdit.setText("")
         self.watchDirLineEdit.setReadOnly(True)
         self.watchDirLineEdit.setObjectName("watchDirLineEdit")
-        self.gridLayout.addWidget(self.watchDirLineEdit, 13, 2, 1, 1)
+        self.gridLayout.addWidget(self.watchDirLineEdit, 14, 2, 1, 1)
         self.defaultRegCalibPathLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.defaultRegCalibPathLineEdit.setEnabled(False)
         self.defaultRegCalibPathLineEdit.setText("")
@@ -629,14 +638,14 @@ class Ui_Main_GUI(object):
         self.watchDirToolButton = QtWidgets.QToolButton(self.tab_config)
         self.watchDirToolButton.setEnabled(False)
         self.watchDirToolButton.setObjectName("watchDirToolButton")
-        self.gridLayout.addWidget(self.watchDirToolButton, 13, 6, 1, 1)
+        self.gridLayout.addWidget(self.watchDirToolButton, 14, 6, 1, 1)
         self.defaultRegCalibPathLabel = QtWidgets.QLabel(self.tab_config)
         self.defaultRegCalibPathLabel.setEnabled(False)
         self.defaultRegCalibPathLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.defaultRegCalibPathLabel.setObjectName("defaultRegCalibPathLabel")
         self.gridLayout.addWidget(self.defaultRegCalibPathLabel, 5, 0, 1, 1)
         spacerItem21 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem21, 10, 2, 1, 1)
+        self.gridLayout.addItem(spacerItem21, 11, 2, 1, 1)
         self.otfFolderPathLabel = QtWidgets.QLabel(self.tab_config)
         self.otfFolderPathLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.otfFolderPathLabel.setObjectName("otfFolderPathLabel")
@@ -657,7 +666,7 @@ class Ui_Main_GUI(object):
         self.gridLayout.addWidget(self.genFlashParams, 6, 2, 1, 1)
         self.watchDirCheckBox = QtWidgets.QCheckBox(self.tab_config)
         self.watchDirCheckBox.setObjectName("watchDirCheckBox")
-        self.gridLayout.addWidget(self.watchDirCheckBox, 13, 0, 1, 1)
+        self.gridLayout.addWidget(self.watchDirCheckBox, 14, 0, 1, 1)
         self.otfFolderLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.otfFolderLineEdit.setText("")
         self.otfFolderLineEdit.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
@@ -677,7 +686,7 @@ class Ui_Main_GUI(object):
         self.prevBackendMatplotlibRadio = QtWidgets.QRadioButton(self.previewBackendGroupBox)
         self.prevBackendMatplotlibRadio.setObjectName("prevBackendMatplotlibRadio")
         self.horizontalLayout_10.addWidget(self.prevBackendMatplotlibRadio)
-        self.gridLayout.addWidget(self.previewBackendGroupBox, 11, 2, 1, 1)
+        self.gridLayout.addWidget(self.previewBackendGroupBox, 12, 2, 1, 1)
         self.watchModeGroupBox = QtWidgets.QGroupBox(self.tab_config)
         self.watchModeGroupBox.setEnabled(False)
         self.watchModeGroupBox.setObjectName("watchModeGroupBox")
@@ -695,7 +704,11 @@ class Ui_Main_GUI(object):
         self.watchModeServerRadio.setChecked(True)
         self.watchModeServerRadio.setObjectName("watchModeServerRadio")
         self.horizontalLayout_5.addWidget(self.watchModeServerRadio)
-        self.gridLayout.addWidget(self.watchModeGroupBox, 14, 2, 1, 1)
+        self.gridLayout.addWidget(self.watchModeGroupBox, 15, 2, 1, 1)
+        self.confirmOnQuitCheckBox = QtWidgets.QCheckBox(self.tab_config)
+        self.confirmOnQuitCheckBox.setChecked(True)
+        self.confirmOnQuitCheckBox.setObjectName("confirmOnQuitCheckBox")
+        self.gridLayout.addWidget(self.confirmOnQuitCheckBox, 10, 2, 1, 1)
         self.tabWidget.addTab(self.tab_config, "")
         self.tab_log = QtWidgets.QWidget()
         self.tab_log.setObjectName("tab_log")
@@ -880,7 +893,8 @@ class Ui_Main_GUI(object):
 
         self.retranslateUi(Main_GUI)
         self.tabWidget.setCurrentIndex(0)
-        self.processingToolBox.setCurrentIndex(0)
+        self.processingToolBox.setCurrentIndex(2)
+        self.comboBox.setCurrentIndex(0)
         self.actionQuit.triggered['bool'].connect(Main_GUI.close)
         self.backgroundRollingRadio.toggled['bool'].connect(self.backgroundRollingSpinBox.setEnabled)
         self.backgroundFixedRadio.toggled['bool'].connect(self.backgroundFixedSpinBox.setEnabled)
@@ -905,6 +919,7 @@ class Ui_Main_GUI(object):
         self.watchDirCheckBox.toggled['bool'].connect(self.watchModeGroupBox.setEnabled)
         self.watchDirCheckBox.toggled['bool'].connect(self.watchModeAcquisitionRadio.setEnabled)
         self.watchDirCheckBox.toggled['bool'].connect(self.watchModeServerRadio.setEnabled)
+        self.compressRawCheckBox.clicked['bool'].connect(self.comboBox.setEnabled)
         QtCore.QMetaObject.connectSlotsByName(Main_GUI)
 
     def retranslateUi(self, Main_GUI):
@@ -1100,6 +1115,8 @@ class Ui_Main_GUI(object):
         self.compressRawCheckBox.setToolTip(_translate("Main_GUI", "Compress the raw data files\n"
 "after processing to save space."))
         self.compressRawCheckBox.setText(_translate("Main_GUI", "Compress Raw Data"))
+        self.comboBox.setItemText(0, _translate("Main_GUI", "lbzip2"))
+        self.comboBox.setItemText(1, _translate("Main_GUI", "pigz"))
         self.processingToolBox.setItemText(self.processingToolBox.indexOf(self.tool_postprocess), _translate("Main_GUI", "Post-Processing"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_process), _translate("Main_GUI", "Process"))
         self.previewBackendLabel.setText(_translate("Main_GUI", "Preview Type"))
@@ -1143,6 +1160,12 @@ class Ui_Main_GUI(object):
 "are added to the regular processing queue\n"
 "in the main window, and processed in turn."))
         self.watchModeServerRadio.setText(_translate("Main_GUI", "Server"))
+        self.confirmOnQuitCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
+"processed data, leaving only the original\n"
+"raw data.  This option retains any MIP\n"
+"folders found, as a smaller-sized\n"
+"preview of the dataset for later review."))
+        self.confirmOnQuitCheckBox.setText(_translate("Main_GUI", "Warn when quitting with unprocessed items"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_config), _translate("Main_GUI", "Config"))
         self.log.setHtml(_translate("Main_GUI", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"

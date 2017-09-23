@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>617</width>
-    <height>813</height>
+    <height>826</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -36,7 +36,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideRight</enum>
@@ -148,7 +148,7 @@ Press process button below when ready.</string>
            </font>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
@@ -625,8 +625,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>467</width>
-             <height>227</height>
+             <width>547</width>
+             <height>267</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1144,8 +1144,8 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>534</width>
-             <height>292</height>
+             <width>547</width>
+             <height>299</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1767,6 +1767,41 @@ after processing to save space.</string>
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QComboBox" name="comboBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="editable">
+                 <bool>false</bool>
+                </property>
+                <property name="currentIndex">
+                 <number>0</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>lbzip2</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>pigz</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
              </layout>
             </item>
             <item>
@@ -1793,7 +1828,7 @@ after processing to save space.</string>
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="11" column="0">
+        <item row="12" column="0">
          <widget class="QLabel" name="previewBackendLabel">
           <property name="text">
            <string>Preview Type</string>
@@ -1806,7 +1841,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="12" column="2">
+        <item row="13" column="2">
          <spacer name="configTabVertSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -1852,7 +1887,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="14" column="0">
+        <item row="15" column="0">
          <widget class="QLabel" name="watchModeLabel">
           <property name="enabled">
            <bool>false</bool>
@@ -1865,7 +1900,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="13" column="2">
+        <item row="14" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -1914,7 +1949,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="13" column="6">
+        <item row="14" column="6">
          <widget class="QToolButton" name="watchDirToolButton">
           <property name="enabled">
            <bool>false</bool>
@@ -1940,7 +1975,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="10" column="2">
+        <item row="11" column="2">
          <spacer name="configTabVertSpacer_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -2014,7 +2049,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="13" column="0">
+        <item row="14" column="0">
          <widget class="QCheckBox" name="watchDirCheckBox">
           <property name="text">
            <string>Watch Directory:</string>
@@ -2034,7 +2069,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="11" column="2">
+        <item row="12" column="2">
          <widget class="QGroupBox" name="previewBackendGroupBox">
           <property name="title">
            <string notr="true"/>
@@ -2072,7 +2107,7 @@ preview of the dataset for later review.</string>
           </layout>
          </widget>
         </item>
-        <item row="14" column="2">
+        <item row="15" column="2">
          <widget class="QGroupBox" name="watchModeGroupBox">
           <property name="enabled">
            <bool>false</bool>
@@ -2129,6 +2164,23 @@ in the main window, and processed in turn.</string>
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item row="10" column="2">
+         <widget class="QCheckBox" name="confirmOnQuitCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Warn when quitting with unprocessed items</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
        </layout>
@@ -2741,8 +2793,8 @@ and restore folder to it's original state
      <y>382</y>
     </hint>
     <hint type="destinationlabel">
-     <x>311</x>
-     <y>386</y>
+     <x>301</x>
+     <y>390</y>
     </hint>
    </hints>
   </connection>
@@ -2865,12 +2917,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>91</x>
-     <y>516</y>
+     <x>110</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>276</x>
-     <y>520</y>
+     <x>255</x>
+     <y>458</y>
     </hint>
    </hints>
   </connection>
@@ -2881,12 +2933,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>125</x>
-     <y>519</y>
+     <x>144</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>309</x>
-     <y>520</y>
+     <x>295</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -2897,12 +2949,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>122</x>
-     <y>512</y>
+     <x>141</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>345</x>
-     <y>519</y>
+     <x>330</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -2913,12 +2965,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>132</x>
-     <y>517</y>
+     <x>151</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>393</x>
-     <y>517</y>
+     <x>365</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -2983,6 +3035,22 @@ and restore folder to it's original state
     <hint type="destinationlabel">
      <x>532</x>
      <y>652</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>compressRawCheckBox</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>comboBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>362</x>
+     <y>665</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>509</x>
+     <y>662</y>
     </hint>
    </hints>
   </connection>
