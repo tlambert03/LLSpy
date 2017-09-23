@@ -23,7 +23,6 @@ from llspy.gui.helpers import (newWorkerThread, ExceptionHandler,
 
 from llspy.gui.img_dialog import ImgDialog
 
-
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
 from PyQt5 import QtCore, QtGui
@@ -39,10 +38,14 @@ except ImportError:
     SPIMAGINE_IMPORTED = False
     print("could not import spimagine!  falling back to matplotlib")
 
+# from raven import Client
+# client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
+#                 release=llspy.__version__)
+
+
 # import sys
 # sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
 
-thisDirectory = osp.dirname(osp.abspath(__file__))
 # Ui_Main_GUI = uic.loadUiType(osp.join(thisDirectory, 'main_gui.ui'))[0]
 # form_class = uic.loadUiType('./llspy/gui/main_gui.ui')[0]  # for debugging
 
@@ -232,8 +235,8 @@ class SubprocessWorker(QtCore.QObject):
     def __init__(self, binary, args, env=None, wid=1):
         super(SubprocessWorker, self).__init__()
         self.id = int(wid)
-        self.binary = binary
-        if not llspy.util.which(binary):
+        self.binary = llspy.util.which(binary)
+        if not binary:
             raise OSError('Binary not found or not executable: {}'.format(self.binary))
         self.args = args
         self.env = env
@@ -328,12 +331,13 @@ class CompressionWorker(SubprocessWorker):
     log_update = QtCore.pyqtSignal(str)
 
     def __init__(self, path, mode='compress', binary=None, wid=1):
-        if not llspy.util.which(binary):
+        if binary is None:
             if sys.platform.startswith('win32'):
-                binary = 'pigz' if llspy.util.which('pigz') else None
+                binary = 'pigz'
             else:
-                binary = 'lbzip2' if llspy.util.which('lbzip2') else None
-        if not llspy.util.which(binary):
+                binary = 'lbzip2'
+        binary = llspy.util.which(binary)
+        if not binary:
             raise FileNotFoundError("No binary found for compression program: {}".format(binary))
         super(CompressionWorker, self).__init__(binary, [], wid)
         self.path = path
@@ -342,7 +346,6 @@ class CompressionWorker(SubprocessWorker):
 
     @QtCore.pyqtSlot()
     def work(self):
-
         if self.mode == 'decompress':
             self.status_update.emit(
                 'Decompressing {}...'.format(shortname(self.path)), 0)
@@ -352,10 +355,12 @@ class CompressionWorker(SubprocessWorker):
                 lambda: self.untar(os.path.splitext(tar_compressed)[0]))
 
         elif self.mode == 'compress':
+            if llspy.util.find_filepattern(self.path, '*.tar*'):
+                raise IOError("There is already a compressed file in this directory")
             self.status_update.emit(
                 'Compressing {}...'.format(shortname(self.path)), 0)
             tarball = llspy.compress.tartiffs(self.path)
-            self.args = ['-zv', tarball]
+            self.args = ['-v', tarball]
             self.process.finished.connect(self.finished.emit)
 
         msg = '\nRunning {} thread_{} with args:\n{}\n'.format(
@@ -695,14 +700,17 @@ class TimePointWorker(QtCore.QObject):
     def work(self):
         try:
             previewStack = llspy.llsdir.preview(self.E, self.tRange, self.cRange, **self.opts)
-            self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal)
+            if previewStack is not None:
+                self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal)
 
-            if self.opts['cropMode'] == 'auto':
-                app = QtCore.QCoreApplication.instance()
-                gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
-                wd = self.E.get_feature_width(pad=self.opts['cropPad'])
-                gui.cropWidthSpinBox.setValue(wd['width'])
-                gui.cropShiftSpinBox.setValue(wd['offset'])
+                if self.opts['cropMode'] == 'auto':
+                    app = QtCore.QCoreApplication.instance()
+                    gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
+                    wd = self.E.get_feature_width(pad=self.opts['cropPad'], t=np.min(self.tRange))
+                    gui.cropWidthSpinBox.setValue(wd['width'])
+                    gui.cropShiftSpinBox.setValue(wd['offset'])
+            else:
+                raise ValueError("No stacks to preview... check tRange")
 
         except Exception:
             (excepttype, value, traceback) = sys.exc_info()
@@ -1152,7 +1160,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         if procTRangetext:
             tRange = string_to_iterable(procTRangetext)
         else:
-            tRange = 0
+            tRange = [0]
 
         if procCRangetext:
             cRange = string_to_iterable(procCRangetext)
@@ -1542,11 +1550,26 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     def closeEvent(self, event):
         ''' triggered when close button is clicked on main window '''
-        if self.listbox.rowCount():
-            reply = QtW.QMessageBox.question(self, 'Unprocessed items!',
-                "You have unprocessed items.  Are you sure you want to quit?",
-                QtW.QMessageBox.Yes | QtW.QMessageBox.No,
-                QtW.QMessageBox.Yes)
+        if self.listbox.rowCount() and self.confirmOnQuitCheckBox.isChecked():
+            box = QtW.QMessageBox()
+            box.setWindowTitle('Unprocessed items!')
+            box.setText("You have unprocessed items.  Are you sure you want to quit?")
+            box.setIcon(QtW.QMessageBox.Warning)
+            box.addButton(QtW.QMessageBox.Yes)
+            box.addButton(QtW.QMessageBox.No)
+            box.setDefaultButton(QtW.QMessageBox.Yes)
+            pref = QtW.QCheckBox("Always quit without confirmation")
+            box.setCheckBox(pref)
+
+            pref.stateChanged.connect(lambda value:
+                self.confirmOnQuitCheckBox.setChecked(False) if value else
+                self.confirmOnQuitCheckBox.setChecked(True))
+
+            reply = box.exec()
+            # reply = box.question(self, 'Unprocessed items!',
+            #     "You have unprocessed items.  Are you sure you want to quit?",
+            #     QtW.QMessageBox.Yes | QtW.QMessageBox.No,
+            #     QtW.QMessageBox.Yes)
             if reply != QtW.QMessageBox.Yes:
                 event.ignore()
                 return
