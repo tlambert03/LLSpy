@@ -9,6 +9,11 @@ from voluptuous import (All, Any, Coerce, Length, Range, Exclusive, Schema,
     Required, REMOVE_EXTRA)
 from voluptuous.humanize import validate_with_humanized_errors
 
+PLAT = sys.platform
+if PLAT == 'linux2':
+    PLAT = 'linux'
+elif PLAT == 'cygwin':
+    PLAT = 'win32'
 
 intbool = Schema(lambda x: int(bool(x)))
 
@@ -30,7 +35,7 @@ def nGPU(binary):
     return int(re.match(b'Detected\s(?P<numGPU>\d+)\sCUDA', output).groups()[0])
 
 
-def get_bundled_binary():
+def get_bundled_binary(name='cudaDeconv'):
     """returns path to bundled, platform-specific cudaDeconv.
     This function is aware of whether program is running in frozen (pyinstaller)
     state,
@@ -40,20 +45,26 @@ def get_bundled_binary():
         binPath = sys._MEIPASS
     else:
         thisDirectory = os.path.dirname(__file__)
-        binPath = os.path.abspath(os.path.join(thisDirectory, 'bin'))
+        binPath = os.path.join(thisDirectory, os.pardir, os.pardir, 'llspylibs', PLAT, 'bin')
+        binPath = os.path.abspath(binPath)
+        if not os.path.isdir(binPath):
+            if os.environ.get('CONDA_PREFIX', False):
+                base = os.environ['CONDA_PREFIX']
+                if PLAT == 'win32':
+                    binPath = os.path.join(base, 'Library', 'bin')
+                else:
+                    binPath = os.path.join(base, 'bin')
+            else:
+                binPath = ''
 
     # get specific binary by platform
-    if sys.platform.startswith('darwin'):
-        binary = os.path.join(binPath, 'cudaDeconv.app')
-    elif sys.platform.startswith('win32'):
-        binary = os.path.join(binPath, 'cudaDeconv.exe')
-    else:
-        binary = os.path.join(binPath, 'cudaDeconv')
+    binary = os.path.join(binPath, name)
+    binary += '.exe' if sys.platform.startswith('win32') else ''
 
     if not util.which(binary):
-        raise CUDAbinException('cudaDeconv could not be located or is not executable: ' + binary)
+        raise CUDAbinException('{} could not be located or is not executable: {}'.format(name, binary))
 
-    logging.debug("Found cudaDeconv Binary: " + os.path.abspath(binary))
+    logging.debug("Found {} Binary: {}".format(name, os.path.abspath(binary)))
     return binary
 
 
