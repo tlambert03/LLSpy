@@ -113,7 +113,7 @@ def imcontentbounds(im, sigma=2):
     return [left, right, fullwidth]
 
 
-def feature_width(E, background=None, pad=50):
+def feature_width(E, background=None, pad=50, t=0):
     """automated detection of post-deskew image content width.
 
     the width can be used during deskewing to crop the final image to
@@ -123,7 +123,7 @@ def feature_width(E, background=None, pad=50):
     # first deskew just first and last timepoints of each channel
     P = E.parameters
     # first and last timepoint
-    raw_stacks = [imread(f) for f in E.get_files(t=(0, P.nt - 1))]
+    raw_stacks = [imread(f) for f in E.get_files(t=(t, P.nt - 1))]
     raw_stacks = [sub_background(f, background) for f in raw_stacks]
     if P.samplescan:
         deskewed_stacks = [deskew(s, P.dz, P.dx, P.angle) for s in raw_stacks]
