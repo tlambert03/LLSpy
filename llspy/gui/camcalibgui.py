@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5 import QtWidgets as QtW
 import llspy
 from llspy import camcalib
+from llspy.util import getAbsoluteResourcePath
 import numpy as np
 import os
 import sys
@@ -77,7 +78,7 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
         self.setupUi(self)  # method inherited from form_class to init UI
         self.setWindowTitle("Flash4.0 Charge Carryover Correction")
         self.abortButton.hide()
-        self.picture.setPixmap(QtGui.QPixmap(os.path.join(thisDirectory, "before_after.png")))
+        self.picture.setPixmap(QtGui.QPixmap(getAbsoluteResourcePath("gui/before_after.png")))
         self.progressBar.setValue(0)
         self.statusLabel.setText('Select folder and press run...')
 
