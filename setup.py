@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 from codecs import open
-import os
 from os import path
 import sys
 
@@ -19,14 +18,9 @@ with open('LICENSE.txt') as f:
     LICENSE = f.read()
 
 if sys.platform.startswith('win32'):
-    DATA_FILES = [
-        ('Library\\bin', ['llspy\\bin\\libfftw3f-3.dll'])
-    ]
+    DATA_FILES = []
 elif sys.platform.startswith('darwin'):
-    DATA_FILES = [
-        ('lib', [os.path.join('llspy', 'lib', f) for f in
-                 os.listdir('llspy/lib') if f.endswith('dylib')])
-    ]
+    DATA_FILES = []
 else:
     DATA_FILES = []
 
