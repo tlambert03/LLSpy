@@ -43,6 +43,8 @@ requirements:
     - llspylibs
     - pathlib2 # [py2k]
     - configparser # [py2k]
+    - pigz # [win]
+    - lbzip2 # [not win]
 
 test:
   imports:
