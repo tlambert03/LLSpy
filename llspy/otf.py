@@ -2,46 +2,14 @@ from . import config
 from . import plib
 import re
 import ctypes
-import sys
 import os
 import logging
 import numpy as np
+from .util import load_lib
 from datetime import datetime, timedelta
 
 
-# get specific library by platform
-if sys.platform.startswith('darwin'):
-    libname = 'libradialft.dylib'
-    # this seems to be necessary for pyinstaller to find it?
-    try:
-        ctypes.CDLL('libradialft.dylib')
-    except Exception:
-        pass
-elif sys.platform.startswith('win32'):
-    libname = 'libradialft.dll'
-else:
-    libname = 'libradialft.so'
-
-# by defatul ctypes uses ctypes.util.find_library() which will search
-# the LD_LIBRARY_PATH or DYLD_LIBRARY_PATH for the library name
-# this method is preferable for bundling the app with pyinstaller
-# however, for ease of development, we fall back on the local libraries
-# in llspy/lib
-
-try:
-    otflib = ctypes.CDLL(libname)
-    logging.debug("Loaded libradialft: " + os.path.abspath(libname))
-except OSError:
-    try:
-        filedir = os.path.dirname(__file__)
-        libdir = os.path.abspath(os.path.join(filedir, 'lib'))
-        cwd = os.getcwd()
-        os.chdir(libdir)
-        otflib = ctypes.CDLL(libname)
-        logging.debug("Loaded libradialft: " + os.path.abspath(libname))
-        os.chdir(cwd)
-    except Exception:
-        otflib = None
+otflib = load_lib('libradialft')
 
 if not otflib:
     logging.warn('COULD NOT LOAD libradialft!  Confirm that FFTW is installed')

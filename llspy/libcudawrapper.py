@@ -3,46 +3,9 @@ import numpy as np
 import os
 import sys
 import logging
+from .util import load_lib
 
-
-# get specific library by platform
-if sys.platform.startswith('darwin'):
-    libname = 'libcudaDeconv.dylib'
-    # this seems to be necessary for pyinstaller to find it?
-    try:
-        ctypes.CDLL('libcudaDeconv.dylib')
-    except Exception:
-        pass
-elif sys.platform.startswith('win32'):
-    libname = 'libcudaDeconv.dll'
-else:
-    libname = 'libcudaDeconv.so'
-
-# by defatul ctypes uses ctypes.util.find_library() which will search
-# the LD_LIBRARY_PATH or DYLD_LIBRARY_PATH for the library name
-# this method is preferable for bundling the app with pyinstaller
-# however, for ease of development, we fall back on the local libraries
-# in llspy/lib
-
-# if getattr(sys, 'frozen', False) and sys.platform.startswith('darwin'):
-#   #libname = os.path.join('lib', libname)
-#   libname = util.getAbsoluteResourcePath(libname)
-#   print("BUNDLED libcudaDeconv library path: {}".format(libname))
-
-try:
-    cudaLib = ctypes.CDLL(libname)
-    logging.debug("Loaded libcudaDeconv: " + os.path.abspath(libname))
-except OSError:
-    try:
-        filedir = os.path.dirname(__file__)
-        libdir = os.path.abspath(os.path.join(filedir, 'lib'))
-        cwd = os.getcwd()
-        os.chdir(libdir)
-        cudaLib = ctypes.CDLL(libname)
-        logging.debug("Loaded libcudaDeconv: " + os.path.abspath(libname))
-        os.chdir(cwd)
-    except Exception:
-        cudaLib = None
+cudaLib = load_lib('libcudaDeconv')
 
 if not cudaLib:
     logging.warn('COULD NOT LOAD libcudaDeconv!  Confirm that CUDA and FFTW are installed')
