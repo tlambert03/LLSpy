@@ -5,7 +5,14 @@ import warnings
 import tifffile
 import numpy as np
 import json
+import ctypes
 
+
+PLAT = sys.platform
+if PLAT == 'linux2':
+    PLAT = 'linux'
+elif PLAT == 'cygwin':
+    PLAT = 'win32'
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
@@ -57,17 +64,40 @@ def format_size(size):
         size /= 1024.0
 
 
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
 def which(program):
     """Check if program is exectuable.  Return path to bin if so"""
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    if program is None:
+        return None
+
     fpath, fname = os.path.split(program)
     if fpath:
         if is_exe(program):
             return program
     else:
+        try:
+            base = sys._MEIPASS
+            if is_exe(os.path.join(base, program)):
+                return os.path.join(base, program)
+            elif is_exe(os.path.join(base, 'bin', program)):
+                return os.path.join(base, 'bin', program)
+        except AttributeError:
+            pass
+
         for path in os.environ["PATH"].split(os.pathsep):
             path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+        binpaths = ['bin', 'Library/bin', '../../llspylibs/{}/bin'.format(PLAT)]
+        for path in binpaths:
+            path = os.path.abspath(getAbsoluteResourcePath(path))
+            if not os.path.isdir(path):
+                continue
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
@@ -127,8 +157,10 @@ def reorderstack(arr, inorder='zyx', outorder='tzcyx'):
     arr = np.transpose(arr, [inorder.find(n) for n in outorder])
     return arr
 
+
 def imshow(*args, **kwargs):
     return tifffile.imshow(*args, **kwargs)
+
 
 def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
     """sample wrapper for tifffile.imsave imagej=True."""
@@ -174,6 +206,47 @@ def getAbsoluteResourcePath(relativePath):
         return None
 
     return path
+
+
+def load_lib(libname):
+    """load shared library, searching a number of likely paths
+    """
+    # first just try to find it on the search path
+
+    searchlist = ['./lib',
+                  os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'lib'),
+                  os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'Library', 'bin'),
+                  '../../llspylibs/{}/lib/'.format(PLAT),
+                  '../llspylibs/{}/lib/'.format(PLAT),
+                  '.']
+
+    ext = {'linux': '.so',
+           'win32': '.dll',
+           'darwin': '.dylib'}
+
+    if not libname.endswith(('.so', '.dll', '.dylib')):
+        libname += ext[PLAT]
+
+    for f in searchlist:
+        try:
+            d = getAbsoluteResourcePath(f)
+            return ctypes.CDLL(os.path.abspath(os.path.join(d, libname)))
+        except Exception:
+            continue
+
+    #last resort, chdir into each dir
+    curdir = os.path.abspath(os.curdir)
+    for f in searchlist:
+        try:
+            d = os.path.abspath(getAbsoluteResourcePath(f))
+            if os.path.isdir(d):
+                os.chdir(d)
+                lib = ctypes.CDLL(libname)
+                os.chdir(curdir)
+                return lib
+            raise Exception('didn\'t find it')
+        except Exception:
+            continue
 
 
 def shortname(path, parents=2):
