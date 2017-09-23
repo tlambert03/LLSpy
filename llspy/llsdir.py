@@ -128,7 +128,12 @@ def preview(E, tR=0, cR=None, **kwargs):
             E = LLSdir(E)
 
     if E.is_compressed():
-        E.decompress()
+        try:
+            E.decompress_partial(tRange=tR)
+        except Exception as e:
+            warnings.warn("ERROR: could not do partial decompression...")
+            warnings.warn(str(e))
+            E.decompress()
 
     if not E.ready_to_process:
         if not E.has_lls_tiffs:
@@ -144,6 +149,8 @@ def preview(E, tR=0, cR=None, **kwargs):
     out = []
     for timepoint in P.tRange:
         stacks = [util.imread(f) for f in E.get_files(c=P.cRange, t=timepoint)]
+        if not stacks:
+            continue
         # print("shape_raw: {}".format(stacks[0].shape))
         if P.correctFlash:
             camparams = CameraParameters(P.camparamsPath)
@@ -198,8 +205,10 @@ def preview(E, tR=0, cR=None, **kwargs):
 
         out.append(np.stack(stacks, 0))
 
-    return np.stack(out, 0) if len(out) > 1 else out[0]
-
+    if out:
+        return np.stack(out, 0) if len(out) > 1 else out[0]
+    else:
+        return None
 
 def process(E, binary=None, **kwargs):
     """Main method for easy processing of the folder"""
@@ -485,7 +494,9 @@ class LLSdir(object):
         self.parameters.nz, self.parameters.ny, self.parameters.nx = self.parameters.shape
 
     def is_compressed(self, subdir='.'):
-        return bool(len([s for s in self.path.joinpath(subdir).glob('*.bz2')]))
+        exts = "|".join(compress.EXTENTIONS.keys())
+        zips = [f for f in os.listdir(self.path.joinpath(subdir)) if re.search('.*({})$'.format(exts), f)]
+        return bool(len(zips))
 
     def has_been_processed(self):
         return bool(len([s for s in self.path.glob('*' + config.__OUTPUTLOG__)]))
@@ -512,6 +523,15 @@ class LLSdir(object):
             self.detect_parameters()
             self.read_tiff_header()
         return o
+
+    def decompress_partial(self, subfolder='.', tRange=None):
+        """attempt to extract a subset of the tarball,  tRange=None will yield t=0
+        """
+        compress.decompress_partial(str(self.path.joinpath(subfolder)), tRange)
+        if self.get_all_tiffs():
+            self.ditch_partial_tiffs()
+            self.detect_parameters()
+            self.read_tiff_header()
 
     def reduce_to_raw(self, keepmip=True, verbose=True):
         """
@@ -581,12 +601,15 @@ class LLSdir(object):
                 warnings.warn('cRange was larger than number of Channels! Excluding C > {}'.format(P.nc - 1))
             S.cRange = sorted([n for n in S.cRange if n < P.nc])
 
+        # FIXME: this has problems when the files do not start at stack0000
+        # or if they are not incrementing by 1 ... fix in E.parameters
         if S.tRange is None:
             S.tRange = range(self.parameters.nt)
         else:
             if np.max(list(S.tRange)) > (P.nt - 1):
                 warnings.warn('tRange was larger than number of Timepoints! Excluding T > {}'.format(P.nt - 1))
-            S.tRange = sorted([n for n in S.tRange if n < P.nt])
+            #S.tRange = sorted([n for n in S.tRange if n < P.nt])
+            S.tRange = sorted([n for n in S.tRange])
 
         # note: background should be forced to 0 if it is getting corrected
         # in the camera correction step
@@ -597,7 +620,7 @@ class LLSdir(object):
             S.background = [S.background] * len(list(S.cRange))
 
         if S.cropMode == 'auto':
-            wd = self.get_feature_width(pad=S.cropPad)
+            wd = self.get_feature_width(pad=S.cropPad, t=np.min(list(kwargs['tRange'])))
             S.width = wd['width']
             S.shift = wd['offset']
         elif S.cropMode == 'none':
@@ -713,10 +736,10 @@ class LLSdir(object):
             otfs[c] = otf
         return otfs
 
-    def get_feature_width(self, **kwargs):
+    def get_feature_width(self, t=0, **kwargs):
         # defaults background=100, pad=100, sigma=2
         w = {}
-        w.update(arrayfun.feature_width(self, **kwargs))
+        w.update(arrayfun.feature_width(self, t=t, **kwargs))
         # self.parameters.content_width = w['width']
         # self.parameters.content_offset = w['offset']
         # self.parameters.deskewed_nx = w['newX']
