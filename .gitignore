@@ -10,8 +10,10 @@ __pycache__/
 .Python
 env/
 build/
+_build/
 develop-eggs/
 dist/
+_dist/
 downloads/
 eggs/
 .eggs/
@@ -102,10 +104,6 @@ ENV/
 /_assets
 
 /_notes
-
-build*
-
-dist*
 
 /llspy/_crashlog.txt
 
