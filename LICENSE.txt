@@ -1,5 +1,0 @@
-Restricted License
-
-Copyright (c) 2017 Talley Lambert, All Rights Reserved
-
-This software is provided for evaluation only.  Redistribution is prohibited.
