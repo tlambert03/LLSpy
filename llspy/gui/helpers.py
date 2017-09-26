@@ -1,6 +1,4 @@
-from llspy import schema
 from PyQt5 import QtCore, QtWidgets
-import traceback
 import time
 import os
 import sys
@@ -160,40 +158,3 @@ def guirestore(widget, settings, default):
         except Exception:
             logging.warn('Unable to restore settings for object: {}'.format(name))
 
-
-class ExceptionHandler(QtCore.QObject):
-    """General class to handle all raise exception errors in the GUI"""
-    errorSignal = QtCore.pyqtSignal()
-    silentSignal = QtCore.pyqtSignal()
-    errorMessage = QtCore.pyqtSignal(str, str)
-
-    def __init__(self):
-        super(ExceptionHandler, self).__init__()
-
-    def handler(self, errorType, errValue, tback):
-        self.errorSignal.emit()
-        self.trap_exc_during_debug(errorType, errValue, tback)
-
-    def trap_exc_during_debug(self, errorType, errValue, tback):
-        # when app raises uncaught exception, print info
-        # traceback.print_exc()
-        if errorType.__module__ == 'voluptuous.error':
-            msgSplit = str(errValue).split('for dictionary value @ data')
-            customMsg = msgSplit[0].strip()
-            if len(customMsg) and customMsg != 'not a valid value':
-                self.errorMessage.emit(customMsg, '')
-            else:
-                errorKey = msgSplit[1].split("'")[1]
-                gotValue = msgSplit[1].split("'")[3]
-                schemaDefaults = schema.__defaults__
-                itemDescription = schemaDefaults[errorKey][1]
-                report = "Not a valid value for: {}\n\n".format(errorKey)
-                report += "({})".format(itemDescription)
-                self.errorMessage.emit(report, "Got value: {}".format(gotValue))
-        else:
-            self.errorMessage.emit(str(errValue), '')
-
-        print("!" * 50)
-        traceback.print_tb(tback)
-        print(errValue)
-        print("!" * 50)
