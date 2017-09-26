@@ -460,6 +460,9 @@ class LLSdir(object):
         self.tiff.count = []  # per channel list of number of tiffs
         self.parameters.wavelength = []
         self.parameters.interval = []
+        stacknum = re.compile('_stack(\d{4})_')
+        self.parameters.tset = {int(t.group(1)) for t in
+            [stacknum.search(s) for s in self.tiff.raw] if t}
         for c in range(6):
             q = [f for f in self.tiff.raw if '_ch' + str(c) in f]
             if len(q):
@@ -495,7 +498,7 @@ class LLSdir(object):
 
     def is_compressed(self, subdir='.'):
         exts = "|".join(compress.EXTENTIONS.keys())
-        zips = [f for f in os.listdir(self.path.joinpath(subdir)) if re.search('.*({})$'.format(exts), f)]
+        zips = [f for f in os.listdir(str(self.path.joinpath(subdir))) if re.search('.*({})$'.format(exts), f)]
         return bool(len(zips))
 
     def has_been_processed(self):
@@ -620,7 +623,8 @@ class LLSdir(object):
             S.background = [S.background] * len(list(S.cRange))
 
         if S.cropMode == 'auto':
-            wd = self.get_feature_width(pad=S.cropPad, t=np.min(list(kwargs['tRange'])))
+            wd = self.get_feature_width(pad=S.cropPad, t=np.min(list(S.tRange)))
+            #wd = self.get_feature_width(pad=S.cropPad, t=np.min(list(kwargs['tRange'])))
             S.width = wd['width']
             S.shift = wd['offset']
         elif S.cropMode == 'none':
@@ -718,20 +722,16 @@ class LLSdir(object):
         otfs = {}
         for c in range(self.parameters.nc):
             wave = self.parameters.wavelength[c]
+            mask = None
             if hasattr(self.settings, 'mask'):
                 innerNA = self.settings.mask.innerNA
                 outerNA = self.settings.mask.outerNA
-                # find the most recent otf that matches the mask settings
-                # in the PSF directory and append it to the channel dict...
-                try:
-                    otf = otfmodule.get_otf_by_date(self.date, wave, (innerNA, outerNA),
-                    otfpath=otfpath, direction='nearest')
-                except Exception:
-                    raise
-            else:
-                otf = str(os.path.join(otfpath, str(wave) + '_otf.tif'))
+                mask = (innerNA, outerNA)
+
+            otf = otfmodule.choose_otf(wave, otfpath, self.date, mask)
+
             if otf is None or not os.path.isfile(otf):
-                raise LLSpyError('Could not find OTF for '
+                raise otfmodule.OTFError('Could not find OTF for '
                     'wave {} in path: {}'.format(wave, otfpath))
             otfs[c] = otf
         return otfs
