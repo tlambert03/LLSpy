@@ -65,7 +65,11 @@ default_otf_pattern = re.compile(r"""
 
 
 def dir_has_otfs(dirname):
-    return any([psffile_pattern.search(t) or default_otf_pattern.search(t) for t in os.listdir(dirname)])
+    if os.path.isdir(str(dirname)):
+        if any([(psffile_pattern.search(t) or
+                 default_otf_pattern.search(t)) for t in os.listdir(dirname)]):
+            return True
+    return False
 
 
 def get_otf_dict(otfdir):
@@ -111,41 +115,53 @@ def get_otf_dict(otfdir):
     return otf_dict
 
 
-def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction='nearest'):
+def get_default_otf(wave, otfpath, approximate=True):
+    origwave = wave
+    otf_dict = get_otf_dict(otfpath)
+    waves_with_defaults = [k for k, v in otf_dict.items() if v['default'] is not None]
+    if wave not in waves_with_defaults:
+        if approximate:
+            for newwave in range(wave-8, wave+9):
+                if newwave in waves_with_defaults:
+                    wave = newwave
+    if wave in otf_dict:
+        return otf_dict[wave]['default']
+    else:
+        raise OTFError("No default OTF found for wavelength {}".format(origwave))
+
+
+def choose_otf(wave, otfpath, date=None, mask=None, direction='nearest', approximate=True):
     """return otf with date closest to requested date.
     if OTF doesn't exist, but PSF does, generate OTF and return the path.i
     direction can be {'nearest', 'before', 'after'}, where 'before' returns an
     OTF that was collected before 'date' and 'after' returns one that was
     collected after 'date.'
     """
-    if not os.path.isdir(str(otfpath)):
-        raise ("OTF path does not exist: {}".format(otfpath))
-        return None
+    if not dir_has_otfs(otfpath):
+        raise OTFError("Not a valid OTF path: {}".format(otfpath))
+    if not date:
+        date = datetime.now()
 
     otf_dict = get_otf_dict(otfpath)
     otflist = []
 
+    # if the exact wavelenght is not matched, look for similar wavelengths...
     if wave not in otf_dict:
-        # raise KeyError('Wave: {} not in otfdict: {}'.format(wave, otf_dict))
-        return None
-
-    # the mask NA has been provided, check to see if it's in the name of any of
-    # files in the otf folder
-    if mask is not None:
-        # if so return that otflist
-        if mask in otf_dict[wave]:
-            otflist = otf_dict[wave][mask]
-    else:
-        # otherwise
-        for k in otf_dict[wave].keys():
-            if k != 'default':
-                [otflist.append(i) for i in otf_dict[wave][k]]
-
-    if not otflist:
-        if os.path.isfile(otf_dict[wave]['default']):
-            return otf_dict[wave]['default']
+        if approximate:
+            for newwave in range(wave-8, wave+9):
+                if newwave in otf_dict:
+                    wave = newwave
+                    break
         else:
             return None
+
+    # if the mask has been provided, use the OTFs from that mask
+    if mask is not None and mask in otf_dict[wave]:
+        otflist = otf_dict[wave][mask]
+
+    # if still empty, just return the default
+    if not len(otflist):
+        return get_default_otf(wave, otfpath, approximate)
 
     if direction == 'nearest':
         minIdx = np.argmin([np.abs(i['date'] - date) for i in otflist])
@@ -161,54 +177,22 @@ def get_otf_by_date(date, wave, mask=None, otfpath=config.__OTFPATH__, direction
         raise ValueError('Unkown direction argument: {}'.format(direction))
 
     if minIdx is None:
-        if os.path.isfile(otf_dict[wave]['default']):
-            return otf_dict[wave]['default']
-        else:
-            return None
+        return get_default_otf(wave, otfpath, approximate)
 
     matching_otfs = [i for i in otflist
         if i['date'] == otflist[minIdx]['date'] and i['form'] == 'otf']
     if len(matching_otfs):
-        if os.path.isfile(matching_otfs[0]['path']):
-            return matching_otfs[0]['path']
-        else:
-            return None
+        return matching_otfs[0]['path']
     else:
         matching_psfs = [i for i in otflist
             if i['date'] == otflist[minIdx]['date'] and i['form'] == 'psf']
         if matching_psfs:
             # generate new OTF from PSF
-            path = matching_psfs[0]['path']
-            otf = makeotf(path, lambdanm=int(wave), bDoCleanup=False)
+            return makeotf(matching_psfs[0]['path'], lambdanm=int(wave), bDoCleanup=False)
 
-            if os.path.isfile(otf):
-                return otf
-            else:
-                return None
+    return get_default_otf(wave, otfpath, approximate)
 
 
-# class OTFbin(CUDAbin):
-#   """docstring for MakeOTF"""
+class OTFError(Exception):
 
-#   def __init__(self, binPath=config.__RADIALFT__):
-#       super(OTFbin, self).__init__(binPath)
-
-#   def process(self, inpath, **options):
-#       cmd = [self.path]
-#       outfile = inpath.replace('.tif', '_otf.tif')
-#       options.update({
-#           'input-file': inpath,
-#           'output-file': outfile,
-#           'fixorigin': '10',
-#           'nocleanup': True,
-#       })
-#       for o in options:
-#           if self.has_option('--' + o):
-#               if isinstance(options[o], bool):
-#                   cmd.extend(['--' + o])
-#               else:
-#                   cmd.extend(['--' + o, str(options[o])])
-#           else:
-#               logging.warn('Warning: option not recognized, ignoring: {}'.format(o))
-#       if self._run_command(cmd):
-#           return outfile
+    pass
