@@ -39,12 +39,13 @@ requirements:
     - pyqt >=5
     - click
     - matplotlib
-    - spimagine
+    - spimagine # [not linux]
     - llspylibs
     - pathlib2 # [py2k]
     - configparser # [py2k]
     - pigz # [win]
     - lbzip2 # [not win]
+    - raven
 
 test:
   imports:
