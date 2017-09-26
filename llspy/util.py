@@ -95,12 +95,13 @@ def which(program):
 
         binpaths = ['bin', 'Library/bin', '../../llspylibs/{}/bin'.format(PLAT)]
         for path in binpaths:
-            path = os.path.abspath(getAbsoluteResourcePath(path))
-            if not os.path.isdir(path):
-                continue
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
+            path = getAbsoluteResourcePath(path)
+            if path:
+                path = os.path.abspath(path)
+                if os.path.isdir(path):
+                    exe_file = os.path.join(path, program)
+                    if is_exe(exe_file):
+                        return exe_file
 
     if sys.platform.startswith('win32') and not program.endswith('.exe'):
         return which(program + ".exe")
