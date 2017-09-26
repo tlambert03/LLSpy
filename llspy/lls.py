@@ -447,8 +447,7 @@ def deskew():
 @cli.command()
 def gui():
     """Launch LLSpy Graphical User Interface"""
-    from llspy.gui import llspygui
-    from llspy.gui import helpers
+    from llspy.gui import llspygui, exceptions
     from PyQt5 import QtWidgets as QtW
 
     app = QtW.QApplication(sys.argv)
@@ -456,9 +455,9 @@ def gui():
     mainGUI.show()
     mainGUI.raise_()
 
-    exceptionHandler = helpers.ExceptionHandler()
+    exceptionHandler = exceptions.ExceptionHandler()
     sys.excepthook = exceptionHandler.handler
-    exceptionHandler.errorMessage.connect(mainGUI.show_general_error)
+    exceptionHandler.errorMessage.connect(mainGUI.show_error_window)
 
     sys.exit(app.exec_())
 
