@@ -17,3 +17,4 @@ dependencies:
   - pyqt
   - pyopencl
   - spimagine
+  - raven
