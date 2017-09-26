@@ -129,6 +129,21 @@ class CameraROI(np.ndarray):
 			return True
 
 
+def seemsValidCamParams(path):
+	data = imread(path)
+	if not data.ndim == 3:
+		return False
+	if not data.shape[0] >= 3:
+		return False
+	# third plane should be a dark image, usually offset around 100
+	if not (50 < data[2].mean() < 250):
+		return False
+	# second plane is that rate of association, usually very low
+	if data[1].mean() > 1:
+		return False
+	return True
+
+
 class CameraParameters(object):
 	"""Class to store parameters for camera correction
 
