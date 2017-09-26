@@ -31,8 +31,19 @@ def filepath(v):
 
 
 def nGPU(binary):
-    output = subprocess.check_output([binary, '-Q'])
-    return int(re.match(b'Detected\s(?P<numGPU>\d+)\sCUDA', output).groups()[0])
+    try:
+        output = subprocess.check_output([binary, '-Q'])
+        return int(re.match(b'Detected\s(?P<numGPU>\d+)\sCUDA', output).groups()[0])
+    except Exception:
+        return 0
+
+
+def is_cudaDeconv(path):
+    try:
+        h = subprocess.check_output([path, '--help'])
+        return all(a in str(h) for a in ('dzdata', 'deskew', 'input-dir', 'otf-file'))
+    except Exception:
+        return False
 
 
 def get_bundled_binary(name='cudaDeconv'):
