@@ -269,6 +269,9 @@ As done in Amat et al 2015</string>
                  <property name="alignment">
                   <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                  </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
                  <property name="placeholderText">
                   <string>path to TIFF file with measured camera parameters</string>
                  </property>
@@ -625,8 +628,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>467</width>
-             <height>227</height>
+             <width>547</width>
+             <height>267</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1144,7 +1147,7 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>534</width>
+             <width>547</width>
              <height>299</height>
             </rect>
            </property>
@@ -1908,6 +1911,9 @@ after processing to save space.</string>
           <property name="text">
            <string>/usr/local/cudaDeconv</string>
           </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
           <property name="placeholderText">
            <string>path to cudaDeconv binary</string>
           </property>
@@ -2089,6 +2095,9 @@ preview of the dataset for later review.</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
           </property>
           <property name="placeholderText">
            <string>path to directory with PSFs/OTFs</string>
