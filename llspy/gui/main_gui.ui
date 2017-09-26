@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="focusPolicy">
-   <enum>Qt::TabFocus</enum>
+   <enum>Qt::ClickFocus</enum>
   </property>
   <property name="windowTitle">
    <string>Main_GUI</string>
@@ -148,7 +148,7 @@ Press process button below when ready.</string>
            </font>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
@@ -625,8 +625,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>267</height>
+             <width>467</width>
+             <height>227</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1144,7 +1144,7 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
+             <width>534</width>
              <height>299</height>
             </rect>
            </property>
@@ -1757,6 +1757,19 @@ minimize the appearance of photobleaching.</string>
                </widget>
               </item>
               <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
                <widget class="QCheckBox" name="compressRawCheckBox">
                 <property name="toolTip">
                  <string>Compress the raw data files
@@ -1768,9 +1781,32 @@ after processing to save space.</string>
                </widget>
               </item>
               <item>
-               <widget class="QComboBox" name="comboBox">
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>Type:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="compressTypeCombo">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="minimumSize">
                  <size>
@@ -1788,18 +1824,8 @@ after processing to save space.</string>
                  <bool>false</bool>
                 </property>
                 <property name="currentIndex">
-                 <number>0</number>
+                 <number>-1</number>
                 </property>
-                <item>
-                 <property name="text">
-                  <string>lbzip2</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>pigz</string>
-                 </property>
-                </item>
                </widget>
               </item>
              </layout>
@@ -1828,7 +1854,7 @@ after processing to save space.</string>
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="12" column="0">
+        <item row="13" column="0">
          <widget class="QLabel" name="previewBackendLabel">
           <property name="text">
            <string>Preview Type</string>
@@ -1841,7 +1867,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="13" column="2">
+        <item row="14" column="2">
          <spacer name="configTabVertSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -1887,7 +1913,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="15" column="0">
+        <item row="16" column="0">
          <widget class="QLabel" name="watchModeLabel">
           <property name="enabled">
            <bool>false</bool>
@@ -1900,7 +1926,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="14" column="2">
+        <item row="15" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -1949,7 +1975,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="14" column="6">
+        <item row="15" column="6">
          <widget class="QToolButton" name="watchDirToolButton">
           <property name="enabled">
            <bool>false</bool>
@@ -1975,7 +2001,7 @@ after processing to save space.</string>
           </property>
          </widget>
         </item>
-        <item row="11" column="2">
+        <item row="12" column="2">
          <spacer name="configTabVertSpacer_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -2049,7 +2075,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="14" column="0">
+        <item row="15" column="0">
          <widget class="QCheckBox" name="watchDirCheckBox">
           <property name="text">
            <string>Watch Directory:</string>
@@ -2069,7 +2095,24 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="12" column="2">
+        <item row="10" column="2">
+         <widget class="QCheckBox" name="confirmOnQuitCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Warn when quitting with unprocessed items</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="2">
          <widget class="QGroupBox" name="previewBackendGroupBox">
           <property name="title">
            <string notr="true"/>
@@ -2107,7 +2150,7 @@ preview of the dataset for later review.</string>
           </layout>
          </widget>
         </item>
-        <item row="15" column="2">
+        <item row="16" column="2">
          <widget class="QGroupBox" name="watchModeGroupBox">
           <property name="enabled">
            <bool>false</bool>
@@ -2166,8 +2209,13 @@ in the main window, and processed in turn.</string>
           </layout>
          </widget>
         </item>
-        <item row="10" column="2">
-         <widget class="QCheckBox" name="confirmOnQuitCheckBox">
+        <item row="17" column="2">
+         <widget class="QCheckBox" name="errorOptOutCheckBox">
+          <property name="font">
+           <font>
+            <pointsize>13</pointsize>
+           </font>
+          </property>
           <property name="toolTip">
            <string>The &quot;reduce to raw&quot; function deletes all
 processed data, leaving only the original
@@ -2176,10 +2224,11 @@ folders found, as a smaller-sized
 preview of the dataset for later review.</string>
           </property>
           <property name="text">
-           <string>Warn when quitting with unprocessed items</string>
+           <string> Opt out of automatic error reporting. 
+ (Leaving this disabled helps us fix bugs in the program!)</string>
           </property>
           <property name="checked">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -2280,6 +2329,9 @@ p, li { white-space: pre-wrap; }
            <height>16777215</height>
           </size>
          </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes. &lt;br&gt;For instance: '0,2-3'&lt;br&gt;NOTE: channels are zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -2304,6 +2356,9 @@ p, li { white-space: pre-wrap; }
            <width>80</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
          </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -2362,6 +2417,9 @@ p, li { white-space: pre-wrap; }
            <height>16777215</height>
           </size>
          </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes. &lt;br&gt;For instance: '0,2-3'&lt;br&gt;NOTE: channels are zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -2386,6 +2444,9 @@ p, li { white-space: pre-wrap; }
            <width>80</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
          </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to process. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -2491,11 +2552,12 @@ QProgressBar::chunk:horizontal {
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionQuit"/>
     <addaction name="actionOpen_LLSdir"/>
     <addaction name="separator"/>
     <addaction name="actionSave_Settings_as_Default"/>
     <addaction name="actionLoad_Default_Settings"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -2513,6 +2575,14 @@ QProgressBar::chunk:horizontal {
     <addaction name="actionAbort"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuLLSpy">
+    <property name="title">
+     <string>LLSpy</string>
+    </property>
+    <addaction name="actionAbout_LLSpy"/>
+    <addaction name="actionHelp"/>
+   </widget>
+   <addaction name="menuLLSpy"/>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuProcess"/>
@@ -2530,6 +2600,7 @@ QProgressBar::chunk:horizontal {
    <addaction name="actionReduce_to_Raw"/>
    <addaction name="actionCompress_Folder"/>
    <addaction name="actionDecompress_Folder"/>
+   <addaction name="actionFreeze"/>
    <addaction name="actionConcatenate"/>
    <addaction name="actionRename_Scripted"/>
   </widget>
@@ -2650,6 +2721,21 @@ and restore folder to it's original state
     <string>Ctrl+Shift+W</string>
    </property>
   </action>
+  <action name="actionAbout_LLSpy">
+   <property name="text">
+    <string>About LLSpy</string>
+   </property>
+  </action>
+  <action name="actionFreeze">
+   <property name="text">
+    <string>Freeze</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="text">
+    <string>Help</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
@@ -2677,7 +2763,7 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>500</x>
+     <x>460</x>
      <y>585</y>
     </hint>
     <hint type="destinationlabel">
@@ -2709,12 +2795,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>330</x>
-     <y>458</y>
+     <x>317</x>
+     <y>413</y>
     </hint>
     <hint type="destinationlabel">
-     <x>451</x>
-     <y>460</y>
+     <x>438</x>
+     <y>415</y>
     </hint>
    </hints>
   </connection>
@@ -2725,12 +2811,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>330</x>
-     <y>458</y>
+     <x>317</x>
+     <y>413</y>
     </hint>
     <hint type="destinationlabel">
-     <x>549</x>
-     <y>460</y>
+     <x>536</x>
+     <y>415</y>
     </hint>
    </hints>
   </connection>
@@ -2741,12 +2827,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>330</x>
-     <y>458</y>
+     <x>317</x>
+     <y>413</y>
     </hint>
     <hint type="destinationlabel">
-     <x>393</x>
-     <y>460</y>
+     <x>380</x>
+     <y>415</y>
     </hint>
    </hints>
   </connection>
@@ -2757,12 +2843,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>330</x>
-     <y>458</y>
+     <x>317</x>
+     <y>413</y>
     </hint>
     <hint type="destinationlabel">
-     <x>493</x>
-     <y>460</y>
+     <x>480</x>
+     <y>415</y>
     </hint>
    </hints>
   </connection>
@@ -2773,12 +2859,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>487</x>
-     <y>526</y>
+     <x>474</x>
+     <y>481</y>
     </hint>
     <hint type="destinationlabel">
-     <x>558</x>
-     <y>528</y>
+     <x>545</x>
+     <y>483</y>
     </hint>
    </hints>
   </connection>
@@ -2789,8 +2875,8 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>201</x>
-     <y>382</y>
+     <x>159</x>
+     <y>386</y>
     </hint>
     <hint type="destinationlabel">
      <x>301</x>
@@ -2805,12 +2891,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>86</x>
-     <y>610</y>
+     <x>53</x>
+     <y>604</y>
     </hint>
     <hint type="destinationlabel">
-     <x>581</x>
-     <y>611</y>
+     <x>565</x>
+     <y>603</y>
     </hint>
    </hints>
   </connection>
@@ -2821,12 +2907,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>86</x>
-     <y>610</y>
+     <x>53</x>
+     <y>604</y>
     </hint>
     <hint type="destinationlabel">
-     <x>316</x>
-     <y>610</y>
+     <x>176</x>
+     <y>603</y>
     </hint>
    </hints>
   </connection>
@@ -2837,12 +2923,12 @@ and restore folder to it's original state
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>199</x>
-     <y>106</y>
+     <x>185</x>
+     <y>87</y>
     </hint>
     <hint type="destinationlabel">
-     <x>190</x>
-     <y>133</y>
+     <x>176</x>
+     <y>113</y>
     </hint>
    </hints>
   </connection>
@@ -2853,12 +2939,12 @@ and restore folder to it's original state
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>199</x>
-     <y>106</y>
+     <x>185</x>
+     <y>87</y>
     </hint>
     <hint type="destinationlabel">
-     <x>62</x>
-     <y>134</y>
+     <x>44</x>
+     <y>113</y>
     </hint>
    </hints>
   </connection>
@@ -2869,12 +2955,12 @@ and restore folder to it's original state
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>199</x>
-     <y>106</y>
+     <x>185</x>
+     <y>87</y>
     </hint>
     <hint type="destinationlabel">
-     <x>581</x>
-     <y>134</y>
+     <x>565</x>
+     <y>113</y>
     </hint>
    </hints>
   </connection>
@@ -2886,11 +2972,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>138</x>
-     <y>458</y>
+     <y>413</y>
     </hint>
     <hint type="destinationlabel">
      <x>172</x>
-     <y>463</y>
+     <y>418</y>
     </hint>
    </hints>
   </connection>
@@ -2902,11 +2988,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>138</x>
-     <y>458</y>
+     <y>413</y>
     </hint>
     <hint type="destinationlabel">
      <x>228</x>
-     <y>459</y>
+     <y>414</y>
     </hint>
    </hints>
   </connection>
@@ -2917,12 +3003,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>110</x>
-     <y>460</y>
+     <x>129</x>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
-     <x>255</x>
-     <y>458</y>
+     <x>295</x>
+     <y>526</y>
     </hint>
    </hints>
   </connection>
@@ -2933,12 +3019,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>144</x>
-     <y>460</y>
+     <x>151</x>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
-     <x>295</x>
-     <y>460</y>
+     <x>335</x>
+     <y>528</y>
     </hint>
    </hints>
   </connection>
@@ -2949,12 +3035,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>141</x>
-     <y>460</y>
+     <x>151</x>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
-     <x>330</x>
-     <y>460</y>
+     <x>370</x>
+     <y>528</y>
     </hint>
    </hints>
   </connection>
@@ -2966,11 +3052,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>151</x>
-     <y>460</y>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
-     <x>365</x>
-     <y>460</y>
+     <x>405</x>
+     <y>528</y>
     </hint>
    </hints>
   </connection>
@@ -2981,12 +3067,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>107</x>
-     <y>607</y>
+     <x>53</x>
+     <y>604</y>
     </hint>
     <hint type="destinationlabel">
-     <x>141</x>
-     <y>649</y>
+     <x>44</x>
+     <y>641</y>
     </hint>
    </hints>
   </connection>
@@ -2997,12 +3083,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>100</x>
+     <x>53</x>
      <y>604</y>
     </hint>
     <hint type="destinationlabel">
-     <x>299</x>
-     <y>638</y>
+     <x>176</x>
+     <y>641</y>
     </hint>
    </hints>
   </connection>
@@ -3013,12 +3099,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>68</x>
-     <y>610</y>
+     <x>53</x>
+     <y>604</y>
     </hint>
     <hint type="destinationlabel">
-     <x>347</x>
-     <y>652</y>
+     <x>272</x>
+     <y>665</y>
     </hint>
    </hints>
   </connection>
@@ -3029,28 +3115,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>109</x>
-     <y>605</y>
+     <x>53</x>
+     <y>604</y>
     </hint>
     <hint type="destinationlabel">
-     <x>532</x>
-     <y>652</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>compressRawCheckBox</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>comboBox</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>362</x>
+     <x>457</x>
      <y>665</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>509</x>
-     <y>662</y>
     </hint>
    </hints>
   </connection>
