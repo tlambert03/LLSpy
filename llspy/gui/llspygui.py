@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
@@ -17,31 +18,26 @@ sys.path.append(osp.join(thisDirectory, os.pardir, os.pardir))
 import llspy
 from llspy.gui.main_gui import Ui_Main_GUI
 from llspy.gui.camcalibgui import CamCalibDialog
-from llspy.gui.helpers import (newWorkerThread, ExceptionHandler,
+from llspy.gui.helpers import (newWorkerThread,
     wait_for_file_close, wait_for_folder_finished, byteArrayToString,
     shortname, string_to_iterable, guisave, guirestore)
-
 from llspy.gui.img_dialog import ImgDialog
+import llspy.gui.exceptions as err
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
 from PyQt5 import QtCore, QtGui
 from PyQt5 import QtWidgets as QtW
 
+_SPIMAGINE_IMPORTED = False
 try:
     #raise ImportError("skipping")
     from spimagine import DataModel, NumpyData
     from spimagine.models import imageprocessor
     from spimagine.gui.mainwidget import MainWidget as spimagineWidget
-    SPIMAGINE_IMPORTED = True
+    _SPIMAGINE_IMPORTED = True
 except ImportError:
-    SPIMAGINE_IMPORTED = False
     print("could not import spimagine!  falling back to matplotlib")
-
-# from raven import Client
-# client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
-#                 release=llspy.__version__)
-
 
 # import sys
 # sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
@@ -201,8 +197,7 @@ class LLSDragDropTable(QtW.QTableWidget):
 
     def keyPressEvent(self, event):
         super(LLSDragDropTable, self).keyPressEvent(event)
-        if (event.key() == QtCore.Qt.Key_Delete or
-                    event.key() == QtCore.Qt.Key_Backspace):
+        if (event.key() == QtCore.Qt.Key_Delete or event.key() == QtCore.Qt.Key_Backspace):
             indices = self.selectionModel().selectedRows()
             i = 0
             for index in sorted(indices):
@@ -237,7 +232,7 @@ class SubprocessWorker(QtCore.QObject):
         self.id = int(wid)
         self.binary = llspy.util.which(binary)
         if not binary:
-            raise OSError('Binary not found or not executable: {}'.format(self.binary))
+            raise err.MissingBinaryError('Binary not found or not executable: {}'.format(self.binary))
         self.args = args
         self.env = env
         self.polling_interval = 100
@@ -338,7 +333,7 @@ class CompressionWorker(SubprocessWorker):
                 binary = 'lbzip2'
         binary = llspy.util.which(binary)
         if not binary:
-            raise FileNotFoundError("No binary found for compression program: {}".format(binary))
+            raise err.MissingBinaryError("No binary found for compression program: {}".format(binary))
         super(CompressionWorker, self).__init__(binary, [], wid)
         self.path = path
         self.mode = mode
@@ -350,13 +345,19 @@ class CompressionWorker(SubprocessWorker):
             self.status_update.emit(
                 'Decompressing {}...'.format(shortname(self.path)), 0)
             tar_compressed = llspy.util.find_filepattern(self.path, '*.tar*')
+            tar_extension = os.path.splitext(tar_compressed)[1]
+            if not llspy.compress.EXTENTIONS[tar_extension] == self.binary:
+                self.binary = llspy.compress.EXTENTIONS[tar_extension]
             self.args = ['-dv', tar_compressed]
             self.process.finished.connect(
                 lambda: self.untar(os.path.splitext(tar_compressed)[0]))
 
         elif self.mode == 'compress':
             if llspy.util.find_filepattern(self.path, '*.tar*'):
-                raise IOError("There is already a compressed file in this directory")
+                raise err.LLSpyError('There is already a compressed file in '
+                    'directory: {}'.format(self.path),
+                    'If you would like to compress this directory, '
+                    'please remove any existing *.tar files')
             self.status_update.emit(
                 'Compressing {}...'.format(shortname(self.path)), 0)
             tarball = llspy.compress.tartiffs(self.path)
@@ -364,7 +365,7 @@ class CompressionWorker(SubprocessWorker):
             self.process.finished.connect(self.finished.emit)
 
         msg = '\nRunning {} thread_{} with args:\n{}\n'.format(
-            self.name, self.id, self.binary + " ".join(self.args))
+            self.name, self.id, self.binary + " " + " ".join(self.args))
         self.log_update.emit('~' * 20 + msg  + '~' * 20)
 
         self.process.start(self.binary, self.args)
@@ -391,14 +392,9 @@ class CompressionWorker(SubprocessWorker):
         # for some reason, lbzip2 puts its verbose output in stderr
         line = byteArrayToString(self.process.readAllStandardError())
         if line is not '':
-            if not self.binary == 'lbzip2':
-                self.log_update.emit("!!!!!! {} Error !!!!!!".format(self.name))
-                self.log_update.emit(line.rstrip())
-            else:
-                if 'compression ratio' in line:
-                    msg = line.split('compression ratio')[1]
-                    self.status_update.emit('Compression ratio' + msg, 4000)
-                self.log_update.emit(line.rstrip())
+            if '%' in line:
+                self.result_string = line
+            self.log_update.emit(line.rstrip())
 
 
 # class CorrectionWorker(QtCore.QObject):
@@ -422,9 +418,8 @@ class CompressionWorker(SubprocessWorker):
 #             self.E.correct_flash(trange=self.tRange, camparamsPath=self.camparams,
 #                                  median=self.median, target=self.target)
 #         except Exception:
-#             (excepttype, value, traceback) = sys.exc_info()
-#             sys.excepthook(excepttype, value, traceback)
 #             self.error.emit()
+#             raise
 
 #         self.finished.emit()
 
@@ -476,10 +471,8 @@ class LLSitemWorker(QtCore.QObject):
         try:
             self.P = self.E.localParams(**self.opts)
         except Exception:
-            (excepttype, value, traceback) = sys.exc_info()
-            sys.excepthook(excepttype, value, traceback)
             self.error.emit()
-            return
+            raise
 
         # we process one folder at a time. Progress bar updates per Z stack
         # so the maximum is the total number of timepoints * channels
@@ -511,10 +504,8 @@ class LLSitemWorker(QtCore.QObject):
                 # check the binary path and create object
                 binary = llspy.cudabinwrapper.CUDAbin(getCudaDeconvBinary())
             except Exception:
-                (excepttype, value, traceback) = sys.exc_info()
-                sys.excepthook(excepttype, value, traceback)
                 self.error.emit()
-                return
+                raise
 
             # generate all the channel specific cudaDeconv arguments for this item
             for chan in self.P.cRange:
@@ -664,8 +655,11 @@ class LLSitemWorker(QtCore.QObject):
         if self.P.writeLog:
             outname = str(self.E.path.joinpath('{}_{}'.format(self.E.basename,
                                 llspy.config.__OUTPUTLOG__)))
-            with open(outname, 'w') as outfile:
-                json.dump(self.P, outfile, cls=llspy.util.paramEncoder)
+            try:
+                with open(outname, 'w') as outfile:
+                    json.dump(self.P, outfile, cls=llspy.util.paramEncoder)
+            except FileNotFoundError:
+                self.log_update('ERROR: could not write processing log file.')
 
         self.finished.emit()
 
@@ -687,6 +681,7 @@ class TimePointWorker(QtCore.QObject):
     finished = QtCore.pyqtSignal()
     previewReady = QtCore.pyqtSignal(np.ndarray, float, float)
     error = QtCore.pyqtSignal()
+    updateCrop = QtCore.pyqtSignal(int, int)
 
     def __init__(self, path, tRange, cRange, opts, ditch_partial=True):
         super(TimePointWorker, self).__init__()
@@ -703,19 +698,17 @@ class TimePointWorker(QtCore.QObject):
             if previewStack is not None:
                 self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal)
 
+                # TODO: this needs to be a signal, but shold only be emitted when the caller
+                # was the preview button (not a watcher)
                 if self.opts['cropMode'] == 'auto':
-                    app = QtCore.QCoreApplication.instance()
-                    gui = next(w for w in app.topLevelWidgets() if isinstance(w, main_GUI))
                     wd = self.E.get_feature_width(pad=self.opts['cropPad'], t=np.min(self.tRange))
-                    gui.cropWidthSpinBox.setValue(wd['width'])
-                    gui.cropShiftSpinBox.setValue(wd['offset'])
+                    self.updateCrop.emit(wd['width'], wd['offset'])
             else:
-                raise ValueError("No stacks to preview... check tRange")
+                raise err.InvalidSettingsErroror("No stacks to preview... check tRange")
 
         except Exception:
-            (excepttype, value, traceback) = sys.exc_info()
-            sys.excepthook(excepttype, value, traceback)
             self.error.emit()
+            raise
 
         self.finished.emit()
 
@@ -844,7 +837,9 @@ class ActiveWatcher(QtCore.QObject):
             cRange = None  # TODO: plug this in
             self.tQueue = []
             w, thread = newWorkerThread(TimePointWorker, self.path, timepoints, cRange,
-                self.opts, False, workerConnect={'previewReady': self.writeFile},
+                self.opts, False, workerConnect={
+                    'previewReady': self.writeFile
+                },
                 start=True)
             self.worker = (timepoints, w, thread)
         elif not any((self.inProcess, len(self.tQueue), not self.allReceived)):
@@ -972,6 +967,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.previewButton.clicked.connect(self.onPreview)
         self.processButton.clicked.connect(self.onProcess)
         self.genFlashParams.clicked.connect(self.camcorDialog.show)
+        self.errorOptOutCheckBox.stateChanged.connect(self.toggleOptOut)
 
         self.watchDirToolButton.clicked.connect(self.changeWatchDir)
         self.watchDirCheckBox.stateChanged.connect(
@@ -1003,34 +999,29 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.previewTRangeLineEdit.setValidator(ctrangeValidator)
 
         # FIXME: this way of doing it clears the text field if you hit cancel
-        self.cudaDeconvPathToolButton.clicked.connect(lambda:
-            self.cudaDeconvPathLineEdit.setText(
-                QtW.QFileDialog.getOpenFileName(
-                    self, 'Choose cudaDeconv Binary', '/usr/local/bin/')[0]))
+        self.cudaDeconvPathToolButton.clicked.connect(self.setCudaDeconvPath)
+        self.otfFolderToolButton.clicked.connect(self.setOTFdirPath)
+        self.camParamTiffToolButton.clicked.connect(self.setCamParamPath)
 
-        self.otfFolderToolButton.clicked.connect(lambda:
-            self.otfFolderLineEdit.setText(
-                QtW.QFileDialog.getExistingDirectory(
-                    self, 'Set OTF Directory', '', QtW.QFileDialog.ShowDirsOnly)))
-
-        self.camParamTiffToolButton.clicked.connect(lambda:
-            self.camParamTiffLineEdit.setText(
-                QtW.QFileDialog.getOpenFileName(
-                    self, 'Chose Camera Parameters Tiff', '',
-                    "Image Files (*.png *.tif *.tiff)")[0]))
-
-        self.defaultRegCalibPathToolButton.clicked.connect(lambda:
-            self.defaultRegCalibPathLineEdit.setText(
-                QtW.QFileDialog.getExistingDirectory(
-                    self,
-                    'Set default Registration Calibration Directory',
-                    '', QtW.QFileDialog.ShowDirsOnly)))
+        # self.defaultRegCalibPathToolButton.clicked.connect(lambda:
+        #     self.defaultRegCalibPathLineEdit.setText(
+        #         QtW.QFileDialog.getExistingDirectory(
+        #             self,
+        #             'Set default Registration Calibration Directory',
+        #             '', QtW.QFileDialog.ShowDirsOnly)))
 
         self.RegCalibPathToolButton.clicked.connect(lambda:
             self.RegCalibPathLineEdit.setText(
                 QtW.QFileDialog.getExistingDirectory(
                     self, 'Set Registration Calibration Directory',
                     '', QtW.QFileDialog.ShowDirsOnly)))
+
+        self.availableCompression = []
+        # get compression options
+        for ctype in ['lbzip2', 'bzip2', 'pbzip2', 'pigz', 'gzip']:
+            if llspy.util.which(ctype) is not None:
+                self.availableCompression.append(ctype)
+        self.compressTypeCombo.addItems(self.availableCompression)
 
         # connect worker signals and slots
         self.sig_item_finished.connect(self.on_item_finished)
@@ -1044,13 +1035,17 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         self.watcherStatus = QtW.QLabel()
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
-        if self.watchDirCheckBox.isChecked():
-            self.startWatcher()
 
-        if not SPIMAGINE_IMPORTED:
+        if not _SPIMAGINE_IMPORTED:
             self.prevBackendMatplotlibRadio.setChecked(True)
             self.prevBackendSpimagineRadio.setDisabled(True)
             self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
+
+        self.show()
+        self.raise_()
+
+        if self.watchDirCheckBox.isChecked():
+            self.startWatcher()
 
     @QtCore.pyqtSlot()
     def startWatcher(self):
@@ -1177,15 +1172,22 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         w, thread = newWorkerThread(TimePointWorker, self.previewPath, tRange, cRange, self.lastopts,
             workerConnect={
-                            'previewReady': self.displayPreview
+                            'previewReady': self.displayPreview,
+                            'updateCrop': self.updateCrop,
                           }, start=True)
 
         w.finished.connect(lambda: self.previewButton.setEnabled(True))
+        w.error.connect(lambda: self.previewButton.setEnabled(True))
         self.previewthreads = (w, thread)
+
+    @QtCore.pyqtSlot(int, int)
+    def updateCrop(self, width, offset):
+        self.cropWidthSpinBox.setValue(width)
+        self.cropShiftSpinBox.setValue(offset)
 
     @QtCore.pyqtSlot(np.ndarray, float, float)
     def displayPreview(self, array, dx, dz, df=None):
-        if self.prevBackendSpimagineRadio.isChecked() and SPIMAGINE_IMPORTED:
+        if self.prevBackendSpimagineRadio.isChecked() and _SPIMAGINE_IMPORTED:
 
             if np.squeeze(array).ndim > 4:
                 arrays = [array[:, i] for i in range(array.shape[1])]
@@ -1203,25 +1205,36 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 win = spimagineWidget()
                 win.setAttribute(QtCore.Qt.WA_DeleteOnClose)
                 win.setModel(DataModel(NumpyData(arr)))
+                win.setWindowTitle(shortname(self.previewPath))
                 win.transform.setStackUnits(dx, dx, dz)
-                win.sliceWidget.checkSlice.setCheckState(2)
-                win.checkSliceView.setChecked(True)
                 win.transform.setGamma(0.9)
                 win.transform.setMax(vmax_init)
                 win.transform.setMin(vmin_init)
                 win.transform.setZoom(1.3)
+
+                # enable slice view by default
+                win.sliceWidget.checkSlice.setCheckState(2)
+                win.checkSliceView.setChecked(True)
                 win.sliceWidget.sliderSlice.setValue(int(arr.shape[-3]/2))
-                #win.impListView.add_image_processor(myImp())
-                #win.impListView.add_image_processor(imageprocessor.LucyRichProcessor())
+
+
+                # win.impListView.add_image_processor(myImp())
+                # win.impListView.add_image_processor(imageprocessor.LucyRichProcessor())
                 win.setLoopBounce(False)
                 win.settingsView.playInterval.setText('100')
 
                 win.resize(1500, 900)
                 win.show()
-                win.volSettingsView.colorCombo.setCurrentIndex(4)
-                #win.rotate()
                 win.raise_()
-                win.setWindowTitle(shortname(self.previewPath))
+
+                # mainwidget doesn't know what order the colormaps are in
+                colormaps = win.volSettingsView.colormaps
+                win.volSettingsView.colorCombo.setCurrentIndex(colormaps.index('inferno'))
+                win.sliceWidget.glSliceWidget.set_colormap('grays')
+
+                # could have it rotating by default
+                # win.rotate()
+
                 self.spimwins.append(win)
 
         else:
@@ -1229,8 +1242,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             # use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
 
             win = ImgDialog(array,
-                            info="\n".join(["{} = {}".format(k,v) for k,v in self.lastopts.items()]),
-                            title=shortname(self.previewPath))
+                info="\n".join(["{} = {}".format(k, v) for k, v in self.lastopts.items()]),
+                title=shortname(self.previewPath))
             self.spimwins.append(win)
 
     @QtCore.pyqtSlot()
@@ -1257,7 +1270,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.enableProcessButton()
             return
 
-        # store current options for this processing run.  ??? Unecessary?
+        # store current options for this processing run.  TODO: Unecessary?
         try:
             self.optionsOnProcessClick = self.getValidatedOptions()
             op = self.optionsOnProcessClick
@@ -1274,8 +1287,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         if not self.inProcess:  # for now, only one item allowed processing at a time
             self.inProcess = True
             self.process_next_item()
-            self.statusBar.showMessage('Starting processing ...')
-            self.inProcess = True
         else:
             self.log.append('ignoring request to process, already processing...')
 
@@ -1286,6 +1297,19 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         idx = 0  # might use this later to spawn more threads
         opts = self.optionsOnProcessClick
+
+        # check if already processed
+        if llspy.util.pathHasPattern(self.currentPath, '*' + llspy.config.__OUTPUTLOG__):
+            if not opts['reprocess']:
+                self.listbox.removePath(self.currentPath)
+                if self.listbox.rowCount() > 0:
+                    self.process_next_item()
+                else:
+                    self.inProcess = False
+                    self.on_proc_finished()
+                return
+
+        self.statusBar.showMessage('Starting processing ...')
         LLSworker, thread = newWorkerThread(LLSitemWorker, idx, self.currentPath,
             opts, workerConnect={
                 'finished': self.on_item_finished,
@@ -1331,17 +1355,17 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.processButton.setText('Process')
         self.actionRun.setEnabled(True)
         self.actionAbort.setDisabled(True)
+        self.inProcess = False
 
     @QtCore.pyqtSlot()
     def on_proc_finished(self):
-        self.enableProcessButton()
         # reinit statusbar and clock
         self.statusBar.showMessage('Ready')
         self.clock.display("00:00:00")
         self.inProcess = False
         self.aborted = False
-
         self.log.append("Processing Finished")
+        self.enableProcessButton()
 
     @QtCore.pyqtSlot()
     def on_item_finished(self):
@@ -1412,11 +1436,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             'regMode': self.channelRefModeCombo.currentText(),
             'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
             'compressRaw': self.compressRawCheckBox.isChecked(),
-            'reprocess': False,
+            'compressionType': self.compressTypeCombo.currentText(),
+            'reprocess': self.reprocessCheckBox.isChecked(),
             'width': self.cropWidthSpinBox.value(),
             'shift': self.cropShiftSpinBox.value(),
             'cropPad': self.autocropPadSpinBox.value(),
-            'reprocess': self.reprocessCheckBox.isChecked(),
             'background': (-1 if self.backgroundAutoRadio.isChecked()
                            else self.backgroundFixedSpinBox.value())
 
@@ -1425,7 +1449,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         }
 
         if options['nIters'] > 0 and not options['otfDir']:
-            raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
+            raise err.InvalidSettingsError(
+                'Deconvolution requested but no OTF available', 'Check OTF path')
 
         # otherwise a cudaDeconv error occurs... could FIXME in cudadeconv
         if not options['saveDeskewedRaw']:
@@ -1434,10 +1459,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         if options['correctFlash']:
             options['camparamsPath'] = self.camParamTiffLineEdit.text()
             if not osp.isfile(options['camparamsPath']):
-                raise ValueError('Flash pixel correction requested, camera parameters Tiff '
-                                 'not provided.\n\nCheck CamParam Tiff path on config tab.\n\n'
-                                 'For information on how to generate this file for your camera,'
-                                 ' see the help menu.')
+                raise err.InvalidSettingsError(
+                    'Flash pixel correction requested, but camera parameters file '
+                    'not provided.', 'Check CamParam Tiff path.\n\n'
+                    'For information on how to generate this file for your camera,'
+                    ' see documentation at llspy.readthedocs.io')
         else:
             options['camparamsPath'] = None
 
@@ -1452,14 +1478,16 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 options['regCalibDir'] = None
 
         if options['doReg'] and options['regCalibDir'] is None:
-            raise ValueError('Registration requested, but calibration folder '
-                             'not provided.\n\nCheck registration settings, or default '
-                             'registration folder in config tab.')
+            raise err.InvalidSettingsError(
+                'Registration requested, but calibration folder not provided.',
+                'Check registration settings, or default registration folder '
+                'in config tab.')
 
         if options['doReg'] and not osp.isdir(options['regCalibDir']):
-            raise ValueError('Registration requested, but calibration folder '
-                             'not a directory.\n\nCheck registration settings, or default '
-                             'registration folder in config tab.')
+            raise err.InvalidSettingsError(
+                'Registration requested, but calibration folder not a directory.'
+                'Check registration settings, or default registration folder in '
+                'config tab.')
 
         if self.croppingGroupBox.isChecked():
             if self.cropAutoRadio.isChecked():
@@ -1502,10 +1530,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 continue
 
             worker, thread = newWorkerThread(CompressionWorker, item, 'compress',
+                self.compressTypeCombo.currentText(),
                 workerConnect={
                     'log_update': self.log.append,
                     'status_update': self.statusBar.showMessage,
-                    'finished': lambda: self.statusBar.showMessage('Compression finished', 4000)
+                    # 'finished': lambda: self.statusBar.showMessage('Compression finished', 4000)
                 },
                 start=True)
             self.compressionThreads.append((worker, thread))
@@ -1518,6 +1547,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 continue
 
             worker, thread = newWorkerThread(CompressionWorker, item, 'decompress',
+                self.compressTypeCombo.currentText(),
                 workerConnect={
                     'log_update': self.log.append,
                     'status_update': self.statusBar.showMessage,
@@ -1538,15 +1568,69 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.listbox.removePath(item)
             [self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
 
-    @QtCore.pyqtSlot(str, str)
-    def show_general_error(self, errMsg, msgtext):
+    def toggleOptOut(self, value):
+        if value:
+            err._OPTOUT = True
+        else:
+            err._OPTOUT = False
+
+    @QtCore.pyqtSlot()
+    def setCudaDeconvPath(self, path=None):
+        if not path:
+            path = QtW.QFileDialog.getOpenFileName(self,
+                    'Choose cudaDeconv Binary', '/usr/local/bin/')[0]
+        if path:
+            if llspy.cudabinwrapper.is_cudaDeconv(path):
+                self.cudaDeconvPathLineEdit.setText(path)
+            else:
+                QtW.QMessageBox.critical(self, 'Invalid File',
+                    "That file does not appear to be a valid cudaDeconv exectuable",
+                    QtW.QMessageBox.Ok)
+
+    @QtCore.pyqtSlot()
+    def setOTFdirPath(self, path=None):
+        if not path:
+            path = QtW.QFileDialog.getExistingDirectory(self,
+                    'Choose OTF Directory', os.path.expanduser('~'), QtW.QFileDialog.ShowDirsOnly)
+        if path:
+            if llspy.otf.dir_has_otfs(path):
+                self.otfFolderLineEdit.setText(path)
+            else:
+                QtW.QMessageBox.warning(self, 'Invalid OTF Directory',
+                    "That folder does not appear to contain any OTF or PSF tif files",
+                    QtW.QMessageBox.Ok)
+
+    @QtCore.pyqtSlot()
+    def setCamParamPath(self, path=None):
+        if not path:
+            path = QtW.QFileDialog.getOpenFileName(self,
+                    'Choose camera parameters tiff',  os.path.expanduser('~'),
+                    "Image Files (*.tif *.tiff)")[0]
+        if path:
+            if llspy.camera.seemsValidCamParams(path):
+                self.camParamTiffLineEdit.setText(path)
+            else:
+                QtW.QMessageBox.critical(self, 'Invalid File',
+                    'That file does not appear to be a valid camera parameters tiff.  '
+                    'It must have >= 3 planes.  See llspy.readthedocs.io for details.',
+                    QtW.QMessageBox.Ok)
+
+
+    @QtCore.pyqtSlot(str, str, str, str)
+    def show_error_window(self, errMsg, title=None, info=None, detail=None):
         self.msgBox = QtW.QMessageBox()
+        if title is None or title is '':
+            title = "LLSpy Error"
+        self.msgBox.setWindowTitle(title)
+
+        # self.msgBox.setTextFormat(QtCore.Qt.RichText)
         self.msgBox.setIcon(QtW.QMessageBox.Warning)
         self.msgBox.setText(errMsg)
-        if msgtext is not '':
-            self.msgBox.setInformativeText(msgtext)
-        self.msgBox.setWindowTitle("LLSpy Error")
-        self.msgBox.show()
+        if info is not None and info is not '':
+            self.msgBox.setInformativeText(info+'\n')
+        if detail is not None and detail is not '':
+            self.msgBox.setDetailedText(detail)
+        self.msgBox.exec_()
 
     def closeEvent(self, event):
         ''' triggered when close button is clicked on main window '''
@@ -1565,7 +1649,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 self.confirmOnQuitCheckBox.setChecked(False) if value else
                 self.confirmOnQuitCheckBox.setChecked(True))
 
-            reply = box.exec()
+            reply = box.exec_()
             # reply = box.question(self, 'Unprocessed items!',
             #     "You have unprocessed items.  Are you sure you want to quit?",
             #     QtW.QMessageBox.Yes | QtW.QMessageBox.No,
@@ -1587,33 +1671,42 @@ def main():
     if 'test' in sys.argv:
         APP = QtW.QApplication(sys.argv)
         mainGUI = main_GUI()
-        mainGUI.show()
         time.sleep(.1)
         mainGUI.close()
         sys.exit(0)
     else:
+
         multiprocessing.freeze_support()
         APP = QtW.QApplication(sys.argv)
-        #dlg = LogWindow()
-        #dlg.show()
+        # dlg = LogWindow()
+        # dlg.show()
         mainGUI = main_GUI()
-        mainGUI.show()
-        mainGUI.raise_()
 
+        appicon = QtGui.QIcon(llspy.util.getAbsoluteResourcePath('gui/logo_dark.png'))
         if sys.platform.startswith('win32'):
-            appicon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, '_assets', 'llspy1.ico'))
             import ctypes
             myappid = 'llspy.LLSpy.' + llspy.__version__
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        else:
-            appicon = QtGui.QIcon(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, '_assets', 'llspy1.icns'))
 
         mainGUI.setWindowIcon(appicon)
         APP.setWindowIcon(appicon)
 
-        exceptionHandler = ExceptionHandler()
+        exceptionHandler = err.ExceptionHandler()
         sys.excepthook = exceptionHandler.handler
-        exceptionHandler.errorMessage.connect(mainGUI.show_general_error)
+        exceptionHandler.errorMessage.connect(mainGUI.show_error_window)
+
+        mainGUI.arr = np.random.rand(1, 10, 100, 100)
+        # for testing #################
+
+        def tester():
+            logger.warning('warning')
+            print(mainGUI.arr.shape)
+            mainGUI.arr = np.concatenate((mainGUI.arr, np.random.rand(1, 10, 100, 100)))
+            mainGUI.spimwins[0].setModel(DataModel(NumpyData(mainGUI.arr)))
+
+        mainGUI.shortcut = QtW.QShortcut(QtGui.QKeySequence("Ctrl+Shift+E"), mainGUI)
+        mainGUI.shortcut.activated.connect(tester)
+        # #############################
 
         sys.exit(APP.exec_())
 
