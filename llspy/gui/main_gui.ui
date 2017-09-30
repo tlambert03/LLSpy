@@ -628,8 +628,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>267</height>
+             <width>467</width>
+             <height>227</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1147,7 +1147,7 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
+             <width>534</width>
              <height>299</height>
             </rect>
            </property>
@@ -2220,11 +2220,6 @@ in the main window, and processed in turn.</string>
         </item>
         <item row="17" column="2">
          <widget class="QCheckBox" name="errorOptOutCheckBox">
-          <property name="font">
-           <font>
-            <pointsize>13</pointsize>
-           </font>
-          </property>
           <property name="toolTip">
            <string>The &quot;reduce to raw&quot; function deletes all
 processed data, leaving only the original
