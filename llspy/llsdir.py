@@ -512,6 +512,7 @@ class LLSdir(object):
             return False
 
     def compress(self, subfolder='.'):
+        logger.info('compressing %s...' % str(self.path.joinpath(subfolder)))
         return compress.compress(str(self.path.joinpath(subfolder)))
 
     def decompress(self, subfolder='.', **kwargs):
@@ -579,7 +580,7 @@ class LLSdir(object):
         if verbose:
             logger.info("freezing {} ...".format(self.path.name))
         if self.reduce_to_raw(verbose=verbose, keepmip=keepmip, **kwargs):
-            if self.compress(verbose=verbose, **kwargs):
+            if self.compress(**kwargs):
                 return 1
 
     def localParams(self, **kwargs):
