@@ -14,7 +14,7 @@ HERE = path.abspath(path.dirname(__file__))
 with open(path.join(HERE, 'README.rst'), encoding='utf-8') as f:
     README = f.read()
 
-with open('LICENSE.txt') as f:
+with open('LICENSE') as f:
     LICENSE = f.read()
 
 if sys.platform.startswith('win32'):
@@ -56,16 +56,25 @@ setup(
     author='Talley Lambert',
     author_email='talley.lambert@gmail.com',
     url='https://github.com/tlambert03/LLSpy2',
-    license='',
+    license='BSD 3-clause',
     packages=find_packages(exclude=('tests', 'docs', 'pyinstaller')),
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
-        'Topic :: Scientific/Engineering',
-
+        'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
+        'Operating System :: MacOS',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Visualization'
+
     ],
 
     python_requires='>=3.5',
@@ -88,8 +97,8 @@ setup(
     ],
     entry_points={
             'console_scripts': [
-                'lls = llspy.lls:cli',
-                'lls-gui = llspy.gui.llspygui:main'
+                'lls = llspy.bin.llspy_cli:cli',
+                'lls-gui = llspy.bin.llspy_gui:main'
             ],
     },
 )
