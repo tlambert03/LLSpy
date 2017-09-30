@@ -14,6 +14,7 @@ if PLAT == 'linux2':
 elif PLAT == 'cygwin':
     PLAT = 'win32'
 
+
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
@@ -42,6 +43,30 @@ def imread(*args, **kwargs):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return tifffile.imread(*args, **kwargs)
+
+
+def imshow(*args, **kwargs):
+    return tifffile.imshow(*args, **kwargs)
+
+
+def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
+    """sample wrapper for tifffile.imsave imagej=True."""
+    # array must be in TZCYX order
+    md = {
+        'unit': unit,
+        'spacing': dz,
+        'finterval': dt,
+        'hyperstack': 'true',
+        'mode': 'composite',
+        'loop': 'true',
+    }
+    bigT = True if arr.nbytes > 3758096384 else False  # > 3.5GB make a bigTiff
+    if arr.ndim == 3:
+        arr = reorderstack(arr)  # assume that 3 dimension array is ZYX
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        tifffile.imsave(outpath, arr, bigtiff=bigT, imagej=True,
+                        resolution=(1 / dx, 1 / dx), metadata=md)
 
 
 def getfoldersize(folder, recurse=False):
@@ -157,30 +182,6 @@ def reorderstack(arr, inorder='zyx', outorder='tzcyx'):
             inorder = i + inorder
     arr = np.transpose(arr, [inorder.find(n) for n in outorder])
     return arr
-
-
-def imshow(*args, **kwargs):
-    return tifffile.imshow(*args, **kwargs)
-
-
-def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
-    """sample wrapper for tifffile.imsave imagej=True."""
-    # array must be in TZCYX order
-    md = {
-        'unit': unit,
-        'spacing': dz,
-        'finterval': dt,
-        'hyperstack': 'true',
-        'mode': 'composite',
-        'loop': 'true',
-    }
-    bigT = True if arr.nbytes > 3758096384 else False  # > 3.5GB make a bigTiff
-    if arr.ndim == 3:
-        arr = reorderstack(arr)  # assume that 3 dimension array is ZYX
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        tifffile.imsave(outpath, arr, bigtiff=bigT, imagej=True,
-                        resolution=(1 / dx, 1 / dx), metadata=md)
 
 
 def getAbsoluteResourcePath(relativePath):
