@@ -259,18 +259,6 @@ To Do
 * implement real-time data viewer during acquisition
 * implement real-time data processing with folder-monitoring
 
-openCL troubleshooting on Linux
-===============================
-
-To Do
-=====
-
-* implement camera correction for two cameras
-* write tests
-* give better progress feedback when hitting preview button
-* allow cancel after hitting preview button
-* implement real-time data viewer during acquisition
-* implement real-time data processing with folder-monitoring
 
 .. openCL troubleshooting on Linux
 .. ===============================
