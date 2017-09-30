@@ -452,19 +452,8 @@ def deskew():
 @cli.command()
 def gui():
     """Launch LLSpy Graphical User Interface"""
-    from llspy.gui import llspygui, exceptions
-    from PyQt5 import QtWidgets as QtW
-
-    app = QtW.QApplication(sys.argv)
-    mainGUI = llspygui.main_GUI()
-    mainGUI.show()
-    mainGUI.raise_()
-
-    exceptionHandler = exceptions.ExceptionHandler()
-    sys.excepthook = exceptionHandler.handler
-    exceptionHandler.errorMessage.connect(mainGUI.show_error_window)
-
-    sys.exit(app.exec_())
+    from llspy.bin.llspy_gui import main
+    main()
 
 
 @cli.command()
@@ -540,7 +529,9 @@ def clean(config, all, configfile, logs):
 
 @cli.command(short_help='Install cudaDeconv libraries and binaries')
 @click.argument('path', type=click.Path(exists=True, file_okay=False, resolve_path=True))
-def install(path):
+@click.option('-n', '--dryrun', is_flag=True, default=False,
+              help='Just show what files would be moved to where')
+def install(path, dryrun):
     """Install cudaDeconv libraries and binaries to LLSPY.
 
     Provided PATH argument can be a LIB or BIN directory, or a parent
@@ -548,6 +539,11 @@ def install(path):
     library and binary files will be installed to the LLSpy installation.
 
     """
+    if os.environ.get('CONDA_DEFAULT_ENV', '') == 'root':
+      if not click.confirm('It looks like you\'re in the root conda environment... '
+        'It is recommended that you install llspy in its own environment.\n'
+        'Continue?'):
+        return
     libinstall.install(path)
 
 
