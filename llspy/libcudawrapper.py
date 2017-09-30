@@ -3,12 +3,13 @@ import numpy as np
 import os
 import sys
 import logging
+logger = logging.getLogger(__name__)
 from .util import load_lib
 
 cudaLib = load_lib('libcudaDeconv')
 
 if not cudaLib:
-    logging.warn('COULD NOT LOAD libcudaDeconv!  Confirm that CUDA and FFTW are installed')
+    logger.error('Could not load libcudaDeconv!  Read docs for more info')
 else:
     try:
         # Deskew is used when no decon is desired
@@ -93,7 +94,7 @@ else:
         RL_cleanup = cudaLib.RL_cleanup
 
     except AttributeError as e:
-        logging.warn('Failed to properly import libcudaDeconv')
+        logger.warning('Failed to properly import libcudaDeconv')
         print(e)
 
 

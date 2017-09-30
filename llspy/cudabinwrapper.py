@@ -1,9 +1,10 @@
+from . import util
 import os
 import sys
 import re
 import subprocess
 import logging
-from . import util
+logger = logging.getLogger(__name__)
 
 from voluptuous import (All, Any, Coerce, Length, Range, Exclusive, Schema,
     Required, REMOVE_EXTRA)
@@ -30,7 +31,9 @@ def filepath(v):
     return v
 
 
-def nGPU(binary):
+def nGPU(binary=None):
+    if binary is None:
+        binary = get_bundled_binary()
     try:
         output = subprocess.check_output([binary, '-Q'])
         return int(re.match(b'Detected\s(?P<numGPU>\d+)\sCUDA', output).groups()[0])
@@ -75,7 +78,7 @@ def get_bundled_binary(name='cudaDeconv'):
     if not util.which(binary):
         raise CUDAbinException('{} could not be located or is not executable: {}'.format(name, binary))
 
-    logging.debug("Found {} Binary: {}".format(name, os.path.abspath(binary)))
+    logger.debug("Found {} Binary: {}".format(name, os.path.abspath(binary)))
     return binary
 
 
@@ -306,7 +309,7 @@ class CUDAbin(object):
                 else:
                     arglist.extend(['--' + optname, str(options[o])])
             else:
-                logging.warn('Warning: option not recognized, ignoring: {}'.format(o))
+                logger.warn('Warning: option not recognized, ignoring: {}'.format(o))
 
         return arglist
 

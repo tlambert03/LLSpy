@@ -1,5 +1,3 @@
-from __future__ import print_function, division
-
 from . import plib
 from . import config
 from .settingstxt import LLSsettings
@@ -24,6 +22,9 @@ import re
 import glob
 import time
 import tifffile as tf
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -76,10 +77,7 @@ def correctTimepoint(fnames, camparams, outpath, medianFilter,
     outnames = [str(outpath.joinpath(os.path.basename(
         str(f).replace('.tif', '_COR.tif')))) for f in fnames]
     for n in range(len(outstacks)):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'),
-                    outnames[n])
+        util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'), outnames[n])
 
 
 def unwrapper(tup):
@@ -87,14 +85,12 @@ def unwrapper(tup):
 
 
 def filter_stack(filename, outname, dx, background, trim, medianFilter):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        stack = tf.imread(filename)
-        if medianFilter:
-            stack, _ = selectiveMedianFilter(stack, background)
-        if any([any(i) for i in trim]):
-            stack = arrayfun.trimedges(stack, trim)
-        util.imsave(util.reorderstack(np.squeeze(stack), 'zyx'), outname, dx=dx, dz=1)
+    stack = util.imread(filename)
+    if medianFilter:
+        stack, _ = selectiveMedianFilter(stack, background)
+    if any([any(i) for i in trim]):
+        stack = arrayfun.trimedges(stack, trim)
+    util.imsave(util.reorderstack(np.squeeze(stack), 'zyx'), outname, dx=dx, dz=1)
 
 
 def unbundle(group):
@@ -126,20 +122,21 @@ def preview(E, tR=0, cR=None, **kwargs):
     if not isinstance(E, LLSdir):
         if isinstance(E, str):
             E = LLSdir(E)
+    logger.debug("Preview called on {}".format(str(E.path)))
 
     if E.is_compressed():
         try:
             E.decompress_partial(tRange=tR)
         except Exception as e:
-            warnings.warn("ERROR: could not do partial decompression...")
-            warnings.warn(str(e))
+            logger.error("ERROR: could not do partial decompression...")
+            logger.error(str(e))
             E.decompress()
 
     if not E.ready_to_process:
         if not E.has_lls_tiffs:
-            warnings.warn('No TIFF files to process in {}'.format(E.path))
+            logger.warn('No TIFF files to process in {}'.format(E.path))
         if not E.has_settings:
-            warnings.warn('Could not find Settings.txt file in {}'.format(E.path))
+            logger.warn('Could not find Settings.txt file in {}'.format(E.path))
         return
 
     kwargs['tRange'] = tR
@@ -151,7 +148,7 @@ def preview(E, tR=0, cR=None, **kwargs):
         stacks = [util.imread(f) for f in E.get_files(c=P.cRange, t=timepoint)]
         if not stacks:
             continue
-        # print("shape_raw: {}".format(stacks[0].shape))
+        # logger.debug("shape_raw: {}".format(stacks[0].shape))
         if P.correctFlash:
             camparams = CameraParameters(P.camparamsPath)
             camparams = camparams.get_subroi(E.settings.camera.roi)
@@ -190,7 +187,7 @@ def preview(E, tR=0, cR=None, **kwargs):
         # FIXME: this is going to be slow until we cache the tform Matrix results
         if P.doReg:
             if P.regCalibDir is None:
-                warnings.warn('Registration requested but no Calibration Directory provided')
+                logger.error('Skipping Registration: no Calibration Directory provided')
             else:
                 RD = RegDir(P.regCalibDir)
                 if RD.isValid:
@@ -200,7 +197,7 @@ def preview(E, tR=0, cR=None, **kwargs):
                             stacks[i] = RD.register_image_to_wave(stk, imwave=wave,
                                 refwave=P.regRefWave, mode=P.regMode)
                 else:
-                    warnings.warn('Registration Calibration dir not valid'
+                    logger.error('Registration Calibration dir not valid'
                         '{}'.format(P.regCalibDir))
 
         out.append(np.stack(stacks, 0))
@@ -210,21 +207,23 @@ def preview(E, tR=0, cR=None, **kwargs):
     else:
         return None
 
+
 def process(E, binary=None, **kwargs):
     """Main method for easy processing of the folder"""
 
     if not isinstance(E, LLSdir):
         if isinstance(E, str):
             E = LLSdir(E)
+    logger.debug("Process called on {}".format(str(E.path)))
 
     if E.is_compressed():
         E.decompress()
 
     if not E.ready_to_process:
         if not E.has_lls_tiffs:
-            warnings.warn('No TIFF files to process in {}'.format(E.path))
+            logger.warn('No TIFF files to process in {}'.format(E.path))
         if not E.has_settings:
-            warnings.warn('Could not find Settings.txt file in {}'.format(E.path))
+            logger.warn('Could not find Settings.txt file in {}'.format(E.path))
         return
 
     P = E.localParams(**kwargs)
@@ -259,7 +258,7 @@ def process(E, binary=None, **kwargs):
             }
 
             # filter by channel and trange
-            if len(list(P.tRange)) == E.parameters.nt:
+            if len(list(P.tRange)) == E.parameters.nt:  # processing all the timepoints
                 filepattern = 'ch{}_'.format(chan)
             else:
                 filepattern = 'ch{}_stack{}'.format(chan, util.pyrange_to_perlregex(P.tRange))
@@ -267,7 +266,7 @@ def process(E, binary=None, **kwargs):
             binary.process(str(E.path), filepattern, P.otfs[chan], **opts)
 
         # if verbose:
-        #   print(response.output.decode('utf-8'))
+        #   logger.info(response.output.decode('utf-8'))
 
     # FIXME: this is just a messy first try...
     if P.doReg:
@@ -359,8 +358,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True):
         return stack
 
     except ValueError:
-        print("ERROR: failed to merge MIPs from {}".format(str(folder)))
-        print("skipping...\n")
+        logger.error("ERROR: failed to merge MIPs from {}".format(str(folder)))
 
 
 class LLSdir(object):
@@ -382,13 +380,10 @@ class LLSdir(object):
         self.tiff = util.dotdict()
         if self.has_settings:
             if len(self.settings_files) > 1:
-                warnings.warn('Multiple Settings.txt files detected...')
+                logger.warn('Multiple Settings.txt files detected...')
             self.settings = LLSsettings(self.settings_files[0])
             self.date = self.settings.date
             self.parameters.update(self.settings.parameters)
-        else:
-            pass
-            # warnings.warn('No Settings.txt folder detected, is this an LLS folder?')
         if self.has_lls_tiffs:
             self.register_tiffs()
 
@@ -430,7 +425,7 @@ class LLSdir(object):
         '''a list of every tiff file in the top level folder (all raw tiffs)'''
         all_tiffs = sorted(self.path.glob('*.tif'))
         if not all_tiffs:
-            warnings.warn('No raw/uncompressed Tiff files detected in folder')
+            logger.warn('No raw/uncompressed Tiff files detected in folder')
             return 0
         self.tiff.numtiffs = len(all_tiffs)
         # self.tiff.bytes can be used to get size of raw data: np.sum(self.tiff.bytes)
@@ -450,7 +445,7 @@ class LLSdir(object):
             if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < 1000:
                 self.tiff.raw.append(str(f))
             else:
-                warnings.warn('discarding small file:  {}'.format(f))
+                logger.warn('discarding small file:  {}'.format(f))
         self.tiff.rejected = list(
             set(self.tiff.raw).difference(set(self.tiff.all)))
         if not len(self.tiff.raw):
@@ -473,7 +468,7 @@ class LLSdir(object):
                     self.parameters.interval.append(
                         parse.parse_filename(str(q[1]), 'reltime') / 1000)
         self.parameters.nc = len(self.tiff.count)
-        self.parameters.nt = max(self.tiff.count)
+        self.parameters.nt = len(self.parameters.tset)
 
         if len(set(self.tiff.count)) > 1:
             # different count for each channel ... decimated stacks?
@@ -509,7 +504,7 @@ class LLSdir(object):
         if corpath.exists():
             if len(list(corpath.glob('*COR*'))) < len(self.tiff.raw):
                 # partial correction
-                warnings.warn('Corrected files incomplete')
+                logger.warn('Corrected path exists but files incomplete')
                 return False
             else:
                 return True
@@ -541,7 +536,7 @@ class LLSdir(object):
         need to consider the case of sepmips
         """
         if verbose:
-            print('reducing %s...' % str(self.path.name))
+            logger.info('reducing %s...' % str(self.path.name))
 
         subfolders = ['GPUdecon', 'CPPdecon', 'Deskewed', 'Corrected']
 
@@ -559,12 +554,12 @@ class LLSdir(object):
             if self.path.joinpath(folder).exists():
                 try:
                     if verbose:
-                        print('\tdeleting %s...' % folder)
+                        logger.info('\tdeleting %s...' % folder)
                     shutil.rmtree(str(self.path.joinpath(folder)))
                 except Exception as e:
-                    print("unable to remove directory: {}".format(
+                    logger.error("unable to remove directory: {}".format(
                         self.path.joinpath(folder)))
-                    print(e)
+                    logger.error(e)
                     return 0
         try:
             i = self.path.glob('*' + config.__OUTPUTLOG__)
@@ -582,7 +577,7 @@ class LLSdir(object):
         then compresses raw files into compressed tarball
         """
         if verbose:
-            print("freezing {} ...".format(self.path.name))
+            logger.info("freezing {} ...".format(self.path.name))
         if self.reduce_to_raw(verbose=verbose, keepmip=keepmip, **kwargs):
             if self.compress(verbose=verbose, **kwargs):
                 return 1
@@ -601,18 +596,22 @@ class LLSdir(object):
             S.cRange = range(P.nc)
         else:
             if np.max(list(S.cRange)) > (P.nc - 1):
-                warnings.warn('cRange was larger than number of Channels! Excluding C > {}'.format(P.nc - 1))
+                logger.warn('cRange was larger than number of Channels! Excluding C > {}'.format(P.nc - 1))
             S.cRange = sorted([n for n in S.cRange if n < P.nc])
 
-        # FIXME: this has problems when the files do not start at stack0000
-        # or if they are not incrementing by 1 ... fix in E.parameters
         if S.tRange is None:
-            S.tRange = range(self.parameters.nt)
+            S.tRange = list(self.parameters.tset)
         else:
-            if np.max(list(S.tRange)) > (P.nt - 1):
-                warnings.warn('tRange was larger than number of Timepoints! Excluding T > {}'.format(P.nt - 1))
-            #S.tRange = sorted([n for n in S.tRange if n < P.nt])
-            S.tRange = sorted([n for n in S.tRange])
+            logger.debug("preview tRange = {}".format(S.tRange))
+            maxT = max(self.parameters.tset)
+            minT = min(self.parameters.tset)
+            logger.debug("preview maxT = %d" % maxT)
+            logger.debug("preview minT = %d" % minT)
+            S.tRange = sorted([n for n in S.tRange if minT <= n <= maxT])
+            if max(list(S.tRange)) > maxT:
+                logger.warn('max tRange was greater than the last timepoint. Excluding T > {}'.format(maxT))
+            if min(list(S.tRange)) < minT:
+                logger.warn('min tRange was less than the first timepoint. Excluding < {}'.format(minT))
 
         # note: background should be forced to 0 if it is getting corrected
         # in the camera correction step
@@ -624,7 +623,6 @@ class LLSdir(object):
 
         if S.cropMode == 'auto':
             wd = self.get_feature_width(pad=S.cropPad, t=np.min(list(S.tRange)))
-            #wd = self.get_feature_width(pad=S.cropPad, t=np.min(list(kwargs['tRange'])))
             S.width = wd['width']
             S.shift = wd['offset']
         elif S.cropMode == 'none':
@@ -635,6 +633,7 @@ class LLSdir(object):
             S.width = S.width
             S.shift = S.shift
         # TODO: add constrainst to make sure that width/2 +/- shift is within bounds
+        assert 0 <= S.width/2
 
         # add check for RegDIR
         # RD = RegDir(P.regCalibDir)
@@ -651,6 +650,8 @@ class LLSdir(object):
         # FIXME:
         # shouldn't have to get OTF if not deconvolving... though cudaDeconv
         # may have an issue with this...
+        # in fact, if not deconvolving, we should simply use libcudaDeconv
+        # and not use the full cudaDeconv binary
         if S.nIters > 0 or (S.deskew > 0 and S.saveDeskewedRaw):
             otfs = self.get_otfs(otfpath=S.otfDir)
             S.otfs = [otfs[i] for i in S.cRange]
@@ -675,7 +676,7 @@ class LLSdir(object):
             if self.path.joinpath(subdir).is_dir():
                 subdir = self.path.joinpath(subdir)
             else:
-                warnings.warn('Could not find subdir: '.format('subdir'))
+                logger.error('Could not find subdir: '.format('subdir'))
                 return
         else:
             subdir = self.path
@@ -748,7 +749,7 @@ class LLSdir(object):
     # TODO: should calculate background of provided folder (e.g. Corrected)
     def get_background(self, **kwargs):
         if not self.has_lls_tiffs:
-            warnings.warn('Cannot calculate background on folder with no Tiffs')
+            logger.error('Cannot calculate background on folder with no Tiffs')
             return
         # defaults background and=100, pad=100, sigma=2
         bgrd = []
@@ -769,7 +770,7 @@ class LLSdir(object):
             outpath.mkdir()
 
         if tRange is None:
-            tRange = range(self.parameters.nt)
+            tRange = list(self.parameters.tset)
 
         filenames = [self.get_files(c=chan, t=tRange) for chan in cRange]
         filenames = [f for f in filenames if len(f)]  # dicard empties
@@ -827,7 +828,7 @@ class LLSdir(object):
             outpath.mkdir()
 
         if tRange is None:
-            tRange = range(self.parameters.nt)
+            tRange = list(self.parameters.tset)
         timegroups = [self.get_t(t) for t in tRange]
 
         # FIXME: this is a temporary bug fix to correct for the fact that
@@ -872,11 +873,11 @@ class LLSdir(object):
 
     def register(self, regRefWave, regMode, regCalibDir):
         if self.parameters.nc < 2:
-            warnings.warn('Cannot register single channel dataset')
+            logger.error('Cannot register single channel dataset')
             return
         RD = RegDir(regCalibDir)
         if not RD.isValid:
-            warnings.warn('Registration Calibration dir not valid: {}'.format(regCalibDir))
+            logger.error('Registration Calibration dir not valid: {}'.format(regCalibDir))
             return
         RD.cloudset()  # optional, intialized the cloud...
 
@@ -1069,7 +1070,7 @@ def rename_iters(folder, splitpositions=True, verbose=False):
                     else:
                         newname = re.sub(r"_Iter_\d+", '', newname)
                     if verbose:
-                        print("{} --> {}".format(base, newname))
+                        logger.info("{} --> {}".format(base, newname))
                     os.rename(flist[pos], os.path.join(folder, newname))
     if splitpositions and nPositions > 1:
         # files from different positions will be placed into subdirectories

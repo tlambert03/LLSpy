@@ -4,6 +4,7 @@ import re
 import ctypes
 import os
 import logging
+logger = logging.getLogger(__name__)
 import numpy as np
 from .util import load_lib
 from datetime import datetime, timedelta
@@ -12,7 +13,7 @@ from datetime import datetime, timedelta
 otflib = load_lib('libradialft')
 
 if not otflib:
-    logging.warn('COULD NOT LOAD libradialft!  Confirm that FFTW is installed')
+    logger.error('Could not load libradialft!')
 else:
     try:
         shared_makeotf = otflib.makeOTF
@@ -21,7 +22,7 @@ else:
             ctypes.c_float, ctypes.c_int, ctypes.c_bool, ctypes.c_float,
             ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_int, ctypes.c_bool]
     except AttributeError as e:
-        logging.warn('Failed to properly import libradialft')
+        logger.warn('Failed to properly import libradialft')
         print(e)
 
 

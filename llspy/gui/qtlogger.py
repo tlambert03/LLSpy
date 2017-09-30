@@ -32,14 +32,13 @@ class NotificationHandler(QObject, logging.Handler):
     def __init__(self):
         super(NotificationHandler, self).__init__()
         self.setLevel(logging.DEBUG)
-        self.setFormatter(NoExceptionTracebackFormatter('%(levelname)s: %(message)s'))
+        self.setFormatter(NoExceptionTracebackFormatter('%(message)s'))
 
     def emit(self, record):
         level = record.levelno
         message = self.format(record)
-        # if level > logging.WARN:
-        print(record)
-        self.emitSignal.emit(message)
+        if level >= logging.INFO:
+            self.emitSignal.emit(message)
 
 
 class LogFileHandler(RotatingFileHandler):
@@ -54,3 +53,12 @@ class LogFileHandler(RotatingFileHandler):
         self.setLevel(logging.DEBUG)
         self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.setFormatter(self.formatter)
+
+    def filter(self, record):
+        permitted = ['llspy', 'spimagine', 'fiducialreg']
+        if any(record.name.startswith(l) for l in permitted):
+            return True
+        return False
+
+
+
