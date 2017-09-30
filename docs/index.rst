@@ -66,38 +66,41 @@ Features of LLSpy
 * cross-platform: includes precompiled binaries and shared libraries that should work on all systems.
 
 
+Requirements
+============
+
+* df
+*
+
 
 Installation
 ============
 
-
 **Note**: *The cudaDeconv binary and associated code is owned by HHMI.  It is not included in this package and must be installed seperately.  See instructions below*
 
+.. #. Install `CUDA <https://developer.nvidia.com/cuda-downloads>`_ (tested on CUDA 8.0)
+.. #. Install `FFTW <http://www.fftw.org/>`_. (not necessary on Windows)
+
+..     **OS X**
+
+..     FFTW can be easily installed using the `Homebrew <https://brew.sh/>`_ package manager for OS X:
+
+..     .. code::
+
+..         $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+..         $ brew update
+..         $ brew install fftw
+
+..     **LINUX**
+
+..     .. code::
+
+..         $ sudo apt-get install fftw-dev
 
 
-1. Install `CUDA <https://developer.nvidia.com/cuda-downloads>`_ (tested on CUDA 8.0)
-2. Install `FFTW <http://www.fftw.org/>`_. (not necessary on Windows)
-
-    **OS X**
-
-    FFTW can be easily installed using the `Homebrew <https://brew.sh/>`_ package manager for OS X:
-
-    .. code::
-
-        $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-        $ brew update
-        $ brew install fftw
-
-    **LINUX**
-
-    .. code::
-
-        $ sudo apt-get install fftw-dev
-
-
-3. Install `Anaconda <https://www.anaconda.com/download/>`_ (python 3.6 is preferred, but 2.7 also works)
-4. Launch a ``terminal`` window (OS X, Linux), or ``Anaconda Prompt`` (Windows)
-5. *Optional but recommended*: Create a virtual environment (this makes it easier to uninstall cleanly and prevents conflicts with any other python environments)
+#. Install `Anaconda <https://www.anaconda.com/download/>`_ (python 3.6 is preferred, but 2.7 also works)
+#. Launch a ``terminal`` window (OS X, Linux), or ``Anaconda Prompt`` (Windows)
+#. *Optional but recommended*: Create a virtual environment (this makes it easier to uninstall cleanly and prevents conflicts with any other python environments)
 
     **WINDOWS**
 
@@ -114,33 +117,32 @@ Installation
         $ conda create -y -n llsenv
         $ source activate llsenv
 
-6. Install LLSpy
+#. Install LLSpy
 
-.. code::
+    .. code::
 
-    > conda install -y -c talley -c conda-forge llspy
+        > conda install -y -c talley -c conda-forge llspy
 
+#. Install Janelia binaries and libraries.  The binaries will (hopefully) be included in the LLS Dropbox share.  Use the ``lls install`` command to install the libraries and binaries to the virtual environment.
 
-7. Install Janelia binaries and libraries.  The binaries will (hopefully) be included in the LLS Dropbox share.  Use the ``lls install`` command to install the libraries and binaries to the virtual environment.
+    .. code::
 
-.. code::
+        > lls install /path/to/lls_dropbox/llspy_extra
 
-    > lls install /path/to/lls_dropbox/llspy_extra
+#. Each time you use the program, you will need to activate the virtual environment (if you created one in step 4).  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``.  You can create a bash script or batch file to autoload the environment and launch the program if desired.
 
-8. Each time you use the program, you will need to activate the virtual environment (if you created one in step 4).  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``
+    .. code:: bash
 
-.. code:: bash
+        # Launch Anaconda Prompt and type...
+        > activate llsenv  # Windows
+        > source activate llsenv  # OS X or Linux
 
-    # Launch Anaconda Prompt and type...
-    > activate llsenv  # Windows
-    > source activate llsenv  # OS X or Linux
-
-    # show the command line interface help menu
-    > lls -h
-    # process a dataset
-    > lls decon /path/to/dataset
-    # or launch the gui
-    > lls gui
+        # show the command line interface help menu
+        > lls -h
+        # process a dataset
+        > lls decon /path/to/dataset
+        # or launch the gui
+        > lls gui
 
 
 Setup
@@ -206,8 +208,10 @@ Transformation matrices for registering multichannel datasets can be generated u
 Known Issues & Bug Reports
 ==========================
 
+* on spimagine preview, openGL error on some windows 10 computers
+* backgrounds on vertical sliders on spimagine viewer are screwed up
 * When unexpected errors occur mid-processing, sometimes the "cancel" button does nothing, forcing a restart.
-* There are still some unsolved segmentation-faults when running cudaDeconv through the GUI.
+
 
 Bug reports are very much appreciated: `Contact Talley <mailto:talley.lambert@gmail.com>`_
 
