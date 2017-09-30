@@ -113,7 +113,7 @@ def unzip_partial(fname, tRange=None, compression=None):
 def compress(path, compression=None):
 	logger.debug("compressing folder {}".format(path))
 	if util.find_filepattern(path, '*.tar*') is not None:
-		raise("There is already a compressed file in this directory")
+		raise CompressionError("There is already a compressed file in this directory")
 	tar = tartiffs(path)
 	return zipit(tar, compression) if tar is not None and os.path.isfile(tar) else None
 
@@ -148,3 +148,6 @@ def decompress_partial(file, tRange, compression=None):
 	logger.debug("doing partial decompression ({}) on folder {}".format(tRange, file))
 	unzip_partial(compressedtar, tRange, compression)
 
+
+class CompressionError(Exception):
+	pass
