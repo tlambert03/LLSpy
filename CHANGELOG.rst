@@ -1,7 +1,7 @@
 LLSpy Release History
 #####################
 
-`Next release`_
+`0.2.1`_
 ===============
 
 **Added:**
@@ -12,6 +12,8 @@ LLSpy Release History
 * Option to quit LLSpy without confirmation
 * Allow to preview a subset of a compressed dataset without decompressing the whole thing
 * Search path for available compression options in {lbzip2, pbzip2, pigz, gzip, bzip2}
+* much improved exception handling in gui
+* log to file
 
 **Changed:**
 
@@ -19,10 +21,16 @@ LLSpy Release History
 * pigz default compression for windows, lbzip2 default for mac/linux
 * Improved handling of compression binaries
 * Improved shared library detection
+* improved validation of OTF dir, cudaDeconv binary path, and Camera Params tiff
+* simplified otf search, including approximate wavelength search
+* logging module used instead of print statements
+* better log tab handling in the gui
 
 **Fixed:**
 
 * Native pyqt previewer eliminates the 'App already exists' bug on image preview
+* bugfix in abspath search
+*
 
 `0.1.0`_ | 2017-09-13
 =====================
@@ -30,6 +38,6 @@ LLSpy Release History
 * Initial Release
 
 
-.. _Next release: https://github.com/tlambert03/llspy2/
+.. _Next release: https://github.com/tlambert03/LLSpy/
 
-.. _0.1.0: https://github.com/tlambert03/llspy2/releases/v0.1.0
+.. _0.1.0: https://github.com/tlambert03/LLSpy/releases/v0.1.0
