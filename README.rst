@@ -144,9 +144,10 @@ Features of LLSpy
 To Do
 =====
 
+* implement camera correction for two cameras
+* write tests
 * give better feedback when hitting preview button
 * allow cancel after hitting preview button
-* ask Martin about sampler_t nearest for volume render
 
 
 Bug Reports, etc...
@@ -165,7 +166,7 @@ Please include the following in any bug reports:
 openCL troubleshooting on Linux
 ===============================
 
-..code::bash
+.. code:: bash
 
     # activate the conda environment that has pyopencl/gputools installed
     $ source activate <clenv>
