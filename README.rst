@@ -28,7 +28,7 @@ LLSpy is a python library to facilitate lattice light sheet data processing. It 
 
 The GUI provides access to the majority of functionality in LLSpy. It includes a drag-and drop queue, visual progress indicator, and the ability to preview data processed with the current settings using the (awesome) 4D-viewer, `Spimagine <https://github.com/maweigert/spimagine>`_ developed by Martin Weigert in the `Myers lab <https://www.mpi-cbg.de/research-groups/current-groups/gene-myers/research-focus/>`_ at MPI-CBG.  Support for online-processing with a "monitored  folder" or real-time visualization with Spimagine is in development.
 
-.. image:: _assets/screenshot.png
+.. image:: https://raw.githubusercontent.com/tlambert03/LLSpy/master/img/screenshot.png
     :alt: LLSpy graphical interface
     :align: right
 
