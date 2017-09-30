@@ -1,8 +1,11 @@
+from . import util
+
 import tarfile
 import os
 import sys
 import subprocess
-from . import util
+import logging
+logger = logging.getLogger(__name__)
 
 EXTENTIONS = {
 	'.bz2': 'lbzip2',
@@ -27,7 +30,7 @@ def tartiffs(path, delete=True):
 	tifflist = [f for f in os.listdir(path) if f.endswith('.tif')]
 	# figure out what type of folder this is
 	if not len(tifflist):
-		print('No tiffs found in folder {}'.format(path))
+		logger.info('No tiffs found in folder {}'.format(path))
 		return None
 
 	# generate output file name
@@ -75,7 +78,7 @@ def unzipit(fname, compression=None):
 	extension = os.path.splitext(fname)[1]
 	if compression is None:
 		compression = EXTENTIONS[extension]
-	print("zipping with compression: ", compression)
+	logger.info("zipping with compression: {}".format(compression))
 	assert archive_extension[compression] == extension, "Format {} cannot be unzipped by program {}".format(extension, compression)
 	# check if it exists and is compressed type
 	assert os.path.exists(fname), 'File does not exist: {}'.format(fname)
@@ -108,6 +111,7 @@ def unzip_partial(fname, tRange=None, compression=None):
 
 
 def compress(path, compression=None):
+	logger.debug("compressing folder {}".format(path))
 	if util.find_filepattern(path, '*.tar*') is not None:
 		raise("There is already a compressed file in this directory")
 	tar = tartiffs(path)
@@ -115,15 +119,16 @@ def compress(path, compression=None):
 
 
 def decompress(file, compression=None):
+	logger.debug("decompressing folder {}".format(file))
 	if compression is None:
 		compression = get_platform_compression()
 	# if it's not a tar.bz2, assume it's a directory that contains one
 	compressedtar = util.find_filepattern(file, '*.tar*') if os.path.isdir(file) else file
 	if compressedtar is None:
-		print('No compressed files found in ' + file)
+		logger.info('No compressed files found in {}'.format(file))
 		return None
 	elif not compressedtar.endswith(archive_extension[compression]):
-		print('Cannot decompress {} with program {} '.format(compressedtar, compression))
+		logger.warning('Cannot decompress {} with program {} '.format(compressedtar, compression))
 		return None
 	tarball = unzipit(compressedtar, compression)
 	return untar(tarball)
@@ -135,10 +140,11 @@ def decompress_partial(file, tRange, compression=None):
 	# if it's not a tar.bz2, assume it's a directory that contains one
 	compressedtar = util.find_filepattern(file, '*.tar*') if os.path.isdir(file) else file
 	if compressedtar is None:
-		print('No compressed files found in ' + file)
+		logger.info('No compressed files found in {}'.format(file))
 		return None
 	elif not compressedtar.endswith(archive_extension[compression]):
-		print('Cannot decompress {} with program {} '.format(compressedtar, compression))
+		logger.warning('Cannot decompress {} with program {} '.format(compressedtar, compression))
 		return None
+	logger.debug("doing partial decompression ({}) on folder {}".format(tRange, file))
 	unzip_partial(compressedtar, tRange, compression)
 
