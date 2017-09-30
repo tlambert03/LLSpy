@@ -93,7 +93,8 @@ setup(
         'pyqt5',
         'matplotlib'
         'spimagine',
-        'gputools'
+        'gputools',
+        'raven'
     ],
     entry_points={
             'console_scripts': [
