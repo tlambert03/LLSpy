@@ -18,7 +18,7 @@ from . import otf
 from . import arrayfun
 from .llsdir import LLSdir, preview, process
 from .settingstxt import LLSsettings as Settings
-from .cudabinwrapper import CUDAbin
+from .cudabinwrapper import CUDAbin, nGPU, get_bundled_binary, CUDAbinException
 from .parse import parse_filename, filter_files
 from .camera import CameraROI, CameraParameters, selectiveMedianFilter
 from .schema import procParams, printOptions
