@@ -11,7 +11,6 @@ from raven import Client, fetch_git_sha, fetch_package_version, breadcrumbs
 
 _OPTOUT = False
 
-
 tags = {}
 env = 'development'
 if hasattr(sys, '_MEIPASS'):
