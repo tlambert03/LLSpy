@@ -453,6 +453,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.actionLoad_Default_Settings.triggered.connect(
             self.loadDefaultSettings)
         self.actionReduce_to_Raw.triggered.connect(self.reduceSelected)
+        self.actionFreeze.triggered.connect(self.freezeSelected)
         self.actionCompress_Folder.triggered.connect(self.compressSelected)
         self.actionDecompress_Folder.triggered.connect(self.decompressSelected)
         self.actionConcatenate.triggered.connect(self.concatenateSelected)
@@ -621,6 +622,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         procTRangetext = self.previewTRangeLineEdit.text()
         procCRangetext = self.previewCRangeLineEdit.text()
 
+        try:
+            self.lastopts = self.getValidatedOptions()
+        except Exception:
+            self.previewButton.setEnabled(True)
+            raise
+
         if procTRangetext:
             tRange = string_to_iterable(procTRangetext)
         else:
@@ -628,16 +635,34 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         if procCRangetext:
             cRange = string_to_iterable(procCRangetext)
+            if (self.lastopts['correctFlash'] and
+                sessionSettings.value('warnCameraCorPreview', True, type=bool)):
+                box = QtW.QMessageBox()
+                box.setWindowTitle('Note')
+                box.setText("You have selected to preview a subset of channels, but "
+                    "have also selected Flash camera correction.  Note that the camera "
+                    "correction requires all channels to be enabled.  Preview will not "
+                    "reflect accurate camera correction.")
+                box.setIcon(QtW.QMessageBox.Warning)
+                box.addButton(QtW.QMessageBox.Ok)
+                box.setDefaultButton(QtW.QMessageBox.Ok)
+                pref = QtW.QCheckBox("Don't remind me.")
+                box.setCheckBox(pref)
+
+                def dontRemind(value):
+                    if value:
+                        sessionSettings.setValue('warnCameraCorPreview', False)
+                    else:
+                        sessionSettings.setValue('warnCameraCorPreview', False)
+                    sessionSettings.sync()
+
+                pref.stateChanged.connect(dontRemind)
+                reply = box.exec_()
         else:
             cRange = None  # means all channels
 
         self.previewPath = self.listbox.item(firstRowSelected, 0).text()
 
-        try:
-            self.lastopts = self.getValidatedOptions()
-        except Exception:
-            self.previewButton.setEnabled(True)
-            raise
 
         w, thread = newWorkerThread(workers.TimePointWorker, self.previewPath, tRange, cRange, self.lastopts,
             workerConnect={
@@ -669,7 +694,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 datamin = arr.min()
                 dataRange = datamax - datamin
                 vmin_init = datamin - dataRange * 0.02
-                vmax_init = datamax * 0.8
+                vmax_init = datamax * 0.75
 
                 win = spimagineWidget()
                 win.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -683,6 +708,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
                 # enable slice view by default
                 win.sliceWidget.checkSlice.setCheckState(2)
+                win.sliceWidget.glSliceWidget.interp = False
                 win.checkSliceView.setChecked(True)
                 win.sliceWidget.sliderSlice.setValue(int(arr.shape[-3]/2))
 
@@ -982,28 +1008,35 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         for item in self.listbox.selectedPaths():
             llspy.LLSdir(item).reduce_to_raw(keepmip=self.saveMIPsDuringReduceCheckBox.isChecked())
 
+    def freezeSelected(self):
+        for item in self.listbox.selectedPaths():
+            llspy.LLSdir(item).reduce_to_raw(keepmip=self.saveMIPsDuringReduceCheckBox.isChecked())
+            self.compressItem(item)
+
     def compressSelected(self):
+        [self.compressItem(item) for item in self.listbox.selectedPaths()]
+
+    def compressItem(self, item):
         def has_tiff(path):
             for f in os.listdir(path):
                 if f.endswith('.tif'):
                     return True
             return False
 
-        for item in self.listbox.selectedPaths():
-            # figure out what type of folder this is
-            if not has_tiff(item):
-                self.statusBar.showMessage(
-                    'No tiffs to compress in ' + shortname(item), 4000)
-                continue
+        # figure out what type of folder this is
+        if not has_tiff(item):
+            self.statusBar.showMessage(
+                'No tiffs to compress in ' + shortname(item), 4000)
+            return
 
-            worker, thread = newWorkerThread(workers.CompressionWorker, item, 'compress',
-                self.compressTypeCombo.currentText(),
-                workerConnect={
-                    'status_update': self.statusBar.showMessage,
-                    'finished': lambda: self.statusBar.showMessage('Compression finished', 4000)
-                },
-                start=True)
-            self.compressionThreads.append((worker, thread))
+        worker, thread = newWorkerThread(workers.CompressionWorker, item, 'compress',
+            self.compressTypeCombo.currentText(),
+            workerConnect={
+                'status_update': self.statusBar.showMessage,
+                'finished': lambda: self.statusBar.showMessage('Compression finished', 4000)
+            },
+            start=True)
+        self.compressionThreads.append((worker, thread))
 
     def decompressSelected(self):
         for item in self.listbox.selectedPaths():
