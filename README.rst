@@ -1,10 +1,9 @@
-##########################################
-LLSpy: Lattice Light-sheet Data Processing
-##########################################
+###################################################
+LLSpy: Lattice light-sheet post-processing utility.
+###################################################
 
 .. image:: https://img.shields.io/badge/License-BSD%203--Clause-blue.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
-
 .. image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6-blue.svg
 
 |
@@ -13,105 +12,198 @@ LLSpy: Lattice Light-sheet Data Processing
     :target: http://cbmf.hms.harvard.edu/lattice-light-sheet/
 
 
-*Copyright (c) 2017 Talley Lambert, Harvard Medical School, all rights reserved.*
+
+.. |copy|   unicode:: U+000A9
+
+Copyright |copy| 2017 Talley Lambert, Harvard Medical School.
 
 |
 
-LLSpy is a graphical and command line interface for lattice light sheet post-processing. It extends the cudaDeconv binary created in the Betzig lab at Janelia Research Campus, and adds additional features that auto-detect experimental parameters (minimizing user input), perform image corrections and manipulations, and facilitate file handling.
+LLSpy is a python library to facilitate lattice light sheet data processing. It extends the cudaDeconv binary created in the Betzig lab at Janelia Research Campus, adding features that auto-detect experimental parameters from the data folder structure and metadata (minimizing user input), auto-choose OTFs, perform image corrections and manipulations, and facilitate file handling.  Full(er) documentation available at http://llspy.readthedocs.io/
 
-Full documentation available at http://llspy.readthedocs.io/
+**There are three ways to use LLSpy:**
 
+1. Graphical User Interface
+===========================
 
-.. image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2017/09/gui.png
-    :height: 825 px
-    :width: 615 px
-    :scale: 100%
-    :alt: alternate text
+The GUI provides access to the majority of functionality in LLSpy. It includes a drag-and drop queue, visual progress indicator, and the ability to preview data processed with the current settings using the (awesome) 4D-viewer, `Spimagine <https://github.com/maweigert/spimagine>`_ developed by Martin Weigert in the `Myers lab <https://www.mpi-cbg.de/research-groups/current-groups/gene-myers/research-focus/>`_ at MPI-CBG.  Support for online-processing with a "monitored  folder" or real-time visualization with Spimagine is in development.
+
+.. image:: _assets/screenshot.png
+    :alt: LLSpy graphical interface
     :align: right
 
+
+.. .. image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2017/09/gui.png
+..     :height: 825 px
+..     :width: 615 px
+..     :scale: 100%
+..     :alt: alternate text
+..     :align: right
+
+
+2. Command Line Interface
+=========================
+
+The command line interface can be used to process LLS data in a server environment (linux compatible).
+
+.. code:: bash
+
+    $ lls --help
+
+    Usage: lls [OPTIONS] COMMAND [ARGS]...
+
+      LLSpy
+
+      This is the command line interface for the LLSpy library, to facilitate
+      processing of lattice light sheet data using cudaDeconv and other tools.
+
+    Options:
+      --version          Show the version and exit.
+      -c, --config PATH  Config file to use instead of the system config.
+      --debug
+      -h, --help         Show this message and exit.
+
+    Commands:
+      camera    Camera correction calibration
+      clean     Delete LLSpy logs and preferences
+      compress  Compression & decompression of LLSdir
+      config    Manipulate the system configuration for LLSpy
+      decon     Deskew and deconvolve data in LLSDIR.
+      deskew    Deskewing only (no decon) of LLS data
+      gui       Launch LLSpy Graphical User Interface
+      info      Get info on an LLSDIR.
+      install   Install cudaDeconv libraries and binaries
+      reg       Channel registration
+
+    # process a dataset
+    $ lls decon --iters 8 --correctFlash /path/to/dataset
+
+    # change system or user-specific configuration
+    $ lls config --set otfDir path/to/PSF_and_OTFs
+
+    # or launch the gui
+    $ lls gui
+
+
+3. Interactive data processing in a python console
+==================================================
+
+.. code:: python
+
+    import llspy
+
+    # the LLSdir object contains most of the useful attributes and
+    # methods for interacting with a data folder containing LLS tiffs
+    >>> E = llspy.LLSdir('path/to/experiment_directory')
+    # it parses the settings file into a dict:
+    >>> E.settings
+    {'acq_mode': 'Z stack',
+     'basename': 'cell1_Settings.txt',
+     'camera': {'cam2name': '"Disabled"',
+                'cycle': '0.01130',
+                'cycleHz': '88.47 Hz',
+                'exp': '0.01002',
+        ...
+    }
+
+    # many important attributes are in the parameters dict
+    >>> E.parameters
+    {'angle': 31.5,
+     'dx': 0.1019,
+     'dz': 0.5,
+     'nc': 2,
+     'nt': 10,
+     'nz': 65,
+     'samplescan': True,
+     #...
+    }
+
+    # and provides methods for processing the data
+    >>> E.autoprocess()
+
+    # the autoprocess method accepts many options as keyword aruguments
+    # a full list with descriptions can be seen here:
+    >>> llspy.printOptions()
+
+                  Name  Default                    Description
+                  ----  -------                    -----------
+          correctFlash  False                      do Flash residual correction
+    flashCorrectTarget  cpu                        {"cpu", "cuda", "parallel"} for FlashCor
+                nIters  10                         deconvolution iters
+             mergeMIPs  True                       do MIP merge into single file (decon)
+                otfDir  None                       directory to look in for PSFs/OTFs
+                tRange  None                       time range to process (None means all)
+                cRange  None                       channel range to process (None means all)
+                   ...  ...                        ...
+
+   # as well as file handling routines
+   >>> E.compress(compression='lbzip2')  # compress the raw data into .tar.(bz2|gz)
+   >>> E.decompress()  # decompress files for re-processing
+   >>> E.freeze()  # delete all processed data and compress raw data for long-term storage.
+
+
+*Note:* The LLSpy API is currently undocumented, and unstable (subject to change).  Look at the ``llspy.llsdir.LLSdir`` class as a starting point for most of the useful methods.  Feel free to fork this project on github and suggest changes or additions.
+
+
+Requirements
+============
+
+* Compatible with Windows (tested on 7/10), Mac or Linux (tested on Ubuntu 16.04)
+* Python 3.6 (recommended), 3.5, or 2.7
+* Most functionality assumes a data folder structure as generated by the Lattice Scope LabeView acquisition software written by Dan Milkie in the Betzig lab.  If you are using different acquisition software, it is likely that you will need to change the data structure and metadata parsing routines.
+* Currently, the core deskew/deconvolution processing is based on cudaDeconv, written by Lin Shao and maintained by Dan Milkie.  cudaDeconv is licensed and distributed by HHMI.  It is *not* included in this repository and must be acquired seperately in the dropbox share accessible after signing the RLA with HHMI.  Contact `innovation@janlia.hhmi.org <mailto:innovation@janlia.hhmi.org>`_.
 
 Installation
 ============
 
-
 **Note**: *The cudaDeconv binary and associated code is owned by HHMI.  It is not included in this package and must be installed seperately.  See instructions below*
 
 
+#. Install `Anaconda <https://www.anaconda.com/download/>`_ (python 3.6 is preferred, but 2.7 also works)
+#. Launch a ``terminal`` window (OS X, Linux), or ``Anaconda Prompt`` (Windows)
+#. Install LLSpy
 
-1. Install `CUDA <https://developer.nvidia.com/cuda-downloads>`_ (tested on CUDA 8.0)
-2. Install `FFTW <http://www.fftw.org/>`_. (not necessary on Windows)
+    .. code:: bash
 
-    **OS X**
+        > conda install -n llsenv -y -c talley -c conda-forge llspy
 
-    This is easiest using the `Homebrew <https://brew.sh/>`_ package manager for OS X:
+    The ``-n llsenv`` part creates a virtual environment.  This is optional, but recommended as it easier to uninstall cleanly and prevents conflicts with any other python environments.  If installing into a virtual environment, you must source the environment before proceeding, and before using llspy.
 
-    .. code::
+    .. code:: bash
 
-        $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-        $ brew update
-        $ brew install fftw
-
-    **LINUX**
-
-    .. code::
-
-        $ sudo apt-get install fftw-dev
-
-
-3. Install `Anaconda <https://www.anaconda.com/download/>`_ (python 3.6 is preferred, but 2.7 also works)
-4. Launch a ``terminal`` window (OS X, Linux), or ``Anaconda Prompt`` (Windows)
-5. *Optional but recommended*: Create a virtual environment (this makes it easier to uninstall cleanly and prevents conflicts with any other python environments)
-
-    **WINDOWS**
-
-    .. code::
-
-        > conda create -y -n llsenv
         > activate llsenv
 
-    **OS X & LINUX**
-
-
-    .. code::
-
-        $ conda create -y -n llsenv
+        # or on OSX/Linux
         $ source activate llsenv
 
-6. Install LLSpy
+#. Install Janelia binaries and libraries.  The binaries are included in the LLS Dropbox share (see requirements section).  Use the ``lls install`` command to install the libraries and binaries to the virtual environment.
 
-.. code::
+    .. code:: bash
 
-    > conda install -y -c talley -c conda-forge llspy
+        > lls install /path/to/lls_dropbox/llspy_extra
 
+#. Each time you use the program, you will need to activate the virtual environment (if you created one in step 4).  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``.  You can create a bash script or batch file to autoload the environment and launch the program if desired.
 
-7. Install Janelia binaries and libraries.  The binaries will (hopefully) be included in the LLS Dropbox share.  Use the ``lls install`` command to install the libraries and binaries to the virtual environment.
+    .. code:: bash
 
-.. code::
+        # Launch Anaconda Prompt and type...
+        > activate llsenv  # Windows
+        > source activate llsenv  # OS X or Linux
 
-    > lls install /path/to/lls_dropbox/llspy_extra
-
-8. Each time you use the program, you will need to activate the virtual environment (if you created one in step 4).  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``
-
-.. code:: bash
-
-    # Launch Anaconda Prompt and type...
-    > activate llsenv  # Windows
-    > source activate llsenv  # OS X or Linux
-
-    # show the command line interface help menu
-    > lls -h
-    # process a dataset
-    > lls decon /path/to/dataset
-    # or launch the gui
-    > lls gui
+        # show the command line interface help menu
+        > lls -h
+        # process a dataset
+        > lls decon /path/to/dataset
+        # or launch the gui
+        > lls gui
 
 
 See complete usage notes in the `documentation <http://llspy.readthedocs.io/>`_.
 
 
 
-Features of LLSpy
-=================
+Extended list of features of LLSpy
+==================================
 
 * graphical user interface with persistent/saveable processing settings
 * command line interface for remote/server usage (coming)
@@ -141,14 +233,6 @@ Features of LLSpy
 * rename files acquired in script-editor mode with ``Iter_`` in the name to match standard naming with positions (work in progress)
 * cross-platform: includes precompiled binaries and shared libraries that should work on all systems.
 
-To Do
-=====
-
-* implement camera correction for two cameras
-* write tests
-* give better feedback when hitting preview button
-* allow cancel after hitting preview button
-
 
 Bug Reports, etc...
 ===================
@@ -162,9 +246,23 @@ Please include the following in any bug reports:
 - CUDA version (type ``nvcc --version`` at command line prompt)
 - Python version (type ``python --version`` at command line prompt, with ``llsenv`` conda environment active if applicable)
 
+The most system-dependent component (and the most likely to fail) is the OpenCL dependency for Spimagine.  LLSpy will fall back gracefully to the built-in Qt-based viewer, but the Spimagine option will be will be unavailble and grayed out on the config tab in the GUI.  Submit an `issue on github <https://github.com/tlambert03/LLSpy/issues>`_ for help.
+
+
+To Do
+=====
+
+* implement camera correction for two cameras
+* write tests
+* give better progress feedback when hitting preview button
+* allow cancel after hitting preview button
+* implement real-time data viewer during acquisition
+* implement real-time data processing with folder-monitoring
 
 openCL troubleshooting on Linux
 ===============================
+
+The conda installation will
 
 .. code:: bash
 
@@ -192,12 +290,15 @@ openCL troubleshooting on Linux
         libOpenCL.so.1 => /usr/lib/x86_64-linux-gnu/libOpenCL.so.1 (0x00007f09c45c5000)
 
 in my case, i think it was an openCL version mismatch... by deleting/moving/renaming the files at
-<CONDA_PREFIX>/lib/python3.6/site-packages/pyopencl/./../../../libOpenCL.so.1
-and
-/usr/local/cuda/lib64/libOpenCL.so.1
-it eventually fell back on
-/usr/lib/x86_64-linux-gnu/libOpenCL.so.1
-which DID work
-Note, when it did finally work, I also no longer saw an error when running clinfo about library version
 
-the null platform behavior at the end of clinfo should show some successes
+``<CONDA_PREFIX>/lib/python3.6/site-packages/pyopencl/./../../../libOpenCL.so.1``
+
+and
+
+``/usr/local/cuda/lib64/libOpenCL.so.1``
+
+it eventually fell back on
+
+``/usr/lib/x86_64-linux-gnu/libOpenCL.so.1``
+
+which *did* work...
