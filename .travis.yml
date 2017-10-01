@@ -8,12 +8,11 @@ before_install:
   - echo "before install"
 
 install:
+  - sudo apt-get update
   # Install Anaconda
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      echo "python 2.7"
       wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
     else
-      echo "python 3"
       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
@@ -21,6 +20,14 @@ install:
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
+  - conda info -a
+
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib tifffile numba ipython voluptuous watchdog click pyqt pyopencl spimagine raven
+  - source activate test-environment
+  - python setup.py install
+
+script:
+  - lls-gui test
 
 after_success:
   - test $TRAVIS_BRANCH = "master" && conda install conda-build && conda install anaconda-client && bash conda.recipe/conda_upload.sh
