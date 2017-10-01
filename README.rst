@@ -1,10 +1,14 @@
-###################################################
-LLSpy: Lattice light-sheet post-processing utility.
-###################################################
+##################################################
+LLSpy: Lattice light-sheet post-processing utility
+##################################################
 
-.. image:: https://img.shields.io/badge/License-BSD%203--Clause-blue.svg
+.. image:: https://img.shields.io/badge/License-BSD%203--Clause-brightgreen.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
-.. image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6-blue.svg
+
+.. image:: https://img.shields.io/badge/Python-2.7%2C%203.5%2C%203.6-brightgreen.svg
+
+.. image:: https://img.shields.io/travis/tlambert03/LLSpy/master.svg
+    :target: https://travis-ci.org/tlambert03/LLSpy
 
 |
 
@@ -90,7 +94,7 @@ The command line interface can be used to process LLS data in a server environme
 
 .. code:: python
 
-    import llspy
+    >>> import llspy
 
     # the LLSdir object contains most of the useful attributes and
     # methods for interacting with a data folder containing LLS tiffs
@@ -115,7 +119,7 @@ The command line interface can be used to process LLS data in a server environme
      'nt': 10,
      'nz': 65,
      'samplescan': True,
-     #...
+      ...
     }
 
     # and provides methods for processing the data
@@ -165,16 +169,15 @@ Installation
 
     .. code:: bash
 
-        > conda install -n llsenv -y -c talley -c conda-forge llspy
-
-    The ``-n llsenv`` part creates a virtual environment.  This is optional, but recommended as it easier to uninstall cleanly and prevents conflicts with any other python environments.  If installing into a virtual environment, you must source the environment before proceeding, and before using llspy.
-
-    .. code:: bash
-
+        > conda create -n llsenv
         > activate llsenv
 
-        # or on OSX/Linux
+        # or on OS X/Linux
         $ source activate llsenv
+
+        > conda install -c talley -c conda-forge llspy
+
+    The ``create -n llsenv`` line creates a virtual environment.  This is optional, but recommended as it easier to uninstall cleanly and prevents conflicts with any other python environments.  If installing into a virtual environment, you must source the environment before proceeding, and each time before using llspy.
 
 #. Install Janelia binaries and libraries.  The binaries are included in the LLS Dropbox share (see requirements section).  Use the ``lls install`` command to install the libraries and binaries to the virtual environment.
 
@@ -182,7 +185,7 @@ Installation
 
         > lls install /path/to/lls_dropbox/llspy_extra
 
-#. Each time you use the program, you will need to activate the virtual environment (if you created one in step 4).  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``.  You can create a bash script or batch file to autoload the environment and launch the program if desired.
+#. Each time you use the program, you will need to activate the virtual environment (if you created one during installation).  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``.  You can create a bash script or batch file to autoload the environment and launch the program if desired.
 
     .. code:: bash
 
@@ -202,31 +205,36 @@ See complete usage notes in the `documentation <http://llspy.readthedocs.io/>`_.
 
 
 
-Extended list of features of LLSpy
-==================================
+Features of LLSpy
+=================
 
 * graphical user interface with persistent/saveable processing settings
 * command line interface for remote/server usage (coming)
 * preview processed image to verify settings prior to processing full experiment
+
 * *Pre-processing corrections*:
-* correct "residual electron" issue on Flash4.0 when using overlap synchronous mode.  Includes CUDA and parallel CPU processing as well as GUI for generation of calibration file.
-* apply selective median filter to particularly noisy pixels
-* trim image edges prior to deskewing (helps with CMOS edge row artifacts)
-* auto-detect background
+    * correct "residual electron" issue on Flash4.0 when using overlap synchronous mode.  Includes CUDA and parallel CPU processing as well as GUI for generation of calibration file.
+    * apply selective median filter to particularly noisy pixels
+    * trim image edges prior to deskewing (helps with CMOS edge row artifacts)
+    * auto-detect background
+
 * Processing:
     * select subset of acquired images (C or T) for processing
     * automatic parameter detection based on auto-parsing of Settings.txt
     * automatic OTF generation/selection from folder of raw PSF files, based on date of acquisition, mask used (if entered into SPIMProject.ini), and wavelength.
     * graphical progress bar and time estimation
+
 * Post-processing:
     * proper voxel-size metadata embedding (newer version of Cimg)
     * join MIP files into single hyperstack viewable in ImageJ/Fiji
     * automatic width/shift selection based on image content ("auto crop to features")
     * automatic fiducial-based image registration (provided tetraspeck bead stack)
     * compress raw data after processing
+
 * Watched-folder autoprocessing (experimental):
     * Server mode: designate a folder to watch for incoming *finished* LLS folders (with Settings.txt file).  When new folders are detected, they are added to the processing queue and the queue is started if not already in progress.
     * Aquisition mode: designed to be used on the aquisition computer.  Designate folder to watch for new LLS folders, and process new files as they arrive.  Similar to built in GPU processing tab in Lattice Scope software, but with the addition of all the corrections and parameter selection in the GUI.
+
 * easily return LLS folder to original (pre-processed) state
 * compress and decompress folders and subfolders with lbzip2 (not working on windows)
 * concatenate two experiments - renaming files with updated relative timestamps and stack numbers
@@ -234,10 +242,12 @@ Extended list of features of LLSpy
 * cross-platform: includes precompiled binaries and shared libraries that should work on all systems.
 
 
-Bug Reports, etc...
-===================
+Bug Reports, Feature requests, etc...
+=====================================
 
-`Contact Talley <mailto:talley.lambert@gmail.com>`_
+Pull requests are welcome!
+
+To report a bug or request a feature, please `submit an issue on github <https://github.com/tlambert03/LLSpy/issues>`_
 
 Please include the following in any bug reports:
 
