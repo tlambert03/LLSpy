@@ -511,9 +511,9 @@ class LLSdir(object):
         else:
             return False
 
-    def compress(self, subfolder='.'):
+    def compress(self, subfolder='.', compression=None):
         logger.info('compressing %s...' % str(self.path.joinpath(subfolder)))
-        return compress.compress(str(self.path.joinpath(subfolder)))
+        return compress.compress(str(self.path.joinpath(subfolder)), compression=compression)
 
     def decompress(self, subfolder='.', **kwargs):
         o = compress.decompress(str(self.path.joinpath(subfolder)))
