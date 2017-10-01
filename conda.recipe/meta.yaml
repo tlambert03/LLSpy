@@ -7,8 +7,8 @@ package:
   version: {{ environ['VERSION'] }}  # for travis
 
 source:
-  #path: ..
-  git_url: https://github.com/tlambert03/LLSpy
+  path: ..
+  # git_url: https://github.com/tlambert03/LLSpy
   # git_rev: v0.1.0
   # fn: {{ name }}-{{ version }}.tar.gz
   # url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz

@@ -91,10 +91,10 @@ setup(
         'click',
         'watchdog',
         'pyqt5',
-        'matplotlib'
+        'matplotlib',
         'spimagine',
         'gputools',
-        'raven'
+        'raven',
     ],
     entry_points={
             'console_scripts': [

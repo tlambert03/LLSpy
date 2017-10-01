@@ -19,15 +19,14 @@ install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
+  - conda config --add channels conda-forge
+  - conda config --add channels talley
   - conda update -q conda
   - conda info -a
 
-  - conda create -q -n test-environment -c talley -c conda-forge python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib tifffile numba ipython voluptuous watchdog click pyqt pyopencl spimagine raven
-  - source activate test-environment
-  - python setup.py install
-
-script:
-  - lls-gui test
+#  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib tifffile numba ipython voluptuous watchdog click pyqt pyopencl spimagine raven
+#  - source activate test-environment
+#  - python setup.py install
 
 after_success:
   - test $TRAVIS_BRANCH = "master" && conda install conda-build && conda install anaconda-client && bash conda.recipe/conda_upload.sh
