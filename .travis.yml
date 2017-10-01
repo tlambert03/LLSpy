@@ -23,10 +23,13 @@ install:
   - conda config --add channels talley
   - conda update -q conda
   - conda info -a
+  - conda install -q conda-build -c defaults
+  - conda install -q anaconda-client -c defaults
 
 #  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib tifffile numba ipython voluptuous watchdog click pyqt pyopencl spimagine raven
 #  - source activate test-environment
 #  - python setup.py install
 
 script:
-  - test $TRAVIS_BRANCH = "master" && conda install conda-build && conda install anaconda-client && bash conda.recipe/conda_upload.sh
+  - conda build -q conda.recipe
+#  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
