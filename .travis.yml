@@ -28,5 +28,5 @@ install:
 #  - source activate test-environment
 #  - python setup.py install
 
-after_success:
+script:
   - test $TRAVIS_BRANCH = "master" && conda install conda-build && conda install anaconda-client && bash conda.recipe/conda_upload.sh
