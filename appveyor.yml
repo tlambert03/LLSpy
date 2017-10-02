@@ -2,11 +2,10 @@ build: false
 
 environment:
   matrix:
-    - platform: x64
-      PYTHON_VERSION: 2.7
-      MINICONDA: C:\Miniconda
-    - platform: x64
+    - PYTHON: "C:\\Python36_64"
       PYTHON_VERSION: 3.6
+      PYTHON_ARCH: "64"
+      CONDA_PY: "36"
       MINICONDA: C:\Miniconda3
 
 init:
