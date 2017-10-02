@@ -1,7 +1,7 @@
 language: python
 python:
-  - "2.7"
-  - "3.5"
+#  - "2.7"
+#  - "3.5"
   - "3.6"
 
 before_install:
@@ -31,5 +31,4 @@ install:
 #  - python setup.py install
 
 script:
-  - conda build -q conda.recipe
-#  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
+  - test $TRAVIS_BRANCH = "master" && conda install conda-build -c defaults && conda install anaconda-client -c defaults && bash conda.recipe/conda_upload.sh
