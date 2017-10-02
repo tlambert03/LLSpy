@@ -8,7 +8,7 @@ environment:
     # Not sure how to resolve this, but maybe we should be tracking the VS version in the build string anyway?
     - TARGET_ARCH: "x64"
       CONDA_PY: "36"
-      CONDA_INSTALL_LOCN: "C:\\Miniconda36-x64"
+      CONDA_INSTALL_LOCN: "C:\Miniconda36-x64"
 
 artifacts:
     # Store built conda packages as artifacts
@@ -35,7 +35,6 @@ install:
     - cmd: conda config --add channels talley
     - cmd: conda config --set show_channel_urls true
     - cmd: appveyor-retry conda update --yes --quiet conda
-
     - cmd: appveyor-retry conda install --yes --quiet -c defaults conda-build anaconda-client
 
 # Skip .NET project specific build phase.
@@ -47,5 +46,6 @@ test_script:
     - cmd: mkdir conda_packages
     # Uncomment the following two lines to make any conda packages created
     # available as build artifacts in AppVeyor
-    - cmd: 'copy /Y C:\Miniconda\conda-bld\win-32\*.bz2 conda_packages || cmd /c "exit /b 0"'
-    - cmd: 'copy /Y C:\Miniconda-x64\conda-bld\win-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
+    - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\win-32\*.bz2 conda_packages || cmd /c "exit /b 0"'
+    - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\win-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
+    - cmd: anaconda -v -t %CONDA_UPLOAD_TOKEN% upload "%CONDA_INSTALL_LOCN%\conda-bld\win-64\*.tar.bz2" -u talley --force
