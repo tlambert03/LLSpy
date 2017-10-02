@@ -18,7 +18,7 @@ install:
   - conda config --add channels conda-forge
   - conda config --add channels talley
   - conda info -a
-  - conda build --debug -c talley -c conda-forge conda.recipe
+  - conda build -c talley -c conda-forge conda.recipe
 
 test_script:
   - nosetests

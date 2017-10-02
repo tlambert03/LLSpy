@@ -3,8 +3,8 @@
 
 package:
   name: {{ name }}
-#  version: {{ setupdata['version'] }}
-  version: {{ environ['VERSION'] }}  # for travis
+  version: {{ setupdata['version'] }}
+#  version: {{ environ['VERSION'] }}  # for travis
 
 source:
   path: ..
@@ -36,10 +36,10 @@ build:
 
 requirements:
   build:
-    - python {{ environ['TRAVIS_PYTHON_VERSION'] }}
+    - python
     - setuptools
   run:
-    - python {{ environ['TRAVIS_PYTHON_VERSION'] }}
+    - python
     - numpy
     - scipy
     - tifffile
