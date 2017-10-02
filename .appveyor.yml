@@ -8,7 +8,7 @@ environment:
     # Not sure how to resolve this, but maybe we should be tracking the VS version in the build string anyway?
     - TARGET_ARCH: "x64"
       CONDA_PY: "36"
-      CONDA_INSTALL_LOCN: "C:\Miniconda36-x64"
+      CONDA_INSTALL_LOCN: "C:\\Miniconda36-x64"
 
 artifacts:
     # Store built conda packages as artifacts
