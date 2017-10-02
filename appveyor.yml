@@ -1,0 +1,24 @@
+build: false
+
+environment:
+  matrix:
+    - PYTHON_VERSION: 2.7
+      MINICONDA: C:\Miniconda
+    - PYTHON_VERSION: 3.6
+      MINICONDA: C:\Miniconda3
+
+init:
+  - "ECHO %PYTHON_VERSION% %MINICONDA%"
+
+install:
+  - "set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda install conda-build anaconda-client
+  - conda update -q conda conda-build
+  - conda config --add channels conda-forge
+  - conda config --add channels talley
+  - conda info -a
+  - conda build --debug -c talley -c conda-forge conda.recipe
+
+test_script:
+  - nosetests
