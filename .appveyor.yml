@@ -13,6 +13,7 @@ environment:
 
   matrix:
     - PYTHON: 3.6
+      MINICONDA: "C:\\Miniconda3-x64"
 
 # We always use a 64-bit machine, but can build x86 distributions
 # with the TARGET_ARCH variable.
@@ -34,19 +35,17 @@ install:
     - cmd: rmdir C:\cygwin /s /q
 
     # Add path, activate `conda` and update conda.2
-    - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
+    - 'SET PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%'
+    - cmd: conda config --set always_yes yes
     - cmd: conda update --yes --quiet conda
 
-    - cmd: set PYTHONUNBUFFERED=1
-
-    # Add our channels.
+    # Add channels.
     - cmd: conda config --set show_channel_urls true
     - cmd: conda config --remove channels defaults
     - cmd: conda config --add channels defaults
     - cmd: conda config --add channels conda-forge
     - cmd: conda config --add channels talley
-
-    # Configure the VM.
+    - cmd: conda install -c defaults conda-build
 
 # Skip .NET project specific build phase.
 build: off
