@@ -73,7 +73,7 @@ p, li { white-space: pre-wrap; }
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap>../../_assets/before_after.png</pixmap>
+        <pixmap>before_after.png</pixmap>
        </property>
       </widget>
      </item>

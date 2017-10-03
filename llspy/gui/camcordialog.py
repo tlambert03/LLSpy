@@ -28,7 +28,7 @@ class Ui_Dialog(object):
         self.picture = QtWidgets.QLabel(Dialog)
         self.picture.setMinimumSize(QtCore.QSize(500, 280))
         self.picture.setText("")
-        self.picture.setPixmap(QtGui.QPixmap("../../_assets/before_after.png"))
+        self.picture.setPixmap(QtGui.QPixmap("before_after.png"))
         self.picture.setObjectName("picture")
         self.horizontalLayout.addWidget(self.picture)
         self.verticalLayout.addLayout(self.horizontalLayout)
