@@ -104,11 +104,11 @@ def main():
         # check to see if the cudaDeconv binary is valid, and alert if not
         try:
             llspy.cudabinwrapper.get_bundled_binary()
-            if not llspy.nGPU() > 0:
-                QtWidgets.QMessageBox.warning(mainGUI, "No GPUs detected!",
-                    "cudaDeconv found no "
-                    "CUDA-capable GPUs.\n\n Preview/Processing will likely not work.",
-                    QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
+            # if not llspy.nGPU() > 0:
+            #     QtWidgets.QMessageBox.warning(mainGUI, "No GPUs detected!",
+            #         "cudaDeconv found no "
+            #         "CUDA-capable GPUs.\n\n Preview/Processing will likely not work.",
+            #         QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
         except llspy.CUDAbinException:
             QtWidgets.QMessageBox.warning(mainGUI, "No binary detected!",
                 'Unable to detect bundled cudaDeconv binary. We will not be able'
