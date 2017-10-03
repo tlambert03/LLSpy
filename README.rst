@@ -10,6 +10,7 @@ LLSpy: Lattice light-sheet post-processing utility
 .. |python_shield| image:: https://img.shields.io/badge/Python-2.7%2C%203.5%2C%203.6-brightgreen.svg
 
 .. |appveyor_shield| image:: https://img.shields.io/appveyor/ci/tlambert03/LLSpy/master.svg
+   :target: https://ci.appveyor.com/project/tlambert03/llspy
 
 .. |docs_shield| image:: https://readthedocs.org/projects/llspy/badge/?version=latest
    :target: http://llspy.readthedocs.io/en/latest/?badge=latest
@@ -222,29 +223,32 @@ Features of LLSpy
 * graphical user interface with persistent/saveable processing settings
 * command line interface for remote/server usage (coming)
 * preview processed image to verify settings prior to processing full experiment
-
 * *Pre-processing corrections*:
-    * correct "residual electron" issue on Flash4.0 when using overlap synchronous mode.  Includes CUDA and parallel CPU processing as well as GUI for generation of calibration file.
-    * apply selective median filter to particularly noisy pixels
-    * trim image edges prior to deskewing (helps with CMOS edge row artifacts)
-    * auto-detect background
+
+  * correct "residual electron" issue on Flash4.0 when using overlap synchronous mode.  Includes CUDA and parallel CPU processing as well as GUI for generation of calibration file.
+  * apply selective median filter to particularly noisy pixels
+  * trim image edges prior to deskewing (helps with CMOS edge row artifacts)
+  * auto-detect background
 
 * Processing:
-    * select subset of acquired images (C or T) for processing
-    * automatic parameter detection based on auto-parsing of Settings.txt
-    * automatic OTF generation/selection from folder of raw PSF files, based on date of acquisition, mask used (if entered into SPIMProject.ini), and wavelength.
-    * graphical progress bar and time estimation
+
+  * select subset of acquired images (C or T) for processing
+  * automatic parameter detection based on auto-parsing of Settings.txt
+  * automatic OTF generation/selection from folder of raw PSF files, based on date of acquisition, mask used (if entered into SPIMProject.ini), and wavelength.
+  * graphical progress bar and time estimation
 
 * Post-processing:
-    * proper voxel-size metadata embedding (newer version of Cimg)
-    * join MIP files into single hyperstack viewable in ImageJ/Fiji
-    * automatic width/shift selection based on image content ("auto crop to features")
-    * automatic fiducial-based image registration (provided tetraspeck bead stack)
-    * compress raw data after processing
+
+  * proper voxel-size metadata embedding (newer version of Cimg)
+  * join MIP files into single hyperstack viewable in ImageJ/Fiji
+  * automatic width/shift selection based on image content ("auto crop to features")
+  * automatic fiducial-based image registration (provided tetraspeck bead stack)
+  * compress raw data after processing
 
 * Watched-folder autoprocessing (experimental):
-    * Server mode: designate a folder to watch for incoming *finished* LLS folders (with Settings.txt file).  When new folders are detected, they are added to the processing queue and the queue is started if not already in progress.
-    * Aquisition mode: designed to be used on the aquisition computer.  Designate folder to watch for new LLS folders, and process new files as they arrive.  Similar to built in GPU processing tab in Lattice Scope software, but with the addition of all the corrections and parameter selection in the GUI.
+
+  * Server mode: designate a folder to watch for incoming *finished* LLS folders (with Settings.txt file).  When new folders are detected, they are added to the processing queue and the queue is started if not already in progress.
+  * Aquisition mode: designed to be used on the aquisition computer.  Designate folder to watch for new LLS folders, and process new files as they arrive.  Similar to built in GPU processing tab in Lattice Scope software, but with the addition of all the corrections and parameter selection in the GUI.
 
 * easily return LLS folder to original (pre-processed) state
 * compress and decompress folders and subfolders with lbzip2 (not working on windows)
