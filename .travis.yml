@@ -1,8 +1,9 @@
+os: osx
 language: python
 python:
 #  - "2.7"
 #  - "3.5"
-  - "3.6"
+  - 3.6
 
 before_install:
   - echo "before install"
@@ -27,7 +28,10 @@ install:
   - conda update -q conda conda-build
   - conda config --add channels conda-forge
   - conda config --add channels talley
+  - conda config --set show_channel_urls true
   - conda info -a
+
+
 #  - conda build --py 36 -c talley -c conda-forge conda.recipe
 
 #  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib tifffile numba ipython voluptuous watchdog click pyqt pyopencl spimagine raven
@@ -35,5 +39,7 @@ install:
 #  - python setup.py install
 
 script:
-  - conda build --py 36 --token $CONDA_UPLOAD_TOKEN --debug --user talley -c talley -c conda-forge conda.recipe
+  - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
+  - conda build --py $TRAVIS_PYTHON_VERSION --token $CONDA_UPLOAD_TOKEN --user talley conda.recipe
+  - conda convert -p win-64 -p linux-64 -o $CONDA_BLD_PATH $OUTPUT
 #  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
