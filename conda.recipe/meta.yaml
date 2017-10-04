@@ -11,7 +11,7 @@ source:
   git_tag: {{ TRAVIS_BRANCH | master }}
 
 build:
-  number: {{ TRAVIS_BUILD_NUMBER | 0 }}
+  number: 0
   string: 'py{{ PY_VER|replace(".", "") }}_{{ PKG_BUILDNUM }}'
   script: python setup.py install --single-version-externally-managed --record record.txt
   entry_points:
