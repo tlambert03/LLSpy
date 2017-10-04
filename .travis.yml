@@ -47,8 +47,6 @@ script:
 after_success:
   - echo $TRAVIS_TEST_RESULT
   - conda convert -p osx-64 -p win-64 -o $CONDA_BLD_PATH $OUTPUT
-
-deploy:
   - ls $CONDA_BLD_PATH/*
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u talley --force
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u talley --force
