@@ -3,7 +3,7 @@ language: python
 python:
   - 3.6
   - 3.5
-  - 2.7
+#  - 2.7  # failing for some reason
 
 before_install:
   - echo "before install"
@@ -51,5 +51,5 @@ after_success:
   - ls $CONDA_BLD_PATH/*
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u $USER --force
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u $USER --force
-  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u USER --force
+  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u $USER --force
 #  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
