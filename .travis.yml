@@ -31,7 +31,6 @@ install:
   - conda config --set show_channel_urls true
   - conda info -a
 
-
 #  - conda build --py 36 -c talley -c conda-forge conda.recipe
 
 #  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib tifffile numba ipython voluptuous watchdog click pyqt pyopencl spimagine raven
@@ -40,6 +39,10 @@ install:
 
 script:
   - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
-  - conda build --py $TRAVIS_PYTHON_VERSION --token $CONDA_UPLOAD_TOKEN --user talley conda.recipe
-  - conda convert -p win-64 -p linux-64 -o $CONDA_BLD_PATH $OUTPUT
+  - conda build --py $TRAVIS_PYTHON_VERSION conda.recipe
+  - conda convert -p osx-64 -p win-64 -o $CONDA_BLD_PATH $OUTPUT
+  - ls $CONDA_BLD_PATH/*
+  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u talley --force
+  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u talley --force
+  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u talley --force
 #  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
