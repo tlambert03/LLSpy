@@ -32,6 +32,7 @@ install:
   - conda info -a
   - echo $TRAVIS_BUILD_NUMBER
   - echo $TRAVIS_BRANCH
+  - echo $TRAVIS_PYTHON_VERSION
 
 #  - conda build --py 36 -c talley -c conda-forge conda.recipe
 
@@ -48,7 +49,7 @@ after_success:
   - echo $TRAVIS_TEST_RESULT
   - conda convert -p osx-64 -p win-64 -o $CONDA_BLD_PATH $OUTPUT
   - ls $CONDA_BLD_PATH/*
-  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u talley --force
-  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u talley --force
-  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u talley --force
+  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u $USER --force
+  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u $USER --force
+  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u USER --force
 #  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
