@@ -1,9 +1,9 @@
 #os: osx
 language: python
 python:
-  - 2.7
-  - 3.5
   - 3.6
+  - 3.5
+  - 2.7
 
 before_install:
   - echo "before install"
@@ -43,7 +43,7 @@ install:
 script:
   - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
   - echo $OUTPUT
-  - conda build --py $TRAVIS_PYTHON_VERSION conda.recipe
+  - conda build --py $TRAVIS_PYTHON_VERSION --debug conda.recipe
 
 after_success:
   - echo $TRAVIS_TEST_RESULT
