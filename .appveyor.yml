@@ -9,12 +9,12 @@ environment:
     - TARGET_ARCH: "x64"
       CONDA_PY: "36"
       CONDA_INSTALL_LOCN: "C:\\Miniconda36-x64"
-    - TARGET_ARCH: "x64"
-      CONDA_PY: "35"
-      CONDA_INSTALL_LOCN: "C:\\Miniconda35-x64"
-    - TARGET_ARCH: "x64"
-      CONDA_PY: "27"
-      CONDA_INSTALL_LOCN: "C:\\Miniconda-x64"
+    # - TARGET_ARCH: "x64"
+    #   CONDA_PY: "35"
+    #   CONDA_INSTALL_LOCN: "C:\\Miniconda35-x64"
+    # - TARGET_ARCH: "x64"
+    #   CONDA_PY: "27"
+    #   CONDA_INSTALL_LOCN: "C:\\Miniconda-x64"
 
 artifacts:
     # Store built conda packages as artifacts
@@ -47,15 +47,18 @@ install:
 build: off
 
 test_script:
+    - conda build conda.recipe --py %CONDA_PY% --output >outname.txt
+    - set /p OUTNAME=<outname.txt
     - conda build conda.recipe --py %CONDA_PY%
     # copy any newly created conda packages into the conda_packages dir
     - cmd: mkdir conda_packages
-    # Uncomment the following two lines to make any conda packages created
-    # available as build artifacts in AppVeyor
+    # make any conda packages created available as build artifacts in AppVeyor
 #    - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\win-32\*.bz2 conda_packages || cmd /c "exit /b 0"'
     - cmd: dir %CONDA_INSTALL_LOCN%\conda-bld\win-64\
-    - cmd: conda convert -p osx-64 -p linux-64 --output-dir %CONDA_INSTALL_LOCN%\conda-bld\ %CONDA_INSTALL_LOCN%\conda-bld\win-64\llspy-0.2.1-py36_0.tar.bz2
+    - cmd: conda convert -p osx-64 -p linux-64 --output-dir %CONDA_INSTALL_LOCN%\conda-bld\ %OUTNAME%
     - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\win-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
-    - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\osx-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
-    - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\linux-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
+    # - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\osx-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
+    # - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\linux-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
     - cmd: anaconda -v -t %CONDA_UPLOAD_TOKEN% upload "%CONDA_INSTALL_LOCN%\conda-bld\win-64\*.tar.bz2" -u talley --force
+    - cmd: anaconda -v -t %CONDA_UPLOAD_TOKEN% upload "%CONDA_INSTALL_LOCN%\conda-bld\linux-64\*.tar.bz2" -u talley --force
+    - cmd: anaconda -v -t %CONDA_UPLOAD_TOKEN% upload "%CONDA_INSTALL_LOCN%\conda-bld\osx-64\*.tar.bz2" -u talley --force
