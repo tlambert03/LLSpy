@@ -1,8 +1,8 @@
 #os: osx
 language: python
 python:
-#  - "2.7"
-#  - "3.5"
+  - 2.7
+  - 3.5
   - 3.6
 
 before_install:
@@ -30,6 +30,8 @@ install:
   - conda config --add channels talley
   - conda config --set show_channel_urls true
   - conda info -a
+  - echo $TRAVIS_BUILD_NUMBER
+  - echo $TRAVIS_BRANCH
 
 #  - conda build --py 36 -c talley -c conda-forge conda.recipe
 
@@ -39,8 +41,14 @@ install:
 
 script:
   - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
+  - echo $OUTPUT
   - conda build --py $TRAVIS_PYTHON_VERSION conda.recipe
+
+after_success:
+  - echo $TRAVIS_TEST_RESULT
   - conda convert -p osx-64 -p win-64 -o $CONDA_BLD_PATH $OUTPUT
+
+deploy:
   - ls $CONDA_BLD_PATH/*
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u talley --force
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u talley --force
