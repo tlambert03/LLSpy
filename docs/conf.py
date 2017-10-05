@@ -29,7 +29,7 @@ class Mock(MagicMock):
 
 
 MOCK_MODULES = ['gputools', 'spimagine', 'pyopencl', 'pyopengl', 'numpy',
-                'matplotlib']
+                'matplotlib', 'scipy', 'scipy.ndimage.filters']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
