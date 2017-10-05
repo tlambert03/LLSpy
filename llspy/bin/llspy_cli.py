@@ -452,10 +452,18 @@ def deskew():
 
 
 @cli.command()
-def gui():
+@click.option('-t', '--test', '_test', is_flag=True, default=False,
+              help="just open window and close")
+def gui(_test):
     """Launch LLSpy Graphical User Interface"""
-    from llspy.bin.llspy_gui import main
-    main()
+    from llspy.bin.llspy_gui import main, test
+    if _test:
+        exceptionHandler = llspy.gui.exceptions.ExceptionHandler()
+        sys.excepthook = exceptionHandler.handler
+        # exceptionHandler.errorMessage.connect(mainGUI.show_error_window)
+        test()
+    else:
+        main()
 
 
 @cli.command()
