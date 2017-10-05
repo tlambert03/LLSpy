@@ -1,0 +1,10 @@
+click
+matplotlib
+numpy
+raven
+scipy
+Sphinx
+spimagine
+tifffile
+voluptuous
+watchdog
