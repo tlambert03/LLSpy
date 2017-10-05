@@ -1,9 +1,0 @@
-click
-matplotlib
-numpy
-raven
-scipy
-Sphinx
-tifffile
-voluptuous
-watchdog
