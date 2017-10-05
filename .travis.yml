@@ -6,7 +6,12 @@ python:
   - 2.7
 
 before_install:
-  - echo "before install"
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+      brew update;
+      brew install python3;
+      python3 -m venv venv;
+      source venv/bin/activate;
+    fi
 
 install:
   - sudo apt-get update
