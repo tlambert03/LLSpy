@@ -13,7 +13,7 @@ package:
 source:
   #path: ..
   git_url: https://github.com/tlambert03/LLSpy
-  git_tag: {{ TRAVIS_BRANCH }}
+  git_tag: 'master'
 
 build:
   number: 0
@@ -51,10 +51,10 @@ requirements:
 
 test:
   imports:
-    - llspy
+    - llspy # [not py2k]
   commands:
-    - which lls  # [unix]
-    - where lls  # [win]
+    # - which lls  # [unix]
+    # - where lls  # [win]
     - lls --help # [not py2k]
     - lls gui --test # [not linux]
 #    - spimagine

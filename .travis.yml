@@ -1,17 +1,12 @@
-os: osx
+#os: osx
 language: python
 python:
   - 3.6
   - 3.5
-  - 2.7
+#  - 2.7
 
 before_install:
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-      brew update;
-      brew install python3;
-      python3 -m venv venv;
-      source venv/bin/activate;
-    fi
+  - echo "before install"
 
 install:
   - sudo apt-get update
@@ -48,13 +43,13 @@ install:
 script:
   - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
   - echo $OUTPUT
-  - conda build --py $TRAVIS_PYTHON_VERSION conda.recipe
+  - conda build --py $TRAVIS_PYTHON_VERSION  conda.recipe
 
 after_success:
   - echo $TRAVIS_TEST_RESULT
-  - conda convert -p osx-64 -p win-64 -o $CONDA_BLD_PATH $OUTPUT
+  - conda convert -p osx-64 -o $CONDA_BLD_PATH $OUTPUT
   - ls $CONDA_BLD_PATH/*
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u $USER --force
-  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u $USER --force
+#  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u $USER --force
   - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u $USER --force
 #  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
