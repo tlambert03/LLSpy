@@ -1,5 +1,10 @@
 {% set name = "llspy" %}
 {% set setupdata = load_setup_py_data() %}
+#{% if TRAVIS_BRANCH is defined %}
+#{% set branch = TRAVIS_BRANCH %}
+#{% else %}
+#{% set branch = 'master' %}
+#{% endif %}
 
 package:
   name: {{ name }}
@@ -8,11 +13,7 @@ package:
 source:
   #path: ..
   git_url: https://github.com/tlambert03/LLSpy
-  {% if TRAVIS_BRANCH is not none %}
   git_tag: {{ TRAVIS_BRANCH }}
-  {% else %}
-  git_tag: master
-  {%endif %}
 
 build:
   number: 0
@@ -55,7 +56,7 @@ test:
     - which lls  # [unix]
     - where lls  # [win]
     - lls --help
-    - lls-gui test # [not linux]
+    - lls gui --test # [not linux]
 #    - spimagine
 
 about:
