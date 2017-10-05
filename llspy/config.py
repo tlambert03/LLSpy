@@ -1,6 +1,13 @@
 import os
 import configparser
-from llspy import plib
+try:
+	import pathlib as plib
+	plib.Path()
+except (ImportError, AttributeError):
+	import pathlib2 as plib
+except (ImportError, AttributeError):
+	raise ImportError('no pathlib detected. For python2: pip install pathlib2')
+
 
 thisDirectory = os.path.dirname(os.path.abspath(__file__))
 parentDirectory = os.path.abspath(os.path.join(thisDirectory, os.pardir))

@@ -4,15 +4,6 @@ import logging
 logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
 logger = logging.getLogger(__name__)
 
-
-try:
-	import pathlib as plib
-	plib.Path()
-except (ImportError, AttributeError):
-	import pathlib2 as plib
-except (ImportError, AttributeError):
-	raise ImportError('no pathlib detected. For python2: pip install pathlib2')
-
 from . import config
 from . import otf
 from . import arrayfun

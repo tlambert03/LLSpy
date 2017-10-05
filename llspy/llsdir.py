@@ -1,4 +1,3 @@
-from . import plib
 from . import config
 from .settingstxt import LLSsettings
 from . import parse, compress, schema
@@ -10,6 +9,15 @@ from . import arrayfun
 
 from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
 from fiducialreg.fiducialreg import CloudSet
+
+try:
+    import pathlib as plib
+    plib.Path()
+except (ImportError, AttributeError):
+    import pathlib2 as plib
+except (ImportError, AttributeError):
+    raise ImportError('no pathlib detected. For python2: pip install pathlib2')
+
 
 import os
 import sys
@@ -115,43 +123,55 @@ def move_corrected(path):
                     t += 1
 
 
-def preview(E, tR=0, cR=None, **kwargs):
-    """ process a restricted time range (defaults to t=0) with same settings
-    as autoprocess, but without file I/O"""
+def preview(exp, tR=0, cR=None, **kwargs):
+    """Process LLS experiment, without file IO.
 
-    if not isinstance(E, LLSdir):
-        if isinstance(E, str):
-            E = LLSdir(E)
-    logger.debug("Preview called on {}".format(str(E.path)))
+    Args:
+        exp (:obj:`str`, LLSdir): path to LLS experiment or LLSdir instance
+        tR (:obj:`int`, Iterable[:obj:`int`], optional): Time points to process (zero indexed)
+        cR (:obj:`int`, Iterable[:obj:`int`], optional): Channels to process (zero indexed)
 
-    if E.is_compressed():
+        **kwargs: any keyword arguments that are recognized by the LLS `Schema list`_.
+
+    Returns:
+        :obj:`np.ndarray`: numpy array of processed data (3D-5D, depending on input)
+
+
+    """
+
+    if not isinstance(exp, LLSdir):
+        if isinstance(exp, str):
+            exp = LLSdir(exp)
+    logger.debug("Preview called on {}".format(str(exp.path)))
+
+    if exp.is_compressed():
         try:
-            E.decompress_partial(tRange=tR)
+            exp.decompress_partial(tRange=tR)
         except Exception as e:
             logger.error("ERROR: could not do partial decompression...")
             logger.error(str(e))
-            E.decompress()
+            exp.decompress()
 
-    if not E.ready_to_process:
-        if not E.has_lls_tiffs:
-            logger.warn('No TIFF files to process in {}'.format(E.path))
-        if not E.has_settings:
-            logger.warn('Could not find Settings.txt file in {}'.format(E.path))
+    if not exp.ready_to_process:
+        if not exp.has_lls_tiffs:
+            logger.warn('No TIFF files to process in {}'.format(exp.path))
+        if not exp.has_settings:
+            logger.warn('Could not find Settings.txt file in {}'.format(exp.path))
         return
 
     kwargs['tRange'] = tR
     kwargs['cRange'] = cR
-    P = E.localParams(**kwargs)
+    P = exp.localParams(**kwargs)
 
     out = []
     for timepoint in P.tRange:
-        stacks = [util.imread(f) for f in E.get_files(c=P.cRange, t=timepoint)]
+        stacks = [util.imread(f) for f in exp.get_files(c=P.cRange, t=timepoint)]
         if not stacks:
             continue
         # logger.debug("shape_raw: {}".format(stacks[0].shape))
         if P.correctFlash:
             camparams = CameraParameters(P.camparamsPath)
-            camparams = camparams.get_subroi(E.settings.camera.roi)
+            camparams = camparams.get_subroi(exp.settings.camera.roi)
             stacks = camparams.correct_stacks(stacks, trim=(P.trimZ, P.trimY, P.trimX), medianFilter=P.medianFilter)
         else:
             # camera correction trims edges, so if we aren't doing the camera correction
@@ -208,33 +228,44 @@ def preview(E, tR=0, cR=None, **kwargs):
         return None
 
 
-def process(E, binary=None, **kwargs):
-    """Main method for easy processing of the folder"""
+def process(exp, binary=None, **kwargs):
+    """Process LLS experiment with cudaDeconv, output results to file.
 
-    if not isinstance(E, LLSdir):
-        if isinstance(E, str):
-            E = LLSdir(E)
-    logger.debug("Process called on {}".format(str(E.path)))
+    Args:
+        exp (:obj:`str`, LLSdir): path to LLS experiment or LLSdir instance
+        binary (:obj:`str`, optional): specify path to cudaDeconv binary, otherwise
+            gets default bundled binary (if present).
 
-    if E.is_compressed():
-        E.decompress()
+        **kwargs: any keyword arguments that are recognized by the LLS `Schema list`_.
 
-    if not E.ready_to_process:
-        if not E.has_lls_tiffs:
-            logger.warn('No TIFF files to process in {}'.format(E.path))
-        if not E.has_settings:
-            logger.warn('Could not find Settings.txt file in {}'.format(E.path))
+    Returns:
+        None:  Files are written to disk.
+    """
+
+    if not isinstance(exp, LLSdir):
+        if isinstance(exp, str):
+            exp = LLSdir(exp)
+    logger.debug("Process called on {}".format(str(exp.path)))
+
+    if exp.is_compressed():
+        exp.decompress()
+
+    if not exp.ready_to_process:
+        if not exp.has_lls_tiffs:
+            logger.warn('No TIFF files to process in {}'.format(exp.path))
+        if not exp.has_settings:
+            logger.warn('Could not find Settings.txt file in {}'.format(exp.path))
         return
 
-    P = E.localParams(**kwargs)
+    P = exp.localParams(**kwargs)
 
     if binary is None:
         binary = CUDAbin()
 
     if P.correctFlash:
-        E.path = E.correct_flash(**P)
+        exp.path = exp.correct_flash(**P)
     elif (P.medianFilter or any([any(i) for i in (P.trimX, P.trimY, P.trimZ)])):
-        E.path = E.median_and_trim(**P)
+        exp.path = exp.median_and_trim(**P)
 
     if P.nIters > 0 or P.saveDeskewedRaw or P.rotate:
         for chan in P.cRange:
@@ -258,41 +289,41 @@ def process(E, binary=None, **kwargs):
             }
 
             # filter by channel and trange
-            if len(list(P.tRange)) == E.parameters.nt:  # processing all the timepoints
+            if len(list(P.tRange)) == exp.parameters.nt:  # processing all the timepoints
                 filepattern = 'ch{}_'.format(chan)
             else:
                 filepattern = 'ch{}_stack{}'.format(chan, util.pyrange_to_perlregex(P.tRange))
 
-            binary.process(str(E.path), filepattern, P.otfs[chan], **opts)
+            binary.process(str(exp.path), filepattern, P.otfs[chan], **opts)
 
         # if verbose:
         #   logger.info(response.output.decode('utf-8'))
 
     # FIXME: this is just a messy first try...
     if P.doReg:
-        E.register(P.regRefWave, P.regMode, P.regCalibDir)
+        exp.register(P.regRefWave, P.regMode, P.regCalibDir)
 
     if P.mergeMIPs:
-        E.mergemips()
+        exp.mergemips()
 
     # if P.mergeMIPsraw:
-    #   if E.path.joinpath('Deskewed').is_dir():
-    #       E.mergemips('Deskewed')
+    #   if exp.path.joinpath('Deskewed').is_dir():
+    #       exp.mergemips('Deskewed')
 
     # if we did camera correction, move the resulting processed folders to
     # the parent folder, and optionally delete the corrected folder
-    if P.moveCorrected and E.path.name == 'Corrected':
-        move_corrected(str(E.path))
-        E.path = E.path.parent
+    if P.moveCorrected and exp.path.name == 'Corrected':
+        move_corrected(str(exp.path))
+        exp.path = exp.path.parent
 
     if not P.keepCorrected:
-        shutil.rmtree(str(E.path.joinpath('Corrected')), ignore_errors=True)
+        shutil.rmtree(str(exp.path.joinpath('Corrected')), ignore_errors=True)
 
     if P.compressRaw:
-        E.compress()
+        exp.compress()
 
     if P.writeLog:
-        outname = str(E.path.joinpath('{}_{}'.format(E.basename,
+        outname = str(exp.path.joinpath('{}_{}'.format(exp.basename,
                             config.__OUTPUTLOG__)))
         with open(outname, 'w') as outfile:
             json.dump(P, outfile, cls=util.paramEncoder)

@@ -1,5 +1,4 @@
 from . import config
-from . import plib
 import re
 import ctypes
 import os
@@ -8,6 +7,15 @@ logger = logging.getLogger(__name__)
 import numpy as np
 from .util import load_lib
 from datetime import datetime, timedelta
+
+try:
+    import pathlib as plib
+    plib.Path()
+except (ImportError, AttributeError):
+    import pathlib2 as plib
+except (ImportError, AttributeError):
+    raise ImportError('no pathlib detected. For python2: pip install pathlib2')
+
 
 
 otflib = load_lib('libradialft')
