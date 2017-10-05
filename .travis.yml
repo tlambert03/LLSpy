@@ -2,12 +2,8 @@
 language: python
 python:
   - 3.6
-#  - 3.5
-#  - 2.7  # failing for some reason
-env:
-  - CONDA_PY=3.6
-  - CONDA_PY=3.5
-  - CONDA_PY=2.7
+  - 3.5
+  - 2.7
 
 before_install:
   - echo "before install"
@@ -37,7 +33,6 @@ install:
   - echo $TRAVIS_BUILD_NUMBER
   - echo $TRAVIS_BRANCH
   - echo $TRAVIS_PYTHON_VERSION
-  - echo $CONDA_PY
 
 #  - conda build --py 36 -c talley -c conda-forge conda.recipe
 
@@ -46,9 +41,9 @@ install:
 #  - python setup.py install
 
 script:
-  - OUTPUT="$(conda build --py $CONDA_PY --output conda.recipe)"
+  - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
   - echo $OUTPUT
-  - conda build --py $CONDA_PY --debug conda.recipe
+  - conda build --py $TRAVIS_PYTHON_VERSION --debug conda.recipe
 
 after_success:
   - echo $TRAVIS_TEST_RESULT
