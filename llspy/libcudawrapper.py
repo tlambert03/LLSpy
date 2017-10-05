@@ -1,10 +1,10 @@
+from .util import load_lib
 import ctypes
 import numpy as np
 import os
 import sys
 import logging
 logger = logging.getLogger(__name__)
-from .util import load_lib
 
 cudaLib = load_lib('libcudaDeconv')
 
@@ -114,6 +114,7 @@ def requireCUDAlib(func, *args, **kwargs):
 
 
 def quickCamcor(imstack, camparams):
+    """Correct Flash residual pixel artifact on GPU"""
     camcor_init(imstack.shape, camparams)
     camcor(imstack)
 
@@ -142,6 +143,7 @@ def camcor(imstack):
 
 @requireCUDAlib
 def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
+    """Deskew data acquired in stage-scanning mode on GPU"""
     nz, ny, nx = im.shape
     if not np.issubdtype(im.dtype, np.float32):
         im = im.astype(np.float32)
@@ -158,6 +160,7 @@ def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
 
 @requireCUDAlib
 def affineGPU(im, tmat):
+    """Perform affine transformation of image with provided transformation matrix"""
     nz, ny, nx = im.shape
     if not np.issubdtype(im.dtype, np.float32) or not im.flags['C_CONTIGUOUS']:
         im = np.ascontiguousarray(im, dtype=np.float32)

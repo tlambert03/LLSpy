@@ -41,7 +41,28 @@ PIXEL_SIZE = {
 
 
 class LLSsettings(object):
-	'''Class for parsing and storing info from LLS Settings.txt.'''
+	'''Class for parsing and storing info from LLS Settings.txt.
+
+	Args:
+		fname (:obj:`str`): path to settings.txt file
+
+	Attributes:
+		path: path to settings.txt file
+		basename: basename of settings file
+		date: :obj:`datetime` instance representing date of acquisition
+		acq_mode: Lattice Scope acquisition mode (i.e. Z-stack)
+		software_version: Lattice Scope software version
+		cycle_lasers: laser cycling mode, e.g. 'per Z'
+		z_motion: stage or objective scan
+		channel: dict with waveform params for each channel
+		camera: dict with camera settings
+		SPIMproject: configparser object with full SPIMproject.ini data
+		sheet_angle: light sheet angle
+		mag: magnification in settings file
+		pixel_size: calculated based on mag and dict of camera photodiode sizes
+		parameters: most important parameters extracted from settings file
+		raw_text: full settings.txt text string
+	'''
 
 	def __init__(self, fname):
 		self.path = os.path.abspath(fname)

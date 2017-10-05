@@ -362,9 +362,49 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True):
 
 
 class LLSdir(object):
-    '''Top level class for an LLS experiment folder
+    '''Main class to encapsulate an LLS experiment.
 
-    Detect parameters of an LLS experiment from a folder of files.
+    Detects parameters of an LLS experiment from a folder of files.  Parses
+    Settings.txt file for acquisition parameters, and uses list of tiffs to
+    determine nT, nC, etc.  Can call primary processing functions: preview and
+    process.
+
+    Args:
+        path (:obj:`str`): path to LLS experiment
+        ditch_partial (:obj:`bool`, optional): whether to discard tiff files that
+            are smaller than the rest (and probably partially acquired)
+
+    Usage:
+        >>> E = llspy.LLSdir('path/to/experiment_directory')
+        # it parses the settings file into a dict:
+        >>> E.settings
+        {'acq_mode': 'Z stack',
+         'basename': 'cell1_Settings.txt',
+         'camera': {'cam2name': '"Disabled"',
+                    'cycle': '0.01130',
+                    'cycleHz': '88.47 Hz',
+                    'exp': '0.01002',
+            ...
+        }
+        # many important attributes are in the parameters dict
+        >>> E.parameters
+        {'angle': 31.5,
+         'dx': 0.1019,
+         'dz': 0.5,
+         'nc': 2,
+         'nt': 10,
+         'nz': 65,
+         'samplescan': True,
+          ...
+        }
+        # and provides methods for processing the data
+        >>> E.autoprocess()
+        # the autoprocess method accepts many options as keyword aruguments
+        # a full list with descriptions can be seen here:
+        >>> llspy.printOptions()
+        >>> E.compress(compression='lbzip2')  # compress the raw data
+        >>> E.decompress()  # decompress files for re-processing
+        >>> E.freeze()  # delete processed data and compress raw data
     '''
 
     def __init__(self, path, ditch_partial=True):
@@ -385,10 +425,11 @@ class LLSdir(object):
             self.date = self.settings.date
             self.parameters.update(self.settings.parameters)
         if self.has_lls_tiffs:
-            self.register_tiffs()
+            self._register_tiffs()
 
     @property
     def isValid(self):
+        """Returns true if the path is a directory and has a settings.txt file."""
         if self.path.is_dir() and self.has_settings:
             return True
         else:
@@ -396,6 +437,7 @@ class LLSdir(object):
 
     @property
     def ready_to_process(self):
+        """Returns true if the path is a directory, has a settings.txt file and valid LLS tiffs."""
         if self.path.is_dir():
             if self.has_lls_tiffs and self.has_settings:
                 return True
@@ -403,6 +445,7 @@ class LLSdir(object):
 
     @property
     def has_lls_tiffs(self):
+        """Returns true if the folder has any tiffs mathing the filename regex."""
         if self.path.is_dir():
             for f in self.path.iterdir():
                 if parse.filename_pattern.match(f.name):
@@ -412,8 +455,8 @@ class LLSdir(object):
     def get_settings_files(self):
         return [str(s) for s in self.path.glob('*Settings.txt')]
 
-    def register_tiffs(self):
-        if self.get_all_tiffs():
+    def _register_tiffs(self):
+        if self._get_all_tiffs():
             if self.ditch_partial:
                 self.ditch_partial_tiffs()
             else:
@@ -421,7 +464,7 @@ class LLSdir(object):
             self.detect_parameters()
             self.read_tiff_header()
 
-    def get_all_tiffs(self):
+    def _get_all_tiffs(self):
         '''a list of every tiff file in the top level folder (all raw tiffs)'''
         all_tiffs = sorted(self.path.glob('*.tif'))
         if not all_tiffs:
@@ -517,7 +560,7 @@ class LLSdir(object):
 
     def decompress(self, subfolder='.', **kwargs):
         o = compress.decompress(str(self.path.joinpath(subfolder)))
-        if self.get_all_tiffs():
+        if self._get_all_tiffs():
             self.ditch_partial_tiffs()
             self.detect_parameters()
             self.read_tiff_header()
@@ -527,7 +570,7 @@ class LLSdir(object):
         """attempt to extract a subset of the tarball,  tRange=None will yield t=0
         """
         compress.decompress_partial(str(self.path.joinpath(subfolder)), tRange)
-        if self.get_all_tiffs():
+        if self._get_all_tiffs():
             self.ditch_partial_tiffs()
             self.detect_parameters()
             self.read_tiff_header()
@@ -584,11 +627,28 @@ class LLSdir(object):
                 return 1
 
     def localParams(self, **kwargs):
-        """ provides a validated dict of processing parameters that are specific
+        """Returns a validated dict of processing parameters that are specific
         to this LLSdir instance.
-        accepts any kwargs that are recognized by the LLSParams schema.
+
+        Accepts any keyword arguments that are recognized by the LLS `Schema list`_.
 
         >>> E.localParams(nIters=0, bRotate=True, bleachCorrection=True)
+        {'MIP': (0, 0, 1), 'autoCropSigma': 2.0, 'bRotate': True,
+        'background': [100, 98], 'bleachCorrection': True,
+        'cRange': range(0, 2), 'camparamsPath': None, 'compressRaw': False,
+        'compressionType': 'lbzip2', 'correctFlash': False,
+        'cropMode': 'none', 'cropPad': 50, 'deskew': 31.5, 'doReg': False,
+        'drdata': 0.1019, 'dzFinal': 0.1567, 'dzdata': 0.3,
+        'flashCorrectTarget': 'cpu', 'keepCorrected': False,
+        'medianFilter': False, 'mergeMIPs': True, 'mergeMIPsraw': True,
+        'mincount': 10, 'moveCorrected': True, 'nApodize': 15,
+        'nIters': 0, 'nZblend': 0, 'otfDir': None, 'rMIP': (0, 0, 0),
+        'regCalibDir': None, 'regMode': '2step', 'regRefWave': 488,
+        'reprocess': False, 'rotate': 31.5, 'saveDecon': True,
+        'saveDeskewedRaw': False, 'shift': 0, 'tRange': [0],
+        'trimX': (0, 0), 'trimY': (0, 0), 'trimZ': (0, 0), 'uint16': True,
+        'uint16raw': True, 'verbose': 0, 'wavelength': [488, 560],
+        'width': 0, 'writeLog': True}
         """
         P = self.parameters
         S = schema.procParams(kwargs)
@@ -667,7 +727,10 @@ class LLSdir(object):
         return util.dotdict(schema.__localSchema__(S))
 
     def autoprocess(self, **kwargs):
-        """Main method for easy processing of the folder"""
+        """Calls the :obj:`process` function on the LLSdir instance.
+
+        kwargs can be any keywords that are recognized by the LLS `Schema list`_.
+        """
         return process(self, **kwargs)
 
     def mergemips(self, subdir=None, delete=True):
@@ -714,7 +777,7 @@ class LLSdir(object):
 
     def get_otfs(self, otfpath=config.__OTFPATH__):
         """ intelligently pick OTF from archive directory based on date and mask
-        settings..."""
+        settings."""
         if otfpath is None or not os.path.isdir(otfpath):
             return None
 
@@ -802,7 +865,7 @@ class LLSdir(object):
     def correct_flash(self, tRange=None, camparamsPath=None, flashCorrectTarget='parallel',
                       medianFilter=False, trimZ=(0, 0), trimY=(0, 0),
                       trimX=(0, 0), **kwargs):
-        """ where tRange is an iterable of timepoints
+        """Correct flash artifact, writing files to Corrected dir.
 
         """
         if not self.has_settings:
