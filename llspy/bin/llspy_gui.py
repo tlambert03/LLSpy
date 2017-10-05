@@ -30,17 +30,16 @@ logger.addHandler(ch)           # add it to the root logger
 logger.removeHandler(lhStdout)  # and delete the original streamhandler
 
 
+def test():
+    APP = QtWidgets.QApplication(sys.argv)
+    mainGUI = main_GUI()
+    # instantiate the execption handler
+    time.sleep(.1)
+    mainGUI.close()
+    sys.exit(0)
+
+
 def main():
-    if 'test' in sys.argv:
-        APP = QtWidgets.QApplication(sys.argv)
-        try:
-            mainGUI = main_GUI()
-            time.sleep(.1)
-            mainGUI.close()
-            sys.exit(0)
-        except (err.MissingBinaryError, llspy.cudabinwrapper.CUDAbinException):
-            logger.error('couldn\'t find binary in test')
-    else:
         # freeze multiprocessing support for pyinstaller
         multiprocessing.freeze_support()
         # create the APP instance
