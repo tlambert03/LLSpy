@@ -241,7 +241,7 @@ class LLSitemWorker(QtCore.QObject):
 
     sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
 
-    status_update = QtCore.pyqtSignal(str)  # update mainGUI status®
+    status_update = QtCore.pyqtSignal(str)  # update mainGUI status
     progressUp = QtCore.pyqtSignal()  # set progressbar value
     progressValue = QtCore.pyqtSignal(int)  # set progressbar value
     progressMaxVal = QtCore.pyqtSignal(int)  # set progressbar maximum
