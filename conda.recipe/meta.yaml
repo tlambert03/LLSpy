@@ -55,7 +55,7 @@ test:
   commands:
     - which lls  # [unix]
     - where lls  # [win]
-    - lls --help
+    - lls --help # [not py2k]
     - lls gui --test # [not linux]
 #    - spimagine
 
