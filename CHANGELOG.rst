@@ -1,8 +1,12 @@
 LLSpy Release History
 #####################
 
-`0.2.1`_
+`Next release`_
 ===============
+
+
+`0.2.1`_
+========
 
 **Added:**
 
@@ -39,5 +43,7 @@ LLSpy Release History
 
 
 .. _Next release: https://github.com/tlambert03/LLSpy/
+
+.. _0.2.1: https://github.com/tlambert03/LLSpy/releases/0.2.1
 
 .. _0.1.0: https://github.com/tlambert03/LLSpy/releases/v0.1.0
