@@ -216,9 +216,15 @@ class LLSsettings(object):
 			self.parameters.dzFinal = self.parameters.dz
 
 	def write(self, outpath):
+		"""Write the raw text back to settings.txt file"""
 		with open(outpath, 'w') as outfile:
 			outfile.write(self.raw_text)
 
 	def write_ini(self, outpath):
+		"""Write just the SPIMProject.ini portion to file.
+
+		The file written by this function should match the SPIMProject.ini file
+		that was used to acquire the data.
+		"""
 		with open(outpath, 'w') as outfile:
 			self.SPIMproject.write(outfile)
