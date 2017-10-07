@@ -3,7 +3,7 @@
 Command Line Interface
 ======================
 
-*In addition to the QT-based graphical user interface described below, LLSpy includes a command line interface (CLI).*
+*In addition to the QT-based graphical user interface, LLSpy includes a command line interface (CLI).*
 
 If the program has been installed using ``conda install -c talley -c conda-forge llspy``, or by using setuptools (i.e. running ``pip install .`` in the top level llspy directory, where setup.py resides) then an executable will be created that can be triggered by typing ``lls`` at the command prompt.  Alternatively, the CLI can be directly executed by running ``python llspy/bin/llspy_cli.py`` at the command prompt.  (For this documentation, it is assumed that the program was installed using ``conda install`` and run with ``lls``).
 
