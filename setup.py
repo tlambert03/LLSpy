@@ -25,7 +25,10 @@ else:
     DATA_FILES = []
 
 PACKAGE_DATA = [path.join('gui', 'guiDefaults.ini'),
-                path.join('gui', 'img_window.ui')]
+                path.join('gui', 'img_window.ui'),
+                path.join('gui', 'before_after.png'),
+                path.join('gui', 'logo_dark.png'),
+                path.join('gui', 'logo_light.png')]
 
 if INCLUDELIBS:
     # add specific library by platform
