@@ -1,17 +1,13 @@
-import unittest
+from llspy.settingstxt import LLSsettings
 import datetime
 import sys
 import os
 sys.path.append('..')
 
-from llspy.settingstxt import LLSsettings
 
 TESTSDIR = os.path.dirname(os.path.abspath(__file__))
 
-class SettingsTests(unittest.TestCase):
-
-	def setUp(self):
-		self.settings_dict = {
+settings_dict = {
 		'acq_mode': 'Z stack',
 		'basename': 'example_Settings.txt',
 		'camera': {'cycle': '0.00330',
@@ -48,15 +44,12 @@ class SettingsTests(unittest.TestCase):
 		'software_version': '4.02893.0012',
 		'z_motion': 'Sample piezo'
 		}
-		self.example_file_path = os.path.join(TESTSDIR, 'testdata', 'example_Settings.txt')
-		self.setobj = LLSsettings(self.example_file_path)
+example_file_path = os.path.join(TESTSDIR, 'testdata', 'example_Settings.txt')
+setobj = LLSsettings(example_file_path)
 
-	def tearDown(self):
-		# code to do tear down
-		pass
 
-	def test_parse_settings(self):
-		for k in self.setobj.__dict__:
-			if not k in ['path', 'raw_text', 'SPIMproject']:
-				self.assertEqual(self.setobj.__dict__[k], self.settings_dict[k])
+def test_parse_settings():
+	for k in setobj.__dict__:
+		if k not in ['path', 'raw_text', 'SPIMproject']:
+			assert setobj.__dict__[k], settings_dict[k]
 
