@@ -1,8 +1,17 @@
 LLSpy Release History
 #####################
 
-`Next release`_
+`0.2.2`_
 ===============
+
+**Changed:**
+
+* much improved docs structure and rtd build
+* gui pngs added to conda.recipe
+
+**Fixed:**
+
+* version not properly reported in command line interface
 
 
 `0.2.1`_
