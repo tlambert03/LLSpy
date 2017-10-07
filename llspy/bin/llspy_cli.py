@@ -168,7 +168,7 @@ def read_config(ctx, param, value):
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.version_option(version=0.1, prog_name='LLSpy')
+@click.version_option(version=llspy.__version__, prog_name='LLSpy')
 @click.option('--config', '-c', type=click.Path(exists=True, dir_okay=False),
               callback=read_config, expose_value=False, multiple=True,
               help='Config file to use instead of the system config.')
