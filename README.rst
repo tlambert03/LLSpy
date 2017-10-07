@@ -156,7 +156,7 @@ The command line interface can be used to process LLS data in a server environme
    >>> E.freeze()  # delete all processed data and compress raw data for long-term storage.
 
 
-*Note:* The LLSpy API is currently undocumented, and unstable (subject to change).  Look at the ``llspy.llsdir.LLSdir`` class as a starting point for most of the useful methods.  Feel free to fork this project on github and suggest changes or additions.
+*Note:* The LLSpy API is currently unstable (subject to change).  Look at the ``llspy.llsdir.LLSdir`` class as a starting point for most of the useful methods.  Minimal documentation available in the docs.  Feel free to fork this project on github and suggest changes or additions.
 
 
 Requirements
