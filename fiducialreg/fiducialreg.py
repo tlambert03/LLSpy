@@ -657,7 +657,7 @@ class CloudSet(object):
             raise ValueError('Index must either be label or int < numClouds in Set')
 
     # Main Method
-    def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=False, **kwargs):
+    def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=True, **kwargs):
         """ get tform matrix that maps moving point cloud to fixed point cloud"""
         if self.labels is None:
             logging.warning('No label list provided... cannot get tform by label')
@@ -704,14 +704,11 @@ class CloudSet(object):
                     reg = funcDict[mode](moving, fixed)
                     tform = reg.register(None)[4]
             else:
-                if inworld:
-                    matching = self._get_matching(inworld=True)
-                    moving = matching[movIdx]
-                    fixed = matching[fixIdx]
-                else:
-                    moving = self.matching()[movIdx]
-                    fixed = self.matching()[fixIdx]
+                matching = self._get_matching(inworld=inworld)
+                moving = matching[movIdx]
+                fixed = matching[fixIdx]
                 tform = funcDict[mode](moving, fixed)
+            logger.debug('Measured Tform Matrix:\n' + str(tform))
             return tform
         else:
             raise ValueError('Unrecognized transformation mode: {}'.format(mode))
