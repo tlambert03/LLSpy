@@ -42,7 +42,9 @@ import itertools
 import numpy as np
 import logging
 import json
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__name__)
 np.seterr(divide='ignore', invalid='ignore')
 
 
@@ -64,7 +66,7 @@ def bead_centroids(img, labeled, nlabels):
     return [ndimage.center_of_mass(img, labeled, l) for l in range(1, nlabels + 1)]
 
 
-def get_thresh(im, mincount=10, steps=100):
+def get_thresh(im, mincount=20, steps=100):
     """intelligently find coordinates of local maxima in an image
     by searching a range of threshold parameters to find_local_maxima
 
@@ -422,7 +424,7 @@ class GaussFitter3D(object):
 class FiducialCloud(object):
 
     def __init__(self, data=None, dz=0.3, dx=0.1, xysig=1, zsig=2.5, threshold='auto',
-        mincount=20, imref=None):
+        mincount=20, imref=None, filtertype='blur'):
         # data is a numpy array or filename
         self.data = None
         if data is not None:
@@ -449,6 +451,7 @@ class FiducialCloud(object):
         self._mincount = mincount
         self.imref = imref
         self.coords = None
+        self.filtertype = filtertype
         if self.data is not None:
             self.update_coords()
 
@@ -463,7 +466,7 @@ class FiducialCloud(object):
     def mincount(self, value):
         self._mincount = value
         self.update_coords()
-        print("found {} spots".format(self.count))
+        logger.info("found {} spots".format(self.count))
 
     @property
     def count(self):
@@ -475,7 +478,12 @@ class FiducialCloud(object):
     @lazyattr
     def filtered(self):
         if self.data is not None:
-            return log_filter(self.data, self.xysig, self.zsig)
+            if self.filtertype == 'log':
+                return log_filter(self.data, self.xysig, self.zsig)
+            else:
+                from gputools import blur
+                sigs = np.array([self.zsig, self.xysig, self.xysig]) * 2
+                return blur(self.data, sigs)
         else:
             return None
 
@@ -519,7 +527,6 @@ class FiducialCloud(object):
         return intrinsicToWorld(self.coords.T, self.dx, self.dz).T
 
     def show(self, withimage=True, filtered=True):
-        import matplotlib.pyplot as plt
         if withimage and self.filtered is not None:
             if filtered:
                 im = self.filtered.max(0)
@@ -582,7 +589,7 @@ class CloudSet(object):
 
     def data(self, idx=None, label=None):
         if not self.has_data():
-            print('Data not loaded, cannot retrieve data')
+            logger.warning('Data not loaded, cannot retrieve data')
             return
 
         if not (idx or label):
@@ -595,7 +602,6 @@ class CloudSet(object):
                     label, self.labels))
         elif label and not idx:
             print('Both label and index provided, using idx')
-            ''
         return self.clouds[idx].data
 
     @property
@@ -716,8 +722,9 @@ class CloudSet(object):
     def show(self, matching=False, withimage=True, filtered=True):
         """show points in clouds overlaying image, if matching is true, only
         show matching points from all sets"""
-        import matplotlib.pyplot as plt
         if withimage:
+            if not self.clouds[0].has_data:
+                pass
             if filtered and self.clouds[0].filtered is not None:
                 im = self.clouds[0].filtered.max(0)
             else:
@@ -738,17 +745,23 @@ class CloudSet(object):
     def show_matching(self, **kwargs):
         self.show(matching=True, **kwargs)
 
-    def show_tformed(self, movingLabel=None, fixedLabel=None, **kwargs):
-        import matplotlib.pyplot as plt
+    def show_tformed(self, movingLabel=None, fixedLabel=None, matching=False, **kwargs):
         T = self.tform(movingLabel, fixedLabel, **kwargs)
-        movingpoints = self[movingLabel].coords
-        fixedpoints = self[fixedLabel].coords
+        if matching:
+            movingpoints = self.matching()[self.labels.index(movingLabel)]
+            fixedpoints = self.matching()[self.labels.index(fixedLabel)]
+        else:
+            movingpoints = self[movingLabel].coords
+            fixedpoints = self[fixedLabel].coords
         shiftedpoints = affineXF(movingpoints, T)
         fp = plt.scatter(fixedpoints[0], fixedpoints[1], c='b', s=5)
         mp = plt.scatter(movingpoints[0], movingpoints[1], c='m', marker='x', s=5)
         sp = plt.scatter(shiftedpoints[0], shiftedpoints[1], c='r', s=5)
         plt.legend((fp, mp, sp), ('Fixed', 'Moving', 'Registered'))
         plt.show()
+
+    def show_tformed_matching(self, movingLabel=None, fixedLabel=None, **kwargs):
+        self.show_tformed(movingLabel, fixedLabel, True, **kwargs)
 
     def show_tformed_image(self, movingLabel=None, fixedLabel=None, **kwargs):
         try:
@@ -800,6 +813,7 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
     else:  # falsecolor
         im3 = np.stack((im1, im2, im1), ndim)
         imshow(im3)
+    plt.show()
 
 ###############################################################################
 # code below is a *very* slightly modified version of the pycpd repo from
