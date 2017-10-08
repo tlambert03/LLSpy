@@ -297,10 +297,7 @@ Transformation matrices for registering multichannel datasets can be generated u
 Known Issues & Bug Reports
 ==========================
 
-* on spimagine preview, openGL error on some windows 10 computers
-* backgrounds on vertical sliders on spimagine viewer are screwed up
-* When unexpected errors occur mid-processing, sometimes the "cancel" button does nothing, forcing a restart.
-
+.. include:: bugs.rst
 
 Bug reports are very much appreciated: `Contact Talley <mailto:talley.lambert@gmail.com>`_
 
