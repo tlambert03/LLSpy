@@ -530,8 +530,8 @@ class LLSdir(object):
         self.parameters.wavelength = []
         self.parameters.interval = []
         stacknum = re.compile('_stack(\d{4})_')
-        self.parameters.tset = {int(t.group(1)) for t in
-            [stacknum.search(s) for s in self.tiff.raw] if t}
+        self.parameters.tset = list({int(t.group(1)) for t in
+            [stacknum.search(s) for s in self.tiff.raw] if t})
         for c in range(6):
             q = [f for f in self.tiff.raw if '_ch' + str(c) in f]
             if len(q):
@@ -692,7 +692,7 @@ class LLSdir(object):
             S.cRange = sorted([n for n in S.cRange if n < P.nc])
 
         if S.tRange is None:
-            S.tRange = list(self.parameters.tset)
+            S.tRange = self.parameters.tset
         else:
             logger.debug("preview tRange = {}".format(S.tRange))
             maxT = max(self.parameters.tset)
@@ -865,7 +865,7 @@ class LLSdir(object):
             outpath.mkdir()
 
         if tRange is None:
-            tRange = list(self.parameters.tset)
+            tRange = self.parameters.tset
 
         filenames = [self.get_files(c=chan, t=tRange) for chan in cRange]
         filenames = [f for f in filenames if len(f)]  # dicard empties
@@ -923,7 +923,7 @@ class LLSdir(object):
             outpath.mkdir()
 
         if tRange is None:
-            tRange = list(self.parameters.tset)
+            tRange = self.parameters.tset
         timegroups = [self.get_t(t) for t in tRange]
 
         # FIXME: this is a temporary bug fix to correct for the fact that
