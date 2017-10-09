@@ -1,6 +1,14 @@
 LLSpy Release History
 #####################
 
+`0.2.3`_
+===============
+
+**Fixed:**
+
+* all registration functions now working better (commit 83b380a)
+
+
 `0.2.2`_
 ===============
 

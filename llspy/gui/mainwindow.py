@@ -596,11 +596,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     def onPreview(self):
         self.previewButton.setDisabled(True)
+        self.previewButton.setText('Working...')
         if self.listbox.rowCount() == 0:
             QtW.QMessageBox.warning(self, "Nothing Added!",
                 'Nothing to preview! Drop LLS experiment folders into the list',
                 QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
             self.previewButton.setEnabled(True)
+            self.previewButton.setText('Preview')
             return
 
         # if there's only one item on the list show it
@@ -614,6 +616,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     "Please select an item (row) from the table to preview",
                     QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
                 self.previewButton.setEnabled(True)
+                self.previewButton.setText('Preview')
                 return
             else:
                 # if they select multiple, chose the first one
@@ -626,6 +629,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.lastopts = self.getValidatedOptions()
         except Exception:
             self.previewButton.setEnabled(True)
+            self.previewButton.setText('Preview')
             raise
 
         if procTRangetext:
@@ -671,7 +675,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                           }, start=True)
 
         w.finished.connect(lambda: self.previewButton.setEnabled(True))
+        w.finished.connect(lambda: self.previewButton.setText('Preview'))
         w.error.connect(lambda: self.previewButton.setEnabled(True))
+        w.error.connect(lambda: self.previewButton.setText('Preview'))
         self.previewthreads = (w, thread)
 
     @QtCore.pyqtSlot(int, int)
