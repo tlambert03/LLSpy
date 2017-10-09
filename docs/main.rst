@@ -284,7 +284,7 @@ see more in the `OTF directory`_ section below.
 Flash4.0 Calibration
 --------------------
 
-In order to take advantage of the Flash synchronous trigger mode correction included in LLSpy, you must first characterize your camera by collecting a calibration dataset as described below in `Generate Camera Calibration File`_, then direct LLSpy to that file on the Config Tab of the GUI, or using ``lls config --set camparamsPath PATH`` in the command line interface.  Support for more than one camera is in development.
+In order to take advantage of the Flash synchronous trigger mode correction included in LLSpy, you must first characterize your camera by collecting a calibration dataset as described below in :ref:`Generate Camera Calibration File`, then direct LLSpy to that file on the Config Tab of the GUI, or using ``lls config --set camparamsPath PATH`` in the command line interface.  Support for more than one camera is in development.
 
 
 Channel Registration
