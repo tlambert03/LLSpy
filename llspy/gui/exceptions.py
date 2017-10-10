@@ -8,6 +8,10 @@ import re
 import os
 import uuid
 from raven import Client, fetch_git_sha, fetch_package_version, breadcrumbs
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlopen
 
 _OPTOUT = False
 
@@ -51,15 +55,15 @@ client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b
                 environment=env,
                 tags=tags)
 client.context.merge({'user':
-   {
-    # 'username': 'talley',
-    'id': uuid.getnode(),
+   {'id': uuid.getnode(),
     # 'email': 'example@example.com',
-    # 'ip_address':11.111.111.111}
-   }
+    # 'username': 'uname',
+    'ip_address': re.search('"([0-9.]*)"',
+                     str(urlopen("http://ip.jsontest.com/").read())).group(1)}
 })
 breadcrumbs.ignore_logger('OpenGL.GL.shaders')
 breadcrumbs.ignore_logger('PIL.PngImagePlugin')
+
 
 def camel2spaces(string):
     return re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))', r' \1', string)
