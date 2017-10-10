@@ -1084,6 +1084,9 @@ class RegDir(LLSdir):
     def reload_data(self):
         self.cloudset(redo=True)
 
+    def write_reg_file(self, outfile, **kwargs):
+        self.cloudset().write_all_tforms(outfile, **kwargs)
+
     def get_tform(self, movingWave, refWave=488, mode='2step'):
         return self.cloudset().tform(movingWave, refWave, mode)
 
