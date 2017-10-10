@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>617</width>
-    <height>826</height>
+    <height>849</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -628,8 +628,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>467</width>
-             <height>227</height>
+             <width>547</width>
+             <height>267</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1707,7 +1707,7 @@ CPD=Coherent Point Drift algorithm
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QLabel" name="RegCalibPathLabel">
+                  <widget class="QLabel" name="RegProcessPathLabel">
                    <property name="toolTip">
                     <string>Specify folder with calibration (e.g. tetraspeck
 bead) images acquired in each channel.</string>
@@ -1718,7 +1718,7 @@ bead) images acquired in each channel.</string>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="RegCalibPathLineEdit">
+                  <widget class="QLineEdit" name="RegProcessPathLineEdit">
                    <property name="enabled">
                     <bool>true</bool>
                    </property>
@@ -1727,12 +1727,12 @@ bead) images acquired in each channel.</string>
 bead) images acquired in each channel.</string>
                    </property>
                    <property name="placeholderText">
-                    <string>Default: &quot;Registration&quot; folder in parent directory</string>
+                    <string> registration file or folder with multichannel fiducial stacks</string>
                    </property>
                   </widget>
                  </item>
                  <item>
-                  <widget class="QToolButton" name="RegCalibPathToolButton">
+                  <widget class="QToolButton" name="RegProcessPathToolButton">
                    <property name="text">
                     <string>...</string>
                    </property>
@@ -1849,6 +1849,414 @@ after processing to save space.</string>
            </layout>
           </widget>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_registration">
+       <attribute name="title">
+        <string>Registration</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="4" column="3">
+         <widget class="QLabel" name="RegCalib_channelRefLabel">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Reference channel to which to register
+(this channel will not change)</string>
+          </property>
+          <property name="text">
+           <string>Ref Channel:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="6" colspan="3">
+         <widget class="QComboBox" name="RegCalib_channelRefModeCombo">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>1606000</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+          </property>
+          <property name="currentText">
+           <string>CPD_Similarity</string>
+          </property>
+          <property name="currentIndex">
+           <number>7</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>None</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Translation</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Rigid</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Similarity</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Affine</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>2step</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>CPD_Rigid</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>CPD_Similarity</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>CPD_Affine</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>CPD_2step</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="0" column="1" colspan="7">
+         <widget class="QLineEdit" name="RegCalibPathLineEdit">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="placeholderText">
+           <string> Folder with mult-channel fiducial stacks</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="4">
+         <widget class="QComboBox" name="RegCalib_channelRefCombo">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>70</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Reference channel to which to register
+(this channel will not change)</string>
+          </property>
+          <property name="currentText">
+           <string>405</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>405</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>488</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>560</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>592</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>642</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="0" column="8">
+         <widget class="QToolButton" name="RegCalibPathLoadButton">
+          <property name="text">
+           <string>load</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0" colspan="7">
+         <widget class="QLabel" name="RegPreviewLabelXY">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>350</height>
+           </size>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background: #777</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <property name="lineWidth">
+           <number>1</number>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="7" colspan="2">
+         <widget class="QLabel" name="RegPreviewLabelYZ">
+          <property name="styleSheet">
+           <string notr="true">background: #777</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2" colspan="2">
+         <widget class="QLabel" name="RegCalibRefChannelsLabel">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Reference channel to which to register
+(this channel will not change)</string>
+          </property>
+          <property name="text">
+           <string>Ref Channels:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0" colspan="7">
+         <widget class="QLabel" name="RegPreviewLabelXZ">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>80</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background: #777</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QPushButton" name="GenerateRegFileButton">
+          <property name="minimumSize">
+           <size>
+            <width>190</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Generate Registration File</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0" colspan="3">
+         <widget class="QPushButton" name="RegCalibPreviewButton">
+          <property name="text">
+           <string>Preview Registration</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4">
+         <spacer name="verticalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="RegCalibPathLabel">
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="text">
+           <string>Calibration:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="5">
+         <widget class="QLabel" name="RegCalib_channelRefModeLabel">
+          <property name="maximumSize">
+           <size>
+            <width>50</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+          </property>
+          <property name="text">
+           <string>Mode:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4" colspan="5">
+         <widget class="QGroupBox" name="RegCalibRefChannelsGroup">
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QHBoxLayout" name="RegCalibRefGroupLayout">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QCheckBox" name="checkBox">
+             <property name="text">
+              <string>405</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_2">
+             <property name="text">
+              <string>488</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_3">
+             <property name="text">
+              <string>560</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_4">
+             <property name="text">
+              <string>642</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="7" column="7">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="2" column="0" colspan="9">
+         <widget class="Line" name="regpreviewline">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="4">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="5" column="4">
+         <spacer name="verticalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>8</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>

@@ -469,22 +469,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.previewTRangeLineEdit.setValidator(ctrangeValidator)
 
         # FIXME: this way of doing it clears the text field if you hit cancel
+        self.RegProcessPathToolButton.clicked.connect(self.setRegFile)
+        self.RegCalibPathLoadButton.clicked.connect(self.setRegCalibPath)
+        self.GenerateRegFileButton.clicked.connect(self.generateCalibrationFile)
         self.cudaDeconvPathToolButton.clicked.connect(self.setCudaDeconvPath)
         self.otfFolderToolButton.clicked.connect(self.setOTFdirPath)
         self.camParamTiffToolButton.clicked.connect(self.setCamParamPath)
-
-        # self.defaultRegCalibPathToolButton.clicked.connect(lambda:
-        #     self.defaultRegCalibPathLineEdit.setText(
-        #         QtW.QFileDialog.getExistingDirectory(
-        #             self,
-        #             'Set default Registration Calibration Directory',
-        #             '', QtW.QFileDialog.ShowDirsOnly)))
-
-        self.RegCalibPathToolButton.clicked.connect(lambda:
-            self.RegCalibPathLineEdit.setText(
-                QtW.QFileDialog.getExistingDirectory(
-                    self, 'Set Registration Calibration Directory',
-                    '', QtW.QFileDialog.ShowDirsOnly)))
 
         self.availableCompression = []
         # get compression options
@@ -565,6 +555,53 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         if self.watchDirCheckBox.isChecked():
             self.stopWatcher()
             self.startWatcher()
+
+    @QtCore.pyqtSlot()
+    def setRegFile(self):
+        dir = QtW.QFileDialog.getExistingDirectory(
+            self, 'Set Registration Calibration Directory',
+            '', QtW.QFileDialog.ShowDirsOnly)
+        if dir is not None and dir is not '':
+            self.RegProcessPathLineEdit.setText(dir)
+
+    @QtCore.pyqtSlot()
+    def setRegCalibPath(self):
+        dir = QtW.QFileDialog.getExistingDirectory(
+            self, 'Set Registration Calibration Directory',
+            '', QtW.QFileDialog.ShowDirsOnly)
+        if dir is not None and dir is not '':
+            RD = llspy.RegDir(dir)
+            if not RD.isValid:
+                raise err.RegistrationError(
+                    'Registration Calibration dir not valid: {}'.format(RD.path))
+
+        self.RegCalibPathLineEdit.setText(dir)
+        layout = self.RegCalibRefGroupLayout
+        group = self.RegCalibRefChannelsGroup
+        for cb in group.findChildren(QtW.QCheckBox):
+            layout.removeWidget(cb)
+            cb.setParent(None)
+        for wave in RD.parameters.wavelength:
+            box = QtW.QCheckBox(str(wave), group)
+            layout.addWidget(box)
+            box.setChecked(True)
+
+    @QtCore.pyqtSlot()
+    def generateCalibrationFile(self):
+        RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
+        if not RD.isValid:
+            raise err.RegistrationError(
+                'Registration Calibration dir not valid: {}'.format(RD.path))
+        outfile = QtW.QFileDialog.getSaveFileName(self,
+            'Chose destination for registration file', '',
+            "Text Files (*.txt *.json)")[0]
+        if outfile is None or outfile is '':
+            return
+        logger.debug("registration file output: {}".format(outfile))
+        group = self.RegCalibRefChannelsGroup
+        refs = [int(cb.text()) for cb in group.findChildren(QtW.QCheckBox) if cb.isChecked()]
+        print(refs)
+        RD.write_reg_file(outfile, refs=refs)
 
     def saveCurrentAsDefault(self):
         if len(defaultSettings.childKeys()):
@@ -966,15 +1003,15 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         else:
             options['camparamsPath'] = None
 
-        rCalibText = self.RegCalibPathLineEdit.text()
-        dCalibText = self.defaultRegCalibPathLineEdit.text()
+        rCalibText = self.RegProcessPathLineEdit.text()
+        # dCalibText = self.defaultRegProcessPathLineEdit.text()
         if rCalibText and rCalibText is not '':
             options['regCalibDir'] = rCalibText
         else:
-            if dCalibText and dCalibText is not '':
-                options['regCalibDir'] = dCalibText
-            else:
-                options['regCalibDir'] = None
+        #    if dCalibText and dCalibText is not '':
+        #        options['regCalibDir'] = dCalibText
+        #    else:
+            options['regCalibDir'] = None
 
         if options['doReg'] and options['regCalibDir'] is None:
             raise err.InvalidSettingsError(
@@ -1075,7 +1112,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     def toggleOptOut(self, value):
         err._OPTOUT = True if value else False
-
 
     def checkBundled(self, value):
         if value:
