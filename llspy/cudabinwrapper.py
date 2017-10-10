@@ -41,6 +41,10 @@ def nGPU(binary=None):
         return 0
 
 
+def gpulist():
+    return re.findall('(?<=Device \d: ").*(?=")', CUDAbin().list_gpus())
+
+
 def is_cudaDeconv(path):
     try:
         h = subprocess.check_output([path, '--help'])
@@ -207,8 +211,30 @@ class CUDAbin(object):
         options['otf-file'] = otf
         options['filename-pattern'] = filepattern
         cmd.extend(self.assemble_args(**options))
-        print("\n"+" ".join(cmd))
+        logger.info("CUDAbin Process:\n"+" ".join(cmd))
         return self._run_command(cmd, mode='call')
+
+    def list_gpus(self):
+        return(self.run('-Q'))
+
+    # FIXME: combine this with _run_command
+    def run(self, cmd):
+        """mostly duplicated in _run_command..."""
+        if isinstance(cmd, list):
+            if cmd[0] in (self.path, 'cudaDeconv'):
+                cmd.pop(0)
+            cmdlist = [self.path]
+            cmdlist.extend(cmd)
+        elif isinstance(cmd, str):
+            if ' ' in cmd:
+                cmdlist = [self.path]
+                cmdlist.extend(cmd.split())
+            else:
+                cmdlist = [self.path, cmd]
+        else:
+            raise ValueError('cmd argument must be either list or string.  got {}'.format(type(cmd)))
+        o = str(subprocess.check_output(cmdlist, stderr=subprocess.STDOUT).decode('utf-8'))
+        return o
 
     def _run_command(self, cmd, mode='check'):
         """
@@ -278,7 +304,7 @@ class CUDAbin(object):
         if self.has_option(flag):
             return self.options[[key for key in self.options.keys() if flag in key][0]]
         else:
-            print('The flag "{}" is not listed in the help string.'.format(flag))
+            logger.warning('The flag "{}" is not listed in the help string.'.format(flag))
 
     def assemble_args(self, **options):
 
@@ -356,3 +382,6 @@ class CUDAbinResult():
         """
         self.rtnCode = rtnCode
         self.output = output
+
+    def __str__(self):
+        return self.output
