@@ -7,7 +7,7 @@ LLSpy Release History
 **Added:**
 
 * new registration tab in gui (929f53b65396aa60aab69220b9ae5e8117dc65bf)
-* ability to reusable registration file (cc3f771d8907508b67648c89334affe2d693f709)
+* ability to reusable registration file 03b6734589a792fad7269d1049002a32c72ea08d
 
 **Changed:**
 
