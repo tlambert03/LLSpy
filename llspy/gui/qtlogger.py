@@ -55,7 +55,7 @@ class LogFileHandler(RotatingFileHandler):
         self.setFormatter(self.formatter)
 
     def filter(self, record):
-        permitted = ['llspy', 'spimagine', 'fiducialreg', 'gputools']
+        permitted = ['root', 'llspy', 'spimagine', 'fiducialreg', 'gputools']
         if any(record.name.startswith(l) for l in permitted):
             return True
         return False

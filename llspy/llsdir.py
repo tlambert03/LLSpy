@@ -143,6 +143,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
         if isinstance(exp, str):
             exp = LLSdir(exp)
     logger.debug("Preview called on {}".format(str(exp.path)))
+    logger.debug("Params: {}".format(exp.parameters))
 
     if exp.is_compressed():
         try:
@@ -246,6 +247,7 @@ def process(exp, binary=None, **kwargs):
         if isinstance(exp, str):
             exp = LLSdir(exp)
     logger.debug("Process called on {}".format(str(exp.path)))
+    logger.debug("Params: {}".format(exp.parameters))
 
     if exp.is_compressed():
         exp.decompress()
@@ -914,6 +916,7 @@ class LLSdir(object):
                         camparams = CameraParameters(camparamsPath)
                 except Exception:
                     camparams = CameraParameters()
+        logger.debug("Correcting Flash artifact with camparam {}".format(camparams.basename))
 
         if not np.all(camparams.roi == self.settings.camera.roi):
             try:

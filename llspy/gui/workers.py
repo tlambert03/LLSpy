@@ -291,9 +291,11 @@ class LLSitemWorker(QtCore.QObject):
         # so the maximum is the total number of timepoints * channels
         self.nFiles = len(self.P.tRange) * len(self.P.cRange)
 
-        self._logger.info('\n' + '#' * 50)
+        self._logger.info('#' * 50)
         self._logger.info('Processing {}'.format(self.E.basename))
         self._logger.info('#' * 50 + '\n')
+        self._logger.debug('Full path {}'.format(self.E.path))
+        self._logger.debug('Parameters {}\n'.format(self.E.parameters))
 
         if self.P.correctFlash:
             self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
