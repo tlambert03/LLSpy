@@ -6,6 +6,8 @@ import io
 import configparser
 import warnings
 import math
+import logging
+logger = logging.getLogger(__name__)
 
 from datetime import datetime
 
@@ -103,7 +105,18 @@ class LLSsettings(object):
 
         # parse the top part (general settings)
         datestring = re.search('Date\s*:\s*(.*)\n', general_settings).group(1)
-        self.date = datetime.strptime(datestring, '%m/%d/%Y %I:%M:%S %p')
+        dateformats = ('%m/%d/%Y %I:%M:%S %p',
+                       '%m/%d/%Y %I:%M:%S',
+                       '%m/%d/%Y %H:%M:%S')
+        self.date = None
+        for fmt in dateformats:
+            try:
+                self.date = datetime.strptime(datestring, fmt)
+            except ValueError:
+                continue
+        if self.date is None:
+            logger.error('Error, could not parse datestring {} with any of formats {}'.format(datestring, dateformats))
+
         # print that with dateobject.strftime('%x %X %p')
 
         self.acq_mode = re.search(
