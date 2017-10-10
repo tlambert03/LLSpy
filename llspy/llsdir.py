@@ -1009,17 +1009,18 @@ class RegDir(LLSdir):
     tetraspeck beads
     """
 
-    def __init__(self, path, t=0, **kwargs):
+    def __init__(self, path, t=None, **kwargs):
         super(RegDir, self).__init__(path, **kwargs)
         if self.path is not None:
             if self.path.joinpath('cloud.json').is_file():
                 with open(str(self.path.joinpath('cloud.json'))) as json_data:
                     self = self.fromJSON(json.load(json_data))
-        self.t = t
+        if t is None:
+            self.t = min(self.parameters.tset)
         if self.isValid:
             self.data = self.getdata()
-            self.waves = [parse.parse_filename(f, 'wave') for f in self.get_t(t)]
-            self.channels = [parse.parse_filename(f, 'channel') for f in self.get_t(t)]
+            self.waves = [parse.parse_filename(f, 'wave') for f in self.get_t(self.t)]
+            self.channels = [parse.parse_filename(f, 'channel') for f in self.get_t(self.t)]
             self.deskew = self.parameters.samplescan
 
     @property
@@ -1034,13 +1035,13 @@ class RegDir(LLSdir):
 
     def toJSON(self):
         D = self.__dict__.copy()
-        D['_cloudset'] = self._cloudset.toJSON()
-        D['path'] = str(self.path)
+        D['_cloudset'] = D['_cloudset'].toJSON()
+        D['path'] = str(D['path'])
         # FIXME: make LLSsettings object serializeable
         D.pop('settings', None)
         # D['settings']['camera']['roi'] = self.settings.camera.roi.tolist()
         # D['settings']['date'] = self.settings.date.isoformat()
-        D['date'] = self.date.isoformat()
+        D['date'] = D['date'].isoformat()
         D.pop('data', None)
         D.pop('deskewed', None)
         return json.dumps(D)
@@ -1070,7 +1071,9 @@ class RegDir(LLSdir):
         """ actually generates the fiducial cloud """
         if '_cloudset' in dir(self) and not redo:
             return self._cloudset
-        self._cloudset = CloudSet(self._deskewed() if self.deskew else self.data, labels=self.waves)
+        self._cloudset = CloudSet(self._deskewed() if self.deskew else self.data,
+                                  labels=self.waves, dx=self.parameters.dx,
+                                  dz=self.parameters.dzFinal)
         with open(self.path.joinpath('cloud.json'), 'w') as outfile:
             json.dump(self.toJSON(), outfile)
         return self._cloudset
@@ -1101,8 +1104,10 @@ class RegDir(LLSdir):
         else:
             raise ValueError('Input to Registration must either be a np.array '
                 'or a path to a tif file')
-
-        return affineGPU(img, self.get_tform(imwave, refwave, mode))
+        tform = self.get_tform(imwave, refwave, mode)
+        inv_tform = np.linalg.inv(tform)
+        voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
+        return affineGPU(img, inv_tform, voxsize)
 
 
 def rename_iters(folder, splitpositions=True, verbose=False):
