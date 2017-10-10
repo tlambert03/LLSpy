@@ -37,6 +37,19 @@ else:
                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS")]
 
+        # Affine transformation
+        Affine_interface_RA = cudaLib.Affine_interface_RA
+        Affine_interface_RA.restype = ctypes.c_int
+        Affine_interface_RA.argtypes = [np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                        ctypes.c_int,
+                        ctypes.c_int,
+                        ctypes.c_int,
+                        ctypes.c_float,
+                        ctypes.c_float,
+                        ctypes.c_float,
+                        np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                        np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS")]
+
         # setup
         camcor_interface_init = cudaLib.camcor_interface_init
         camcor_interface_init.restype = ctypes.c_int
@@ -92,6 +105,8 @@ else:
 
         # call after
         RL_cleanup = cudaLib.RL_cleanup
+
+        cuda_reset = cudaLib.cuda_reset
 
     except AttributeError as e:
         logger.warning('Failed to properly import libcudaDeconv')
@@ -151,8 +166,20 @@ def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
     return result
 
 
-def affineGPU(im, tmat):
-    """Perform affine transformation of image with provided transformation matrix"""
+def affineGPU(im, tmat, dzyx=None):
+    """Perform affine transformation of image with provided transformation matrix
+
+    optional dzyx parameter specifies the voxel size of the image [dz, dy, dx].
+    If it is provided, it will be used to transform the image from intrinsic
+    coordinates to world coordinates prior to transformation, e.g.:
+
+    x = 0.5 + (x - 0.5) * dx;
+
+    and then back to intrinsic coords afterwards... e.g.:
+
+    tu = 0.5 + (tu - 0.5) / dx;
+
+    """
     requireCUDAlib()
     nz, ny, nx = im.shape
     if not np.issubdtype(im.dtype, np.float32) or not im.flags['C_CONTIGUOUS']:
@@ -161,7 +188,13 @@ def affineGPU(im, tmat):
         tmat = tmat.astype(np.float32)
     # have to calculate this here to know the size of the return array
     result = np.empty((nz, ny, nx), dtype=np.float32)
-    Affine_interface(im, nx, ny, nz, result, tmat)
+    if (isinstance(dzyx, (tuple, list)) and
+            all([isinstance(i, float) for i in dzyx]) and
+            len(dzyx) == 3):
+        # note, dzyx coordinate order is flipped when handing to Affine_interface_RA
+        Affine_interface_RA(im, nx, ny, nz, dzyx[2], dzyx[1], dzyx[0], result, tmat)
+    else:
+        Affine_interface(im, nx, ny, nz, result, tmat)
     return result
 
 
