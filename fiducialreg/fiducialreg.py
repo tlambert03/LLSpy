@@ -662,6 +662,80 @@ class CloudSet(object):
         else:
             raise ValueError('Index must either be label or int < numClouds in Set')
 
+    def get_all_tforms(self, refs=None, inworld=True,
+                       modes=('translation', 'rigid', 'similarity', 'affine',
+                              '2step', 'cpd_2step', 'cpd_similarity')):
+        """Generate an array of dicts for lots of possible tforms."""
+
+        if refs is None:
+            # default to all channels
+            regto = self.labels
+        else:
+            # otherwise validate the provided list of channels
+            try:
+                iter(refs)
+            except TypeError:
+                refs = [refs]
+            regto = []
+            for ref in refs:
+                if ref in self.labels:
+                    regto.append(ref)
+                else:
+                    logger.warning('Reference {} not in lablels: {} ... skipping'.format(
+                        ref, self.labels))
+        if not len(regto):
+            logger.error('No recognized values in refs list.  No tforms calculated')
+            return
+
+        # validate modes, and assert iterable
+        try:
+            iter(modes)
+        except TypeError:
+            modes = [modes]
+        modes = [m for m in modes if m in funcDict]
+
+        import itertools
+        pairings = itertools.permutations(self.labels, 2)
+        pairings = [i for i in pairings if i[1] in regto]
+
+        D = []
+        for moving, fixed in pairings:
+            for mode in modes:
+                D.append({
+                    'mode': mode,
+                    'reference': fixed,
+                    'moving': moving,
+                    'inworld': inworld,
+                    'tform': self.tform(moving, fixed, mode, inworld=inworld)
+                })
+        return D
+
+    def write_all_tforms(self, outfile, **kwargs):
+        """write all of the tforms for this cloudset to file"""
+
+        class npEncoder(json.JSONEncoder):
+
+            def fixedString(self, obj):
+                numel = len(obj)
+                form = '[' + ','.join(['{:14.10f}'] * numel) + ']'
+                return form.format(*obj)
+
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    if all(isinstance(i, np.ndarray) for i in obj):
+                        nestedList = obj.tolist()
+                        result = [self.fixedString(l) for l in nestedList]
+                        return result
+                    else:
+                        return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
+        s = self.get_all_tforms(**kwargs)
+        outstring = json.dumps(s, cls=npEncoder, indent=2)
+        outstring = outstring.replace('"[', ' [').replace(']"', ']')
+        with open(outfile, 'w') as file:
+            file.write(outstring)
+
     # Main Method
     def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=True, **kwargs):
         """ get tform matrix that maps moving point cloud to fixed point cloud"""
@@ -681,19 +755,6 @@ class CloudSet(object):
         except ValueError:
             raise ValueError('Could not find label {} in reg list: {}'.format(
                 fixedLabel, self.labels))
-
-        funcDict = {
-            'translate'     : infer_translation,
-            'translation'   : infer_translation,
-            'rigid'         : infer_rigid,
-            'similarity'    : infer_similarity,
-            'affine'        : infer_affine,
-            '2step'         : infer_2step,
-            'cpd_rigid'     : CPDrigid,
-            'cpd_similarity': CPDsimilarity,
-            'cpd_affine'    : CPDaffine,
-            'cpd_2step'     : cpd_2step,
-        }
 
         mode = mode.lower()
         if mode in funcDict:
