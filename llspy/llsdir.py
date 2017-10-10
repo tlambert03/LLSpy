@@ -683,6 +683,9 @@ class LLSdir(object):
         """
         P = self.parameters
         S = schema.procParams(kwargs)
+        assert sum(S.trimY) < P.ny, "TrimY sum must be less than number of Y pixels"
+        assert sum(S.trimX) < P.nx, "TrimX sum must be less than number of X pixels"
+        assert sum(S.trimZ) < P.nz, "TrimZ sum must be less than number of Z pixels"
 
         if S.cRange is None:
             S.cRange = range(P.nc)
