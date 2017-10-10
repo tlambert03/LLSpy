@@ -42,6 +42,8 @@ import itertools
 import numpy as np
 import logging
 import json
+import matplotlib
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
