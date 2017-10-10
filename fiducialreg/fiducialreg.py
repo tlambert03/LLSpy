@@ -42,6 +42,8 @@ import itertools
 import numpy as np
 import logging
 import json
+import matplotlib
+matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
@@ -49,9 +51,9 @@ np.seterr(divide='ignore', invalid='ignore')
 
 
 # TODO: try seperable gaussian filter instead for speed
-def log_filter(img, xysigma=1, zsigma=2.5, mask=None):
+def log_filter(img, blurxysigma=1, blurzsigma=2.5, mask=None):
     # sigma that works for 2 or 3 dimensional img
-    sigma = [zsigma, xysigma, xysigma][-img.ndim:]
+    sigma = [blurzsigma, blurxysigma, blurxysigma][-img.ndim:]
     # LOG filter image
     filtered_img = -ndimage.gaussian_laplace(img.astype('f'), sigma)
     # eliminate negative pixels
@@ -233,11 +235,15 @@ def cart2hom(X):
 
 def intrinsicToWorld(intrinsicXYZ, dxy, dz, worldStart=0.5):
     """ where intrinsicXYZ is a 1x3 vector np.array([X, Y, Z]) """
+    if dxy == dz == 1:
+        logger.warning('voxel size set at [1,1,1]... possibly unset')
     return worldStart + (intrinsicXYZ - 0.5) * np.array([dxy, dxy, dz])
 
 
 def worldToInstrinsic(worldXYZ, dxy, dz, worldStart=0.5):
     """ where XYZ coord is a 1x3 vector np.array([X, Y, Z]) """
+    if dxy == dz == 1:
+        logger.warning('voxel size set at [1,1,1]... possibly unset')
     return .5 + (worldXYZ - worldStart) / np.array([dxy, dxy, dz])
 
 
@@ -363,7 +369,7 @@ class GaussFitResult:
 
 
 class GaussFitter3D(object):
-    def __init__(self, data, dz=0.3, dx=0.1, wx=0.17, wz=0.37):
+    def __init__(self, data, dz=1, dx=1, wx=0.17, wz=0.37):
         self.data = data
         self.dz = dz
         self.dx = dx
@@ -422,9 +428,31 @@ class GaussFitter3D(object):
 
 
 class FiducialCloud(object):
+    """Generate a 3D point cloud of XYZ locations of fiducial markers
 
-    def __init__(self, data=None, dz=0.3, dx=0.1, xysig=1, zsig=2.5, threshold='auto',
-        mincount=20, imref=None, filtertype='blur'):
+    Points are extracted from an image of (e.g.) beads by 3D gaussian fitting.
+    Creates an instance for a single wavelength.  Multiple Clouds can be related
+    to each other using a :obj:`CloudSet` object.
+
+    Args:
+        data (:obj:`np.ndarray`, :obj:`str`): 3D numpy array or
+            path to LLS registration folder experiment
+        dz (:obj:`float`): Z-step size
+        dx (:obj:`float`): Pixel size in XY
+        blurxysig (:obj:`float`): XY sigma for pre-fitting blur step
+        blurzsig (:obj:`float`): Z sigma for pre-fitting blur step
+        threshold ('auto', :obj:`int`): intensity threshold when detecting beads.
+            by default, it will autodetect threshold using mincount parameter.
+        mincount (:obj:`int`): minimum number of beads expected in the image,
+            used when autodetecting threshold.
+        imref (:obj:`fiducialreg.imref.imref3d`): spatial referencing object.
+        filtertype ({'blur', 'log'}): type of blur to use prior to bead detection.
+            log = laplacian of gaussian
+            blur = gaussian
+
+    """
+    def __init__(self, data=None, dz=1, dx=1, blurxysig=1, blurzsig=2.5,
+                 threshold='auto', mincount=20, imref=None, filtertype='blur'):
         # data is a numpy array or filename
         self.data = None
         if data is not None:
@@ -445,13 +473,15 @@ class FiducialCloud(object):
                     'filepath or a numpy arrays')
         self.dx = dx
         self.dz = dz
-        self.xysig = xysig
-        self.zsig = zsig
+        self.blurxysig = blurxysig
+        self.blurzsig = blurzsig
         self.threshold = threshold
         self._mincount = mincount
         self.imref = imref
         self.coords = None
         self.filtertype = filtertype
+
+        logger.debug('New fiducial cloud created with dx: {},  dz: {}'.format(dx, dz))
         if self.data is not None:
             self.update_coords()
 
@@ -479,11 +509,15 @@ class FiducialCloud(object):
     def filtered(self):
         if self.data is not None:
             if self.filtertype == 'log':
-                return log_filter(self.data, self.xysig, self.zsig)
+                return log_filter(self.data, self.blurxysig, self.blurzsig)
             else:
                 from gputools import blur
-                sigs = np.array([self.zsig, self.xysig, self.xysig]) * 2
-                return blur(self.data, sigs)
+                import warnings
+                sigs = np.array([self.blurzsig, self.blurxysig, self.blurxysig]) * 2
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    out = blur(self.data, sigs)
+                return out
         else:
             return None
 
@@ -524,6 +558,7 @@ class FiducialCloud(object):
 
     @property
     def coords_inworld(self):
+        """return coordinate list in world corrdinates based on voxel size"""
         return intrinsicToWorld(self.coords.T, self.dx, self.dz).T
 
     def show(self, withimage=True, filtered=True):
@@ -544,17 +579,40 @@ class FiducialCloud(object):
         return json.dumps(D)
 
     def fromJSON(self, Jstring):
+        logger.debug("Recovering Fidicuals from JSON string")
         J = json.loads(Jstring)
         for k, v in J.items():
+            if not k == 'coords':
+                logger.debug("Setting attribute {} to {}".format(k, v))
+            else:
+                logger.debug("Populating coordinates from JSON string")
             setattr(self, k, v)
         self.coords = np.array(self.coords)
         return self
 
 
 class CloudSet(object):
-    """docstring for CloudSet"""
+    """Creates a set of fiducial clouds for the purpose of estimating transform
 
-    def __init__(self, data=None, labels=None, **kwargs):
+    The main method is the tform() method to generate a transformation matrix
+    mapping one cloud in the set to another.
+
+    Args:
+        data (Iterable[:obj:`str`, :obj:`np.ndarray`]): list of 3D numpy arrays,
+            or a list of filepath strings.  Strings will be handed to
+            :obj:`FiducialCloud` and read using tifffile
+        labels (Iterable[:obj:`str`], optional):  List of labels (e.g. wave) naming each
+            fiducial cloud in the set.  This allows registration using labels
+            instead of the index of the original dataset provided to :obj:`CloudSet`
+
+        **kwargs: extra keyword arguments are passed to the :obj:`FiducialCloud`
+            constructor.
+
+    """
+
+    def __init__(self, data=None, labels=None, dx=1, dz=1, **kwargs):
+        self.dx = dx
+        self.dz = dz
         if data is not None:
             if not isinstance(data, (list, tuple, set)):
                 raise ValueError('CloudSet expects a list of np.ndarrays or '
@@ -563,12 +621,17 @@ class CloudSet(object):
                 if len(labels) != len(data):
                     raise ValueError('Length of optional labels list must match '
                         'length of the data list')
+                self.labels = labels
+            else:
+                self.labels = ['ch'+str(i) for i in range(len(data))]
             self.N = len(data)
-            self.clouds = [FiducialCloud(i, **kwargs) for i in data]
+            self.clouds = []
+            for i, d in enumerate(data):
+                logger.debug("Creating FiducalCloud for label: {}".format(self.labels[i]))
+                self.clouds.append(FiducialCloud(d, dx=self.dx, dz=self.dz, **kwargs))
         else:
             self.clouds = []
             self.N = 0
-        self.labels = labels
 
     def toJSON(self):
         return json.dumps({
@@ -737,11 +800,34 @@ class CloudSet(object):
             file.write(outstring)
 
     # Main Method
-    def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=True, **kwargs):
-        """ get tform matrix that maps moving point cloud to fixed point cloud"""
+    def tform(self, movingLabel=None, fixedLabel=None, mode='2step',
+              inworld=True, **kwargs):
+        """ get tform matrix that maps moving point cloud to fixed point cloud
+
+        Args:
+            movingLabel (:obj:`str`): label/wave to register.  if none, will use the
+                second cloud in the cloudset by default.
+            fixedLabel (:obj:`str`):  reference label/wave.  if none, will use the
+                first cloud in the cloudset by default.
+            mode ({'translation', 'rigid', 'similarity', 'affine', '2step',
+                'cpd_rigid', 'cpd_similarity', 'cpd_affine', 'cpd_2step'}):
+                type of registration transformation to calculate.  CPD modes
+                use coherent point drift estimation, other modes use least
+                squares.
+            inworld (:obj:`bool`): if True, will use :obj:`intrinsicToWorld` to
+                convert pixel coordinates into world coordinates using the voxel
+                size provided.  (needs work)
+
+        Returns:
+            :obj:`np.ndarray`: 4x4 transformation matrix
+
+
+        """
         if self.labels is None:
             logging.warning('No label list provided... cannot get tform by label')
             return
+
+        # FIXME: I think this will cause an exception if no labels are set
         movingLabel = movingLabel if movingLabel is not None else self.labels[1]
         fixedLabel = fixedLabel if fixedLabel is not None else self.labels[0]
 
@@ -775,7 +861,8 @@ class CloudSet(object):
                 moving = matching[movIdx]
                 fixed = matching[fixIdx]
                 tform = funcDict[mode](moving, fixed)
-            logger.debug('Measured Tform Matrix:\n' + str(tform))
+            logger.debug('Measured {} Tform Matrix {}inWorld:\n'.format(mode, '' if inworld else 'not ' ) +
+                         str(tform))
             return tform
         else:
             raise ValueError('Unrecognized transformation mode: {}'.format(mode))
@@ -784,8 +871,9 @@ class CloudSet(object):
         """show points in clouds overlaying image, if matching is true, only
         show matching points from all sets"""
         if withimage:
-            if not self.clouds[0].has_data:
-                pass
+            if not self.has_data():
+                raise AttributeError("No data present in cloudset.  Cannot show"
+                    " image.  Try calling reload_data() from parent object")
             if filtered and self.clouds[0].filtered is not None:
                 im = self.clouds[0].filtered.max(0)
             else:
@@ -811,13 +899,18 @@ class CloudSet(object):
         if matching:
             movingpoints = self.matching()[self.labels.index(movingLabel)]
             fixedpoints = self.matching()[self.labels.index(fixedLabel)]
+
+            matching = self._get_matching(inworld=kwargs.get('inworld', False))
+            movingpoints = matching[self.labels.index(movingLabel)]
+            fixedpoints = matching[self.labels.index(fixedLabel)]
+
         else:
             movingpoints = self[movingLabel].coords
             fixedpoints = self[fixedLabel].coords
         shiftedpoints = affineXF(movingpoints, T)
-        fp = plt.scatter(fixedpoints[0], fixedpoints[1], c='b', s=5)
+        fp = plt.scatter(fixedpoints[0], fixedpoints[1], c='b', s=7)
         mp = plt.scatter(movingpoints[0], movingpoints[1], c='m', marker='x', s=5)
-        sp = plt.scatter(shiftedpoints[0], shiftedpoints[1], c='r', s=5)
+        sp = plt.scatter(shiftedpoints[0], shiftedpoints[1], c='r', s=7)
         plt.legend((fp, mp, sp), ('Fixed', 'Moving', 'Registered'))
         plt.show()
 
@@ -833,7 +926,7 @@ class CloudSet(object):
         T = self.tform(movingLabel, fixedLabel, **kwargs)
         movingImg = self.data(label=movingLabel)
         fixedImg = self.data(label=fixedLabel)
-        movingReg = affineGPU(movingImg, T)
+        movingReg = affineGPU(movingImg, T, [self.dz, self.dx, self.dx])
         imshowpair(fixedImg, movingReg, **kwargs)
 
 
@@ -846,10 +939,10 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
         try:
             from tifffile import imshow
         except ImportError:
-            from matplotlib.pyplot import imshow
+            imshow = plt.imshow
             mip = True
     else:
-        from matplotlib.pyplot import imshow
+        imshow = plt.imshow
         if im1.ndim < 3:
             mip = False
 
@@ -878,7 +971,7 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
 
 ###############################################################################
 # code below is a *very* slightly modified version of the pycpd repo from
-# Siavash Kallaghi.
+# Siavash Kallaghi. https://github.com/siavashk/pycpd
 #
 # The MIT License
 #
@@ -1110,3 +1203,17 @@ class CPDaffine(CPDregistration):
         self.sigma2 = (xPx - trAR) / (self.Np * self.D)
         if self.sigma2 <= 0:
             self.sigma2 = self.tolerance / 10
+
+
+funcDict = {
+    'translate'     : infer_translation,
+    'translation'   : infer_translation,
+    'rigid'         : infer_rigid,
+    'similarity'    : infer_similarity,
+    'affine'        : infer_affine,
+    '2step'         : infer_2step,
+    'cpd_rigid'     : CPDrigid,
+    'cpd_similarity': CPDsimilarity,
+    'cpd_affine'    : CPDaffine,
+    'cpd_2step'     : cpd_2step,
+}
