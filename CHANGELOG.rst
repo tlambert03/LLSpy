@@ -4,9 +4,18 @@ LLSpy Release History
 `0.2.3`_
 ===============
 
+**Added:**
+
+* new registration tab in gui (929f53b65396aa60aab69220b9ae5e8117dc65bf)
+* ability to reusable registration file (cc3f771d8907508b67648c89334affe2d693f709)
+
+**Changed:**
+
+* registration now defaults to world coordinates (should work with different voxel sizes)
+
 **Fixed:**
 
-* all registration functions now working better (commit 83b380a)
+* properly parse 24-hour timestamp in settings.txt (36d4ed0e71e5a6a7dcae62cd778a0e48f3d29610)
 
 
 `0.2.2`_
