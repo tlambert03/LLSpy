@@ -1,4 +1,5 @@
 from llspy import schema
+from llspy.cudabinwrapper import gpulist
 from PyQt5 import QtCore
 import traceback
 import llspy
@@ -38,11 +39,7 @@ elif sys.platform.startswith('win32'):
 else:
     tags['os'] = '{}'.format(platform.linux_distribution()[0])
 
-# try:  # lots of overhead just to get GPU version?
-#     import gputools
-#     tags['gpu'] = gputools.get_device().device.platform.name + '_' + gputools.get_device().device.name
-# except Exception:
-#     pass
+tags['gpu'] = gpulist()
 
 tags['pyqt'] = QtCore.QT_VERSION_STR
 for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools'):
