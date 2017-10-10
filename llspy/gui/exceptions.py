@@ -7,6 +7,9 @@ import platform
 import re
 import os
 import uuid
+import logging
+logger = logging.getLogger(__name__)
+
 from raven import Client, fetch_git_sha, fetch_package_version, breadcrumbs
 try:
     from urllib.request import urlopen
@@ -35,11 +38,11 @@ elif sys.platform.startswith('win32'):
 else:
     tags['os'] = '{}'.format(platform.linux_distribution()[0])
 
-try:  # lots of overhead just to get GPU version?
-    import gputools
-    tags['gpu'] = gputools.get_device().device.platform.name + '_' + gputools.get_device().device.name
-except Exception:
-    pass
+# try:  # lots of overhead just to get GPU version?
+#     import gputools
+#     tags['gpu'] = gputools.get_device().device.platform.name + '_' + gputools.get_device().device.name
+# except Exception:
+#     pass
 
 tags['pyqt'] = QtCore.QT_VERSION_STR
 for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools'):
@@ -105,9 +108,11 @@ class ExceptionHandler(QtCore.QObject):
             self.handleLLSpyError(*err_info)
         elif etype.__module__ == 'voluptuous.error':
             self.handleSchemaError(*err_info)
+        elif "0xe06d7363" in str(value):
+            self.handleCUDA_CL_Error(*err_info)
         else:  # uncaught exceptions go to sentry
             if not _OPTOUT:
-                print("sending bug report")
+                logger.debug("Sending bug report")
                 client.captureException(err_info)
             self.errorMessage.emit(str(value), '', '', '')
             print("!" * 50)
@@ -134,3 +139,16 @@ class ExceptionHandler(QtCore.QObject):
                 report = "Not a valid value for: {}\n\n".format(errorKey)
                 report += "({})".format(itemDescription)
                 self.errorMessage.emit(report, "Got value: {}".format(gotValue), '', '', '')
+
+    def handleCUDA_CL_Error(self, etype, value, tb):
+        if not _OPTOUT:
+            logger.debug("Sending bug report")
+            client.captureException((etype, value, tb))
+        tbstring = "".join(traceback.format_exception(etype, value, tb))
+        self.errorMessage.emit('Sorry, it looks like CUDA and OpenCL are not '
+            'getting along on your system',
+            'CUDA/OpenCL clash', 'If you continue to get this error, please '
+            'click the "disable Spimagine" checkbox in the config tab '
+            'and restart LLSpy.  To report this bug or get updates on a fix, '
+            'please go to https://github.com/tlambert03/LLSpy/issues/2 and '
+            'include your system configuration in any reports.  Thanks!', tbstring)

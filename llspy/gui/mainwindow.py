@@ -55,7 +55,7 @@ programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 
 if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
     try:
-        raise ImportError("skipping")
+        #raise ImportError("skipping")
         from spimagine import DataModel, NumpyData
         from spimagine.gui.mainwidget import MainWidget as spimagineWidget
         _SPIMAGINE_IMPORTED = True
@@ -486,6 +486,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 QtW.QFileDialog.getExistingDirectory(
                     self, 'Set Registration Calibration Directory',
                     '', QtW.QFileDialog.ShowDirsOnly)))
+
+        self.disableSpimagineCheckBox.clicked.connect(lambda:
+            QtW.QMessageBox.information(self, 'Restart Required',
+                "Please quit and restart LLSpy for changes to take effect",
+                QtW.QMessageBox.Ok))
 
         self.availableCompression = []
         # get compression options
