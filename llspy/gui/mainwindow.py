@@ -35,14 +35,6 @@ logger.addHandler(ch)           # add it to the root logger
 logger.removeHandler(lhStdout)  # and delete the original streamhandler
 
 _SPIMAGINE_IMPORTED = False
-try:
-    # raise ImportError("skipping")
-    from spimagine import DataModel, NumpyData
-    # from spimagine.models import imageprocessor
-    from spimagine.gui.mainwidget import MainWidget as spimagineWidget
-    _SPIMAGINE_IMPORTED = True
-except ImportError:
-    print("could not import spimagine!  falling back to matplotlib")
 
 # import sys
 # sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
@@ -60,6 +52,15 @@ defaultSettings = QtCore.QSettings("llspy", 'llspyDefaults')
 # pyinstaller bundle or live.
 defaultINI = llspy.util.getAbsoluteResourcePath('gui/guiDefaults.ini')
 programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
+
+if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
+    try:
+        raise ImportError("skipping")
+        from spimagine import DataModel, NumpyData
+        from spimagine.gui.mainwidget import MainWidget as spimagineWidget
+        _SPIMAGINE_IMPORTED = True
+    except ImportError:
+        print("could not import spimagine!  falling back to matplotlib")
 
 
 class LLSDragDropTable(QtW.QTableWidget):
