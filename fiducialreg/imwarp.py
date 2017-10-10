@@ -5,6 +5,7 @@ from numba import njit
 
 
 def imwarp(inputImage, tform, R_A=None, outputRef=None):
+	""" transform input image with provided tform matrix"""
 
 	# checkImageAgreementWithTform(inputImage,tform)
 

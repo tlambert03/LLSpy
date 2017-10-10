@@ -106,7 +106,7 @@ class DimensionManager(object):
 
 
 class imref2d(object):
-	"""docstring for imref2d"""
+	"""Spatial referenceing object for 2d"""
 
 	def __init__(self, *args):
 		self.Dimension = dotdict()
@@ -243,7 +243,26 @@ class imref2d(object):
 
 
 class imref3d(imref2d):
-	"""docstring for imref3d"""
+	"""Spatial referenceing object for 3d
+
+	R = imref3d() creates an imref3d object with default property settings.
+
+	R = imref3d(imageSize)
+		creates an imref3d object given an image size: (nZ, nY, nX)
+		This syntax constructs a spatial referencing object for the default
+		case in which the world coordinate system is co-aligned with the
+		intrinsic coordinate system.
+
+	R = imref3d(imageSize, pixelExtentInWorldX, pixelExtentInWorldY, pixelExtentInWorldZ)
+		creates an imref3d object given an image size (nZ, nY, nX) and the
+		resolution in each dimension, specified by
+		pixelExtentInWorldX, pixelExtentInWorldY, and pixelExtentInWorldZ.
+
+	R = imref3d(imageSize,xWorldLimits,yWorldLimits,zWorldLimits)
+		creates an imref3d object given an image size and the world limits
+		in each dimension, specified by xWorldLimits, yWorldLimits and zWorldLimits.
+
+	"""
 
 	def __init__(self, *args):
 		self.Dimension = dotdict()
