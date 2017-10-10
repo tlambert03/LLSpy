@@ -86,6 +86,11 @@ class MissingBinaryError(LLSpyError):
     pass
 
 
+class RegistrationError(LLSpyError):
+    """Unable to find executable or shared library dependency."""
+    pass
+
+
 class ExceptionHandler(QtCore.QObject):
     """General class to handle all raise exception errors in the GUI"""
 
