@@ -472,6 +472,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.RegProcessPathToolButton.clicked.connect(self.setRegFile)
         self.RegCalibPathLoadButton.clicked.connect(self.setRegCalibPath)
         self.GenerateRegFileButton.clicked.connect(self.generateCalibrationFile)
+        self.RegCalibPreviewButton.clicked.connect(self.previewRegistration)
+
         self.cudaDeconvPathToolButton.clicked.connect(self.setCudaDeconvPath)
         self.otfFolderToolButton.clicked.connect(self.setOTFdirPath)
         self.camParamTiffToolButton.clicked.connect(self.setCamParamPath)
@@ -556,7 +558,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.stopWatcher()
             self.startWatcher()
 
-    @QtCore.pyqtSlot()
     def setRegFile(self):
         dir = QtW.QFileDialog.getExistingDirectory(
             self, 'Set Registration Calibration Directory',
@@ -564,16 +565,16 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         if dir is not None and dir is not '':
             self.RegProcessPathLineEdit.setText(dir)
 
-    @QtCore.pyqtSlot()
     def setRegCalibPath(self):
         dir = QtW.QFileDialog.getExistingDirectory(
             self, 'Set Registration Calibration Directory',
             '', QtW.QFileDialog.ShowDirsOnly)
-        if dir is not None and dir is not '':
-            RD = llspy.RegDir(dir)
-            if not RD.isValid:
-                raise err.RegistrationError(
-                    'Registration Calibration dir not valid: {}'.format(RD.path))
+        if dir is None or dir is  '':
+            return
+        RD = llspy.RegDir(dir)
+        if not RD.isValid:
+            raise err.RegistrationError(
+                'Registration Calibration dir not valid: {}'.format(RD.path))
 
         self.RegCalibPathLineEdit.setText(dir)
         layout = self.RegCalibRefGroupLayout
@@ -586,7 +587,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             layout.addWidget(box)
             box.setChecked(True)
 
-    @QtCore.pyqtSlot()
     def generateCalibrationFile(self):
         RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
         if not RD.isValid:
@@ -600,8 +600,58 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         logger.debug("registration file output: {}".format(outfile))
         group = self.RegCalibRefChannelsGroup
         refs = [int(cb.text()) for cb in group.findChildren(QtW.QCheckBox) if cb.isChecked()]
-        print(refs)
         RD.write_reg_file(outfile, refs=refs)
+
+    def previewRegistration(self):
+        RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
+        if not RD.isValid:
+            raise err.RegistrationError(
+                'Registration Calibration dir not valid: {}'.format(RD.path))
+
+        @QtCore.pyqtSlot(np.ndarray, float, float)
+        def displayRegPreview(array, dx=None, dz=None, df=None):
+            ims = []
+            for d in range(array.shape[0]):
+                im = array[d].astype(np.float).max(0)
+                im -= im.min()
+                im /= im.max()
+                ims.append(im)
+
+            from PIL import Image
+            rgbArray = np.zeros((ims[0].shape[0], ims[0].shape[1], 3), 'uint8')
+            rgbArray[..., 0] = ims[0]*256
+            rgbArray[..., 1] = ims[1]*256
+            rgbArray[..., 2] = ims[2]*256
+            im = Image.fromarray(rgbArray)
+            im.show()
+            #img = QtGui.QImage(array.shape[2], array.shape[1], QtGui.QImage.Format_RGB32)
+
+            # self.RegPreviewLabelXY.setScaledContents(True)
+            # self.RegPreviewLabelXY.setSizePolicy(
+            #     QtW.QSizePolicy.Ignored, QtW.QSizePolicy.Ignored)
+            # # import qimage2ndarray as qi
+            # # img = qi.array2qimage(self.data[0,0,0])
+            # self.RegPreviewLabelXY.setPixmap(QtGui.QPixmap.fromImage(img))
+
+        self.previewButton.setDisabled(True)
+        self.previewButton.setText('Working...')
+
+        opts = self.getValidatedOptions()
+        opts['regMode'] = self.RegCalib_channelRefModeCombo.currentText()
+        opts['doReg'] = True if opts['regMode'].lower() is not 'none' else False
+        opts['regRefWave'] = int(self.RegCalib_channelRefCombo.currentText())
+        opts['regCalibDir'] = self.RegCalibPathLineEdit.text()
+        w, thread = newWorkerThread(workers.TimePointWorker,
+            RD.path, [0], None, opts,
+            workerConnect={'previewReady': displayRegPreview},
+            start=True)
+
+        w.finished.connect(lambda: self.previewButton.setEnabled(True))
+        w.finished.connect(lambda: self.previewButton.setText('Preview'))
+        w.error.connect(lambda: self.previewButton.setEnabled(True))
+        w.error.connect(lambda: self.previewButton.setText('Preview'))
+        self.previewthreads = (w, thread)
+
 
     def saveCurrentAsDefault(self):
         if len(defaultSettings.childKeys()):
@@ -704,8 +754,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         self.previewPath = self.listbox.item(firstRowSelected, 0).text()
 
-
-        w, thread = newWorkerThread(workers.TimePointWorker, self.previewPath, tRange, cRange, self.lastopts,
+        w, thread = newWorkerThread(workers.TimePointWorker,
+            self.previewPath, tRange, cRange, self.lastopts,
             workerConnect={
                             'previewReady': self.displayPreview,
                             'updateCrop': self.updateCrop,

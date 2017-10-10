@@ -930,6 +930,24 @@ class CloudSet(object):
         imshowpair(fixedImg, movingReg, **kwargs)
 
 
+def imoverlay(im1, im2, method=None, mip=False):
+    im1 = im1.astype(np.float) if not mip else im1.astype(np.float).max(0)
+    im2 = im2.astype(np.float) if not mip else im2.astype(np.float).max(0)
+    im1 -= im1.min()
+    im1 /= im1.max()
+    im2 -= im2.min()
+    im2 /= im2.max()
+
+    ndim = im1.ndim
+    if method == 'diff':
+        im3 = im1-im2
+        im3 -= im3.min()
+        im3 /= im3.max()
+        return im3
+    else:
+        return np.stack((im1, im2, im1), ndim)
+
+
 def imshowpair(im1, im2, method=None, mip=False, **kwargs):
     # normalize
     if not im1.shape == im2.shape:
@@ -946,27 +964,15 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
         if im1.ndim < 3:
             mip = False
 
-    im1 = im1.astype(np.float) if not mip else im1.astype(np.float).max(0)
-    im2 = im2.astype(np.float) if not mip else im2.astype(np.float).max(0)
-    im1 -= im1.min()
-    im1 /= im1.max()
-    im2 -= im2.min()
-    im2 /= im2.max()
-
-    ndim = im1.ndim
     if method == 'diff':
-        im3 = im1-im2
-        im3 -= im3.min()
-        im3 /= im3.max()
-        imshow(im3, cmap='gray', vmin=0.2, vmax=.8)
+        imshow(imoverlay(im1, im2, 'diff'), cmap='gray', vmin=0.2, vmax=.8)
     elif method == '3D':
-        im3 = np.stack((im1, im2, im1), ndim)
+        im3 = imoverlay(im1, im2)
         fig, subpl, ax = imshow(im3, subplot=221)
         imshow(np.rot90(im3.max(1)), figure=fig, subplot=222)
         imshow(im3.max(2), figure=fig, subplot=223)
     else:  # falsecolor
-        im3 = np.stack((im1, im2, im1), ndim)
-        imshow(im3)
+        imshow(imoverlay(im1, im2))
     plt.show()
 
 ###############################################################################
