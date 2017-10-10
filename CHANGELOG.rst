@@ -1,8 +1,8 @@
 LLSpy Release History
 #####################
 
-`0.2.3`_
-===============
+Next Version
+============
 
 **Added:**
 
@@ -12,6 +12,10 @@ LLSpy Release History
 **Changed:**
 
 * registration now defaults to world coordinates (should work with different voxel sizes)
+
+
+`0.2.3`_
+=========
 
 **Fixed:**
 
