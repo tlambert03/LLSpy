@@ -133,8 +133,8 @@ __validator__ = {
     'doReg'             : smartbool,
     'regRefWave'        : intRange(300, 1000),
     'regMode'           : All(Coerce(str), Lower, Strip,
-        Any('translation', 'translate', 'affine', 'rigid', 'similarity', '2step',
-            'cpd_affine', 'cpd_rigid', 'cpd_similarity', 'cpd_2step'),
+        Any('none', Any('translation', 'translate', 'affine', 'rigid', 'similarity', '2step',
+            'cpd_affine', 'cpd_rigid', 'cpd_similarity', 'cpd_2step')),
         msg='Registration mode must be one of {translation, rigid, similarity, affine, 2step, '
             'cpd_affine, cpd_rigid, cpd_similarity, cpd_2step}'),
     'regCalibDir'       : Any(None, dirpath,
