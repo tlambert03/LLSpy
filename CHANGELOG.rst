@@ -17,6 +17,11 @@ Next Version
 `0.2.3`_
 =========
 
+**Added:**
+
+* intelligible warning when openCL and CUDA clash
+* option to disable spimagine import (and reenable easily)
+
 **Fixed:**
 
 * properly parse 24-hour timestamp in settings.txt `36d4ed0e <https://github.com/tlambert03/LLSpy/commit/36d4ed0e71e5a6a7dcae62cd778a0e48f3d29610>`_
