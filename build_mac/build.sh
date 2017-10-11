@@ -3,6 +3,7 @@ export DYLD_LIBRARY_PATH="/Users/talley/DropboxHMS/Python/llspylibs/lib/:$DYLD_L
 rm -rf ./_dist
 rm -rf ./_build
 pyinstaller  --noconfirm --clean \
+	--log-level=INFO \
 	--distpath=./_dist \
 	--workpath=./_build \
 	--upx-dir="/usr/local/bin/" \
