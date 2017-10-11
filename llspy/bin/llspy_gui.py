@@ -19,6 +19,14 @@ import os
 import sys
 import multiprocessing
 import time
+import json
+from distutils.version import StrictVersion
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlopen
+
+
 import logging
 logger = logging.getLogger()  # set root logger
 logger.setLevel(logging.DEBUG)
@@ -121,6 +129,14 @@ def main():
                 'Please contact innovation@janelia.hhmi.org.\n\n'
                 'More info in the documentation at llspy.readthedocs.io',
                 QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
+
+        projectURL = "https://api.github.com/repos/tlambert03/LLSpy/releases/latest"
+        newestVersion = json.loads(urlopen(projectURL).read())['tag_name']
+        if StrictVersion(newestVersion) > StrictVersion(llspy.__version__):
+            QtWidgets.QMessageBox.warning(mainGUI, "Newer Version Available!",
+                'Update available: v{}\n\nYou are using v{}\n\nTry updating using "conda update llspy"'.format(newestVersion, llspy.__version__),
+                QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
+
 
         # ######################## TESTING
         # def tester():
