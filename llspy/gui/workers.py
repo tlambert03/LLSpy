@@ -59,9 +59,12 @@ class SubprocessWorker(QtCore.QObject):
         chance to process events, which means processing signals received
         from GUI (such as abort).
         """
+        logger.debug('Subprocess {} START'.format(self.name))
         self._logger.info('~' * 20 + '\nRunning {} thread_{} with args: '
             '\n{}\n'.format(self.binary, self.id, " ".join(self.args)) + '\n')
         self.process.finished.connect(self.onFinished)
+        self.process.finished.connect(lambda:
+            logger.debug('Subprocess {} FINISH'.format(self.name)))
         if self.env is not None:
             sysenv = QtCore.QProcessEnvironment.systemEnvironment()
             sysenv.insert
@@ -291,9 +294,11 @@ class LLSitemWorker(QtCore.QObject):
         # so the maximum is the total number of timepoints * channels
         self.nFiles = len(self.P.tRange) * len(self.P.cRange)
 
-        self._logger.info('\n' + '#' * 50)
+        self._logger.info('#' * 50)
         self._logger.info('Processing {}'.format(self.E.basename))
         self._logger.info('#' * 50 + '\n')
+        self._logger.debug('Full path {}'.format(self.E.path))
+        self._logger.debug('Parameters {}\n'.format(self.E.parameters))
 
         if self.P.correctFlash:
             self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
@@ -343,6 +348,7 @@ class LLSitemWorker(QtCore.QObject):
             # with the argQueue populated, we can now start the workers
             if not len(self.__argQueue):
                 self._logger.error('No channel arguments to process in LLSitem: %s' % self.shortname)
+                self._logger.debug('LLSitemWorker FINISH: {}'.format(self.E.basename))
                 self.finished.emit()
                 return
             self.startCUDAWorkers()

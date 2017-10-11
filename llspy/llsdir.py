@@ -143,6 +143,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
         if isinstance(exp, str):
             exp = LLSdir(exp)
     logger.debug("Preview called on {}".format(str(exp.path)))
+    logger.debug("Params: {}".format(exp.parameters))
 
     if exp.is_compressed():
         try:
@@ -223,7 +224,9 @@ def preview(exp, tR=0, cR=None, **kwargs):
         out.append(np.stack(stacks, 0))
 
     if out:
-        return np.stack(out, 0) if len(out) > 1 else out[0]
+        combined = np.stack(out, 0) if len(out) > 1 else out[0]
+        logger.debug("Preview finished. Output array shape = {}".format(combined.shape))
+        return combined
     else:
         return None
 
@@ -246,6 +249,7 @@ def process(exp, binary=None, **kwargs):
         if isinstance(exp, str):
             exp = LLSdir(exp)
     logger.debug("Process called on {}".format(str(exp.path)))
+    logger.debug("Params: {}".format(exp.parameters))
 
     if exp.is_compressed():
         exp.decompress()
@@ -328,6 +332,7 @@ def process(exp, binary=None, **kwargs):
         with open(outname, 'w') as outfile:
             json.dump(P, outfile, cls=util.paramEncoder)
 
+    logger.debug("Process func finished.")
     return
 
 
@@ -683,6 +688,9 @@ class LLSdir(object):
         """
         P = self.parameters
         S = schema.procParams(kwargs)
+        assert sum(S.trimY) < P.ny, "TrimY sum must be less than number of Y pixels"
+        assert sum(S.trimX) < P.nx, "TrimX sum must be less than number of X pixels"
+        assert sum(S.trimZ) < P.nz, "TrimZ sum must be less than number of Z pixels"
 
         if S.cRange is None:
             S.cRange = range(P.nc)
@@ -911,6 +919,7 @@ class LLSdir(object):
                         camparams = CameraParameters(camparamsPath)
                 except Exception:
                     camparams = CameraParameters()
+        logger.debug("Correcting Flash artifact with camparam {}".format(camparams.basename))
 
         if not np.all(camparams.roi == self.settings.camera.roi):
             try:

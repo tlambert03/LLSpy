@@ -2265,7 +2265,7 @@ CPD=Coherent Point Drift algorithm
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="13" column="0">
+        <item row="14" column="0">
          <widget class="QLabel" name="previewBackendLabel">
           <property name="text">
            <string>Preview Type</string>
@@ -2278,7 +2278,7 @@ CPD=Coherent Point Drift algorithm
           </property>
          </widget>
         </item>
-        <item row="14" column="2">
+        <item row="15" column="2">
          <spacer name="configTabVertSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -2327,7 +2327,7 @@ CPD=Coherent Point Drift algorithm
           </property>
          </widget>
         </item>
-        <item row="16" column="0">
+        <item row="17" column="0">
          <widget class="QLabel" name="watchModeLabel">
           <property name="enabled">
            <bool>false</bool>
@@ -2340,7 +2340,7 @@ CPD=Coherent Point Drift algorithm
           </property>
          </widget>
         </item>
-        <item row="15" column="2">
+        <item row="16" column="2">
          <widget class="QLineEdit" name="watchDirLineEdit">
           <property name="enabled">
            <bool>false</bool>
@@ -2389,7 +2389,7 @@ CPD=Coherent Point Drift algorithm
           </property>
          </widget>
         </item>
-        <item row="15" column="6">
+        <item row="16" column="6">
          <widget class="QToolButton" name="watchDirToolButton">
           <property name="enabled">
            <bool>false</bool>
@@ -2489,7 +2489,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="15" column="0">
+        <item row="16" column="0">
          <widget class="QCheckBox" name="watchDirCheckBox">
           <property name="text">
            <string>Watch Directory:</string>
@@ -2529,7 +2529,25 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="13" column="2">
+        <item row="18" column="2">
+         <widget class="QCheckBox" name="errorOptOutCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string> Opt out of automatic error reporting. 
+ (Leaving this disabled helps us fix bugs in the program!)</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="2">
          <widget class="QGroupBox" name="previewBackendGroupBox">
           <property name="title">
            <string notr="true"/>
@@ -2567,7 +2585,7 @@ preview of the dataset for later review.</string>
           </layout>
          </widget>
         </item>
-        <item row="16" column="2">
+        <item row="17" column="2">
          <widget class="QGroupBox" name="watchModeGroupBox">
           <property name="enabled">
            <bool>false</bool>
@@ -2626,18 +2644,10 @@ in the main window, and processed in turn.</string>
           </layout>
          </widget>
         </item>
-        <item row="17" column="2">
-         <widget class="QCheckBox" name="errorOptOutCheckBox">
-          <property name="toolTip">
-           <string>The &quot;reduce to raw&quot; function deletes all
-processed data, leaving only the original
-raw data.  This option retains any MIP
-folders found, as a smaller-sized
-preview of the dataset for later review.</string>
-          </property>
+        <item row="13" column="2">
+         <widget class="QCheckBox" name="disableSpimagineCheckBox">
           <property name="text">
-           <string> Opt out of automatic error reporting. 
- (Leaving this disabled helps us fix bugs in the program!)</string>
+           <string>Disable spimagine import (in case of WinError on Preview)</string>
           </property>
           <property name="checked">
            <bool>false</bool>

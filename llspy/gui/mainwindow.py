@@ -35,14 +35,6 @@ logger.addHandler(ch)           # add it to the root logger
 logger.removeHandler(lhStdout)  # and delete the original streamhandler
 
 _SPIMAGINE_IMPORTED = False
-try:
-    # raise ImportError("skipping")
-    from spimagine import DataModel, NumpyData
-    # from spimagine.models import imageprocessor
-    from spimagine.gui.mainwidget import MainWidget as spimagineWidget
-    _SPIMAGINE_IMPORTED = True
-except ImportError:
-    print("could not import spimagine!  falling back to matplotlib")
 
 # import sys
 # sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
@@ -60,6 +52,15 @@ defaultSettings = QtCore.QSettings("llspy", 'llspyDefaults')
 # pyinstaller bundle or live.
 defaultINI = llspy.util.getAbsoluteResourcePath('gui/guiDefaults.ini')
 programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
+
+if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
+    try:
+        #raise ImportError("skipping")
+        from spimagine import DataModel, NumpyData
+        from spimagine.gui.mainwidget import MainWidget as spimagineWidget
+        _SPIMAGINE_IMPORTED = True
+    except ImportError:
+        print("could not import spimagine!  falling back to matplotlib")
 
 
 class LLSDragDropTable(QtW.QTableWidget):
@@ -478,6 +479,24 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.otfFolderToolButton.clicked.connect(self.setOTFdirPath)
         self.camParamTiffToolButton.clicked.connect(self.setCamParamPath)
 
+        # self.defaultRegCalibPathToolButton.clicked.connect(lambda:
+        #     self.defaultRegCalibPathLineEdit.setText(
+        #         QtW.QFileDialog.getExistingDirectory(
+        #             self,
+        #             'Set default Registration Calibration Directory',
+        #             '', QtW.QFileDialog.ShowDirsOnly)))
+
+        self.RegCalibPathToolButton.clicked.connect(lambda:
+            self.RegCalibPathLineEdit.setText(
+                QtW.QFileDialog.getExistingDirectory(
+                    self, 'Set Registration Calibration Directory',
+                    '', QtW.QFileDialog.ShowDirsOnly)))
+
+        self.disableSpimagineCheckBox.clicked.connect(lambda:
+            QtW.QMessageBox.information(self, 'Restart Required',
+                "Please quit and restart LLSpy for changes to take effect",
+                QtW.QMessageBox.Ok))
+
         self.availableCompression = []
         # get compression options
         for ctype in ['lbzip2', 'bzip2', 'pbzip2', 'pigz', 'gzip']:
@@ -756,6 +775,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         w, thread = newWorkerThread(workers.TimePointWorker,
             self.previewPath, tRange, cRange, self.lastopts,
+
+
+
+
             workerConnect={
                             'previewReady': self.displayPreview,
                             'updateCrop': self.updateCrop,
@@ -1049,13 +1072,16 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     'Flash pixel correction requested, but camera parameters file '
                     'not provided.', 'Check CamParam Tiff path.\n\n'
                     'For information on how to generate this file for your camera,'
-                    ' see documentation at llspy.readthedocs.io')
-        else:
-            options['camparamsPath'] = None
-
         rCalibText = self.RegProcessPathLineEdit.text()
         # dCalibText = self.defaultRegProcessPathLineEdit.text()
-        if rCalibText and rCalibText is not '':
+
+
+            options['camparamsPath'] = None
+        #    if dCalibText and dCalibText is not '':
+        #        options['regCalibDir'] = dCalibText
+        #    else:
+            options['regCalibDir'] = None
+
             options['regCalibDir'] = rCalibText
         else:
         #    if dCalibText and dCalibText is not '':

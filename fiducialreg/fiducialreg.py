@@ -43,7 +43,7 @@ import numpy as np
 import logging
 import json
 import matplotlib
-matplotlib.use("Qt5Agg")
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
@@ -826,8 +826,6 @@ class CloudSet(object):
         if self.labels is None:
             logging.warning('No label list provided... cannot get tform by label')
             return
-
-        # FIXME: I think this will cause an exception if no labels are set
         movingLabel = movingLabel if movingLabel is not None else self.labels[1]
         fixedLabel = fixedLabel if fixedLabel is not None else self.labels[0]
 

@@ -723,9 +723,9 @@ class Ui_Main_GUI(object):
         self.previewBackendLabel = QtWidgets.QLabel(self.tab_config)
         self.previewBackendLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.previewBackendLabel.setObjectName("previewBackendLabel")
-        self.gridLayout.addWidget(self.previewBackendLabel, 13, 0, 1, 1)
-        spacerItem26 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem26, 14, 2, 1, 1)
+        self.gridLayout.addWidget(self.previewBackendLabel, 14, 0, 1, 1)
+        spacerItem22 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem22, 15, 2, 1, 1)
         self.cudaDeconvPathLabel = QtWidgets.QLabel(self.tab_config)
         self.cudaDeconvPathLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.cudaDeconvPathLabel.setObjectName("cudaDeconvPathLabel")
@@ -742,13 +742,13 @@ class Ui_Main_GUI(object):
         self.watchModeLabel.setEnabled(False)
         self.watchModeLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.watchModeLabel.setObjectName("watchModeLabel")
-        self.gridLayout.addWidget(self.watchModeLabel, 16, 0, 1, 1)
+        self.gridLayout.addWidget(self.watchModeLabel, 17, 0, 1, 1)
         self.watchDirLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.watchDirLineEdit.setEnabled(False)
         self.watchDirLineEdit.setText("")
         self.watchDirLineEdit.setReadOnly(True)
         self.watchDirLineEdit.setObjectName("watchDirLineEdit")
-        self.gridLayout.addWidget(self.watchDirLineEdit, 15, 2, 1, 1)
+        self.gridLayout.addWidget(self.watchDirLineEdit, 16, 2, 1, 1)
         self.defaultRegCalibPathLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.defaultRegCalibPathLineEdit.setEnabled(False)
         self.defaultRegCalibPathLineEdit.setText("")
@@ -765,7 +765,7 @@ class Ui_Main_GUI(object):
         self.watchDirToolButton = QtWidgets.QToolButton(self.tab_config)
         self.watchDirToolButton.setEnabled(False)
         self.watchDirToolButton.setObjectName("watchDirToolButton")
-        self.gridLayout.addWidget(self.watchDirToolButton, 15, 6, 1, 1)
+        self.gridLayout.addWidget(self.watchDirToolButton, 16, 6, 1, 1)
         self.defaultRegCalibPathLabel = QtWidgets.QLabel(self.tab_config)
         self.defaultRegCalibPathLabel.setEnabled(False)
         self.defaultRegCalibPathLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
@@ -793,7 +793,7 @@ class Ui_Main_GUI(object):
         self.gridLayout.addWidget(self.genFlashParams, 6, 2, 1, 1)
         self.watchDirCheckBox = QtWidgets.QCheckBox(self.tab_config)
         self.watchDirCheckBox.setObjectName("watchDirCheckBox")
-        self.gridLayout.addWidget(self.watchDirCheckBox, 15, 0, 1, 1)
+        self.gridLayout.addWidget(self.watchDirCheckBox, 16, 0, 1, 1)
         self.otfFolderLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.otfFolderLineEdit.setText("")
         self.otfFolderLineEdit.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
@@ -804,6 +804,10 @@ class Ui_Main_GUI(object):
         self.confirmOnQuitCheckBox.setChecked(True)
         self.confirmOnQuitCheckBox.setObjectName("confirmOnQuitCheckBox")
         self.gridLayout.addWidget(self.confirmOnQuitCheckBox, 10, 2, 1, 1)
+        self.errorOptOutCheckBox = QtWidgets.QCheckBox(self.tab_config)
+        self.errorOptOutCheckBox.setChecked(False)
+        self.errorOptOutCheckBox.setObjectName("errorOptOutCheckBox")
+        self.gridLayout.addWidget(self.errorOptOutCheckBox, 18, 2, 1, 1)
         self.previewBackendGroupBox = QtWidgets.QGroupBox(self.tab_config)
         self.previewBackendGroupBox.setTitle("")
         self.previewBackendGroupBox.setObjectName("previewBackendGroupBox")
@@ -818,7 +822,7 @@ class Ui_Main_GUI(object):
         self.prevBackendMatplotlibRadio = QtWidgets.QRadioButton(self.previewBackendGroupBox)
         self.prevBackendMatplotlibRadio.setObjectName("prevBackendMatplotlibRadio")
         self.horizontalLayout_10.addWidget(self.prevBackendMatplotlibRadio)
-        self.gridLayout.addWidget(self.previewBackendGroupBox, 13, 2, 1, 1)
+        self.gridLayout.addWidget(self.previewBackendGroupBox, 14, 2, 1, 1)
         self.watchModeGroupBox = QtWidgets.QGroupBox(self.tab_config)
         self.watchModeGroupBox.setEnabled(False)
         self.watchModeGroupBox.setObjectName("watchModeGroupBox")
@@ -836,11 +840,11 @@ class Ui_Main_GUI(object):
         self.watchModeServerRadio.setChecked(True)
         self.watchModeServerRadio.setObjectName("watchModeServerRadio")
         self.horizontalLayout_5.addWidget(self.watchModeServerRadio)
-        self.gridLayout.addWidget(self.watchModeGroupBox, 16, 2, 1, 1)
-        self.errorOptOutCheckBox = QtWidgets.QCheckBox(self.tab_config)
-        self.errorOptOutCheckBox.setChecked(False)
-        self.errorOptOutCheckBox.setObjectName("errorOptOutCheckBox")
-        self.gridLayout.addWidget(self.errorOptOutCheckBox, 17, 2, 1, 1)
+        self.gridLayout.addWidget(self.watchModeGroupBox, 17, 2, 1, 1)
+        self.disableSpimagineCheckBox = QtWidgets.QCheckBox(self.tab_config)
+        self.disableSpimagineCheckBox.setChecked(False)
+        self.disableSpimagineCheckBox.setObjectName("disableSpimagineCheckBox")
+        self.gridLayout.addWidget(self.disableSpimagineCheckBox, 13, 2, 1, 1)
         self.tabWidget.addTab(self.tab_config, "")
         self.tab_log = QtWidgets.QWidget()
         self.tab_log.setObjectName("tab_log")
@@ -1358,6 +1362,13 @@ class Ui_Main_GUI(object):
 "folders found, as a smaller-sized\n"
 "preview of the dataset for later review."))
         self.confirmOnQuitCheckBox.setText(_translate("Main_GUI", "Warn when quitting with unprocessed items"))
+        self.errorOptOutCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
+"processed data, leaving only the original\n"
+"raw data.  This option retains any MIP\n"
+"folders found, as a smaller-sized\n"
+"preview of the dataset for later review."))
+        self.errorOptOutCheckBox.setText(_translate("Main_GUI", " Opt out of automatic error reporting. \n"
+" (Leaving this disabled helps us fix bugs in the program!)"))
         self.prevBackendSpimagineRadio.setText(_translate("Main_GUI", "spimagine"))
         self.prevBackendMatplotlibRadio.setText(_translate("Main_GUI", "matplotlib"))
         self.watchModeAcquisitionRadio.setToolTip(_translate("Main_GUI", "Use this mode on the acquisition computer\n"
@@ -1370,13 +1381,7 @@ class Ui_Main_GUI(object):
 "are added to the regular processing queue\n"
 "in the main window, and processed in turn."))
         self.watchModeServerRadio.setText(_translate("Main_GUI", "Server"))
-        self.errorOptOutCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
-"processed data, leaving only the original\n"
-"raw data.  This option retains any MIP\n"
-"folders found, as a smaller-sized\n"
-"preview of the dataset for later review."))
-        self.errorOptOutCheckBox.setText(_translate("Main_GUI", " Opt out of automatic error reporting. \n"
-" (Leaving this disabled helps us fix bugs in the program!)"))
+        self.disableSpimagineCheckBox.setText(_translate("Main_GUI", "Disable spimagine import (in case of WinError on Preview)"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_config), _translate("Main_GUI", "Config"))
         self.log.setHtml(_translate("Main_GUI", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
