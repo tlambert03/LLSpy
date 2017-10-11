@@ -21,9 +21,18 @@ archive_extension = {
 	'gzip': '.gz',
 }
 
+# FIXME: this is mostly duplicated from gui/mainwindow.py...
+# should unify that and get rid of get_platform_compression()
+availableCompression = []
+# get compression options
+for ctype in ('lbzip2', 'pbzip2', 'pigz', 'bzip2', 'gzip'):
+	if util.which(ctype) is not None:
+		availableCompression.append(ctype)
+
 
 def get_platform_compression():
-	return 'pigz' if sys.platform.startswith("win32") else 'lbzip2'
+	# return 'pigz' if sys.platform.startswith("win32") else 'lbzip2'
+	return availableCompression[0]
 
 
 def tartiffs(path, delete=True):
@@ -70,7 +79,7 @@ def zipit(fname, compression=None):
 		flags = '-v'  # the -z flag means complress to zlib format in pigz
 	else:
 		flags = '-zv'
-	subprocess.call([compression, flags, fname])
+	subprocess.call([util.which(compression), flags, fname])
 	return fname + archive_extension[compression]
 
 
