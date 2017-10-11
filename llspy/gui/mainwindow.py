@@ -499,6 +499,14 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 self.availableCompression.append(ctype)
         self.compressTypeCombo.addItems(self.availableCompression)
 
+        i = 0
+        for comptype in ('lbzip2', 'pigz', 'bzip2'):
+            try:
+                i = self.availableCompression.index(comptype)
+            except ValueError:
+                continue
+        self.compressTypeCombo.setCurrentIndex(i)
+
         # connect worker signals and slots
         self.sig_item_finished.connect(self.on_item_finished)
         self.sig_processing_done.connect(self.on_proc_finished)
