@@ -224,7 +224,9 @@ def preview(exp, tR=0, cR=None, **kwargs):
         out.append(np.stack(stacks, 0))
 
     if out:
-        return np.stack(out, 0) if len(out) > 1 else out[0]
+        combined = np.stack(out, 0) if len(out) > 1 else out[0]
+        logger.debug("Preview finished. Output array shape = {}".format(combined.shape))
+        return combined
     else:
         return None
 
@@ -330,6 +332,7 @@ def process(exp, binary=None, **kwargs):
         with open(outname, 'w') as outfile:
             json.dump(P, outfile, cls=util.paramEncoder)
 
+    logger.debug("Process func finished.")
     return
 
 
