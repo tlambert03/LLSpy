@@ -1,5 +1,8 @@
+.. _gui:
+
+************************
 Graphical User Interface
-========================
+************************
 
 **The following sections all refer to the GUI interface for LLSpy**
 

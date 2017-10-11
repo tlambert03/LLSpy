@@ -1,7 +1,8 @@
 .. _cli:
 
+**********************
 Command Line Interface
-======================
+**********************
 
 *In addition to the QT-based graphical user interface, LLSpy includes a command line interface (CLI).*
 

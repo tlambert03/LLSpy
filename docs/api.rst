@@ -1,7 +1,8 @@
 .. _api:
 
+*******************
 Developer Interface
-===================
+*******************
 
 .. module:: llspy.llsdir
 

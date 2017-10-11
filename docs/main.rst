@@ -1,34 +1,22 @@
-
-
-LLSpy Documentation
-===================
-
-.. |copy|   unicode:: U+000A9
-
-Copyright |copy| 2017 Talley Lambert, Harvard Medical School, all rights reserved.
-
-|ImageLink|_
-
-.. |ImageLink| image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2015/07/logo-horizontal-small.png
-.. _ImageLink: http://cbmf.hms.harvard.edu/lattice-light-sheet/
-
-
+************
 Introduction
-------------
+************
+
+Overview
+========
 
 LLSpy is a python library to facilitate lattice light sheet data processing. It extends the cudaDeconv binary created in the Betzig lab at Janelia Research Campus, adding features that auto-detect experimental parameters from the data folder structure and metadata (minimizing user input), auto-choose OTFs, perform image corrections and manipulations, and facilitate file handling.  Full(er) documentation available at http://llspy.readthedocs.io/
 
 **There are three ways to use LLSpy:**
 
 1. Graphical User Interface
-***************************
+---------------------------
 
 The GUI provides access to the majority of functionality in LLSpy. It includes a drag-and drop queue, visual progress indicator, and the ability to preview data processed with the current settings using the (awesome) 4D-viewer, `Spimagine <https://github.com/maweigert/spimagine>`_ developed by Martin Weigert in the `Myers lab <https://www.mpi-cbg.de/research-groups/current-groups/gene-myers/research-focus/>`_ at MPI-CBG.  Support for online-processing with a "monitored  folder" or real-time visualization with Spimagine is in development.
 
 .. image:: https://raw.githubusercontent.com/tlambert03/LLSpy/master/img/screenshot.png
     :alt: LLSpy graphical interface
     :align: right
-
 
 .. .. image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2017/09/gui.png
 ..     :height: 825 px
@@ -37,9 +25,10 @@ The GUI provides access to the majority of functionality in LLSpy. It includes a
 ..     :alt: alternate text
 ..     :align: right
 
+GUI documentation :ref:`here <gui>`.
 
 2. Command Line Interface
-*************************
+-------------------------
 
 The command line interface can be used to process LLS data in a server environment (linux compatible).
 
@@ -81,9 +70,10 @@ The command line interface can be used to process LLS data in a server environme
     # or launch the gui
     $ lls gui
 
+Command line documentation :ref:`here <cli>`.
 
 3. Interactive data processing in a python console
-**************************************************
+--------------------------------------------------
 
 .. code:: python
 
@@ -138,7 +128,7 @@ The command line interface can be used to process LLS data in a server environme
    >>> E.decompress()  # decompress files for re-processing
    >>> E.freeze()  # delete all processed data and compress raw data for long-term storage.
 
-
+API documentation :ref:`here <api>`.
 
 Features of LLSpy
 =================
@@ -293,6 +283,83 @@ Channel Registration
 Transformation matrices for registering multichannel datasets can be generated using a calibration dataset of multi-color fiducials such as `tetraspeck beads <https://www.thermofisher.com/order/catalog/product/T7280>`_.  The path to this dataset must be provided to LLSpy in the Post-Processing tab.  See more in the section on `channel registration`_.
 
 
+Data Structure Assumptions
+==========================
+
+I have made a number of assumptions about the structure of the data folder being processed with LLSpy.  If you organize your data different than I have, it may cause unexpected results or bugs.  It's likely that these problems can be fixed, so if your data organization conventions differ from those described below, just `submit an issue on github <https://github.com/tlambert03/LLSpy/issues>`_ describing the problem or `contact Talley`_ with an example of your data folder format.
+
+The main object in LLSpy is the :class:`llspy.llsdir.LLSdir` "data folder" object (see :ref:`api`).  This object assumes that each experiment (e.g. single multi-channel timelapse) is contained in a single folder, with all of the raw tiffs, and one \*Settings.txt file.  It also assumes that you are using the file naming convention used by Dan Milkie's Labview acquisition software.  A typical LLSdir folder structure might look like this:
+
+.. code::
+
+  /lls_experiment_1/
+  |-- cell5_ch0_stack0000_488nm_0000000msec_0020931273msecAbs.tif
+  |-- cell5_ch0_stack0001_488nm_0000880msec_0020932153msecAbs.tif
+  |-- cell5_ch0_stack0002_488nm_0001760msec_0020933033msecAbs.tif
+  |-- cell5_ch1_stack0000_560nm_0000000msec_0020931273msecAbs.tif
+  |-- cell5_ch1_stack0001_560nm_0000880msec_0020932153msecAbs.tif
+  |-- cell5_ch1_stack0002_560nm_0001760msec_0020933033msecAbs.tif
+  |-- cell5_Settings.txt
+
+.. _Parsing:
+
+*Filenames are parsed according to the following regex:*
+
+.. code:: python
+
+  filename_pattern = re.compile(r"""
+    ^(?P<basename>.+)
+    _ch(?P<channel>\d)
+    _stack(?P<stack>\d{4})
+    _\D*(?P<wave>\d+).*
+    _(?P<reltime>\d{7})msec
+    _(?P<abstime>\d{10})msecAbs
+    """, re.VERBOSE)
+
+
+If your folder structure or filenaming convention varies much from this, you will likely run into difficulties.  You can `contact Talley`_ with an example filename, or change it directly in :mod:`llspy.parse`.
+
+Script-editor datasets
+----------------------
+
+There is basic (but experimental) support for multi-point experiments that have been acquired using the Script Editor in the Lattice Scope software.  Here a typical experimental folder might look like this:
+
+.. code::
+
+  /lls_multipoint_samp/
+  |-- looptest_Iter_0_ch0_stack0000_488nm_0000000msec_0006417513msecAbs.tif
+  |-- looptest_Iter_0_ch0_stack0000_488nm_0000000msec_0006419755msecAbs.tif
+  |-- looptest_Iter_0_ch1_stack0000_560nm_0000000msec_0006417513msecAbs.tif
+  |-- looptest_Iter_0_ch1_stack0000_560nm_0000000msec_0006419755msecAbs.tif
+  |-- looptest_Iter_0_Settings.txt
+  |-- looptest_Iter_1_ch0_stack0000_488nm_0000000msec_0006429124msecAbs.tif
+  |-- looptest_Iter_1_ch0_stack0000_488nm_0000000msec_0006431503msecAbs.tif
+  |-- looptest_Iter_1_ch1_stack0000_560nm_0000000msec_0006429124msecAbs.tif
+  |-- looptest_Iter_1_ch1_stack0000_560nm_0000000msec_0006431503msecAbs.tif
+  |-- looptest_Iter_1_Settings.txt
+
+You can use the :func:`llspy.llsdir.rename_iters` function on this folder, or the ``Rename Scripted`` tool in the LLSpy GUI to convert this folder to multiple standard LLSdirs.  The result be something like this:
+
+.. code::
+
+  /lls_multipoint_samp/
+  |-- /looptest_pos00/
+      |-- looptest_pos00_ch0_stack0000_488nm_0000000msec_0006417513msecAbs.tif
+      |-- looptest_pos00_ch0_stack0001_488nm_0011611msec_0006429124msecAbs.tif
+      |-- looptest_pos00_ch1_stack0000_560nm_0000000msec_0006417513msecAbs.tif
+      |-- looptest_pos00_ch1_stack0001_560nm_0011611msec_0006429124msecAbs.tif
+      |-- looptest_pos00_Settings.txt
+  |-- /looptest_pos01/
+      |-- looptest_pos01_ch0_stack0000_488nm_0000000msec_0006419755msecAbs.tif
+      |-- looptest_pos01_ch0_stack0001_488nm_0011748msec_0006431503msecAbs.tif
+      |-- looptest_pos01_ch1_stack0000_560nm_0000000msec_0006419755msecAbs.tif
+      |-- looptest_pos01_ch1_stack0001_560nm_0011748msec_0006431503msecAbs.tif
+      |-- looptest_pos01_Settings.txt
+
+
+.. Concatenating Dataset
+.. ---------------------
+
 
 Known Issues & Bug Reports
 ==========================
@@ -308,29 +375,6 @@ Bug reports are very much appreciated: `Contact Talley <mailto:talley.lambert@gm
 - CUDA version (type ``nvcc --version`` at command line prompt)
 - Python version (type ``python --version`` at command line prompt, with ``llsenv`` conda environment active if applicable)
 
-
-General Information
-===================
-
-.. _Parsing:
-
-Filename parsing
-----------------
-
-*Filenames are parsed according to the following regex:*
-
-.. code:: python
-
-  filename_pattern = re.compile(r"""
-    ^(?P<basename>.+)
-    _ch(?P<channel>\d)
-    _stack(?P<stack>\d{4})
-    _\D*(?P<wave>\d+).*
-    _(?P<reltime>\d{7})msec
-    _(?P<abstime>\d{10})msecAbs
-    """, re.VERBOSE)
-
-if you need something different, you can `contact Talley`_ with an example filename, or change it directly in the ``parse.py`` file
 
 
 .. _contact Talley: mailto:talley.lambert@gmail.com
