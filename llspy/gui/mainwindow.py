@@ -486,7 +486,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         #             'Set default Registration Calibration Directory',
         #             '', QtW.QFileDialog.ShowDirsOnly)))
 
-        self.RegCalibPathToolButton.clicked.connect(lambda:
+        self.RegProcessPathToolButton.clicked.connect(lambda:
             self.RegCalibPathLineEdit.setText(
                 QtW.QFileDialog.getExistingDirectory(
                     self, 'Set Registration Calibration Directory',
@@ -634,15 +634,21 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 im = array[d].astype(np.float).max(0)
                 im -= im.min()
                 im /= im.max()
-                ims.append(im)
+                ims.append(im*10000)
 
-            from PIL import Image
-            rgbArray = np.zeros((ims[0].shape[0], ims[0].shape[1], 3), 'uint8')
-            rgbArray[..., 0] = ims[0]*256
-            rgbArray[..., 1] = ims[1]*256
-            rgbArray[..., 2] = ims[2]*256
-            im = Image.fromarray(rgbArray)
-            im.show()
+            array = np.stack(ims, 0)
+            #from PIL import Image
+            #rgbArray = np.zeros((ims[0].shape[0], ims[0].shape[1], 3), 'uint8')
+            #rgbArray[..., 0] = ims[0]*256
+            #rgbArray[..., 1] = ims[1]*256
+            #rgbArray[..., 2] = ims[2]*256
+            #im = Image.fromarray(rgbArray)
+            #im.show()
+            win = ImgDialog(array,
+                info="info",
+                title="Registration Mode: {}".format(opts['regMode']))
+            self.spimwins.append(win)
+
             #img = QtGui.QImage(array.shape[2], array.shape[1], QtGui.QImage.Format_RGB32)
 
             # self.RegPreviewLabelXY.setScaledContents(True)
@@ -657,7 +663,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         opts = self.getValidatedOptions()
         opts['regMode'] = self.RegCalib_channelRefModeCombo.currentText()
-        opts['doReg'] = True if opts['regMode'].lower() is not 'none' else False
+        print(opts['regMode'])
+        if opts['regMode'].lower() == 'none':
+            opts['doReg'] = False
+        else:
+            opts['doReg'] = True
         opts['regRefWave'] = int(self.RegCalib_channelRefCombo.currentText())
         opts['regCalibDir'] = self.RegCalibPathLineEdit.text()
         w, thread = newWorkerThread(workers.TimePointWorker,
@@ -1072,16 +1082,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     'Flash pixel correction requested, but camera parameters file '
                     'not provided.', 'Check CamParam Tiff path.\n\n'
                     'For information on how to generate this file for your camera,'
-        rCalibText = self.RegProcessPathLineEdit.text()
-        # dCalibText = self.defaultRegProcessPathLineEdit.text()
-
-
+                    ' see documentation at llspy.readthedocs.io')
+        else:
             options['camparamsPath'] = None
-        #    if dCalibText and dCalibText is not '':
-        #        options['regCalibDir'] = dCalibText
-        #    else:
-            options['regCalibDir'] = None
 
+        rCalibText = self.RegCalibPathLineEdit.text()
+        # dCalibText = self.defaultRegCalibPathLineEdit.text()
+        if rCalibText and rCalibText is not '':
             options['regCalibDir'] = rCalibText
         else:
         #    if dCalibText and dCalibText is not '':
