@@ -89,11 +89,10 @@ class MplCanvas(FigureCanvas):
     _contrastChanged = QtCore.pyqtSignal()
 
     def __init__(self):
-        self.figure = Figure(tight_layout=True, facecolor='r')
+        self.figure = Figure(figsize=(12,12), tight_layout=True, facecolor='r')
         self.figure.patch.set_alpha(0)  # transparent background
-        super(MplCanvas, self).__init__(self.figure)
-
         self.ax = self.figure.add_subplot(111)
+        super(MplCanvas, self).__init__(self.figure)
 
     def setData(self, data):
         self.data = data
@@ -129,7 +128,6 @@ class MplCanvas(FigureCanvas):
         self.image.set_clim(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self.image.set_cmap(self.displayOptions['cmap'])
         self.draw()
-
 
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
