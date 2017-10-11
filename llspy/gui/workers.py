@@ -157,10 +157,17 @@ class CompressionWorker(SubprocessWorker):
             tar_compressed = llspy.util.find_filepattern(self.path, '*.tar*')
             tar_extension = os.path.splitext(tar_compressed)[1]
             if tar_extension not in llspy.compress.EXTENTIONS:
-                self._logger('Unexpected uncompressed tar file found')
+                self._logger.error('Unexpected uncompressed tar file found')
                 raise err.LLSpyError('found a tar file, but don\'t know how to decompress')
-            if not llspy.compress.EXTENTIONS[tar_extension] == self.binary:
-                self.binary = llspy.util.which(llspy.compress.EXTENTIONS[tar_extension])
+            if self.binary not in llspy.compress.EXTENTIONS[tar_extension]:
+                    for compbin in llspy.compress.EXTENTIONS[tar_extension]:
+                        if llspy.util.which(compbin):
+                            self.binary = llspy.util.which(compbin)
+                            break
+            if not self.binary:
+                raise err.MissingBinaryError(
+                    "No binary found for compression program: {}".format(
+                        llspy.compress.EXTENTIONS[tar_extension]))
             self.args = ['-dv', tar_compressed]
             self.process.finished.connect(
                 lambda: self.untar(os.path.splitext(tar_compressed)[0]))
@@ -180,8 +187,12 @@ class CompressionWorker(SubprocessWorker):
             self.args = ['-v', tarball]
             self.process.finished.connect(self.finished.emit)
 
+        print(self.name)
+        print(self.binary)
+        print(" ".join(self.args))
         msg = '\nRunning {} thread_{} with args:\n{}\n'.format(
             self.name, self.id, self.binary + " " + " ".join(self.args))
+        print(msg)
         self._logger.info('~' * 20 + msg)
 
         self.process.start(self.binary, self.args)

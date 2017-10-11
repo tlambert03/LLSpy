@@ -8,9 +8,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 EXTENTIONS = {
-	'.bz2': 'lbzip2',
-	'.gz': 'pigz',
-	'.zz': 'pigz',
+	'.bz2': ('lbzip2', 'bzip2'),
+	'.gz': ('pigz', 'gzip'),
+	'.zz': ('pigz', 'gzip'),
 }
 
 archive_extension = {
@@ -77,13 +77,16 @@ def zipit(fname, compression=None):
 def unzipit(fname, compression=None):
 	extension = os.path.splitext(fname)[1]
 	if compression is None:
-		compression = EXTENTIONS[extension]
+		for compbin in EXTENTIONS[extension]:
+			if util.which(compbin):
+				compression = compbin
+				break
 	logger.info("zipping with compression: {}".format(compression))
 	assert archive_extension[compression] == extension, "Format {} cannot be unzipped by program {}".format(extension, compression)
 	# check if it exists and is compressed type
 	assert os.path.exists(fname), 'File does not exist: {}'.format(fname)
 	assert extension in (archive_extension[compression],), 'File not compressed: ' + fname
-	subprocess.call([compression, '-dv', fname])
+	subprocess.call([util.which(compression), '-dv', fname])
 	return fname.strip(archive_extension[compression])
 
 
@@ -92,7 +95,10 @@ def unzip_partial(fname, tRange=None, compression=None):
 		tRange = [0]
 	extension = os.path.splitext(fname)[1]
 	if compression is None:
-		compression = EXTENTIONS[extension]
+		for compbin in EXTENTIONS[extension]:
+			if util.which(compbin):
+				compression = compbin
+				break
 	assert archive_extension[compression] == extension, "Format {} cannot be unzipped by program {}".format(extension, compression)
 	# check if it exists and is compressed type
 	assert os.path.exists(fname), 'File does not exist: {}'.format(fname)
@@ -101,7 +107,7 @@ def unzip_partial(fname, tRange=None, compression=None):
 	try:
 		cmd = ['tar', 'xf', fname, '-C', os.path.dirname(fname), '--wildcards']
 		cmd.extend(['*stack{:04d}*'.format(f) for f in tRange])
-		cmd.extend(['--use-compress-program', compression])
+		cmd.extend(['--use-compress-program', util.which(compression)])
 		subprocess.call(cmd)
 	except Exception:
 		files_i_want = ['stack{:04d}'.format(f) for f in tRange]
