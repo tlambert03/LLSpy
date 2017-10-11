@@ -131,10 +131,11 @@ def main():
                 QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
         projectURL = "https://api.github.com/repos/tlambert03/LLSpy/releases/latest"
-        newestVersion = json.loads(urlopen(projectURL).read())['tag_name']
+        newestVersion = json.loads(urlopen(projectURL).read().decode('utf-8'))['tag_name']
         if StrictVersion(newestVersion) > StrictVersion(llspy.__version__):
-            QtWidgets.QMessageBox.warning(mainGUI, "Newer Version Available!",
-                'Update available: v{}\n\nYou are using v{}\n\nTry updating using "conda update llspy"'.format(newestVersion, llspy.__version__),
+            QtWidgets.QMessageBox.information(mainGUI, "Newer Version Available!",
+                'Update available: v%s\n\nYou are using v%s\n\nIf you are using anaconda, you may update by typing "conda update llspy" at the anaconda prompt' 
+                % (newestVersion, llspy.__version__),
                 QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
 
