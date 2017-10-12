@@ -509,7 +509,6 @@ class TimePointWorker(QtCore.QObject):
 
     finished = QtCore.pyqtSignal()
     previewReady = QtCore.pyqtSignal(np.ndarray, float, float, dict)
-    error = QtCore.pyqtSignal()
     updateCrop = QtCore.pyqtSignal(int, int)
 
     def __init__(self, path, tRange, cRange, opts, ditch_partial=True):
@@ -537,7 +536,7 @@ class TimePointWorker(QtCore.QObject):
                 raise err.InvalidSettingsError("No stacks to preview... check tRange")
 
         except Exception:
-            self.error.emit()
+            self.finished.emit()
             raise
 
         self.finished.emit()

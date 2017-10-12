@@ -709,8 +709,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         w.finished.connect(lambda: self.previewButton.setEnabled(True))
         w.finished.connect(lambda: self.previewButton.setText('Preview'))
-        w.error.connect(lambda: self.previewButton.setEnabled(True))
-        w.error.connect(lambda: self.previewButton.setText('Preview'))
         self.previewthreads = (w, thread)
 
     @QtCore.pyqtSlot(int, int)
