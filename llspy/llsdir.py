@@ -662,7 +662,7 @@ class LLSdir(object):
             if self.compress(**kwargs):
                 return 1
 
-    def localParams(self, **kwargs):
+    def localParams(self, recalc=False, **kwargs):
         """Returns a validated dict of processing parameters that are specific
         to this LLSdir instance.
 
@@ -686,6 +686,11 @@ class LLSdir(object):
         'uint16raw': True, 'verbose': 0, 'wavelength': [488, 560],
         'width': 0, 'writeLog': True}
         """
+        # allow for 'lazy' storage of previously calculated value
+        if '_localParams' in dir(self) and not recalc:
+            if all([self._localParams[k] == v for k, v in kwargs.items()]):
+                return self._localParams
+
         P = self.parameters
         S = schema.procParams(kwargs)
         assert sum(S.trimY) < P.ny, "TrimY sum must be less than number of Y pixels"
@@ -764,7 +769,8 @@ class LLSdir(object):
         else:
             S.rotate = 0
 
-        return util.dotdict(schema.__localSchema__(S))
+        self._localParams = util.dotdict(schema.__localSchema__(S))
+        return self._localParams
 
     def autoprocess(self, **kwargs):
         """Calls the :obj:`process` function on the LLSdir instance.
