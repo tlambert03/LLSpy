@@ -105,7 +105,7 @@ class ExceptionHandler(QtCore.QObject):
             self.handleLLSpyError(*err_info)
         elif etype.__module__ == 'voluptuous.error':
             self.handleSchemaError(*err_info)
-        elif "0xe06d7363" in str(value):
+        elif "0xe06d7363" in str(value).lower():
             self.handleCUDA_CL_Error(*err_info)
         else:  # uncaught exceptions go to sentry
             if not _OPTOUT:
