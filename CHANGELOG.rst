@@ -16,7 +16,7 @@ Next Version
 
 **Added:**
 
-* intelligible warning when openCL and CUDA clash `b19c9bb <https://github.com/tlambert03/LLSpy/commit/b19c9bb15d589464df666cbc8537f91ee35c2456>`_
+* intelligible warning when openCL and CUDA clash.  Workaround for [Error -529697949] Windows Error 0xE06D7363 `b19c9bb <https://github.com/tlambert03/LLSpy/commit/b19c9bb15d589464df666cbc8537f91ee35c2456>`_
 * option to disable spimagine import (and reenable easily) `39a761f <https://github.com/tlambert03/LLSpy/commit/39a761f1122416115d0d0df62f84f1e66ddaa700>`_
 * list detected GPUs in logs at startup
 * check for update on launch `41a8cb6 <https://github.com/tlambert03/LLSpy/commit/41a8cb6b465838f6542ffb6e4af2eadcf3aa4b63>`_
