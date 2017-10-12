@@ -10,6 +10,13 @@ Next Version
 * create reusable registration file `03b67345 <https://github.com/tlambert03/LLSpy/commit/03b6734589a792fad7269d1049002a32c72ea08d>`_
 * registration now defaults to world coordinates (should work with different voxel sizes)
 
+`0.2.4`_
+=========
+
+**Fixed:**
+
+* important: fixed bug that causes crash when pressing preview button, if it had already failed once before f715f92
+
 
 `0.2.3`_
 =========
