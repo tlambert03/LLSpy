@@ -93,24 +93,19 @@ else:
         # call after
         RL_cleanup = cudaLib.RL_cleanup
 
+        cuda_reset = cudaLib.cuda_reset
+
     except AttributeError as e:
         logger.warning('Failed to properly import libcudaDeconv')
         print(e)
 
 
-def requireCUDAlib(func, *args, **kwargs):
-    def dec(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            if not cudaLib:
-                raise Exception("Could not find libcudaDeconv library! These "
+def requireCUDAlib():
+    if not cudaLib:
+        raise LibCUDAException("Could not find libcudaDeconv library! These "
                                 "functions will not be available:\n"
                                 "Preview\nAutoCrop\nCUDA camera corrections\n"
                                 "Channel Registration")
-            else:
-                raise e
-    return dec
 
 
 def quickCamcor(imstack, camparams):
@@ -119,19 +114,19 @@ def quickCamcor(imstack, camparams):
     camcor(imstack)
 
 
-@requireCUDAlib
 def camcor_init(rawdata_shape, camparams):
     """ initialize camera correction on GPU.
     shape is nz/ny/nx of the concatenated stacks from a single timepoint
     """
+    requireCUDAlib()
     nz, ny, nx = rawdata_shape
     if not np.issubdtype(camparams.dtype, np.float32):
         camparams = camparams.astype(np.float32)
     camcor_interface_init(nx, ny, nz, camparams)
 
 
-@requireCUDAlib
 def camcor(imstack):
+    requireCUDAlib()
     if not np.issubdtype(imstack.dtype, np.uint16):
         print('CONVERTING')
         imstack = imstack.astype(np.uint16)
@@ -141,9 +136,9 @@ def camcor(imstack):
     return result
 
 
-@requireCUDAlib
 def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
     """Deskew data acquired in stage-scanning mode on GPU"""
+    requireCUDAlib()
     nz, ny, nx = im.shape
     if not np.issubdtype(im.dtype, np.float32):
         im = im.astype(np.float32)
@@ -158,9 +153,9 @@ def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
     return result
 
 
-@requireCUDAlib
 def affineGPU(im, tmat):
     """Perform affine transformation of image with provided transformation matrix"""
+    requireCUDAlib()
     nz, ny, nx = im.shape
     if not np.issubdtype(im.dtype, np.float32) or not im.flags['C_CONTIGUOUS']:
         im = np.ascontiguousarray(im, dtype=np.float32)
@@ -174,6 +169,7 @@ def affineGPU(im, tmat):
 
 def rotateGPU(im, angle=32.5, xzRatio=0.4253, reverse=False):
     # TODO: crop smarter
+    requireCUDAlib()
     npad = ((0, 0), (0, 0), (0, 0))
     im = np.pad(im, pad_width=npad, mode='constant', constant_values=0)
 
@@ -225,6 +221,7 @@ def quickDecon(im, otfpath, savedeskew=False, **kwargs):
         shift       int
         rotate      float
     """
+    requireCUDAlib()
     RL_init(im.shape, otfpath, **kwargs)
     if savedeskew:
         decon_result, deskew_result = RL_decon(im, savedeskew=True, **kwargs)
@@ -236,17 +233,17 @@ def quickDecon(im, otfpath, savedeskew=False, **kwargs):
         return decon_result
 
 
-@requireCUDAlib
 def RL_init(rawdata_shape, otfpath, drdata=0.104, dzdata=0.5, drpsf=0.104,
-    dzpsf=0.1, deskew=31.5, rotate=0, width=0, **kwargs):
+            dzpsf=0.1, deskew=31.5, rotate=0, width=0, **kwargs):
+    requireCUDAlib()
     nz, ny, nx = rawdata_shape
     RL_interface_init(nx, ny, nz, drdata, dzdata, drpsf, dzpsf, deskew, rotate,
         width, otfpath.encode())
 
 
-@requireCUDAlib
 def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
-    rescale=False, **kwargs):
+             rescale=False, **kwargs):
+    requireCUDAlib()
     nz, ny, nx = im.shape
     decon_result = np.empty((get_output_nz(), get_output_ny(),
             get_output_nx()), dtype=np.float32)
@@ -267,8 +264,16 @@ def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
         return decon_result
 
 
+class LibCUDAException(Exception):
+    """
+    Generic exception indicating anything relating to the execution
+    of cudaDeconDeskew. A string containing an error message should be supplied
+    when raising this exception.
+    """
+    pass
+
+
 if __name__ == "__main__":
-    import sys
     import tifffile as tf
     import matplotlib.pyplot as plt
 

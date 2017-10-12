@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 from . import config
 from . import otf
 from . import arrayfun
-from .llsdir import LLSdir, preview, process
+from .llsdir import LLSdir, preview, process, RegDir
 from .settingstxt import LLSsettings as Settings
 from .cudabinwrapper import CUDAbin, nGPU, get_bundled_binary, CUDAbinException
 from .parse import parse_filename, filter_files

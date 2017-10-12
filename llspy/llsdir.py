@@ -143,6 +143,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
         if isinstance(exp, str):
             exp = LLSdir(exp)
     logger.debug("Preview called on {}".format(str(exp.path)))
+    logger.debug("Params: {}".format(exp.parameters))
 
     if exp.is_compressed():
         try:
@@ -223,7 +224,9 @@ def preview(exp, tR=0, cR=None, **kwargs):
         out.append(np.stack(stacks, 0))
 
     if out:
-        return np.stack(out, 0) if len(out) > 1 else out[0]
+        combined = np.stack(out, 0) if len(out) > 1 else out[0]
+        logger.debug("Preview finished. Output array shape = {}".format(combined.shape))
+        return combined
     else:
         return None
 
@@ -246,6 +249,7 @@ def process(exp, binary=None, **kwargs):
         if isinstance(exp, str):
             exp = LLSdir(exp)
     logger.debug("Process called on {}".format(str(exp.path)))
+    logger.debug("Params: {}".format(exp.parameters))
 
     if exp.is_compressed():
         exp.decompress()
@@ -328,6 +332,7 @@ def process(exp, binary=None, **kwargs):
         with open(outname, 'w') as outfile:
             json.dump(P, outfile, cls=util.paramEncoder)
 
+    logger.debug("Process func finished.")
     return
 
 
@@ -530,8 +535,8 @@ class LLSdir(object):
         self.parameters.wavelength = []
         self.parameters.interval = []
         stacknum = re.compile('_stack(\d{4})_')
-        self.parameters.tset = {int(t.group(1)) for t in
-            [stacknum.search(s) for s in self.tiff.raw] if t}
+        self.parameters.tset = list({int(t.group(1)) for t in
+            [stacknum.search(s) for s in self.tiff.raw] if t})
         for c in range(6):
             q = [f for f in self.tiff.raw if '_ch' + str(c) in f]
             if len(q):
@@ -683,6 +688,9 @@ class LLSdir(object):
         """
         P = self.parameters
         S = schema.procParams(kwargs)
+        assert sum(S.trimY) < P.ny, "TrimY sum must be less than number of Y pixels"
+        assert sum(S.trimX) < P.nx, "TrimX sum must be less than number of X pixels"
+        assert sum(S.trimZ) < P.nz, "TrimZ sum must be less than number of Z pixels"
 
         if S.cRange is None:
             S.cRange = range(P.nc)
@@ -692,7 +700,7 @@ class LLSdir(object):
             S.cRange = sorted([n for n in S.cRange if n < P.nc])
 
         if S.tRange is None:
-            S.tRange = list(self.parameters.tset)
+            S.tRange = self.parameters.tset
         else:
             logger.debug("preview tRange = {}".format(S.tRange))
             maxT = max(self.parameters.tset)
@@ -747,8 +755,9 @@ class LLSdir(object):
         if S.nIters > 0 or (S.deskew > 0 and S.saveDeskewedRaw):
             otfs = self.get_otfs(otfpath=S.otfDir)
             S.otfs = [otfs[i] for i in S.cRange]
-            if S.nIters > 0 and any([(otf == '' or otf is None) for otf in S.otfs]):
-                raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
+            assert all([otf for otf in S.otfs]), 'Deconvolution requested but no OTF available.  Check OTF path'
+            assert len(S.otfs) > 0, 'Deconvolution requested but no OTF available.  Check OTF path'
+            assert len(S.otfs) == len(list(S.cRange)), "Could not find OTF for every channel in OTFdir."
 
         if S.bRotate:
             S.rotate = S.rotate if S.rotate is not None else P.angle
@@ -865,7 +874,7 @@ class LLSdir(object):
             outpath.mkdir()
 
         if tRange is None:
-            tRange = list(self.parameters.tset)
+            tRange = self.parameters.tset
 
         filenames = [self.get_files(c=chan, t=tRange) for chan in cRange]
         filenames = [f for f in filenames if len(f)]  # dicard empties
@@ -911,6 +920,7 @@ class LLSdir(object):
                         camparams = CameraParameters(camparamsPath)
                 except Exception:
                     camparams = CameraParameters()
+        logger.debug("Correcting Flash artifact with camparam {}".format(camparams.basename))
 
         if not np.all(camparams.roi == self.settings.camera.roi):
             try:
@@ -923,7 +933,7 @@ class LLSdir(object):
             outpath.mkdir()
 
         if tRange is None:
-            tRange = list(self.parameters.tset)
+            tRange = self.parameters.tset
         timegroups = [self.get_t(t) for t in tRange]
 
         # FIXME: this is a temporary bug fix to correct for the fact that

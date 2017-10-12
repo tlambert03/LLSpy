@@ -89,11 +89,10 @@ class MplCanvas(FigureCanvas):
     _contrastChanged = QtCore.pyqtSignal()
 
     def __init__(self):
-        self.figure = Figure(tight_layout=True, facecolor='r')
+        self.figure = Figure(figsize=(15, 15), tight_layout=True, facecolor='r')
         self.figure.patch.set_alpha(0)  # transparent background
-        super(MplCanvas, self).__init__(self.figure)
-
         self.ax = self.figure.add_subplot(111)
+        super(MplCanvas, self).__init__(self.figure)
 
     def setData(self, data):
         self.data = data
@@ -129,7 +128,6 @@ class MplCanvas(FigureCanvas):
         self.image.set_clim(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self.image.set_cmap(self.displayOptions['cmap'])
         self.draw()
-
 
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
@@ -238,8 +236,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         datamax = self.data.max()
         datamin = self.data.min()
         dataRange = datamax - datamin
-        vmin_init = datamin - dataRange * 0.02
-        vmax_init = datamax * 0.6
+        vmin_init = datamin - dataRange * 0.03
+        vmax_init = datamax * 0.55
 
         displayOptions = {
             'vmin': int(vmin_init),
@@ -281,7 +279,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
         figheight = 600
         yxAspect = self.data.shape[-2]/self.data.shape[-1]
-        self.resize(figheight/yxAspect, figheight)
+        self.resize(figheight/yxAspect, figheight+75)
 
     def setDimIdx(self, dim, idx):
         F = {

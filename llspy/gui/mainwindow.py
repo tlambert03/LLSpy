@@ -35,14 +35,6 @@ logger.addHandler(ch)           # add it to the root logger
 logger.removeHandler(lhStdout)  # and delete the original streamhandler
 
 _SPIMAGINE_IMPORTED = False
-try:
-    # raise ImportError("skipping")
-    from spimagine import DataModel, NumpyData
-    # from spimagine.models import imageprocessor
-    from spimagine.gui.mainwidget import MainWidget as spimagineWidget
-    _SPIMAGINE_IMPORTED = True
-except ImportError:
-    print("could not import spimagine!  falling back to matplotlib")
 
 # import sys
 # sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
@@ -60,6 +52,15 @@ defaultSettings = QtCore.QSettings("llspy", 'llspyDefaults')
 # pyinstaller bundle or live.
 defaultINI = llspy.util.getAbsoluteResourcePath('gui/guiDefaults.ini')
 programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
+
+if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
+    try:
+        #raise ImportError("skipping")
+        from spimagine import DataModel, NumpyData
+        from spimagine.gui.mainwidget import MainWidget as spimagineWidget
+        _SPIMAGINE_IMPORTED = True
+    except ImportError:
+        print("could not import spimagine!  falling back to matplotlib")
 
 
 class LLSDragDropTable(QtW.QTableWidget):
@@ -181,9 +182,10 @@ class LLSDragDropTable(QtW.QTableWidget):
             indices = self.selectionModel().selectedRows()
             i = 0
             for index in sorted(indices):
-                name = shortname(self.getPathByIndex(index.row()))
+                removerow = index.row() - i
+                name = shortname(self.getPathByIndex(removerow))
                 logger.info('Removing from queue: %s' % name)
-                self.removeRow(index.row() - i)
+                self.removeRow(removerow)
                 i += 1
 
 
@@ -486,12 +488,25 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     self, 'Set Registration Calibration Directory',
                     '', QtW.QFileDialog.ShowDirsOnly)))
 
+        self.disableSpimagineCheckBox.clicked.connect(lambda:
+            QtW.QMessageBox.information(self, 'Restart Required',
+                "Please quit and restart LLSpy for changes to take effect",
+                QtW.QMessageBox.Ok))
+
         self.availableCompression = []
         # get compression options
         for ctype in ['lbzip2', 'bzip2', 'pbzip2', 'pigz', 'gzip']:
             if llspy.util.which(ctype) is not None:
                 self.availableCompression.append(ctype)
         self.compressTypeCombo.addItems(self.availableCompression)
+
+        i = 0
+        for comptype in ('lbzip2', 'pigz', 'bzip2'):
+            try:
+                i = self.availableCompression.index(comptype)
+            except ValueError:
+                continue
+        self.compressTypeCombo.setCurrentIndex(i)
 
         # connect worker signals and slots
         self.sig_item_finished.connect(self.on_item_finished)
@@ -596,11 +611,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     def onPreview(self):
         self.previewButton.setDisabled(True)
+        self.previewButton.setText('Working...')
         if self.listbox.rowCount() == 0:
             QtW.QMessageBox.warning(self, "Nothing Added!",
                 'Nothing to preview! Drop LLS experiment folders into the list',
                 QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
             self.previewButton.setEnabled(True)
+            self.previewButton.setText('Preview')
             return
 
         # if there's only one item on the list show it
@@ -614,6 +631,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     "Please select an item (row) from the table to preview",
                     QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
                 self.previewButton.setEnabled(True)
+                self.previewButton.setText('Preview')
                 return
             else:
                 # if they select multiple, chose the first one
@@ -626,6 +644,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.lastopts = self.getValidatedOptions()
         except Exception:
             self.previewButton.setEnabled(True)
+            self.previewButton.setText('Preview')
             raise
 
         if procTRangetext:
@@ -671,7 +690,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                           }, start=True)
 
         w.finished.connect(lambda: self.previewButton.setEnabled(True))
+        w.finished.connect(lambda: self.previewButton.setText('Preview'))
         w.error.connect(lambda: self.previewButton.setEnabled(True))
+        w.error.connect(lambda: self.previewButton.setText('Preview'))
         self.previewthreads = (w, thread)
 
     @QtCore.pyqtSlot(int, int)
@@ -862,9 +883,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     @QtCore.pyqtSlot()
     def on_item_finished(self):
-        thread, worker = self.LLSItemThreads.pop(0)
-        thread.quit()
-        thread.wait()
+        if len(self.LLSItemThreads):
+            thread, worker = self.LLSItemThreads.pop(0)
+            thread.quit()
+            thread.wait()
         self.clock.display("00:00:00")
         self.progressBar.setValue(0)
         if self.aborted:

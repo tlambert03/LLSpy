@@ -19,6 +19,14 @@ import os
 import sys
 import multiprocessing
 import time
+import json
+from distutils.version import StrictVersion
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib import urlopen
+
+
 import logging
 logger = logging.getLogger()  # set root logger
 logger.setLevel(logging.DEBUG)
@@ -58,7 +66,7 @@ def main():
         fh = LogFileHandler(maxBytes=100000, backupCount=2)
         logger.addHandler(fh)
         fh.setLevel(logging.DEBUG)
-        logger.debug('>'*10 + '  LLSpy STARTUP  ' + '<'*10)
+        logger.info('>'*10 + '  LLSpy STARTUP  ' + '<'*10)
 
         # instantiate the main window widget
         mainGUI = main_GUI()
@@ -105,7 +113,8 @@ def main():
 
         # check to see if the cudaDeconv binary is valid, and alert if not
         try:
-            llspy.cudabinwrapper.get_bundled_binary()
+            binary = llspy.cudabinwrapper.get_bundled_binary()
+            logger.info(llspy.cudabinwrapper.CUDAbin(binary).list_gpus())
             # if not llspy.nGPU() > 0:
             #     QtWidgets.QMessageBox.warning(mainGUI, "No GPUs detected!",
             #         "cudaDeconv found no "
@@ -120,6 +129,15 @@ def main():
                 'Please contact innovation@janelia.hhmi.org.\n\n'
                 'More info in the documentation at llspy.readthedocs.io',
                 QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
+
+        projectURL = "https://api.github.com/repos/tlambert03/LLSpy/releases/latest"
+        newestVersion = json.loads(urlopen(projectURL).read().decode('utf-8'))['tag_name']
+        if StrictVersion(newestVersion) > StrictVersion(llspy.__version__):
+            QtWidgets.QMessageBox.information(mainGUI, "Newer Version Available!",
+                'Update available: v%s\n\nYou are using v%s\n\nIf you are using anaconda, you may update by typing "conda update llspy" at the anaconda prompt' 
+                % (newestVersion, llspy.__version__),
+                QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
+
 
         # ######################## TESTING
         # def tester():
