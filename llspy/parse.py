@@ -33,12 +33,12 @@ warnings.formatwarning = custom_formatwarning
 # 'cell5_ch1_stack0102_560nm_0001760msec_0020933033msecAbs.tif'
 # {name}_ch{channel:1}_stack{stack:4}_{wave:3}nm_{reltime:7}msec_{abstime:10}msecAbs
 filename_pattern = re.compile(r"""
-	^(?P<basename>.+)
-	_ch(?P<channel>\d)
-	_stack(?P<stack>\d{4})
-	_\D*(?P<wave>\d+).*		# allowing for non-strict wavelength naming
-	_(?P<reltime>\d{7})msec
-	_(?P<abstime>\d{10})msecAbs
+	^(?P<basename>.+)			# any characters before _ch are basename
+	_ch(?P<channel>\d)			# channel is a single digit following _ch
+	_stack(?P<stack>\d{4})		# timepoint is 4 digits following _stack
+	_\D*(?P<wave>\d+).*			# wave = contiguous digits in this section
+	_(?P<reltime>\d{7})msec 	# 7 digits after _ and before msec
+	_(?P<abstime>\d{10})msecAbs	# 10 digits after _ and before msecAbs
 	""", re.VERBOSE)
 
 
