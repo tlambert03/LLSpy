@@ -85,7 +85,7 @@ If "Save Corrected" is checked, the corrected pre-processed images will be saved
 
 **Trim Edges**
 
-These settings allow you crop a number of pixesl from each edge of the raw data volume prior to processing.
+These settings allow you crop a number of pixels from each edge of the raw data volume prior to processing.
 
 Sometimes when imaging a subregion of the chip on a CMOS camera, the last 1 or 2 rows on the edge will be particularly bright, especially if there is a bright object just outside of the ROI.  After deskewing and max projection, those bright edges often corrupt the image. Use Trim X Left and Trim X Right to crop pixels on the sides of the images prior to processing.
 
@@ -120,7 +120,7 @@ The 16-bit / 32-bit dropdown menu controls the bit-depth of the resulting deconv
 
 **Join MIPS into single hyperstack**
 
-This option applies to both Deskewed and Deconvolved MIP folders, and combines all of the tiff files in each of those folders into a single multichannel/timelapse hyperstack that wil be recognized by ImageJ/Fiji.
+This option applies to both Deskewed and Deconvolved MIP folders, and combines all of the tiff files in each of those folders into a single multichannel/timelapse hyperstack that will be recognized by ImageJ/Fiji.
 
 
 Post-Processing
@@ -168,6 +168,8 @@ After processing, compress the raw data using lbzip2 parallel compression.
 
 Preview Button
 --------------
+
+*Note:* Documentation below currently only applies to the "matplotlib" viewer... not the spimagine viewer.
 
 The Preview button (Ctrl-P) is used to process and show the first timepoint (by default) of the dataset selected in the processing queue, allowing evaluation of the current settings prior to processing of the entire folder.  After clicking "Preview", a multidimensional image window will appear after a moment of processing.  This window has a number of features (some non-obvious):
 
