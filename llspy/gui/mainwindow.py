@@ -182,9 +182,10 @@ class LLSDragDropTable(QtW.QTableWidget):
             indices = self.selectionModel().selectedRows()
             i = 0
             for index in sorted(indices):
-                name = shortname(self.getPathByIndex(index.row()))
+                removerow = index.row() - i
+                name = shortname(self.getPathByIndex(removerow))
                 logger.info('Removing from queue: %s' % name)
-                self.removeRow(index.row() - i)
+                self.removeRow(removerow)
                 i += 1
 
 
@@ -882,9 +883,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     @QtCore.pyqtSlot()
     def on_item_finished(self):
-        thread, worker = self.LLSItemThreads.pop(0)
-        thread.quit()
-        thread.wait()
+        if len(self.LLSItemThreads):
+            thread, worker = self.LLSItemThreads.pop(0)
+            thread.quit()
+            thread.wait()
         self.clock.display("00:00:00")
         self.progressBar.setValue(0)
         if self.aborted:
