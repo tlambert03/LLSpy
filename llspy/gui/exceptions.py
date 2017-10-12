@@ -1,5 +1,5 @@
 from llspy import schema
-from llspy.cudabinwrapper import gpulist
+from llspy.cudabinwrapper import gpulist, CUDAbinException
 from PyQt5 import QtCore
 import traceback
 import llspy
@@ -39,7 +39,11 @@ elif sys.platform.startswith('win32'):
 else:
     tags['os'] = '{}'.format(platform.linux_distribution()[0])
 
-tags['gpu'] = gpulist()
+try:
+    tags['gpu'] = gpulist()
+except CUDAbinException():
+    tags['gpu'] = 'no_cudabin'
+    logger.error("CUDAbinException: Could not get gpulist")
 
 tags['pyqt'] = QtCore.QT_VERSION_STR
 for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools'):
