@@ -31,7 +31,7 @@ else:
             ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_int, ctypes.c_bool]
     except AttributeError as e:
         logger.warn('Failed to properly import libradialft')
-        print(e)
+        logger.error(e)
 
 
 def requireOTFlib(func, *args, **kwargs):
@@ -58,6 +58,8 @@ def makeotf(psf, otf=None, lambdanm=520, dz=0.102, fixorigin=10,
         fixorigin, bUserBackground, background, NA, NIMM, dr, krmax, bDoCleanup)
     return otf
 
+
+# example: 20160825_488_totPSF_mb_0p5-0p42.tif
 
 psffile_pattern = re.compile(r"""
     ^(?P<date>\d{6}|\d{8})      # 6 or 8 digit date
@@ -122,6 +124,8 @@ def get_otf_dict(otfdir):
                 if wave not in otf_dict:
                     otf_dict[wave] = {}
                 otf_dict[wave]['default'] = str(t)
+    for wave in otf_dict.keys():
+        logger.debug('OTFdict wave: {}, masks: {}'.format(wave, otf_dict[wave].keys()))
     return otf_dict
 
 
@@ -164,6 +168,8 @@ def choose_otf(wave, otfpath, date=None, mask=None, direction='nearest', approxi
                     break
         else:
             return None
+    if wave not in otf_dict:
+        return None
 
     # if the mask has been provided, use the OTFs from that mask
     if mask is not None and mask in otf_dict[wave]:
