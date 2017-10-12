@@ -41,7 +41,7 @@ else:
 
 try:
     tags['gpu'] = gpulist()
-except CUDAbinException():
+except CUDAbinException:
     tags['gpu'] = 'no_cudabin'
     logger.error("CUDAbinException: Could not get gpulist")
 
