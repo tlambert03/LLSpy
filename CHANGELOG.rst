@@ -27,6 +27,7 @@ Next Version
 * fixed "handle is invalid" error on pyinstaller version
 * fixed multi-argument parameters in the CLI
 * don't allow trim sum greater than num pixels
+* fixed bug: 'NoneType' object has no attribute 'text' when deleting items from queue `53e7fda <https://github.com/tlambert03/LLSpy/commit/53e7fda0c5cbf25a4071083a58e08de64de5bb38>`_
 
 **Changed:**
 
