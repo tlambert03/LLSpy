@@ -440,6 +440,24 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.errorOptOutCheckBox.stateChanged.connect(self.toggleOptOut)
         self.useBundledBinariesCheckBox.stateChanged.connect(self.checkBundled)
 
+        # add GPU checkboxes
+        try:
+            gpulist = llspy.cudabinwrapper.gpulist()
+            if len(gpulist):
+                for i, gpu in enumerate(gpulist):
+                    box = QtW.QCheckBox(self.tab_config)
+                    box.setChecked(True)
+                    box.setObjectName('useGPU_{}'.format(i))
+                    box.setText(gpu.strip('GeForce'))
+                    self.gpuGroupBoxLayout.addWidget(box)
+            else:
+                label = QtW.QLabel(self.tab_config)
+                label.setText('No CUDA-capabled GPUs detected')
+                self.gpuGroupBoxLayout.addWidget(label)
+
+        except llspy.cudabinwrapper.CUDAbinException:
+            pass
+
         self.watchDirToolButton.clicked.connect(self.changeWatchDir)
         self.watchDirCheckBox.stateChanged.connect(
             lambda st: self.startWatcher() if st else self.stopWatcher())
