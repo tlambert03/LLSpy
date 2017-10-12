@@ -755,8 +755,9 @@ class LLSdir(object):
         if S.nIters > 0 or (S.deskew > 0 and S.saveDeskewedRaw):
             otfs = self.get_otfs(otfpath=S.otfDir)
             S.otfs = [otfs[i] for i in S.cRange]
-            if S.nIters > 0 and any([(otf == '' or otf is None) for otf in S.otfs]):
-                raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
+            assert all([otf for otf in S.otfs]), 'Deconvolution requested but no OTF available.  Check OTF path'
+            assert len(S.otfs) > 0, 'Deconvolution requested but no OTF available.  Check OTF path'
+            assert len(S.otfs) == len(list(S.cRange)), "Could not find OTF for every channel in OTFdir."
 
         if S.bRotate:
             S.rotate = S.rotate if S.rotate is not None else P.angle
