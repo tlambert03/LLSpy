@@ -508,7 +508,7 @@ class TimePointWorker(QtCore.QObject):
     """docstring for TimePointWorker"""
 
     finished = QtCore.pyqtSignal()
-    previewReady = QtCore.pyqtSignal(np.ndarray, float, float)
+    previewReady = QtCore.pyqtSignal(np.ndarray, float, float, dict)
     error = QtCore.pyqtSignal()
     updateCrop = QtCore.pyqtSignal(int, int)
 
@@ -526,7 +526,7 @@ class TimePointWorker(QtCore.QObject):
         try:
             previewStack = llspy.llsdir.preview(self.E, self.tRange, self.cRange, **self.opts)
             if previewStack is not None:
-                self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal)
+                self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal, self.E._localParams)
 
                 # TODO: this needs to be a signal, but shold only be emitted when the caller
                 # was the preview button (not a watcher)
