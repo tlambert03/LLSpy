@@ -52,6 +52,11 @@ for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools'):
     except Exception:
         pass
 
+ip = ''
+try:
+    ip = re.search('"([0-9.]*)"', str(urlopen("http://ip.jsontest.com/").read())).group(1)
+except Exception:
+    pass
 
 client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
                 release=llspy.__version__,
@@ -62,8 +67,7 @@ client.context.merge({'user':
    {'id': uuid.getnode(),
     # 'email': 'example@example.com',
     # 'username': 'uname',
-    'ip_address': re.search('"([0-9.]*)"',
-                     str(urlopen("http://ip.jsontest.com/").read())).group(1)}
+    'ip_address': ip}
 })
 breadcrumbs.ignore_logger('OpenGL.GL.shaders')
 breadcrumbs.ignore_logger('PIL.PngImagePlugin')
