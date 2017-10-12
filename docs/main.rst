@@ -254,11 +254,25 @@ The parsed wavelength will be the *digits only* from the segment between the sta
 
 For greater convenience and sophistication, you can also place raw PSF files in this directory with the following naming convention:
 
-``[date]_[wave]_[psf-type][outerNA]-[innerNA].tif``
+``[date]_[wave]_[slm_pattern]_[outerNA]-[innerNA].tif``
 
 ... where ``outerNA`` and ``innerNA`` use 'p' instead of decimal points, for instance:
 
-``20160825_488_totPSF_mb0p5-0p42.tif``
+``20160825_488_square_0p5-0p42.tif``
+
+*the actual regex that parses the OTF is as follows*
+
+.. code:: python
+
+  psffile_pattern = re.compile(r"""
+    ^(?P<date>\d{6}|\d{8})      # 6 or 8 digit date
+    _(?P<wave>\d+).*            # wavelength ... only digits following _ are used
+    _(?P<slmpattern>[a-zA-Z_]*) # slm pattern
+    _(?P<outerNA>[0-9p.]+)      # outer NA, digits with . or p for decimal
+    [-_](?P<innerNA>[0-9p.]+)   # inter NA, digits with . or p for decimal
+    (?P<isotf>_otf)?.tif$""",   # optional _otf to specify that it is already an otf
+    re.VERBOSE)
+
 
 If the SPIMProject.ini file also contains information about the ``[Annular Mask]`` pattern being used (as demonstrated below), then LLSpy will find the PSF in the OTF directory that most closely matches the date of acquisition of the data, and the annular mask pattern used, and generate an OTF from that file that will be used for deconvolution.
 
@@ -308,12 +322,12 @@ The main object in LLSpy is the :class:`llspy.llsdir.LLSdir` "data folder" objec
 .. code:: python
 
   filename_pattern = re.compile(r"""
-    ^(?P<basename>.+)
-    _ch(?P<channel>\d)
-    _stack(?P<stack>\d{4})
-    _\D*(?P<wave>\d+).*
-    _(?P<reltime>\d{7})msec
-    _(?P<abstime>\d{10})msecAbs
+    ^(?P<basename>.+)        # any characters before _ch are basename
+    _ch(?P<channel>\d)       # channel is a single digit following _ch
+    _stack(?P<stack>\d{4})   # timepoint is 4 digits following _stack
+    _\D*(?P<wave>\d+).*      # wave = contiguous digits in this section
+    _(?P<reltime>\d{7})msec  # 7 digits after _ and before msec
+    _(?P<abstime>\d{10})msecAbs # 10 digits after _ and before msecAbs
     """, re.VERBOSE)
 
 
