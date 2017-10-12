@@ -16,17 +16,23 @@ Next Version
 
 **Added:**
 
-* intelligible warning when openCL and CUDA clash
-* option to disable spimagine import (and reenable easily)
+* intelligible warning when openCL and CUDA clash `b19c9bb <https://github.com/tlambert03/LLSpy/commit/b19c9bb15d589464df666cbc8537f91ee35c2456>`_
+* option to disable spimagine import (and reenable easily) `39a761f <https://github.com/tlambert03/LLSpy/commit/39a761f1122416115d0d0df62f84f1e66ddaa700>`_
+* list detected GPUs in logs at startup
+* check for update on launch `41a8cb6 <https://github.com/tlambert03/LLSpy/commit/41a8cb6b465838f6542ffb6e4af2eadcf3aa4b63>`_
 
 **Fixed:**
 
 * properly parse 24-hour timestamp in settings.txt `36d4ed0e <https://github.com/tlambert03/LLSpy/commit/36d4ed0e71e5a6a7dcae62cd778a0e48f3d29610>`_
 * fixed "handle is invalid" error on pyinstaller version
+* fixed multi-argument parameters in the CLI
+* don't allow trim sum greater than num pixels
 
 **Changed:**
 
 * improved image scaling in matplotlib preview window
+* better choosing of default binary for each platform
+* much more useful information in the logs
 
 
 `0.2.2`_
