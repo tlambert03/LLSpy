@@ -3,7 +3,8 @@ try:
 except ImportError:
     import os
     import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
+    thisDirectory = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisDirectory, os.pardir, os.pardir))
     import llspy
 
 from llspy import llsdir, util, schema, otf, libinstall, compress
@@ -284,11 +285,11 @@ def check_iters(ctx, param, value):
               help="Shift center when cropping",
               default=DEFAULTS['shift'][0], show_default=True)
 @click.option('-m', '--rMIP', 'rMIP', default=DEFAULTS['rMIP'][0], show_default=True,
-              metavar='<BOOL BOOL BOOL>',
+              metavar='<BOOL BOOL BOOL>', nargs=3, type=int,
               help="Save max-intensity projection after deskewing "
               "along x, y, or z axis.  Takes 3 binary numbers separated by spaces.")
 @click.option('-M', '--MIP', 'MIP', default=DEFAULTS['MIP'][0], show_default=True,
-              metavar='<BOOL BOOL BOOL>',
+              metavar='<BOOL BOOL BOOL>', nargs=3, type=int,
               help="Save max-intensity projection after deconvolution along x, "
               "y, or z axis. Takes 3 binary numbers separated by spaces")
 @click.option('--mergemips/--sepmips', 'mergeMIPs',
@@ -301,14 +302,17 @@ def check_iters(ctx, param, value):
               help="Perform bleach correction on timelapse data",
               default=DEFAULTS['bleachCorrection'][0], show_default=True,)
 @click.option('--trimX', 'trimX', default=DEFAULTS['trimX'][0], show_default=True,
-              metavar='<LEFT RIGHT>',
-              help="Number of X pixels to trim off raw data before processing")
+              metavar='<LEFT RIGHT>', nargs=2, type=int,
+              help="Number of X pixels to trim off raw data before processing. "
+              "Takes 2 integers separated by spaces")
 @click.option('--trimY', 'trimY', default=DEFAULTS['trimY'][0], show_default=True,
-              metavar='<TOP BOT>',
-              help="Number of Y pixels to trim off raw data before processing")
+              metavar='<TOP BOT>',  nargs=2, type=int,
+              help="Number of Y pixels to trim off raw data before processing. "
+              "Takes 2 integers separated by spaces")
 @click.option('--trimZ', 'trimZ', default=DEFAULTS['trimZ'][0], show_default=True,
-              metavar='<FIRST LAST>',
-              help="Number of Z pixels to trim off raw data before processing")
+              metavar='<FIRST LAST>',  nargs=2, type=int,
+              help="Number of Z pixels to trim off raw data before processing. "
+              "Takes 2 integers separated by spaces")
 @click.option('-f', '--correctFlash', 'correctFlash', is_flag=True,
               type=click.BOOL, help="Correct Flash pixels before processing.",
               default=DEFAULTS['correctFlash'][0], show_default=True)
@@ -370,7 +374,7 @@ def decon(config, path, **kwargs):
 
         if options['reprocess'] and E.is_compressed():
             # uncompress the raw files first...
-            E.decompress(verbose=options.verbose)
+            E.decompress()
             # if reprocessing, look for a top level MIPs folder and remove it
             if E.path.joinpath('MIPs').exists():
                 shutil.rmtree(E.path.joinpath('MIPs'))
@@ -625,7 +629,11 @@ def edit_sysconfig(ctx, param, value):
 @pass_config
 def config(config, _set, remove, disable, enable, _print):
     '''Manipulate the system configuration for LLSpy'''
-    [config.update_default(key, value) for key, value in _set]
+    for key, value in _set:
+        if key in ('MIP', 'rMIP', 'trimZ', 'trimY', 'trimX'):
+            from ast import literal_eval as make_tuple
+            value = make_tuple(value)
+        config.update_default(key, value)
     [config.remove_key(key) for key in remove]
     [config.enable_key(key) for key in enable]
     [config.disable_key(key) for key in disable]
