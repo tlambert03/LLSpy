@@ -700,8 +700,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.cropWidthSpinBox.setValue(width)
         self.cropShiftSpinBox.setValue(offset)
 
-    @QtCore.pyqtSlot(np.ndarray, float, float)
-    def displayPreview(self, array, dx, dz, df=None):
+    @QtCore.pyqtSlot(np.ndarray, float, float, dict)
+    def displayPreview(self, array, dx, dz, params=None):
         if self.prevBackendSpimagineRadio.isChecked() and _SPIMAGINE_IMPORTED:
 
             if np.squeeze(array).ndim > 4:
@@ -757,7 +757,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             # use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
 
             win = ImgDialog(array,
-                info="\n".join(["{} = {}".format(k, v) for k, v in self.lastopts.items()]),
+                info="\n".join(["{} = {}".format(k, v) for k, v in params.items()]),
                 title=shortname(self.previewPath))
             self.spimwins.append(win)
 
