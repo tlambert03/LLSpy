@@ -42,6 +42,11 @@
          <height>1000</height>
         </size>
        </property>
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
        </property>
@@ -52,12 +57,12 @@
         <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot; bgcolor=&quot;#ececec&quot;&gt;
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:12pt; font-weight:400; font-style:normal;&quot; bgcolor=&quot;#ececec&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;Flash4.0 Artifact Explanation&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:14pt;&quot;&gt;When using synchronous readout mode on the Flash4.0, as is typically done in the lattice scope software, the camera is unable to fully reset the charge in each pixel after readout, resulting in residual charge remaining in the potential well that contributes to the intensity of that pixel in the following image.  This can cause noisy, repeating artifacts in a desewed image, most visible in a max projection, as shown to the right&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Use this script to generate the calibration file that holds the parameters of the regression describing the predicted residual intensity in a given pixel as a function of the intensity of the previous image.  This can be used to yield a corrected image, as shown in the image on the right.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:13pt; font-style:italic;&quot;&gt;Use this script to generate the calibration file that holds the parameters of the regression describing the predicted residual intensity in a given pixel as a function of the intensity of the previous image.  This can be used to yield a corrected image, as shown in the image on the right.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
@@ -126,7 +131,11 @@ p, li { white-space: pre-wrap; }
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="camCalibFolderLineEdit"/>
+      <widget class="QLineEdit" name="camCalibFolderLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
      <item row="0" column="2">
       <widget class="QPushButton" name="selectFolderPushButton">
@@ -136,22 +145,50 @@ p, li { white-space: pre-wrap; }
       </widget>
      </item>
      <item row="1" column="2">
-      <widget class="QPushButton" name="choseDarkImgPushButton">
+      <widget class="QPushButton" name="DarkAVGPushButton">
        <property name="text">
         <string>Chose Dark Avg</string>
        </property>
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="darkImageLineEdit"/>
+      <widget class="QLineEdit" name="darkAVGLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0" alignment="Qt::AlignRight">
       <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Dark Image:</string>
+        <string>Dark AVG (optional):</string>
        </property>
        <property name="buddy">
         <cstring>camCalibFolderLineEdit</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Dark STD (optional):</string>
+       </property>
+       <property name="buddy">
+        <cstring>camCalibFolderLineEdit</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="darkSTDLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QPushButton" name="DarkSTDPushButton">
+       <property name="text">
+        <string>Chose Dark STD</string>
        </property>
       </widget>
      </item>
@@ -182,7 +219,7 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot; bgcolor=&quot;#ececec&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;The dark image is an average projection of &amp;gt;20,000 images with no light delivered to the camera.  By default, the program will look for an image called Dark_AVG.tif in the Image Folder.  Optionally, a standard deviation projection of the dark iamge stack (i.e. noise map) can be provided in the same folder, named Dark_STD.tif.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Dark AVG is an average projection of many (&amp;gt;20,000) images with no light delivered to the camera.  Dark STD is a standard deviation projection of the same images.  By default, the program will generate an offset map (Avg projection) and noise map (StdDev Projection) from all images in the folder with the word &amp;quot;dark&amp;quot; . Optionally, these two images can be calculated elsewhere and provided to the program in the lines above.  Alternatively, you may place them in the folder to be processed, but they must be named dark_AVG.tif and dark_STD.tif respectively.  See docs for more info.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
