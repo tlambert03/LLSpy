@@ -13,10 +13,20 @@ Next Version
 `0.2.4`_
 =========
 
+**Added:**
+
+* gpuCheckboxes added to config tab (disabled for now, future version will support multiple gpus)
+
+**Changed:**
+
+* camera calibration GUI calculates no longer requires dark_avg or dark_std... will calculate itself if \*dark\*.tifs present in selected folder.
+* better feedback during camera calibration gui (still can't abort)
+* disable acquisition watch mode until ready...
+
 **Fixed:**
 
 * important: fixed bug that causes crash when pressing preview button, if it had already failed once before f715f92
-
+* improved robustness and error messages when looking for OTFs in OTFdir
 
 `0.2.3`_
 =========
