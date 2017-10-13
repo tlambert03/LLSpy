@@ -762,8 +762,12 @@ class LLSdir(object):
             for c in S.cRange:
                 wave = P.wavelength[c]
                 S.otfs.append(self.get_otf(wave, otfpath=S.otfDir))
-            assert len(S.otfs) > 0, 'Deconvolution requested but no OTF available.  Check OTF path'
-            assert len(S.otfs) == len(list(S.cRange)), "Could not find OTF for every channel in OTFdir."
+            if not len(S.otfs):
+                raise otfmodule.OTFError(
+                    'Deconvolution requested but no OTF available.  Check OTF path')
+            if not len(S.otfs) == len(list(S.cRange)):
+                raise otfmodule.OTFError(
+                    "Could not find OTF for every channel in OTFdir.")
 
         if S.bRotate:
             S.rotate = S.rotate if S.rotate is not None else P.angle

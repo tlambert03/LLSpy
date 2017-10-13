@@ -210,5 +210,4 @@ def choose_otf(wave, otfpath, date=None, mask=None, direction='nearest', approxi
 
 
 class OTFError(Exception):
-
     pass
