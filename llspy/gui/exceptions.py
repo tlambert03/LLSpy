@@ -46,7 +46,7 @@ except CUDAbinException:
     logger.error("CUDAbinException: Could not get gpulist")
 
 tags['pyqt'] = QtCore.QT_VERSION_STR
-for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools'):
+for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools', 'llspy'):
     try:
         tags[p] = fetch_package_version(p)
     except Exception:
@@ -64,10 +64,10 @@ client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b
                 environment=env,
                 tags=tags)
 client.context.merge({'user':
-   {'id': uuid.getnode(),
+    {'id': uuid.getnode(),
     # 'email': 'example@example.com',
     # 'username': 'uname',
-    'ip_address': ip}
+     'ip_address': ip}
 })
 breadcrumbs.ignore_logger('OpenGL.GL.shaders')
 breadcrumbs.ignore_logger('PIL.PngImagePlugin')
