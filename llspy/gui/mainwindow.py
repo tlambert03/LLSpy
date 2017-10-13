@@ -450,6 +450,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     box.setObjectName('useGPU_{}'.format(i))
                     box.setText(gpu.strip('GeForce'))
                     self.gpuGroupBoxLayout.addWidget(box)
+                    # TODO: enable selection of GPUs
+                    box.setDisabled(True)
             else:
                 label = QtW.QLabel(self.tab_config)
                 label.setText('No CUDA-capabled GPUs detected')
@@ -535,6 +537,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         self.clock.display("00:00:00")
         self.statusBar.showMessage('Ready')
+
+        # TODO: reenable when feature is ready
+        self.watchModeServerRadio.setChecked(True)
+        self.watchModeAcquisitionRadio.setDisabled(True)
 
         self.watcherStatus = QtW.QLabel()
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
