@@ -283,6 +283,8 @@ To Do
 * allow cancel after hitting preview button
 * implement real-time data viewer during acquisition
 * implement real-time data processing with folder-monitoring
+* color overlay in matplotlib preview
+* allow cancel of camera calibration
 
 
 .. openCL troubleshooting on Linux
