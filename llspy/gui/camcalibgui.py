@@ -47,7 +47,7 @@ class CamCalibWorker(QtCore.QObject):
             self.setProgMax.emit(numdark*2)
             darkavg = self.darkavg
             darkstd = self.darkstd
-            if not (darkavg and darkstd):
+            if not all([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]):
                 darkavg, darkstd = camcalib.process_dark_images(
                             self.folder, self.progress.emit, updatedarkstatus)
 
@@ -122,11 +122,12 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
         elif os.path.isfile(os.path.join(folder, 'dark_STD.tif')):
             darkstd = tf.imread(os.path.join(folder, 'dark_STD.tif'))
 
-        if not (darkavg and darkstd):
+        if not all([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]):
             if not pathHasPattern(folder, '*dark*.tif*'):
                 QtW.QMessageBox.warning(self, "No dark images!",
-                    'Camera calibration requires dark images, but none provided'
-                    ' and none detected in provided folder.  Read docs for more info.',
+                    'Camera calibration requires dark images, but none were provided'
+                    ' and none were detected in the specified folder.'
+                    ' Read documentation on camera calibration for more info.',
                     QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
                 return
 
