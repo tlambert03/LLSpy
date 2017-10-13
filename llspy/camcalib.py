@@ -1,3 +1,5 @@
+from . import util
+from . import llsdir
 import numpy as np
 import os
 import glob
@@ -6,8 +8,8 @@ import multiprocessing
 from scipy.optimize import least_squares
 from numba import jit
 import warnings
-from . import util
-from . import llsdir
+import logging
+logger = logging.getLogger(__name__)
 
 
 def get_channel_list(folder):
@@ -86,9 +88,13 @@ def parallel_fit(xdata, ydata, callback=None):
     return out
 
 
-def process_dark_images(folder, callback=None):
+def process_dark_images(folder, callback=None, callback2=None):
     darklist = sorted(glob.glob(os.path.join(folder, '*dark*.tif')))
 
+    # TODO: are these two loops necessary? seems like it should
+    # be possible in a single loop
+
+    # first  verify size/shape of everything
     shapes = np.zeros((len(darklist), 3))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -104,6 +110,7 @@ def process_dark_images(folder, callback=None):
     darkstack = np.zeros((int(shapes[:, 0].sum()), int(shapes[0, 1]),
                           int(shapes[0, 2])), dtype=np.uint16)
 
+    # then load the data
     plane = 0
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -121,14 +128,27 @@ def process_dark_images(folder, callback=None):
     # for n in range(1, len(darklist)):
     #   darkstack = np.vstack((darkstack, tf.imread(darklist[n])))
 
-    print("\nCalculating offset map...")
+    if callback2 is not None:
+        try:
+            callback2(0)
+        except Exception:
+            pass
+
+    logger.info("Camera Calibration - Calculating offset map...")
     darkavg = darkstack.mean(0)
-    print("Calculating noise map...")
+
+    if callback2 is not None:
+        try:
+            callback2(1)
+        except Exception:
+            pass
+
+    logger.info("Camera Calibration - Calculating noise map...")
     darkstd = darkstack.std(0)
     return darkavg, darkstd
 
 
-def process_bright_images(folder, darkavg, darkstd, callback=None):
+def process_bright_images(folder, darkavg, darkstd, callback=None, save=True):
 
     ch0list, ch1list = get_channel_list(folder)
     pre, post = combine_stacks(ch0list, ch1list, darkavg)
@@ -137,18 +157,21 @@ def process_bright_images(folder, darkavg, darkstd, callback=None):
     results = np.vstack((results, darkavg[None, :, :], darkstd[None, :, :]))
     results = util.reorderstack(results, 'zyx').astype(np.float32)
 
-    E = llsdir.LLSdir(folder, ditch_partial=False)
-    outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
-        E.settings.camera.serial,
-        "-".join([str(i) for i in E.settings.camera.roi]),
-        E.date.strftime('%Y%m%d'))
+    if save:
+        E = llsdir.LLSdir(folder, ditch_partial=False)
+        outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
+            E.settings.camera.serial,
+            "-".join([str(i) for i in E.settings.camera.roi]),
+            E.date.strftime('%Y%m%d'))
 
-    tf.imsave(os.path.join(folder, outname), results, imagej=True,
-        resolution=(1 / E.parameters.dx, 1 / E.parameters.dx),
-        metadata={
-            'unit': 'micron',
-            'hyperstack': 'true',
-            'mode': 'composite'})
+        tf.imsave(os.path.join(folder, outname), results, imagej=True,
+            resolution=(1 / E.parameters.dx, 1 / E.parameters.dx),
+            metadata={
+                'unit': 'micron',
+                'hyperstack': 'true',
+                'mode': 'composite'})
+
+    return (os.path.join(folder, outname), results)
 
 
 if __name__ == '__main__':
@@ -168,7 +191,11 @@ if __name__ == '__main__':
     #
     # this is the folder with all of the stacks
 
-    folder = '/Users/talley/Desktop/FlashCarryoverCalibration161219/'
+    import sys
+    if len(sys.argv) > 1:
+        folder = sys.argv[1]
+    else:
+        folder = input()
 
     # futhermore ... there should be a folder inside of that called 'dark' that
     # holds the following files:
