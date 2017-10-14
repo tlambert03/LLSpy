@@ -9,7 +9,7 @@ import inspect
 
 # TODO: add timer?
 def newWorkerThread(workerClass, *args, **kwargs):
-    worker = workerClass(*args)
+    worker = workerClass(*args, **kwargs)
     thread = QtCore.QThread()
     worker.moveToThread(thread)
     # all workers started using this function must implement work() func
