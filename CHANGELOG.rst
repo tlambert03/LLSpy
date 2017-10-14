@@ -17,10 +17,12 @@ Next Version
 **Added:**
 
 * ability to overlay channels in matplotlib viewer (still not possible in spimagine)
+* support for multiple GPUs. Work will be split across GPUs enabled in config tab.
 
 **Fixed:**
 
 * fixed "long division or modulo by zero" error that sometimes appeared in matplotlib viewer
+* fixed bug that prevented processing of a subset of channels when the channel number was > 0
 
 `0.2.4`_
 ========
