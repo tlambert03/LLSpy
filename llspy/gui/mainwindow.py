@@ -60,7 +60,7 @@ if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
         from spimagine.gui.mainwidget import MainWidget as spimagineWidget
         _SPIMAGINE_IMPORTED = True
     except ImportError:
-        print("could not import spimagine!  falling back to matplotlib")
+        logger.error("could not import spimagine!  falling back to matplotlib")
 
 
 class LLSDragDropTable(QtW.QTableWidget):
@@ -229,7 +229,7 @@ class ActiveHandler(RegexMatchingEventHandler, QtCore.QObject):
 
         # once all nC * nT has been seen emit allReceived
         if all(np.isnan(self.counter)):
-            print("All Timepoints Received")
+            logger.debug("All Timepoints Received")
             self.allReceived.emit()
 
 
@@ -281,7 +281,7 @@ class ActiveWatcher(QtCore.QObject):
         self.observer.schedule(handler, self.path, recursive=False)
         self.observer.start()
 
-        print("New LLS directory now being watched: " + self.path)
+        logger.info("New LLS directory now being watched: " + self.path)
 
     @QtCore.pyqtSlot(str)
     def newfile(self, path):
@@ -364,12 +364,12 @@ class ActiveWatcher(QtCore.QObject):
 
     def stall(self):
         self.stalled.emit()
-        print('WATCHER TIMEOUT REACHED!')
+        logger.debug('WATCHER TIMEOUT REACHED!')
         self.terminate()
 
     @QtCore.pyqtSlot()
     def terminate(self):
-        print('TERMINATING')
+        logger.debug('TERMINATING WATCHER')
         self.observer.stop()
         self.observer.join()
         self.finished.emit()
@@ -440,8 +440,25 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.errorOptOutCheckBox.stateChanged.connect(self.toggleOptOut)
         self.useBundledBinariesCheckBox.stateChanged.connect(self.checkBundled)
 
-        # add GPU checkboxes
+        def toggleActiveGPU(val):
+            gpunum = int(self.sender().objectName().strip('useGPU_'))
+            app = QtCore.QCoreApplication.instance()
+            if not hasattr(app, 'gpuset'):
+                app.gpuset = set()
+            if val:
+                app.gpuset.add(gpunum)
+                logger.debug("GPU {} added to gpuset.".format(gpunum))
+            else:
+                if gpunum in app.gpuset:
+                    app.gpuset.remove(gpunum)
+                    logger.debug("GPU {} removed from gpuset.".format(gpunum))
+            logger.debug("GPUset now: {}".format(app.gpuset))
+
+        # add GPU checkboxes and add
         try:
+            app = QtCore.QCoreApplication.instance()
+            if not hasattr(app, 'gpuset'):
+                app.gpuset = set()
             gpulist = llspy.cudabinwrapper.gpulist()
             if len(gpulist):
                 for i, gpu in enumerate(gpulist):
@@ -449,9 +466,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     box.setChecked(True)
                     box.setObjectName('useGPU_{}'.format(i))
                     box.setText(gpu.strip('GeForce'))
+                    box.stateChanged.connect(toggleActiveGPU)
+                    app.gpuset.add(i)
                     self.gpuGroupBoxLayout.addWidget(box)
                     # TODO: enable selection of GPUs
-                    box.setDisabled(True)
+                    #box.setDisabled(True)
             else:
                 label = QtW.QLabel(self.tab_config)
                 label.setText('No CUDA-capabled GPUs detected')
@@ -843,6 +862,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     self.inProcess = False
                     self.on_proc_finished()
                 return
+
+        if not len(QtCore.QCoreApplication.instance().gpuset):
+            self.on_proc_finished()
+            raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
 
         self.statusBar.showMessage('Starting processing ...')
         LLSworker, thread = newWorkerThread(workers.LLSitemWorker, idx, self.currentPath,
