@@ -18,6 +18,9 @@ Next Version
 
 * ability to overlay channels in matplotlib viewer (still not possible in spimagine)
 
+**Fixed:**
+
+* fixed "long division or modulo by zero" error that sometimes appeared in matplotlib viewer
 
 `0.2.4`_
 ========
