@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>907</width>
+    <width>677</width>
     <height>695</height>
    </rect>
   </property>
@@ -35,11 +35,17 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QVBoxLayout" name="mainLayout">
+    <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0,0,0,0">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
        <property name="topMargin">
-        <number>6</number>
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
        </property>
        <item>
         <widget class="QPushButton" name="maxProjButton">
@@ -50,35 +56,7 @@
           </size>
          </property>
          <property name="text">
-          <string>Max Projection</string>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-         <property name="autoDefault">
-          <bool>false</bool>
-         </property>
-         <property name="default">
-          <bool>false</bool>
-         </property>
-         <property name="flat">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="minProjButton">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>35</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Min Projection</string>
+          <string>Max Proj</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -106,7 +84,7 @@
           </size>
          </property>
          <property name="text">
-          <string>Mean Projection</string>
+          <string>Mean Proj</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -134,7 +112,7 @@
           </size>
          </property>
          <property name="text">
-          <string>StdDev Projection</string>
+          <string>StdDev Proj</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -175,7 +153,63 @@
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QPushButton" name="overlayButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>35</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Overlay</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
+         <property name="default">
+          <bool>false</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
+     </item>
+     <item>
+      <widget class="QWidget" name="chanSelectWidget" native="true">
+       <layout class="QHBoxLayout" name="chanSelectLayout">
+        <property name="leftMargin">
+         <number>15</number>
+        </property>
+        <property name="topMargin">
+         <number>2</number>
+        </property>
+        <property name="rightMargin">
+         <number>15</number>
+        </property>
+        <property name="bottomMargin">
+         <number>2</number>
+        </property>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
      </item>
      <item>
       <layout class="QHBoxLayout" name="imgLayout">
@@ -198,7 +232,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="minLabelk">
+          <widget class="QLabel" name="minLabel">
            <property name="text">
             <string>Min</string>
            </property>
@@ -286,6 +320,9 @@
           <property name="topMargin">
            <number>1</number>
           </property>
+          <property name="bottomMargin">
+           <number>2</number>
+          </property>
           <item>
            <widget class="QLabel" name="Zlabel">
             <property name="minimumSize">
@@ -346,6 +383,9 @@
           <property name="topMargin">
            <number>1</number>
           </property>
+          <property name="bottomMargin">
+           <number>2</number>
+          </property>
           <item>
            <widget class="QLabel" name="Clabel">
             <property name="minimumSize">
@@ -405,6 +445,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_7">
           <property name="topMargin">
            <number>1</number>
+          </property>
+          <property name="bottomMargin">
+           <number>2</number>
           </property>
           <item>
            <widget class="QLabel" name="fpsLabel">
@@ -534,19 +577,24 @@
     <string>M</string>
    </property>
   </action>
-  <zorder>Tlabel</zorder>
-  <zorder>Zlabel</zorder>
-  <zorder>Cslider</zorder>
-  <zorder>fpsSpin</zorder>
-  <zorder>Zslider</zorder>
-  <zorder>infoText</zorder>
-  <zorder>fpsLabel</zorder>
-  <zorder>Clabel</zorder>
-  <zorder>playButton</zorder>
-  <zorder>Tslider</zorder>
-  <zorder>horizontalLayoutWidget</zorder>
-  <zorder>horizontalSpacer</zorder>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>overlayButton</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>chanSelectWidget</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>66</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>49</x>
+     <y>51</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

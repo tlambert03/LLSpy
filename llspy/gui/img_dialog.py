@@ -1,10 +1,10 @@
 import sys
 import os
 import numpy as np
-
-from PyQt5 import QtWidgets, QtCore
+import logging
+from PyQt5 import QtWidgets, QtCore, QtGui
 from llspy.gui.img_window import Ui_Dialog
-
+logger = logging.getLogger(__name__)
 
 import matplotlib
 matplotlib.use("Qt5Agg")
@@ -16,6 +16,52 @@ from matplotlib.figure import Figure
 # here = os.path.dirname(os.path.abspath(__file__))
 # form_class = uic.loadUiType(os.path.join(here, 'img_window.ui'))[0]  # for debugging
 
+LUTS = {
+    'Red':     [1, 0, 0],
+    'Green':   [0, 1, 0],
+    'Blue':    [0, 0, 1],
+    'Cyan':    [0, 1, 1],
+    'Yellow':  [1, 1, 0],
+    'Magenta': [1, 0, 1],
+    'Gray':    [1, 1, 1],
+}
+
+preferredLUTs = ['Green', 'Magenta', 'Cyan', 'Blue']
+
+class channelSelector(QtWidgets.QWidget):
+    def __init__(self, name, wave=None, parent=None):
+        super(channelSelector, self).__init__(parent)
+        if wave is None:
+            wave = name
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setObjectName(name + "Layout")
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.checkBox = QtWidgets.QCheckBox(self)
+        # self.checkBox.setMaximumSize(QtCore.QSize(60, 16777215))
+        self.checkBox.setObjectName(name + "checkBox")
+        self.checkBox.setText(str(wave))
+        self.checkBox.setChecked(True)
+        self.layout.addWidget(self.checkBox)
+
+        self.maxSlider = QtWidgets.QSlider(self)
+        self.maxSlider.setOrientation(QtCore.Qt.Horizontal)
+        self.maxSlider.setObjectName(name + "slider")
+        # self.maxSlider.setMaximumSize(QtCore.QSize(60, 16777215))
+        self.maxSlider.setMinimum(50)
+        self.maxSlider.setMaximum(300)
+        self.maxSlider.setProperty("value", 100)
+        self.layout.addWidget(self.maxSlider)
+
+        self.LUTcombo = QtWidgets.QComboBox(self)
+        self.LUTcombo.setEnabled(True)
+        # self.LUTcombo.setMaximumSize(QtCore.QSize(90, 16777215))
+        self.LUTcombo.setObjectName(name + "LUTcombo")
+        for lut in LUTS.keys():
+            self.LUTcombo.addItem(lut)
+        self.layout.addWidget(self.LUTcombo)
+        self.checkBox.clicked['bool'].connect(self.LUTcombo.setEnabled)
+        self.checkBox.clicked['bool'].connect(self.maxSlider.setEnabled)
+
 
 class DataModel(QtCore.QObject):
 
@@ -26,6 +72,7 @@ class DataModel(QtCore.QObject):
         super(DataModel, self).__init__()
         self.setData(data)
         self.projection = projection
+        self._overlay = False
         self.curImgIdx = [0, 0, 0]  # T, C, Z
 
     @QtCore.pyqtSlot(str)
@@ -36,8 +83,33 @@ class DataModel(QtCore.QObject):
             self.projection = None
         self._dataChanged.emit()
 
+    @QtCore.pyqtSlot(bool)
+    def setOverlay(self, val):
+        self._overlay = bool(val)
+        self._dataChanged.emit()
+
+    @QtCore.pyqtSlot(bool)
+    def toggleChannel(self, val):
+        chan = int(self.sender().objectName().strip('checkBox').strip('ch'))
+        logger.debug("Channel {} {}activated".format(chan, '' if val else 'de'))
+        self.chanSettings[chan]['active'] = val
+        self._dataChanged.emit()
+
+    @QtCore.pyqtSlot(str)
+    def changeLUT(self, val):
+        chan = int(self.sender().objectName().strip('LUTcombo').strip('ch'))
+        logger.debug("Channel {} LUT changed to {}".format(chan, val))
+        self.chanSettings[chan]['lut'] = LUTS[val]
+        self._dataChanged.emit()
+
+    @QtCore.pyqtSlot(int)
+    def setChannelScale(self, val):
+        chan = int(self.sender().objectName().strip('slider').strip('ch'))
+        self.chanSettings[chan]['scale'] = val/100.00
+        self._dataChanged.emit()
+
     def setData(self, data):
-        print('data changed')
+        logger.debug('data changed')
         self.ndim = len(data.shape)
         if self.ndim < 2:
             raise ValueError("Not an image!")
@@ -57,6 +129,15 @@ class DataModel(QtCore.QObject):
         else:
             raise TypeError("data should be 3-5 dimensional! shape = %s" % str(data.shape))
 
+        self.nT, self.nC, self.nZ, self.nY, self.nX = self.data.shape
+        self.cmax = [self.data[:, c, :, :, :].max() for c in range(self.nC)]
+        self.cmin = [self.data[:, c, :, :, :].min() for c in range(self.nC)]
+
+        self.chanSettings = [{'active': True,
+                              'lut': LUTS[preferredLUTs[c]],
+                              'scale': 1.0}
+                             for c in range(self.nC)]
+
         self._dataChanged.emit()
 
     @QtCore.pyqtSlot(int, int)
@@ -75,9 +156,36 @@ class DataModel(QtCore.QObject):
         return self.data.min()
 
     def getCurrent(self):
-        if self.projection is not None:
+        if self._overlay:
+            curT, curC, curZ = tuple(self.curImgIdx)
+
+            if self.projection is not None:
+                # get 2D projection
+                data = getattr(np, self.projection)(self.data[curT], 1)
+            else:
+                data = self.data[curT, :, curZ]
+
+            ny, nx = data.shape[-2:]
+            rgb = np.zeros((ny, nx, 3))
+
+            for chan in range(self.nC):
+                if not self.chanSettings[chan]['active']:
+                    continue
+                lut = self.chanSettings[chan]['lut']
+                D = np.maximum(data[chan].astype(np.float) - self.cmin[chan], 0)
+                D /= self.cmax[chan] if self.projection is None else D.max()
+                D *= self.chanSettings[chan]['scale']
+                D = np.tile(D, (3, 1, 1)).transpose(1, 2, 0)
+                lutmask = np.tile(lut, (ny, nx, 1))
+                rgb += D * lutmask
+
+            return np.minimum(rgb, 1)
+
+        elif self.projection is not None:
+            # generate 2D projection
             return getattr(np, self.projection)(self.data[tuple(self.curImgIdx[:2])], 0)
         else:
+            # use full 3D data
             return self.data[tuple(self.curImgIdx)]
 
     def __getitem__(self, tczTuple):
@@ -129,6 +237,7 @@ class MplCanvas(FigureCanvas):
         self.image.set_cmap(self.displayOptions['cmap'])
         self.draw()
 
+
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
         super(ImgDialog, self).__init__(parent)
@@ -138,20 +247,31 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.cmap = cmap
 
         self.infoText.hide()
+        self.gamSlider.hide()
+        self.gamLabel.hide()
+        self.chanSelectWidget.hide()
 
         self.data = DataModel(data)
         self.canvas = MplCanvas()
         self.canvas.setData(self.data)
 
-        self.initialize()
-
+        self.waves = []
         if info is not None:
-            self.infoText.setText(info)
+            if isinstance(info, dict):
+                txt = "\n".join(["{} = {}".format(k, v) for k, v in info.items()])
+                self.infoText.setText(txt)
+                if 'cRange' in info and 'wavelength' in info:
+                    self.waves = [info['wavelength'][i] for i in info['cRange']]
+            elif isinstance(info, str):
+                self.infoText.setText(info)
+
+        self.initialize()
 
         self.maxProjButton.toggled.connect(self.setProjection)
         self.stdProjButton.toggled.connect(self.setProjection)
         self.meanProjButton.toggled.connect(self.setProjection)
-        self.minProjButton.toggled.connect(self.setProjection)
+        self.overlayButton.toggled.connect(self.setOverlay)
+
         self.playButton.clicked.connect(self.playMovie)
         self.fpsSpin.valueChanged.connect(self.changeFPS)
 
@@ -162,8 +282,6 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.minSlider.valueChanged.connect(lambda val: self.canvas.setContrast(vmin=val))
         # self.gamSlider.valueChanged.connect(self.canvas.setGamma)
 
-        self.gamSlider.hide()
-        self.gamLabel.hide()
         self.infoButton.toggled.connect(self.toggleInfo)
 
         self.toolbar = NavigationToolbar(self.canvas, self)
@@ -192,22 +310,14 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             if val:
                 self.stdProjButton.setChecked(False)
                 self.meanProjButton.setChecked(False)
-                self.minProjButton.setChecked(False)
         elif self.sender() == self.stdProjButton:
             if val:
                 self.maxProjButton.setChecked(False)
                 self.meanProjButton.setChecked(False)
-                self.minProjButton.setChecked(False)
         elif self.sender() == self.meanProjButton:
             if val:
                 self.stdProjButton.setChecked(False)
                 self.maxProjButton.setChecked(False)
-                self.minProjButton.setChecked(False)
-        elif self.sender() == self.minProjButton:
-            if val:
-                self.stdProjButton.setChecked(False)
-                self.maxProjButton.setChecked(False)
-                self.meanProjButton.setChecked(False)
 
         projtype = None
         if self.maxProjButton.isChecked():
@@ -216,10 +326,24 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             projtype = 'mean'
         if self.stdProjButton.isChecked():
             projtype = 'std'
-        if self.minProjButton.isChecked():
-            projtype = 'min'
+
+        if val:
+            self.Zwidget.hide()
+        else:
+            self.Zwidget.show()
 
         self.data.setProjType(projtype)
+
+    @QtCore.pyqtSlot(bool)
+    def setOverlay(self, val):
+        group = (self.Cwidget, self.maxSlider, self.maxLabel,
+                 self.minSlider, self.minLabel)
+        if val:
+            self.data.setOverlay(True)
+            [item.hide() for item in group]
+        else:
+            self.data.setOverlay(False)
+            [item.show() for item in group]
 
     def toggleInfo(self, val):
         w = self.size().width()
@@ -277,9 +401,25 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         else:
             self.Zwidget.hide()
 
-        figheight = 600
-        yxAspect = self.data.shape[-2]/self.data.shape[-1]
-        self.resize(figheight/yxAspect, figheight+75)
+        try:
+            figheight = 600
+            yxAspect = self.data.shape[-2]/self.data.shape[-1]
+            if yxAspect > 0:
+                self.resize(figheight/yxAspect, figheight+75)
+        except Exception:
+            pass
+
+        for chan in range(nC):
+            try:
+                wave = self.waves[chan]
+            except Exception:
+                wave = None
+            selector = channelSelector('ch'+str(chan), wave=wave)
+            selector.LUTcombo.setCurrentText(preferredLUTs[chan])
+            selector.checkBox.clicked['bool'].connect(self.data.toggleChannel)
+            selector.LUTcombo.currentTextChanged.connect(self.data.changeLUT)
+            selector.maxSlider.valueChanged.connect(self.data.setChannelScale)
+            self.chanSelectLayout.addWidget(selector)
 
     def setDimIdx(self, dim, idx):
         F = {
@@ -322,22 +462,17 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
             self.close()
-        elif event.key() in (QtCore.Qt.Key_1, QtCore.Qt.Key_M):
+        elif event.key() in (QtCore.Qt.Key_M,):
             if self.maxProjButton.isChecked():
                 self.maxProjButton.setChecked(False)
             else:
                 self.maxProjButton.setChecked(True)
-        elif event.key() in (QtCore.Qt.Key_2, QtCore.Qt.Key_N):
-            if self.minProjButton.isChecked():
-                self.minProjButton.setChecked(False)
-            else:
-                self.minProjButton.setChecked(True)
-        elif event.key() in (QtCore.Qt.Key_3, QtCore.Qt.Key_B):
+        elif event.key() in (QtCore.Qt.Key_N,):
             if self.meanProjButton.isChecked():
                 self.meanProjButton.setChecked(False)
             else:
                 self.meanProjButton.setChecked(True)
-        elif event.key() in (QtCore.Qt.Key_4, QtCore.Qt.Key_V):
+        elif event.key() in (QtCore.Qt.Key_B,):
             if self.stdProjButton.isChecked():
                 self.stdProjButton.setChecked(False)
             else:

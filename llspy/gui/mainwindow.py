@@ -778,9 +778,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             # FIXME:  pyplot should not be imported in pyqt
             # use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
 
-            win = ImgDialog(array,
-                info="\n".join(["{} = {}".format(k, v) for k, v in params.items()]),
-                title=shortname(self.previewPath))
+            win = ImgDialog(array, info=params, title=shortname(self.previewPath))
             self.spimwins.append(win)
 
     @QtCore.pyqtSlot()
