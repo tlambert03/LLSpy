@@ -33,7 +33,7 @@ class SubprocessWorker(QtCore.QObject):
     processStarted = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal()
 
-    def __init__(self, binary, args, env=None, wid=1):
+    def __init__(self, binary, args, env=None, wid=1, **kwargs):
         super(SubprocessWorker, self).__init__()
         self.id = int(wid)
         self.binary = llspy.util.which(binary)
@@ -65,11 +65,12 @@ class SubprocessWorker(QtCore.QObject):
         self.process.finished.connect(self.onFinished)
         self.process.finished.connect(lambda:
             logger.debug('Subprocess {} FINISH'.format(self.name)))
+        # set environmental variables (for instance, to chose GPU)
         if self.env is not None:
             sysenv = QtCore.QProcessEnvironment.systemEnvironment()
-            sysenv.insert
             for k, v in self.env.items():
-                sysenv.insert(k, v)
+                sysenv.insert(k, str(v))
+                logger.debug('Setting Environment Variable: {} = {}'.format(k, v))
             self.process.setProcessEnvironment(sysenv)
         self.process.start(self.binary, self.args)
         self.processStarted.emit()
@@ -114,11 +115,12 @@ class SubprocessWorker(QtCore.QObject):
 
 
 class CudaDeconvWorker(SubprocessWorker):
-    file_finished = QtCore.pyqtSignal()  # worker id, filename
+    file_finished = QtCore.pyqtSignal()
+    finished = QtCore.pyqtSignal(int)  # worker id
 
-    def __init__(self, args, **kwargs):
+    def __init__(self, args, env=None, **kwargs):
         binaryPath = _CUDABIN
-        super(CudaDeconvWorker, self).__init__(binaryPath, args, **kwargs)
+        super(CudaDeconvWorker, self).__init__(binaryPath, args, env, **kwargs)
         self.name = 'CudaDeconv'
 
     def procReadyRead(self):
@@ -127,15 +129,24 @@ class CudaDeconvWorker(SubprocessWorker):
             line = byteArrayToString(line)
             if "*** Finished!" in line or "Output:" in line:
                 self.file_finished.emit()
+            elif  "Iteration" in line:
+                self._logger.info("CUDAworker {}: ".format(self.id) + line.rstrip())
             else:
                 self._logger.info(line.rstrip())
+
+    @QtCore.pyqtSlot(int, QtCore.QProcess.ExitStatus)
+    def onFinished(self, exitCode, exitStatus):
+        statusmsg = {0: 'exited normally', 1: 'crashed'}
+        self._logger.info('{} #{} {} with exit code: {}'.format(
+            self.name, self.id, statusmsg[exitStatus], exitCode))
+        self.finished.emit(self.id)
 
 
 class CompressionWorker(SubprocessWorker):
 
     status_update = QtCore.pyqtSignal(str, int)
 
-    def __init__(self, path, mode='compress', binary=None, wid=1):
+    def __init__(self, path, mode='compress', binary=None, wid=1, **kwargs):
         if binary is None:
             if sys.platform.startswith('win32'):
                 binary = 'pigz'
@@ -144,7 +155,7 @@ class CompressionWorker(SubprocessWorker):
         binary = llspy.util.which(binary)
         if not binary:
             raise err.MissingBinaryError("No binary found for compression program: {}".format(binary))
-        super(CompressionWorker, self).__init__(binary, [], wid)
+        super(CompressionWorker, self).__init__(binary, [], wid, **kwargs)
         self.path = path
         self.mode = mode
         self.name = 'CompressionWorker'
@@ -157,10 +168,17 @@ class CompressionWorker(SubprocessWorker):
             tar_compressed = llspy.util.find_filepattern(self.path, '*.tar*')
             tar_extension = os.path.splitext(tar_compressed)[1]
             if tar_extension not in llspy.compress.EXTENTIONS:
-                self._logger('Unexpected uncompressed tar file found')
+                self._logger.error('Unexpected uncompressed tar file found')
                 raise err.LLSpyError('found a tar file, but don\'t know how to decompress')
-            if not llspy.compress.EXTENTIONS[tar_extension] == self.binary:
-                self.binary = llspy.util.which(llspy.compress.EXTENTIONS[tar_extension])
+            if self.binary not in llspy.compress.EXTENTIONS[tar_extension]:
+                    for compbin in llspy.compress.EXTENTIONS[tar_extension]:
+                        if llspy.util.which(compbin):
+                            self.binary = llspy.util.which(compbin)
+                            break
+            if not self.binary:
+                raise err.MissingBinaryError(
+                    "No binary found for compression program: {}".format(
+                        llspy.compress.EXTENTIONS[tar_extension]))
             self.args = ['-dv', tar_compressed]
             self.process.finished.connect(
                 lambda: self.untar(os.path.splitext(tar_compressed)[0]))
@@ -180,8 +198,12 @@ class CompressionWorker(SubprocessWorker):
             self.args = ['-v', tarball]
             self.process.finished.connect(self.finished.emit)
 
+        print(self.name)
+        print(self.binary)
+        print(" ".join(self.args))
         msg = '\nRunning {} thread_{} with args:\n{}\n'.format(
             self.name, self.id, self.binary + " " + " ".join(self.args))
+        print(msg)
         self._logger.info('~' * 20 + msg)
 
         self.process.start(self.binary, self.args)
@@ -255,7 +277,7 @@ class LLSitemWorker(QtCore.QObject):
     sig_abort = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal()
 
-    def __init__(self, wid, path, opts):
+    def __init__(self, wid, path, opts, **kwargs):
         super(LLSitemWorker, self).__init__()
         self.__id = int(wid)
         self.opts = opts
@@ -263,9 +285,13 @@ class LLSitemWorker(QtCore.QObject):
         self.shortname = shortname(str(self.E.path))
         self.aborted = False
         self.__argQueue = []  # holds all argument lists that will be sent to threads
-        self.__CUDAthreads = []
-        # self.NUM_CUDA_THREADS = llspy.cudabinwrapper.nGPU(getCudaDeconvBinary())
-        self.NUM_CUDA_THREADS = 1
+        self.GPU_SET = QtCore.QCoreApplication.instance().gpuset
+        self.__CUDAthreads = {gpu: None for gpu in self.GPU_SET}
+
+        if not len(self.GPU_SET):
+            self.error.emit()
+            raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
+
         self._logger = logging.getLogger('llspy.worker.'+type(self).__name__)
 
     @QtCore.pyqtSlot()
@@ -325,32 +351,37 @@ class LLSitemWorker(QtCore.QObject):
                 self.error.emit()
                 raise
 
+            def split(a, n):
+                k, m = divmod(len(a), n)
+                return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
+
             # generate all the channel specific cudaDeconv arguments for this item
-            for chan in self.P.cRange:
-
-                # generate channel specific options
-                cudaOpts = self.P.copy()
+            cudaOpts = self.P.copy()
+            tRanges = list(split(self.P.tRange, len(self.GPU_SET)))
+            for i, chan in enumerate(self.P.cRange):
+                # generate channel and gpu specific options
                 cudaOpts['input-dir'] = str(self.E.path)
-                # filter by channel and trange
-                if len(list(self.P.tRange)) == self.E.parameters.nt:
-                    cudaOpts['filename-pattern'] = '_ch{}_'.format(chan)
-                else:
-                    cudaOpts['filename-pattern'] = '_ch{}_stack{}'.format(chan,
-                        llspy.util.pyrange_to_perlregex(self.P.tRange))
-
-                cudaOpts['otf-file'] = self.P.otfs[chan]
-                cudaOpts['background'] = self.P.background[chan] if not self.P.correctFlash else 0
+                cudaOpts['otf-file'] = self.P.otfs[i]
+                cudaOpts['background'] = self.P.background[i] if not self.P.correctFlash else 0
                 cudaOpts['wavelength'] = float(self.P.wavelength[chan]) / 1000
 
-                args = binary.assemble_args(**cudaOpts)
-                self.__argQueue.append(args)
+                for tRange in tRanges:
+                    # filter by channel and trange
+                    if len(tRange) == self.E.parameters.nt:
+                        cudaOpts['filename-pattern'] = '_ch{}_'.format(chan)
+                    else:
+                        cudaOpts['filename-pattern'] = '_ch{}_stack{}'.format(chan,
+                            llspy.util.pyrange_to_perlregex(tRange))
 
+                    args = binary.assemble_args(**cudaOpts)
+                    self.__argQueue.append(args)
             # with the argQueue populated, we can now start the workers
             if not len(self.__argQueue):
                 self._logger.error('No channel arguments to process in LLSitem: %s' % self.shortname)
                 self._logger.debug('LLSitemWorker FINISH: {}'.format(self.E.basename))
                 self.finished.emit()
                 return
+
             self.startCUDAWorkers()
         else:
             self.post_process()
@@ -360,10 +391,8 @@ class LLSitemWorker(QtCore.QObject):
 
     def startCUDAWorkers(self):
         # initialize the workers and threads
-        self.__CUDAworkers_done = 0
-        self.__CUDAthreads = []
 
-        for idx in range(self.NUM_CUDA_THREADS):
+        for gpu in self.GPU_SET:
             # create new CUDAworker for every thread
             # each CUDAworker will control one cudaDeconv process (which only gets
             # one wavelength at a time)
@@ -378,8 +407,8 @@ class LLSitemWorker(QtCore.QObject):
             args = self.__argQueue.pop(0)
 
             CUDAworker, thread = newWorkerThread(CudaDeconvWorker, args,
-                env={"CUDA_VISIBLE_DEVICES": idx},
-                wid=idx,
+                {"CUDA_VISIBLE_DEVICES": gpu},
+                wid=gpu,
                 workerConnect={
                      # get progress messages from CUDAworker and pass to parent
                      'file_finished': self.on_file_finished,
@@ -389,7 +418,8 @@ class LLSitemWorker(QtCore.QObject):
                 })
 
             # need to store worker too otherwise will be garbage collected
-            self.__CUDAthreads.append((thread, CUDAworker))
+            self.__CUDAthreads[gpu] = (thread, CUDAworker)
+
             # connect mainGUI abort CUDAworker signal to the new CUDAworker
             self.sig_abort.connect(CUDAworker.abort)
 
@@ -411,16 +441,20 @@ class LLSitemWorker(QtCore.QObject):
         timeAsString = QtCore.QTime(0, 0).addMSecs(remainingTime).toString()
         self.clockUpdate.emit(timeAsString)
 
-    @QtCore.pyqtSlot()
-    def on_CUDAworker_done(self):
+    @QtCore.pyqtSlot(int)
+    def on_CUDAworker_done(self, worker_id):
         # a CUDAworker has finished... update the log and check if any are still going
-        self.__CUDAworkers_done += 1
-        if self.__CUDAworkers_done == min(self.NUM_CUDA_THREADS, len(self.P.cRange)):
-            # all the workers are finished, cleanup thread(s) and start again
-            for thread, _ in self.__CUDAthreads:
-                thread.quit()
-                thread.wait()
-            self.__CUDAthreads = []
+        logger.debug("CudaDeconv Worker on GPU {} finished".format(worker_id))
+        thread, _ = self.__CUDAthreads[worker_id]
+        thread.quit()
+        thread.wait()
+        self.__CUDAthreads[worker_id] = None
+
+        # FIXME:  this forces all GPUs to be done before ANY can continue
+        # ... only as fast as the slowest GPU
+        # could probably fix easily by delivering a value to startCudaWorkers
+        # instead of looping through gpu inside of it
+        if not any([v for v in self.__CUDAthreads.values()]):
             # if there's still stuff left in the argQueue for this item, keep going
             if self.aborted:
                 self.aborted = False
@@ -484,7 +518,7 @@ class LLSitemWorker(QtCore.QObject):
     @QtCore.pyqtSlot()
     def abort(self):
         self._logger.info('LLSworker #{} notified to abort'.format(self.__id))
-        if len(self.__CUDAthreads):
+        if any([v for v in self.__CUDAthreads.values()]):
             self.aborted = True
             self.__argQueue = []
             self.sig_abort.emit()
@@ -497,11 +531,10 @@ class TimePointWorker(QtCore.QObject):
     """docstring for TimePointWorker"""
 
     finished = QtCore.pyqtSignal()
-    previewReady = QtCore.pyqtSignal(np.ndarray, float, float)
-    error = QtCore.pyqtSignal()
+    previewReady = QtCore.pyqtSignal(np.ndarray, float, float, dict)
     updateCrop = QtCore.pyqtSignal(int, int)
 
-    def __init__(self, path, tRange, cRange, opts, ditch_partial=True):
+    def __init__(self, path, tRange, cRange, opts, ditch_partial=True, **kwargs):
         super(TimePointWorker, self).__init__()
         self.path = path
         self.tRange = tRange
@@ -515,7 +548,7 @@ class TimePointWorker(QtCore.QObject):
         try:
             previewStack = llspy.llsdir.preview(self.E, self.tRange, self.cRange, **self.opts)
             if previewStack is not None:
-                self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal)
+                self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal, self.E._localParams)
 
                 # TODO: this needs to be a signal, but shold only be emitted when the caller
                 # was the preview button (not a watcher)
@@ -526,7 +559,7 @@ class TimePointWorker(QtCore.QObject):
                 raise err.InvalidSettingsError("No stacks to preview... check tRange")
 
         except Exception:
-            self.error.emit()
+            self.finished.emit()
             raise
 
         self.finished.emit()

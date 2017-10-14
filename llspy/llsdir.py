@@ -662,7 +662,7 @@ class LLSdir(object):
             if self.compress(**kwargs):
                 return 1
 
-    def localParams(self, **kwargs):
+    def localParams(self, recalc=False, **kwargs):
         """Returns a validated dict of processing parameters that are specific
         to this LLSdir instance.
 
@@ -686,6 +686,11 @@ class LLSdir(object):
         'uint16raw': True, 'verbose': 0, 'wavelength': [488, 560],
         'width': 0, 'writeLog': True}
         """
+        # allow for 'lazy' storage of previously calculated value
+        if '_localParams' in dir(self) and not recalc:
+            if all([self._localParams[k] == v for k, v in kwargs.items()]):
+                return self._localParams
+
         P = self.parameters
         S = schema.procParams(kwargs)
         assert sum(S.trimY) < P.ny, "TrimY sum must be less than number of Y pixels"
@@ -753,17 +758,24 @@ class LLSdir(object):
         # in fact, if not deconvolving, we should simply use libcudaDeconv
         # and not use the full cudaDeconv binary
         if S.nIters > 0 or (S.deskew > 0 and S.saveDeskewedRaw):
-            otfs = self.get_otfs(otfpath=S.otfDir)
-            S.otfs = [otfs[i] for i in S.cRange]
-            if S.nIters > 0 and any([(otf == '' or otf is None) for otf in S.otfs]):
-                raise ValueError('Deconvolution requested but no OTF available.  Check OTF path')
+            S.otfs = []
+            for c in S.cRange:
+                wave = P.wavelength[c]
+                S.otfs.append(self.get_otf(wave, otfpath=S.otfDir))
+            if not len(S.otfs):
+                raise otfmodule.OTFError(
+                    'Deconvolution requested but no OTF available.  Check OTF path')
+            if not len(S.otfs) == len(list(S.cRange)):
+                raise otfmodule.OTFError(
+                    "Could not find OTF for every channel in OTFdir.")
 
         if S.bRotate:
             S.rotate = S.rotate if S.rotate is not None else P.angle
         else:
             S.rotate = 0
 
-        return util.dotdict(schema.__localSchema__(S))
+        self._localParams = util.dotdict(schema.__localSchema__(S))
+        return self._localParams
 
     def autoprocess(self, **kwargs):
         """Calls the :obj:`process` function on the LLSdir instance.
@@ -814,7 +826,7 @@ class LLSdir(object):
     def get_files(self, **kwargs):
         return parse.filter_files(self.tiff.raw, **kwargs)
 
-    def get_otfs(self, otfpath=config.__OTFPATH__):
+    def get_otf(self, wave, otfpath=config.__OTFPATH__):
         """ intelligently pick OTF from archive directory based on date and mask
         settings."""
         if otfpath is None or not os.path.isdir(otfpath):
@@ -823,22 +835,17 @@ class LLSdir(object):
         if not otfmodule.dir_has_otfs(otfpath):
             raise LLSpyError("OTF directory has no OTFs! -> {}".format(otfpath))
 
-        otfs = {}
-        for c in range(self.parameters.nc):
-            wave = self.parameters.wavelength[c]
-            mask = None
-            if hasattr(self.settings, 'mask'):
-                innerNA = self.settings.mask.innerNA
-                outerNA = self.settings.mask.outerNA
-                mask = (innerNA, outerNA)
+        mask = None
+        if hasattr(self.settings, 'mask'):
+            innerNA = self.settings.mask.innerNA
+            outerNA = self.settings.mask.outerNA
+            mask = (innerNA, outerNA)
 
-            otf = otfmodule.choose_otf(wave, otfpath, self.date, mask)
-
-            if otf is None or not os.path.isfile(otf):
-                raise otfmodule.OTFError('Could not find OTF for '
-                    'wave {} in path: {}'.format(wave, otfpath))
-            otfs[c] = otf
-        return otfs
+        otf = otfmodule.choose_otf(wave, otfpath, self.date, mask)
+        if not otf or not os.path.isfile(otf):
+            raise otfmodule.OTFError('Could not find OTF for '
+                'wave {} in path: {}'.format(wave, otfpath))
+        return otf
 
     def get_feature_width(self, t=0, **kwargs):
         # defaults background=100, pad=100, sigma=2

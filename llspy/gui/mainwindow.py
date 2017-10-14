@@ -60,7 +60,11 @@ if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
         from spimagine.gui.mainwidget import MainWidget as spimagineWidget
         _SPIMAGINE_IMPORTED = True
     except ImportError:
+<<<<<<< HEAD
         print("could not import spimagine!  falling back to matplotlib")
+=======
+        logger.error("could not import spimagine!  falling back to matplotlib")
+>>>>>>> develop
 
 
 class LLSDragDropTable(QtW.QTableWidget):
@@ -182,9 +186,16 @@ class LLSDragDropTable(QtW.QTableWidget):
             indices = self.selectionModel().selectedRows()
             i = 0
             for index in sorted(indices):
+<<<<<<< HEAD
                 name = shortname(self.getPathByIndex(index.row()))
                 logger.info('Removing from queue: %s' % name)
                 self.removeRow(index.row() - i)
+=======
+                removerow = index.row() - i
+                name = shortname(self.getPathByIndex(removerow))
+                logger.info('Removing from queue: %s' % name)
+                self.removeRow(removerow)
+>>>>>>> develop
                 i += 1
 
 
@@ -228,7 +239,11 @@ class ActiveHandler(RegexMatchingEventHandler, QtCore.QObject):
 
         # once all nC * nT has been seen emit allReceived
         if all(np.isnan(self.counter)):
+<<<<<<< HEAD
             print("All Timepoints Received")
+=======
+            logger.debug("All Timepoints Received")
+>>>>>>> develop
             self.allReceived.emit()
 
 
@@ -280,7 +295,11 @@ class ActiveWatcher(QtCore.QObject):
         self.observer.schedule(handler, self.path, recursive=False)
         self.observer.start()
 
+<<<<<<< HEAD
         print("New LLS directory now being watched: " + self.path)
+=======
+        logger.info("New LLS directory now being watched: " + self.path)
+>>>>>>> develop
 
     @QtCore.pyqtSlot(str)
     def newfile(self, path):
@@ -363,12 +382,20 @@ class ActiveWatcher(QtCore.QObject):
 
     def stall(self):
         self.stalled.emit()
+<<<<<<< HEAD
         print('WATCHER TIMEOUT REACHED!')
+=======
+        logger.debug('WATCHER TIMEOUT REACHED!')
+>>>>>>> develop
         self.terminate()
 
     @QtCore.pyqtSlot()
     def terminate(self):
+<<<<<<< HEAD
         print('TERMINATING')
+=======
+        logger.debug('TERMINATING WATCHER')
+>>>>>>> develop
         self.observer.stop()
         self.observer.join()
         self.finished.emit()
@@ -439,6 +466,48 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.errorOptOutCheckBox.stateChanged.connect(self.toggleOptOut)
         self.useBundledBinariesCheckBox.stateChanged.connect(self.checkBundled)
 
+<<<<<<< HEAD
+=======
+        def toggleActiveGPU(val):
+            gpunum = int(self.sender().objectName().strip('useGPU_'))
+            app = QtCore.QCoreApplication.instance()
+            if not hasattr(app, 'gpuset'):
+                app.gpuset = set()
+            if val:
+                app.gpuset.add(gpunum)
+                logger.debug("GPU {} added to gpuset.".format(gpunum))
+            else:
+                if gpunum in app.gpuset:
+                    app.gpuset.remove(gpunum)
+                    logger.debug("GPU {} removed from gpuset.".format(gpunum))
+            logger.debug("GPUset now: {}".format(app.gpuset))
+
+        # add GPU checkboxes and add
+        try:
+            app = QtCore.QCoreApplication.instance()
+            if not hasattr(app, 'gpuset'):
+                app.gpuset = set()
+            gpulist = llspy.cudabinwrapper.gpulist()
+            if len(gpulist):
+                for i, gpu in enumerate(gpulist):
+                    box = QtW.QCheckBox(self.tab_config)
+                    box.setChecked(True)
+                    box.setObjectName('useGPU_{}'.format(i))
+                    box.setText(gpu.strip('GeForce'))
+                    box.stateChanged.connect(toggleActiveGPU)
+                    app.gpuset.add(i)
+                    self.gpuGroupBoxLayout.addWidget(box)
+                    # TODO: enable selection of GPUs
+                    #box.setDisabled(True)
+            else:
+                label = QtW.QLabel(self.tab_config)
+                label.setText('No CUDA-capabled GPUs detected')
+                self.gpuGroupBoxLayout.addWidget(label)
+
+        except llspy.cudabinwrapper.CUDAbinException:
+            pass
+
+>>>>>>> develop
         self.watchDirToolButton.clicked.connect(self.changeWatchDir)
         self.watchDirCheckBox.stateChanged.connect(
             lambda st: self.startWatcher() if st else self.stopWatcher())
@@ -470,11 +539,14 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.previewTRangeLineEdit.setValidator(ctrangeValidator)
 
         # FIXME: this way of doing it clears the text field if you hit cancel
+<<<<<<< HEAD
         self.RegProcessPathToolButton.clicked.connect(self.setRegFile)
         self.RegCalibPathLoadButton.clicked.connect(self.setRegCalibPath)
         self.GenerateRegFileButton.clicked.connect(self.generateCalibrationFile)
         self.RegCalibPreviewButton.clicked.connect(self.previewRegistration)
 
+=======
+>>>>>>> develop
         self.cudaDeconvPathToolButton.clicked.connect(self.setCudaDeconvPath)
         self.otfFolderToolButton.clicked.connect(self.setOTFdirPath)
         self.camParamTiffToolButton.clicked.connect(self.setCamParamPath)
@@ -486,7 +558,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         #             'Set default Registration Calibration Directory',
         #             '', QtW.QFileDialog.ShowDirsOnly)))
 
+<<<<<<< HEAD
         self.RegProcessPathToolButton.clicked.connect(lambda:
+=======
+        self.RegCalibPathToolButton.clicked.connect(lambda:
+>>>>>>> develop
             self.RegCalibPathLineEdit.setText(
                 QtW.QFileDialog.getExistingDirectory(
                     self, 'Set Registration Calibration Directory',
@@ -504,6 +580,17 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                 self.availableCompression.append(ctype)
         self.compressTypeCombo.addItems(self.availableCompression)
 
+<<<<<<< HEAD
+=======
+        i = 0
+        for comptype in ('lbzip2', 'pigz', 'bzip2'):
+            try:
+                i = self.availableCompression.index(comptype)
+            except ValueError:
+                continue
+        self.compressTypeCombo.setCurrentIndex(i)
+
+>>>>>>> develop
         # connect worker signals and slots
         self.sig_item_finished.connect(self.on_item_finished)
         self.sig_processing_done.connect(self.on_proc_finished)
@@ -514,6 +601,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.clock.display("00:00:00")
         self.statusBar.showMessage('Ready')
 
+<<<<<<< HEAD
+=======
+        # TODO: reenable when feature is ready
+        self.watchModeServerRadio.setChecked(True)
+        self.watchModeAcquisitionRadio.setDisabled(True)
+
+>>>>>>> develop
         self.watcherStatus = QtW.QLabel()
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
 
@@ -577,6 +671,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.stopWatcher()
             self.startWatcher()
 
+<<<<<<< HEAD
     def setRegFile(self):
         dir = QtW.QFileDialog.getExistingDirectory(
             self, 'Set Registration Calibration Directory',
@@ -682,6 +777,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.previewthreads = (w, thread)
 
 
+=======
+>>>>>>> develop
     def saveCurrentAsDefault(self):
         if len(defaultSettings.childKeys()):
             reply = QtW.QMessageBox.question(self, 'Save Settings',
@@ -783,12 +880,17 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         self.previewPath = self.listbox.item(firstRowSelected, 0).text()
 
+<<<<<<< HEAD
         w, thread = newWorkerThread(workers.TimePointWorker,
             self.previewPath, tRange, cRange, self.lastopts,
 
 
 
 
+=======
+
+        w, thread = newWorkerThread(workers.TimePointWorker, self.previewPath, tRange, cRange, self.lastopts,
+>>>>>>> develop
             workerConnect={
                             'previewReady': self.displayPreview,
                             'updateCrop': self.updateCrop,
@@ -796,8 +898,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
         w.finished.connect(lambda: self.previewButton.setEnabled(True))
         w.finished.connect(lambda: self.previewButton.setText('Preview'))
+<<<<<<< HEAD
         w.error.connect(lambda: self.previewButton.setEnabled(True))
         w.error.connect(lambda: self.previewButton.setText('Preview'))
+=======
+>>>>>>> develop
         self.previewthreads = (w, thread)
 
     @QtCore.pyqtSlot(int, int)
@@ -805,8 +910,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.cropWidthSpinBox.setValue(width)
         self.cropShiftSpinBox.setValue(offset)
 
+<<<<<<< HEAD
     @QtCore.pyqtSlot(np.ndarray, float, float)
     def displayPreview(self, array, dx, dz, df=None):
+=======
+    @QtCore.pyqtSlot(np.ndarray, float, float, dict)
+    def displayPreview(self, array, dx, dz, params=None):
+>>>>>>> develop
         if self.prevBackendSpimagineRadio.isChecked() and _SPIMAGINE_IMPORTED:
 
             if np.squeeze(array).ndim > 4:
@@ -861,9 +971,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             # FIXME:  pyplot should not be imported in pyqt
             # use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
 
+<<<<<<< HEAD
             win = ImgDialog(array,
                 info="\n".join(["{} = {}".format(k, v) for k, v in self.lastopts.items()]),
                 title=shortname(self.previewPath))
+=======
+            win = ImgDialog(array, info=params, title=shortname(self.previewPath))
+>>>>>>> develop
             self.spimwins.append(win)
 
     @QtCore.pyqtSlot()
@@ -929,6 +1043,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
                     self.on_proc_finished()
                 return
 
+<<<<<<< HEAD
+=======
+        if not len(QtCore.QCoreApplication.instance().gpuset):
+            self.on_proc_finished()
+            raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
+
+>>>>>>> develop
         self.statusBar.showMessage('Starting processing ...')
         LLSworker, thread = newWorkerThread(workers.LLSitemWorker, idx, self.currentPath,
             opts, workerConnect={
@@ -988,9 +1109,16 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
 
     @QtCore.pyqtSlot()
     def on_item_finished(self):
+<<<<<<< HEAD
         thread, worker = self.LLSItemThreads.pop(0)
         thread.quit()
         thread.wait()
+=======
+        if len(self.LLSItemThreads):
+            thread, worker = self.LLSItemThreads.pop(0)
+            thread.quit()
+            thread.wait()
+>>>>>>> develop
         self.clock.display("00:00:00")
         self.progressBar.setValue(0)
         if self.aborted:
@@ -1087,6 +1215,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             options['camparamsPath'] = None
 
         rCalibText = self.RegCalibPathLineEdit.text()
+<<<<<<< HEAD
         # dCalibText = self.defaultRegCalibPathLineEdit.text()
         if rCalibText and rCalibText is not '':
             options['regCalibDir'] = rCalibText
@@ -1095,6 +1224,16 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         #        options['regCalibDir'] = dCalibText
         #    else:
             options['regCalibDir'] = None
+=======
+        dCalibText = self.defaultRegCalibPathLineEdit.text()
+        if rCalibText and rCalibText is not '':
+            options['regCalibDir'] = rCalibText
+        else:
+            if dCalibText and dCalibText is not '':
+                options['regCalibDir'] = dCalibText
+            else:
+                options['regCalibDir'] = None
+>>>>>>> develop
 
         if options['doReg'] and options['regCalibDir'] is None:
             raise err.InvalidSettingsError(
@@ -1196,6 +1335,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
     def toggleOptOut(self, value):
         err._OPTOUT = True if value else False
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
     def checkBundled(self, value):
         if value:
             try:

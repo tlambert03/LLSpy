@@ -25,6 +25,10 @@ artifacts:
 platform:
     - x64
 
+branches:
+  only:
+    - master
+
 install:
     # If there is a newer build queued for the same PR, cancel this one.
     - cmd: |

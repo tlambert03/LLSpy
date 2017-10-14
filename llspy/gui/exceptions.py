@@ -1,5 +1,5 @@
 from llspy import schema
-from llspy.cudabinwrapper import gpulist
+from llspy.cudabinwrapper import gpulist, CUDAbinException
 from PyQt5 import QtCore
 import traceback
 import llspy
@@ -39,15 +39,24 @@ elif sys.platform.startswith('win32'):
 else:
     tags['os'] = '{}'.format(platform.linux_distribution()[0])
 
-tags['gpu'] = gpulist()
+try:
+    tags['gpu'] = gpulist()
+except CUDAbinException:
+    tags['gpu'] = 'no_cudabin'
+    logger.error("CUDAbinException: Could not get gpulist")
 
 tags['pyqt'] = QtCore.QT_VERSION_STR
-for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools'):
+for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools', 'llspy'):
     try:
         tags[p] = fetch_package_version(p)
     except Exception:
         pass
 
+ip = ''
+try:
+    ip = re.search('"([0-9.]*)"', str(urlopen("http://ip.jsontest.com/").read())).group(1)
+except Exception:
+    pass
 
 client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
                 release=llspy.__version__,
@@ -55,11 +64,10 @@ client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b
                 environment=env,
                 tags=tags)
 client.context.merge({'user':
-   {'id': uuid.getnode(),
+    {'id': uuid.getnode(),
     # 'email': 'example@example.com',
     # 'username': 'uname',
-    'ip_address': re.search('"([0-9.]*)"',
-                     str(urlopen("http://ip.jsontest.com/").read())).group(1)}
+     'ip_address': ip}
 })
 breadcrumbs.ignore_logger('OpenGL.GL.shaders')
 breadcrumbs.ignore_logger('PIL.PngImagePlugin')
@@ -110,7 +118,7 @@ class ExceptionHandler(QtCore.QObject):
             self.handleLLSpyError(*err_info)
         elif etype.__module__ == 'voluptuous.error':
             self.handleSchemaError(*err_info)
-        elif "0xe06d7363" in str(value):
+        elif "0xe06d7363" in str(value).lower():
             self.handleCUDA_CL_Error(*err_info)
         else:  # uncaught exceptions go to sentry
             if not _OPTOUT:
