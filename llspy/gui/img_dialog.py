@@ -39,7 +39,7 @@ class channelSelector(QtWidgets.QWidget):
         self.checkBox = QtWidgets.QCheckBox(self)
         # self.checkBox.setMaximumSize(QtCore.QSize(60, 16777215))
         self.checkBox.setObjectName(name + "checkBox")
-        self.checkBox.setText(str(wave))
+        self.checkBox.setText(name + ": " + str(wave))
         self.checkBox.setChecked(True)
         self.layout.addWidget(self.checkBox)
 
@@ -54,7 +54,7 @@ class channelSelector(QtWidgets.QWidget):
 
         self.LUTcombo = QtWidgets.QComboBox(self)
         self.LUTcombo.setEnabled(True)
-        # self.LUTcombo.setMaximumSize(QtCore.QSize(90, 16777215))
+        self.LUTcombo.setMaximumSize(QtCore.QSize(90, 16777215))
         self.LUTcombo.setObjectName(name + "LUTcombo")
         for lut in LUTS.keys():
             self.LUTcombo.addItem(lut)
