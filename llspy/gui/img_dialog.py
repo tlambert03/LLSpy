@@ -48,8 +48,8 @@ class channelSelector(QtWidgets.QWidget):
         self.maxSlider.setObjectName(name + "slider")
         # self.maxSlider.setMaximumSize(QtCore.QSize(60, 16777215))
         self.maxSlider.setMinimum(50)
-        self.maxSlider.setMaximum(300)
-        self.maxSlider.setProperty("value", 100)
+        self.maxSlider.setMaximum(400)
+        self.maxSlider.setProperty("value", 170)
         self.layout.addWidget(self.maxSlider)
 
         self.LUTcombo = QtWidgets.QComboBox(self)
@@ -135,7 +135,7 @@ class DataModel(QtCore.QObject):
 
         self.chanSettings = [{'active': True,
                               'lut': LUTS[preferredLUTs[c]],
-                              'scale': 1.0}
+                              'scale': 1.7}
                              for c in range(self.nC)]
 
         self._dataChanged.emit()
