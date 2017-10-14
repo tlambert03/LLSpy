@@ -286,6 +286,7 @@ To Do
 * color overlay in matplotlib preview
 * allow cancel of camera calibration
 * MIPsSummary folder
+* handle case with multiple experiments in same folder better
 
 
 .. openCL troubleshooting on Linux
