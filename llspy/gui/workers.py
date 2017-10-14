@@ -70,7 +70,7 @@ class SubprocessWorker(QtCore.QObject):
             sysenv = QtCore.QProcessEnvironment.systemEnvironment()
             for k, v in self.env.items():
                 sysenv.insert(k, str(v))
-                logger.info('Setting Environment Variable: {} = {}'.format(k, v))
+                logger.debug('Setting Environment Variable: {} = {}'.format(k, v))
             self.process.setProcessEnvironment(sysenv)
         self.process.start(self.binary, self.args)
         self.processStarted.emit()
@@ -129,6 +129,8 @@ class CudaDeconvWorker(SubprocessWorker):
             line = byteArrayToString(line)
             if "*** Finished!" in line or "Output:" in line:
                 self.file_finished.emit()
+            elif  "Iteration" in line:
+                self._logger.info("CUDAworker {}: ".format(self.id) + line.rstrip())
             else:
                 self._logger.info(line.rstrip())
 
