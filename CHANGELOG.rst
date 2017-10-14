@@ -10,8 +10,17 @@ Next Version
 * create reusable registration file `03b67345 <https://github.com/tlambert03/LLSpy/commit/03b6734589a792fad7269d1049002a32c72ea08d>`_
 * registration now defaults to world coordinates (should work with different voxel sizes)
 
+
+`0.2.5`_
+========
+
+**Added:**
+
+* ability to overlay channels in matplotlib viewer (still not possible in spimagine)
+
+
 `0.2.4`_
-=========
+========
 
 **Added:**
 
@@ -29,7 +38,7 @@ Next Version
 * improved robustness and error messages when looking for OTFs in OTFdir
 
 `0.2.3`_
-=========
+========
 
 **Added:**
 
@@ -54,7 +63,7 @@ Next Version
 
 
 `0.2.2`_
-===============
+========
 
 **Changed:**
 
