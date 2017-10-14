@@ -285,6 +285,7 @@ To Do
 * implement real-time data processing with folder-monitoring
 * color overlay in matplotlib preview
 * allow cancel of camera calibration
+* MIPsSummary folder
 
 
 .. openCL troubleshooting on Linux
