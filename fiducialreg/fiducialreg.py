@@ -50,6 +50,11 @@ logger = logging.getLogger(__name__)
 np.seterr(divide='ignore', invalid='ignore')
 
 
+class RegistrationError(Exception):
+    """Base class for fiducialreg errors"""
+    pass
+
+
 # TODO: try seperable gaussian filter instead for speed
 def log_filter(img, blurxysigma=1, blurzsigma=2.5, mask=None):
     # sigma that works for 2 or 3 dimensional img
@@ -748,7 +753,7 @@ class CloudSet(object):
                         ref, self.labels))
         if not len(regto):
             logger.error('No recognized values in refs list.  No tforms calculated')
-            return
+            return None
 
         # validate modes, and assert iterable
         try:
@@ -793,8 +798,12 @@ class CloudSet(object):
                         return obj.tolist()
                 return json.JSONEncoder.default(self, obj)
 
-        s = self.get_all_tforms(**kwargs)
-        outstring = json.dumps(s, cls=npEncoder, indent=2)
+        tforms = self.get_all_tforms(**kwargs)
+        outdict = {
+            'cloud': self.toJSON(),
+            'tforms': tforms
+        }
+        outstring = json.dumps(outdict, cls=npEncoder, indent=2)
         outstring = outstring.replace('"[', ' [').replace(']"', ']')
         with open(outfile, 'w') as file:
             file.write(outstring)
@@ -972,6 +981,84 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
     else:  # falsecolor
         imshow(imoverlay(im1, im2))
     plt.show()
+
+
+class RegFile(object):
+
+    def __init__(self, path):
+        self.path = path
+        if not osp.isfile(path):
+            raise FileNotFoundError('Could not find registration file: {}'.format(path))
+        self.parsefile()
+
+    def parsefile(self):
+        try:
+            with open(self.path) as json_data:
+                regdict = json.load(json_data)
+        except json.decoder.JSONDecodeError:
+            raise RegistrationError('Could not parse registration file as JSON {}.'.format(self.path))
+
+        if 'tforms' not in regdict:
+            self.tforms = []
+            return
+        else:
+            self.tforms = regdict['tforms']
+
+        # these parameters are written to the regfile by llspy
+        try:
+            from datetime import datetime
+            self.date = regdict.get('date', None)
+            if self.date:
+                self.date = datetime.strptime(self.date, '%Y/%m/%d-%H:%M')
+        except Exception:
+            logger.error('Could not parse registraion file date')
+
+        self.dx = regdict.get('dx', None)
+        self.dz = regdict.get('dz', None)
+        self.z_motion = regdict.get('z_motion', None)
+        self.regdir = regdict.get('path', None)
+
+        self.tform_dict = {}
+        self.refwaves = []
+        self.movwaves = []
+        self.modes = []
+        for tform in self.tforms:
+            ref = str(tform['reference'])
+            mov = str(tform['moving'])
+            mode = tform['mode'].lower()
+            self.refwaves.append(ref)
+            self.movwaves.append(mov)
+            self.modes.append(mode)
+            if ref not in self.tform_dict:
+                self.tform_dict[ref] = {}
+            if mov not in self.tform_dict[ref]:
+                self.tform_dict[ref][mov] = {}
+            self.tform_dict[ref][mov][mode] = tform['tform']
+        self.refwaves = sorted(list(set(self.refwaves)))
+        self.movwaves = sorted(list(set(self.movwaves)))
+        self.modes = sorted(list(set(self.modes)))
+
+    @property
+    def n_tforms(self):
+        return len(self.tforms)
+
+    @property
+    def isValid(self):
+        return bool(len(self.tforms))
+
+    def get_tform(self, moving, ref, mode):
+        ref = str(ref)
+        moving = str(moving)
+        mode = str(mode).lower()
+        if ref not in self.tform_dict:
+            raise RegistrationError('Reference wave {} not in registration file'.format(ref))
+        if moving not in self.tform_dict[ref]:
+            raise RegistrationError('No transform to map moving wave {} onto refrence wave {}'.format(moving, ref))
+        if mode not in self.tform_dict[ref][moving]:
+            raise RegistrationError('Transform mode {} not found for refwave: {}, movingwave: {}'.format(mode, ref, moving))
+
+        return self.tform_dict[ref][moving][mode]
+
 
 ###############################################################################
 # code below is a *very* slightly modified version of the pycpd repo from
