@@ -287,6 +287,8 @@ To Do
 * allow cancel of camera calibration
 * MIPsSummary folder
 * handle case with multiple experiments in same folder better
+* comboMIP should use registered files when registration requested
+* registered files are always floating point when rest of data is not
 
 
 .. openCL troubleshooting on Linux
