@@ -4,25 +4,28 @@ LLSpy Release History
 Next Version
 ============
 
-**Added:**
 
-* new registration tab in gui `929f53b6 <https://github.com/tlambert03/LLSpy/commit/929f53b65396aa60aab69220b9ae5e8117dc65bf>`_
-* create reusable registration file `03b67345 <https://github.com/tlambert03/LLSpy/commit/03b6734589a792fad7269d1049002a32c72ea08d>`_
-* registration now defaults to world coordinates (should work with different voxel sizes)
-
-
-`0.2.5`_
+`0.3.0`_
 ========
 
 **Added:**
 
+* new registration tab in gui with ability to quickly preview registration effectiveness `929f53b6 <https://github.com/tlambert03/LLSpy/commit/929f53b65396aa60aab69220b9ae5e8117dc65bf>`_
+* ability to create reusable registration file and new RegFile class to parse registration files`03b67345 <https://github.com/tlambert03/LLSpy/commit/03b6734589a792fad7269d1049002a32c72ea08d>`_
 * ability to overlay channels in matplotlib viewer (still not possible in spimagine)
-* support for multiple GPUs. Work will be split across GPUs enabled in config tab.
+* support for multiple GPUs. Work will be split across GPUs enabled in config tab. `a798788  <https://github.com/tlambert03/LLSpy/commit/a79878831edc0e66dd6a2f7a4700b64f908c7fb8>`_
+
+**Changed:**
+
+* many small changes implemented to take advantage of new regfile class
+* registration now defaults to world coordinates (should work on datasets with different voxel sizes from fiducials)
 
 **Fixed:**
 
 * fixed "long division or modulo by zero" error that sometimes appeared in matplotlib viewer
 * fixed bug that prevented processing of a subset of channels when the channel number was > 0
+* fixed bug when joining MIPs on a dataset with only 1 timepoint
+
 
 `0.2.4`_
 ========

@@ -50,10 +50,15 @@ logger = logging.getLogger(__name__)
 np.seterr(divide='ignore', invalid='ignore')
 
 
+class RegistrationError(Exception):
+    """Base class for fiducialreg errors"""
+    pass
+
+
 # TODO: try seperable gaussian filter instead for speed
-def log_filter(img, xysigma=1, zsigma=2.5, mask=None):
+def log_filter(img, blurxysigma=1, blurzsigma=2.5, mask=None):
     # sigma that works for 2 or 3 dimensional img
-    sigma = [zsigma, xysigma, xysigma][-img.ndim:]
+    sigma = [blurzsigma, blurxysigma, blurxysigma][-img.ndim:]
     # LOG filter image
     filtered_img = -ndimage.gaussian_laplace(img.astype('f'), sigma)
     # eliminate negative pixels
@@ -235,11 +240,15 @@ def cart2hom(X):
 
 def intrinsicToWorld(intrinsicXYZ, dxy, dz, worldStart=0.5):
     """ where intrinsicXYZ is a 1x3 vector np.array([X, Y, Z]) """
+    if dxy == dz == 1:
+        logger.warning('voxel size set at [1,1,1]... possibly unset')
     return worldStart + (intrinsicXYZ - 0.5) * np.array([dxy, dxy, dz])
 
 
 def worldToInstrinsic(worldXYZ, dxy, dz, worldStart=0.5):
     """ where XYZ coord is a 1x3 vector np.array([X, Y, Z]) """
+    if dxy == dz == 1:
+        logger.warning('voxel size set at [1,1,1]... possibly unset')
     return .5 + (worldXYZ - worldStart) / np.array([dxy, dxy, dz])
 
 
@@ -365,7 +374,7 @@ class GaussFitResult:
 
 
 class GaussFitter3D(object):
-    def __init__(self, data, dz=0.3, dx=0.1, wx=0.17, wz=0.37):
+    def __init__(self, data, dz=1, dx=1, wx=0.17, wz=0.37):
         self.data = data
         self.dz = dz
         self.dx = dx
@@ -424,9 +433,31 @@ class GaussFitter3D(object):
 
 
 class FiducialCloud(object):
+    """Generate a 3D point cloud of XYZ locations of fiducial markers
 
-    def __init__(self, data=None, dz=0.3, dx=0.1, xysig=1, zsig=2.5, threshold='auto',
-        mincount=20, imref=None, filtertype='blur'):
+    Points are extracted from an image of (e.g.) beads by 3D gaussian fitting.
+    Creates an instance for a single wavelength.  Multiple Clouds can be related
+    to each other using a :obj:`CloudSet` object.
+
+    Args:
+        data (:obj:`np.ndarray`, :obj:`str`): 3D numpy array or
+            path to LLS registration folder experiment
+        dz (:obj:`float`): Z-step size
+        dx (:obj:`float`): Pixel size in XY
+        blurxysig (:obj:`float`): XY sigma for pre-fitting blur step
+        blurzsig (:obj:`float`): Z sigma for pre-fitting blur step
+        threshold ('auto', :obj:`int`): intensity threshold when detecting beads.
+            by default, it will autodetect threshold using mincount parameter.
+        mincount (:obj:`int`): minimum number of beads expected in the image,
+            used when autodetecting threshold.
+        imref (:obj:`fiducialreg.imref.imref3d`): spatial referencing object.
+        filtertype ({'blur', 'log'}): type of blur to use prior to bead detection.
+            log = laplacian of gaussian
+            blur = gaussian
+
+    """
+    def __init__(self, data=None, dz=1, dx=1, blurxysig=1, blurzsig=2.5,
+                 threshold='auto', mincount=20, imref=None, filtertype='blur'):
         # data is a numpy array or filename
         self.data = None
         if data is not None:
@@ -447,13 +478,15 @@ class FiducialCloud(object):
                     'filepath or a numpy arrays')
         self.dx = dx
         self.dz = dz
-        self.xysig = xysig
-        self.zsig = zsig
+        self.blurxysig = blurxysig
+        self.blurzsig = blurzsig
         self.threshold = threshold
         self._mincount = mincount
         self.imref = imref
         self.coords = None
         self.filtertype = filtertype
+
+        logger.debug('New fiducial cloud created with dx: {},  dz: {}'.format(dx, dz))
         if self.data is not None:
             self.update_coords()
 
@@ -481,11 +514,15 @@ class FiducialCloud(object):
     def filtered(self):
         if self.data is not None:
             if self.filtertype == 'log':
-                return log_filter(self.data, self.xysig, self.zsig)
+                return log_filter(self.data, self.blurxysig, self.blurzsig)
             else:
                 from gputools import blur
-                sigs = np.array([self.zsig, self.xysig, self.xysig]) * 2
-                return blur(self.data, sigs)
+                import warnings
+                sigs = np.array([self.blurzsig, self.blurxysig, self.blurxysig]) * 2
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    out = blur(self.data, sigs)
+                return out
         else:
             return None
 
@@ -526,6 +563,7 @@ class FiducialCloud(object):
 
     @property
     def coords_inworld(self):
+        """return coordinate list in world corrdinates based on voxel size"""
         return intrinsicToWorld(self.coords.T, self.dx, self.dz).T
 
     def show(self, withimage=True, filtered=True):
@@ -546,17 +584,40 @@ class FiducialCloud(object):
         return json.dumps(D)
 
     def fromJSON(self, Jstring):
+        logger.debug("Recovering Fidicuals from JSON string")
         J = json.loads(Jstring)
         for k, v in J.items():
+            if not k == 'coords':
+                logger.debug("Setting attribute {} to {}".format(k, v))
+            else:
+                logger.debug("Populating coordinates from JSON string")
             setattr(self, k, v)
         self.coords = np.array(self.coords)
         return self
 
 
 class CloudSet(object):
-    """docstring for CloudSet"""
+    """Creates a set of fiducial clouds for the purpose of estimating transform
 
-    def __init__(self, data=None, labels=None, **kwargs):
+    The main method is the tform() method to generate a transformation matrix
+    mapping one cloud in the set to another.
+
+    Args:
+        data (Iterable[:obj:`str`, :obj:`np.ndarray`]): list of 3D numpy arrays,
+            or a list of filepath strings.  Strings will be handed to
+            :obj:`FiducialCloud` and read using tifffile
+        labels (Iterable[:obj:`str`], optional):  List of labels (e.g. wave) naming each
+            fiducial cloud in the set.  This allows registration using labels
+            instead of the index of the original dataset provided to :obj:`CloudSet`
+
+        **kwargs: extra keyword arguments are passed to the :obj:`FiducialCloud`
+            constructor.
+
+    """
+
+    def __init__(self, data=None, labels=None, dx=1, dz=1, **kwargs):
+        self.dx = dx
+        self.dz = dz
         if data is not None:
             if not isinstance(data, (list, tuple, set)):
                 raise ValueError('CloudSet expects a list of np.ndarrays or '
@@ -565,12 +626,17 @@ class CloudSet(object):
                 if len(labels) != len(data):
                     raise ValueError('Length of optional labels list must match '
                         'length of the data list')
+                self.labels = labels
+            else:
+                self.labels = ['ch'+str(i) for i in range(len(data))]
             self.N = len(data)
-            self.clouds = [FiducialCloud(i, **kwargs) for i in data]
+            self.clouds = []
+            for i, d in enumerate(data):
+                logger.debug("Creating FiducalCloud for label: {}".format(self.labels[i]))
+                self.clouds.append(FiducialCloud(d, dx=self.dx, dz=self.dz, **kwargs))
         else:
             self.clouds = []
             self.N = 0
-        self.labels = labels
 
     def toJSON(self):
         return json.dumps({
@@ -664,9 +730,108 @@ class CloudSet(object):
         else:
             raise ValueError('Index must either be label or int < numClouds in Set')
 
+    def get_all_tforms(self, refs=None, inworld=True,
+                       modes=('translation', 'rigid', 'similarity', 'affine',
+                              '2step', 'cpd_2step', 'cpd_similarity')):
+        """Generate an array of dicts for lots of possible tforms."""
+
+        if refs is None:
+            # default to all channels
+            regto = self.labels
+        else:
+            # otherwise validate the provided list of channels
+            try:
+                iter(refs)
+            except TypeError:
+                refs = [refs]
+            regto = []
+            for ref in refs:
+                if ref in self.labels:
+                    regto.append(ref)
+                else:
+                    logger.warning('Reference {} not in lablels: {} ... skipping'.format(
+                        ref, self.labels))
+        if not len(regto):
+            logger.error('No recognized values in refs list.  No tforms calculated')
+            return None
+
+        # validate modes, and assert iterable
+        try:
+            iter(modes)
+        except TypeError:
+            modes = [modes]
+        modes = [m for m in modes if m in funcDict]
+
+        import itertools
+        pairings = itertools.permutations(self.labels, 2)
+        pairings = [i for i in pairings if i[1] in regto]
+
+        D = []
+        for moving, fixed in pairings:
+            for mode in modes:
+                D.append({
+                    'mode': mode,
+                    'reference': fixed,
+                    'moving': moving,
+                    'inworld': inworld,
+                    'tform': self.tform(moving, fixed, mode, inworld=inworld)
+                })
+        return D
+
+    def write_all_tforms(self, outfile, **kwargs):
+        """write all of the tforms for this cloudset to file"""
+
+        class npEncoder(json.JSONEncoder):
+
+            def fixedString(self, obj):
+                numel = len(obj)
+                form = '[' + ','.join(['{:14.10f}'] * numel) + ']'
+                return form.format(*obj)
+
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    if all(isinstance(i, np.ndarray) for i in obj):
+                        nestedList = obj.tolist()
+                        result = [self.fixedString(l) for l in nestedList]
+                        return result
+                    else:
+                        return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
+        tforms = self.get_all_tforms(**kwargs)
+        outdict = {
+            'cloud': self.toJSON(),
+            'tforms': tforms
+        }
+        outstring = json.dumps(outdict, cls=npEncoder, indent=2)
+        outstring = outstring.replace('"[', ' [').replace(']"', ']')
+        with open(outfile, 'w') as file:
+            file.write(outstring)
+
     # Main Method
-    def tform(self, movingLabel=None, fixedLabel=None, mode='2step', inworld=True, **kwargs):
-        """ get tform matrix that maps moving point cloud to fixed point cloud"""
+    def tform(self, movingLabel=None, fixedLabel=None, mode='2step',
+              inworld=True, **kwargs):
+        """ get tform matrix that maps moving point cloud to fixed point cloud
+
+        Args:
+            movingLabel (:obj:`str`): label/wave to register.  if none, will use the
+                second cloud in the cloudset by default.
+            fixedLabel (:obj:`str`):  reference label/wave.  if none, will use the
+                first cloud in the cloudset by default.
+            mode ({'translation', 'rigid', 'similarity', 'affine', '2step',
+                'cpd_rigid', 'cpd_similarity', 'cpd_affine', 'cpd_2step'}):
+                type of registration transformation to calculate.  CPD modes
+                use coherent point drift estimation, other modes use least
+                squares.
+            inworld (:obj:`bool`): if True, will use :obj:`intrinsicToWorld` to
+                convert pixel coordinates into world coordinates using the voxel
+                size provided.  (needs work)
+
+        Returns:
+            :obj:`np.ndarray`: 4x4 transformation matrix
+
+
+        """
         if self.labels is None:
             logging.warning('No label list provided... cannot get tform by label')
             return
@@ -683,19 +848,6 @@ class CloudSet(object):
         except ValueError:
             raise ValueError('Could not find label {} in reg list: {}'.format(
                 fixedLabel, self.labels))
-
-        funcDict = {
-            'translate'     : infer_translation,
-            'translation'   : infer_translation,
-            'rigid'         : infer_rigid,
-            'similarity'    : infer_similarity,
-            'affine'        : infer_affine,
-            '2step'         : infer_2step,
-            'cpd_rigid'     : CPDrigid,
-            'cpd_similarity': CPDsimilarity,
-            'cpd_affine'    : CPDaffine,
-            'cpd_2step'     : cpd_2step,
-        }
 
         mode = mode.lower()
         if mode in funcDict:
@@ -716,7 +868,8 @@ class CloudSet(object):
                 moving = matching[movIdx]
                 fixed = matching[fixIdx]
                 tform = funcDict[mode](moving, fixed)
-            logger.debug('Measured Tform Matrix:\n' + str(tform))
+            logger.debug('Measured {} Tform Matrix {}inWorld:\n'.format(mode, '' if inworld else 'not ' ) +
+                         str(tform))
             return tform
         else:
             raise ValueError('Unrecognized transformation mode: {}'.format(mode))
@@ -725,8 +878,9 @@ class CloudSet(object):
         """show points in clouds overlaying image, if matching is true, only
         show matching points from all sets"""
         if withimage:
-            if not self.clouds[0].has_data:
-                pass
+            if not self.has_data():
+                raise AttributeError("No data present in cloudset.  Cannot show"
+                    " image.  Try calling reload_data() from parent object")
             if filtered and self.clouds[0].filtered is not None:
                 im = self.clouds[0].filtered.max(0)
             else:
@@ -752,13 +906,18 @@ class CloudSet(object):
         if matching:
             movingpoints = self.matching()[self.labels.index(movingLabel)]
             fixedpoints = self.matching()[self.labels.index(fixedLabel)]
+
+            matching = self._get_matching(inworld=kwargs.get('inworld', False))
+            movingpoints = matching[self.labels.index(movingLabel)]
+            fixedpoints = matching[self.labels.index(fixedLabel)]
+
         else:
             movingpoints = self[movingLabel].coords
             fixedpoints = self[fixedLabel].coords
         shiftedpoints = affineXF(movingpoints, T)
-        fp = plt.scatter(fixedpoints[0], fixedpoints[1], c='b', s=5)
+        fp = plt.scatter(fixedpoints[0], fixedpoints[1], c='b', s=7)
         mp = plt.scatter(movingpoints[0], movingpoints[1], c='m', marker='x', s=5)
-        sp = plt.scatter(shiftedpoints[0], shiftedpoints[1], c='r', s=5)
+        sp = plt.scatter(shiftedpoints[0], shiftedpoints[1], c='r', s=7)
         plt.legend((fp, mp, sp), ('Fixed', 'Moving', 'Registered'))
         plt.show()
 
@@ -774,26 +933,11 @@ class CloudSet(object):
         T = self.tform(movingLabel, fixedLabel, **kwargs)
         movingImg = self.data(label=movingLabel)
         fixedImg = self.data(label=fixedLabel)
-        movingReg = affineGPU(movingImg, T)
+        movingReg = affineGPU(movingImg, T, [self.dz, self.dx, self.dx])
         imshowpair(fixedImg, movingReg, **kwargs)
 
 
-def imshowpair(im1, im2, method=None, mip=False, **kwargs):
-    # normalize
-    if not im1.shape == im2.shape:
-        raise ValueError('images must be same shape')
-
-    if not mip:
-        try:
-            from tifffile import imshow
-        except ImportError:
-            from matplotlib.pyplot import imshow
-            mip = True
-    else:
-        from matplotlib.pyplot import imshow
-        if im1.ndim < 3:
-            mip = False
-
+def imoverlay(im1, im2, method=None, mip=False):
     im1 = im1.astype(np.float) if not mip else im1.astype(np.float).max(0)
     im2 = im2.astype(np.float) if not mip else im2.astype(np.float).max(0)
     im1 -= im1.min()
@@ -806,20 +950,119 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
         im3 = im1-im2
         im3 -= im3.min()
         im3 /= im3.max()
-        imshow(im3, cmap='gray', vmin=0.2, vmax=.8)
+        return im3
+    else:
+        return np.stack((im1, im2, im1), ndim)
+
+
+def imshowpair(im1, im2, method=None, mip=False, **kwargs):
+    # normalize
+    if not im1.shape == im2.shape:
+        raise ValueError('images must be same shape')
+
+    if not mip:
+        try:
+            from tifffile import imshow
+        except ImportError:
+            imshow = plt.imshow
+            mip = True
+    else:
+        imshow = plt.imshow
+        if im1.ndim < 3:
+            mip = False
+
+    if method == 'diff':
+        imshow(imoverlay(im1, im2, 'diff'), cmap='gray', vmin=0.2, vmax=.8)
     elif method == '3D':
-        im3 = np.stack((im1, im2, im1), ndim)
+        im3 = imoverlay(im1, im2)
         fig, subpl, ax = imshow(im3, subplot=221)
         imshow(np.rot90(im3.max(1)), figure=fig, subplot=222)
         imshow(im3.max(2), figure=fig, subplot=223)
     else:  # falsecolor
-        im3 = np.stack((im1, im2, im1), ndim)
-        imshow(im3)
+        imshow(imoverlay(im1, im2))
     plt.show()
+
+
+class RegFile(object):
+
+    def __init__(self, path):
+        self.path = path
+        if not osp.isfile(path):
+            raise FileNotFoundError('Could not find registration file: {}'.format(path))
+        self.parsefile()
+
+    def parsefile(self):
+        try:
+            with open(self.path) as json_data:
+                regdict = json.load(json_data)
+        except json.decoder.JSONDecodeError:
+            raise RegistrationError('Could not parse registration file as JSON {}.'.format(self.path))
+
+        if 'tforms' not in regdict:
+            self.tforms = []
+            return
+        else:
+            self.tforms = regdict['tforms']
+
+        # these parameters are written to the regfile by llspy
+        try:
+            from datetime import datetime
+            self.date = regdict.get('date', None)
+            if self.date:
+                self.date = datetime.strptime(self.date, '%Y/%m/%d-%H:%M')
+        except Exception:
+            logger.error('Could not parse registraion file date')
+
+        self.dx = regdict.get('dx', None)
+        self.dz = regdict.get('dz', None)
+        self.z_motion = regdict.get('z_motion', None)
+        self.regdir = regdict.get('path', None)
+
+        self.tform_dict = {}
+        self.refwaves = []
+        self.movwaves = []
+        self.modes = []
+        for tform in self.tforms:
+            ref = str(tform['reference'])
+            mov = str(tform['moving'])
+            mode = tform['mode'].lower()
+            self.refwaves.append(ref)
+            self.movwaves.append(mov)
+            self.modes.append(mode)
+            if ref not in self.tform_dict:
+                self.tform_dict[ref] = {}
+            if mov not in self.tform_dict[ref]:
+                self.tform_dict[ref][mov] = {}
+            self.tform_dict[ref][mov][mode] = tform['tform']
+        self.refwaves = sorted(list(set(self.refwaves)))
+        self.movwaves = sorted(list(set(self.movwaves)))
+        self.modes = sorted(list(set(self.modes)))
+
+    @property
+    def n_tforms(self):
+        return len(self.tforms)
+
+    @property
+    def isValid(self):
+        return bool(len(self.tforms))
+
+    def get_tform(self, moving, ref, mode):
+        ref = str(ref)
+        moving = str(moving)
+        mode = str(mode).lower()
+        if ref not in self.tform_dict:
+            raise RegistrationError('Reference wave {} not in registration file'.format(ref))
+        if moving not in self.tform_dict[ref]:
+            raise RegistrationError('No transform to map moving wave {} onto refrence wave {}'.format(moving, ref))
+        if mode not in self.tform_dict[ref][moving]:
+            raise RegistrationError('Transform mode {} not found for refwave: {}, movingwave: {}'.format(mode, ref, moving))
+
+        return self.tform_dict[ref][moving][mode]
+
 
 ###############################################################################
 # code below is a *very* slightly modified version of the pycpd repo from
-# Siavash Kallaghi.
+# Siavash Kallaghi. https://github.com/siavashk/pycpd
 #
 # The MIT License
 #
@@ -1051,3 +1294,17 @@ class CPDaffine(CPDregistration):
         self.sigma2 = (xPx - trAR) / (self.Np * self.D)
         if self.sigma2 <= 0:
             self.sigma2 = self.tolerance / 10
+
+
+funcDict = {
+    'translate'     : infer_translation,
+    'translation'   : infer_translation,
+    'rigid'         : infer_rigid,
+    'similarity'    : infer_similarity,
+    'affine'        : infer_affine,
+    '2step'         : infer_2step,
+    'cpd_rigid'     : CPDrigid,
+    'cpd_similarity': CPDsimilarity,
+    'cpd_affine'    : CPDaffine,
+    'cpd_2step'     : cpd_2step,
+}

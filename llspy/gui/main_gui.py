@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Main_GUI(object):
     def setupUi(self, Main_GUI):
         Main_GUI.setObjectName("Main_GUI")
-        Main_GUI.resize(617, 826)
+        Main_GUI.resize(617, 849)
         Main_GUI.setMinimumSize(QtCore.QSize(0, 803))
         Main_GUI.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.centralWidget = QtWidgets.QWidget(Main_GUI)
@@ -394,7 +394,7 @@ class Ui_Main_GUI(object):
         self.verticalLayout_14.addItem(spacerItem14)
         self.processingToolBox.addItem(self.tool_deconvolution, "")
         self.tool_postprocess = QtWidgets.QWidget()
-        self.tool_postprocess.setGeometry(QtCore.QRect(0, 0, 534, 299))
+        self.tool_postprocess.setGeometry(QtCore.QRect(0, -33, 534, 310))
         self.tool_postprocess.setObjectName("tool_postprocess")
         self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.tool_postprocess)
         self.verticalLayout_12.setContentsMargins(11, 11, 11, 11)
@@ -505,64 +505,45 @@ class Ui_Main_GUI(object):
         self.doRegistrationGroupBox.setCheckable(True)
         self.doRegistrationGroupBox.setChecked(True)
         self.doRegistrationGroupBox.setObjectName("doRegistrationGroupBox")
-        self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.doRegistrationGroupBox)
-        self.verticalLayout_6.setContentsMargins(4, 4, 4, 4)
-        self.verticalLayout_6.setSpacing(6)
-        self.verticalLayout_6.setObjectName("verticalLayout_6")
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_3.setContentsMargins(11, 0, 11, 11)
-        self.horizontalLayout_3.setSpacing(6)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.gridLayout = QtWidgets.QGridLayout(self.doRegistrationGroupBox)
+        self.gridLayout.setContentsMargins(11, 11, 11, 11)
+        self.gridLayout.setSpacing(6)
+        self.gridLayout.setObjectName("gridLayout")
         self.channelRefLabel = QtWidgets.QLabel(self.doRegistrationGroupBox)
         self.channelRefLabel.setEnabled(True)
         self.channelRefLabel.setObjectName("channelRefLabel")
-        self.horizontalLayout_3.addWidget(self.channelRefLabel)
-        self.channelRefCombo = QtWidgets.QComboBox(self.doRegistrationGroupBox)
-        self.channelRefCombo.setEnabled(True)
-        self.channelRefCombo.setMaximumSize(QtCore.QSize(70, 16777215))
-        self.channelRefCombo.setObjectName("channelRefCombo")
-        self.channelRefCombo.addItem("")
-        self.channelRefCombo.addItem("")
-        self.channelRefCombo.addItem("")
-        self.channelRefCombo.addItem("")
-        self.channelRefCombo.addItem("")
-        self.horizontalLayout_3.addWidget(self.channelRefCombo)
-        spacerItem18 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem18)
+        self.gridLayout.addWidget(self.channelRefLabel, 0, 0, 1, 1)
+        self.RegProcessChannelRefCombo = QtWidgets.QComboBox(self.doRegistrationGroupBox)
+        self.RegProcessChannelRefCombo.setEnabled(True)
+        self.RegProcessChannelRefCombo.setMaximumSize(QtCore.QSize(65, 16777215))
+        self.RegProcessChannelRefCombo.setCurrentText("")
+        self.RegProcessChannelRefCombo.setObjectName("RegProcessChannelRefCombo")
+        self.gridLayout.addWidget(self.RegProcessChannelRefCombo, 0, 1, 1, 1)
         self.channelRefModeLabel = QtWidgets.QLabel(self.doRegistrationGroupBox)
         self.channelRefModeLabel.setObjectName("channelRefModeLabel")
-        self.horizontalLayout_3.addWidget(self.channelRefModeLabel, 0, QtCore.Qt.AlignRight)
-        self.channelRefModeCombo = QtWidgets.QComboBox(self.doRegistrationGroupBox)
-        self.channelRefModeCombo.setEnabled(True)
-        self.channelRefModeCombo.setMinimumSize(QtCore.QSize(200, 0))
-        self.channelRefModeCombo.setMaximumSize(QtCore.QSize(70, 16777215))
-        self.channelRefModeCombo.setObjectName("channelRefModeCombo")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.channelRefModeCombo.addItem("")
-        self.horizontalLayout_3.addWidget(self.channelRefModeCombo)
-        self.verticalLayout_6.addLayout(self.horizontalLayout_3)
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_2.setContentsMargins(11, 0, 11, 11)
-        self.horizontalLayout_2.setSpacing(6)
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.RegCalibPathLabel = QtWidgets.QLabel(self.doRegistrationGroupBox)
-        self.RegCalibPathLabel.setObjectName("RegCalibPathLabel")
-        self.horizontalLayout_2.addWidget(self.RegCalibPathLabel)
-        self.RegCalibPathLineEdit = QtWidgets.QLineEdit(self.doRegistrationGroupBox)
-        self.RegCalibPathLineEdit.setEnabled(True)
-        self.RegCalibPathLineEdit.setObjectName("RegCalibPathLineEdit")
-        self.horizontalLayout_2.addWidget(self.RegCalibPathLineEdit)
-        self.RegCalibPathToolButton = QtWidgets.QToolButton(self.doRegistrationGroupBox)
-        self.RegCalibPathToolButton.setObjectName("RegCalibPathToolButton")
-        self.horizontalLayout_2.addWidget(self.RegCalibPathToolButton)
-        self.verticalLayout_6.addLayout(self.horizontalLayout_2)
+        self.gridLayout.addWidget(self.channelRefModeLabel, 0, 2, 1, 1)
+        self.RegProcessChannelRefModeCombo = QtWidgets.QComboBox(self.doRegistrationGroupBox)
+        self.RegProcessChannelRefModeCombo.setEnabled(True)
+        self.RegProcessChannelRefModeCombo.setMinimumSize(QtCore.QSize(130, 0))
+        self.RegProcessChannelRefModeCombo.setMaximumSize(QtCore.QSize(50, 16777215))
+        self.RegProcessChannelRefModeCombo.setCurrentText("")
+        self.RegProcessChannelRefModeCombo.setObjectName("RegProcessChannelRefModeCombo")
+        self.gridLayout.addWidget(self.RegProcessChannelRefModeCombo, 0, 3, 1, 1)
+        spacerItem18 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem18, 0, 4, 1, 1)
+        self.RegProcessLoadRegFile = QtWidgets.QPushButton(self.doRegistrationGroupBox)
+        self.RegProcessLoadRegFile.setObjectName("RegProcessLoadRegFile")
+        self.gridLayout.addWidget(self.RegProcessLoadRegFile, 0, 5, 1, 1)
+        self.RegProcessPathLabel = QtWidgets.QLabel(self.doRegistrationGroupBox)
+        self.RegProcessPathLabel.setObjectName("RegProcessPathLabel")
+        self.gridLayout.addWidget(self.RegProcessPathLabel, 1, 0, 1, 1)
+        self.RegProcessPathLineEdit = QtWidgets.QLineEdit(self.doRegistrationGroupBox)
+        self.RegProcessPathLineEdit.setEnabled(True)
+        self.RegProcessPathLineEdit.setObjectName("RegProcessPathLineEdit")
+        self.gridLayout.addWidget(self.RegProcessPathLineEdit, 1, 1, 1, 4)
+        self.RegProcessPathPushButton = QtWidgets.QPushButton(self.doRegistrationGroupBox)
+        self.RegProcessPathPushButton.setObjectName("RegProcessPathPushButton")
+        self.gridLayout.addWidget(self.RegProcessPathPushButton, 1, 5, 1, 1)
         self.verticalLayout_12.addWidget(self.doRegistrationGroupBox)
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setContentsMargins(11, 0, 11, 11)
@@ -595,6 +576,86 @@ class Ui_Main_GUI(object):
         self.processingToolBox.addItem(self.tool_postprocess, "")
         self.process_tab_layout.addWidget(self.processingToolBox)
         self.tabWidget.addTab(self.tab_process, "")
+        self.tab_registration = QtWidgets.QWidget()
+        self.tab_registration.setObjectName("tab_registration")
+        self.gridLayout_3 = QtWidgets.QGridLayout(self.tab_registration)
+        self.gridLayout_3.setContentsMargins(11, 11, 11, 11)
+        self.gridLayout_3.setSpacing(6)
+        self.gridLayout_3.setObjectName("gridLayout_3")
+        self.RegCalib_channelRefModeCombo = QtWidgets.QComboBox(self.tab_registration)
+        self.RegCalib_channelRefModeCombo.setEnabled(True)
+        self.RegCalib_channelRefModeCombo.setMinimumSize(QtCore.QSize(0, 0))
+        self.RegCalib_channelRefModeCombo.setMaximumSize(QtCore.QSize(1606000, 16777215))
+        self.RegCalib_channelRefModeCombo.setCurrentText("")
+        self.RegCalib_channelRefModeCombo.setObjectName("RegCalib_channelRefModeCombo")
+        self.gridLayout_3.addWidget(self.RegCalib_channelRefModeCombo, 6, 6, 1, 3)
+        self.RegCalibPathLineEdit = QtWidgets.QLineEdit(self.tab_registration)
+        self.RegCalibPathLineEdit.setEnabled(True)
+        self.RegCalibPathLineEdit.setObjectName("RegCalibPathLineEdit")
+        self.gridLayout_3.addWidget(self.RegCalibPathLineEdit, 0, 1, 1, 7)
+        self.RegCalib_channelRefCombo = QtWidgets.QComboBox(self.tab_registration)
+        self.RegCalib_channelRefCombo.setEnabled(True)
+        self.RegCalib_channelRefCombo.setMaximumSize(QtCore.QSize(70, 16777215))
+        self.RegCalib_channelRefCombo.setCurrentText("")
+        self.RegCalib_channelRefCombo.setObjectName("RegCalib_channelRefCombo")
+        self.gridLayout_3.addWidget(self.RegCalib_channelRefCombo, 6, 4, 1, 1)
+        self.RegCalibRefChannelsLabel = QtWidgets.QLabel(self.tab_registration)
+        self.RegCalibRefChannelsLabel.setEnabled(True)
+        self.RegCalibRefChannelsLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.RegCalibRefChannelsLabel.setObjectName("RegCalibRefChannelsLabel")
+        self.gridLayout_3.addWidget(self.RegCalibRefChannelsLabel, 1, 2, 1, 2)
+        self.GenerateRegFileButton = QtWidgets.QPushButton(self.tab_registration)
+        self.GenerateRegFileButton.setMinimumSize(QtCore.QSize(190, 0))
+        self.GenerateRegFileButton.setObjectName("GenerateRegFileButton")
+        self.gridLayout_3.addWidget(self.GenerateRegFileButton, 1, 0, 1, 2)
+        self.RegCalibPathLabel = QtWidgets.QLabel(self.tab_registration)
+        self.RegCalibPathLabel.setMinimumSize(QtCore.QSize(95, 0))
+        self.RegCalibPathLabel.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.RegCalibPathLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.RegCalibPathLabel.setObjectName("RegCalibPathLabel")
+        self.gridLayout_3.addWidget(self.RegCalibPathLabel, 0, 0, 1, 1)
+        self.RegCalib_channelRefModeLabel = QtWidgets.QLabel(self.tab_registration)
+        self.RegCalib_channelRefModeLabel.setMaximumSize(QtCore.QSize(50, 16777215))
+        self.RegCalib_channelRefModeLabel.setObjectName("RegCalib_channelRefModeLabel")
+        self.gridLayout_3.addWidget(self.RegCalib_channelRefModeLabel, 6, 5, 1, 1)
+        self.horizline_1 = QtWidgets.QFrame(self.tab_registration)
+        self.horizline_1.setFrameShape(QtWidgets.QFrame.HLine)
+        self.horizline_1.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.horizline_1.setObjectName("horizline_1")
+        self.gridLayout_3.addWidget(self.horizline_1, 2, 0, 1, 9)
+        spacerItem22 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout_3.addItem(spacerItem22, 7, 4, 1, 1)
+        self.RegCalibRefChannelsGroup = QtWidgets.QGroupBox(self.tab_registration)
+        self.RegCalibRefChannelsGroup.setTitle("")
+        self.RegCalibRefChannelsGroup.setObjectName("RegCalibRefChannelsGroup")
+        self.RegCalibRefGroupLayout = QtWidgets.QHBoxLayout(self.RegCalibRefChannelsGroup)
+        self.RegCalibRefGroupLayout.setContentsMargins(11, 0, 11, 0)
+        self.RegCalibRefGroupLayout.setSpacing(6)
+        self.RegCalibRefGroupLayout.setObjectName("RegCalibRefGroupLayout")
+        self.gridLayout_3.addWidget(self.RegCalibRefChannelsGroup, 1, 4, 1, 5)
+        self.RegCalibPathLoadButton = QtWidgets.QPushButton(self.tab_registration)
+        self.RegCalibPathLoadButton.setObjectName("RegCalibPathLoadButton")
+        self.gridLayout_3.addWidget(self.RegCalibPathLoadButton, 0, 8, 1, 1)
+        self.RegFilePathLoadButton = QtWidgets.QPushButton(self.tab_registration)
+        self.RegFilePathLoadButton.setObjectName("RegFilePathLoadButton")
+        self.gridLayout_3.addWidget(self.RegFilePathLoadButton, 4, 8, 1, 1)
+        self.RegFilePathLabel = QtWidgets.QLabel(self.tab_registration)
+        self.RegFilePathLabel.setMinimumSize(QtCore.QSize(105, 0))
+        self.RegFilePathLabel.setObjectName("RegFilePathLabel")
+        self.gridLayout_3.addWidget(self.RegFilePathLabel, 4, 0, 1, 1)
+        self.RegFilePath = QtWidgets.QLineEdit(self.tab_registration)
+        self.RegFilePath.setEnabled(True)
+        self.RegFilePath.setText("")
+        self.RegFilePath.setObjectName("RegFilePath")
+        self.gridLayout_3.addWidget(self.RegFilePath, 4, 1, 1, 7)
+        self.RegCalibPreviewButton = QtWidgets.QPushButton(self.tab_registration)
+        self.RegCalibPreviewButton.setObjectName("RegCalibPreviewButton")
+        self.gridLayout_3.addWidget(self.RegCalibPreviewButton, 6, 0, 1, 2)
+        self.RegCalib_channelRefLabel = QtWidgets.QLabel(self.tab_registration)
+        self.RegCalib_channelRefLabel.setEnabled(True)
+        self.RegCalib_channelRefLabel.setObjectName("RegCalib_channelRefLabel")
+        self.gridLayout_3.addWidget(self.RegCalib_channelRefLabel, 6, 2, 1, 2)
+        self.tabWidget.addTab(self.tab_registration, "")
         self.tab_config = QtWidgets.QWidget()
         self.tab_config.setObjectName("tab_config")
         self.configTabGridLayout = QtWidgets.QGridLayout(self.tab_config)
@@ -681,20 +742,16 @@ class Ui_Main_GUI(object):
         self.watchDirLineEdit.setReadOnly(True)
         self.watchDirLineEdit.setObjectName("watchDirLineEdit")
         self.configTabGridLayout.addWidget(self.watchDirLineEdit, 17, 2, 1, 1)
-        spacerItem22 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.configTabGridLayout.addItem(spacerItem22, 16, 2, 1, 1)
+        spacerItem23 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.configTabGridLayout.addItem(spacerItem23, 16, 2, 1, 1)
         self.otfFolderLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.otfFolderLineEdit.setText("")
         self.otfFolderLineEdit.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.otfFolderLineEdit.setReadOnly(True)
         self.otfFolderLineEdit.setObjectName("otfFolderLineEdit")
         self.configTabGridLayout.addWidget(self.otfFolderLineEdit, 3, 2, 1, 1)
-        spacerItem23 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.configTabGridLayout.addItem(spacerItem23, 13, 2, 1, 1)
-        self.cudaDeconvPathToolButton = QtWidgets.QToolButton(self.tab_config)
-        self.cudaDeconvPathToolButton.setAutoRaise(False)
-        self.cudaDeconvPathToolButton.setObjectName("cudaDeconvPathToolButton")
-        self.configTabGridLayout.addWidget(self.cudaDeconvPathToolButton, 2, 6, 1, 1)
+        spacerItem24 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.configTabGridLayout.addItem(spacerItem24, 13, 2, 1, 1)
         self.saveMIPsDuringReduceCheckBox = QtWidgets.QCheckBox(self.tab_config)
         self.saveMIPsDuringReduceCheckBox.setChecked(True)
         self.saveMIPsDuringReduceCheckBox.setObjectName("saveMIPsDuringReduceCheckBox")
@@ -738,6 +795,10 @@ class Ui_Main_GUI(object):
         self.cudaDeconvPathLabel_2.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.cudaDeconvPathLabel_2.setObjectName("cudaDeconvPathLabel_2")
         self.configTabGridLayout.addWidget(self.cudaDeconvPathLabel_2, 0, 0, 1, 1)
+        self.cudaDeconvPathToolButton = QtWidgets.QToolButton(self.tab_config)
+        self.cudaDeconvPathToolButton.setAutoRaise(False)
+        self.cudaDeconvPathToolButton.setObjectName("cudaDeconvPathToolButton")
+        self.configTabGridLayout.addWidget(self.cudaDeconvPathToolButton, 2, 6, 1, 1)
         self.tabWidget.addTab(self.tab_config, "")
         self.tab_log = QtWidgets.QWidget()
         self.tab_log.setObjectName("tab_log")
@@ -820,14 +881,14 @@ class Ui_Main_GUI(object):
         self.progressBar = QtWidgets.QProgressBar(self.centralWidget)
         self.progressBar.setMinimumSize(QtCore.QSize(0, 0))
         self.progressBar.setStyleSheet("QProgressBar {\n"
-"    border: 1px solid grey;\n"
-"    border-radius: 3px;\n"
-"    height: 20px;\n"
-"    margin: 0px 0px 0px 5px;\n"
+"  border: 1px solid grey;\n"
+"  border-radius: 3px;\n"
+"  height: 20px;\n"
+"  margin: 0px 0px 0px 5px;\n"
 "}\n"
 "\n"
 "QProgressBar::chunk:horizontal {\n"
-"    background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484DE7, stop: 1 #787DFF);\n"
+"  background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484DE7, stop: 1 #787DFF);\n"
 "}")
         self.progressBar.setProperty("value", 0)
         self.progressBar.setTextVisible(False)
@@ -942,6 +1003,7 @@ class Ui_Main_GUI(object):
         self.tabWidget.setCurrentIndex(0)
         self.processingToolBox.setCurrentIndex(0)
         self.compressTypeCombo.setCurrentIndex(-1)
+        self.RegCalib_channelRefModeCombo.setCurrentIndex(-1)
         self.actionQuit.triggered['bool'].connect(Main_GUI.close)
         self.backgroundRollingRadio.toggled['bool'].connect(self.backgroundRollingSpinBox.setEnabled)
         self.backgroundFixedRadio.toggled['bool'].connect(self.backgroundFixedSpinBox.setEnabled)
@@ -955,7 +1017,6 @@ class Ui_Main_GUI(object):
         self.watchDirCheckBox.toggled['bool'].connect(self.watchDirLineEdit.setEnabled)
         self.useBundledBinariesCheckBox.toggled['bool'].connect(self.cudaDeconvPathLineEdit.setHidden)
         self.useBundledBinariesCheckBox.toggled['bool'].connect(self.cudaDeconvPathLabel.setHidden)
-        self.useBundledBinariesCheckBox.toggled['bool'].connect(self.cudaDeconvPathToolButton.setHidden)
         self.cropAutoRadio.toggled['bool'].connect(self.autocropPadLabel.setEnabled)
         self.cropAutoRadio.toggled['bool'].connect(self.autocropPadSpinBox.setEnabled)
         self.saveDeskewedCheckBox.toggled['bool'].connect(self.deconSaveMIPSLabel_2.setEnabled)
@@ -966,6 +1027,7 @@ class Ui_Main_GUI(object):
         self.watchDirCheckBox.toggled['bool'].connect(self.watchModeGroupBox.setEnabled)
         self.watchDirCheckBox.toggled['bool'].connect(self.watchModeAcquisitionRadio.setEnabled)
         self.watchDirCheckBox.toggled['bool'].connect(self.watchModeServerRadio.setEnabled)
+        self.useBundledBinariesCheckBox.toggled['bool'].connect(self.cudaDeconvPathToolButton.setHidden)
         QtCore.QMetaObject.connectSlotsByName(Main_GUI)
 
     def retranslateUi(self, Main_GUI):
@@ -974,7 +1036,7 @@ class Ui_Main_GUI(object):
         self.listbox.setToolTip(_translate("Main_GUI", "Drag and drop LLS experiment folders\n"
 "(containing a Settings.txt file) here, to\n"
 "add to the processing queue. Select\n"
-"and press delete to remove. \n"
+"and press delete to remove.\n"
 "Press process button below when ready."))
         item = self.listbox.horizontalHeaderItem(0)
         item.setText(_translate("Main_GUI", "basename"))
@@ -1035,10 +1097,10 @@ class Ui_Main_GUI(object):
         self.apodizeLabel.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
         self.apodizeLabel.setText(_translate("Main_GUI", "nApodize:"))
         self.apodizeSpinBox.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
-        self.zblendLabel.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in \n"
+        self.zblendLabel.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
 "to reduce axial ringing"))
         self.zblendLabel.setText(_translate("Main_GUI", "nZblend"))
-        self.zblendSpinBox.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in \n"
+        self.zblendSpinBox.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
 "to reduce axial ringing"))
         self.saveDeconvolvedCheckBox.setText(_translate("Main_GUI", "Save Stacks"))
         self.deconvolvedMIPFrame.setToolTip(_translate("Main_GUI", "Save maximum-intensity-projection\n"
@@ -1112,15 +1174,9 @@ class Ui_Main_GUI(object):
         self.doRegistrationGroupBox.setTitle(_translate("Main_GUI", "Do Channel Registration"))
         self.channelRefLabel.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
 "(this channel will not change)"))
-        self.channelRefLabel.setText(_translate("Main_GUI", "Reference Channel:"))
-        self.channelRefCombo.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
+        self.channelRefLabel.setText(_translate("Main_GUI", "Ref Wave:"))
+        self.RegProcessChannelRefCombo.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
 "(this channel will not change)"))
-        self.channelRefCombo.setCurrentText(_translate("Main_GUI", "405"))
-        self.channelRefCombo.setItemText(0, _translate("Main_GUI", "405"))
-        self.channelRefCombo.setItemText(1, _translate("Main_GUI", "488"))
-        self.channelRefCombo.setItemText(2, _translate("Main_GUI", "560"))
-        self.channelRefCombo.setItemText(3, _translate("Main_GUI", "592"))
-        self.channelRefCombo.setItemText(4, _translate("Main_GUI", "642"))
         self.channelRefModeLabel.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
 "Translation=shift only\n"
 "Rigid=Shift and rotation\n"
@@ -1130,7 +1186,7 @@ class Ui_Main_GUI(object):
 "CPD=Coherent Point Drift algorithm\n"
 "(Myronenko, 2010)"))
         self.channelRefModeLabel.setText(_translate("Main_GUI", "Mode:"))
-        self.channelRefModeCombo.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
+        self.RegProcessChannelRefModeCombo.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
 "Translation=shift only\n"
 "Rigid=Shift and rotation\n"
 "Similarity=Rigid plus scaling\n"
@@ -1138,23 +1194,14 @@ class Ui_Main_GUI(object):
 "2-step=Affine in XY, Rigid in Z\n"
 "CPD=Coherent Point Drift algorithm\n"
 "(Myronenko, 2010)"))
-        self.channelRefModeCombo.setCurrentText(_translate("Main_GUI", "Translation"))
-        self.channelRefModeCombo.setItemText(0, _translate("Main_GUI", "Translation"))
-        self.channelRefModeCombo.setItemText(1, _translate("Main_GUI", "Rigid"))
-        self.channelRefModeCombo.setItemText(2, _translate("Main_GUI", "Similarity"))
-        self.channelRefModeCombo.setItemText(3, _translate("Main_GUI", "Affine"))
-        self.channelRefModeCombo.setItemText(4, _translate("Main_GUI", "2step"))
-        self.channelRefModeCombo.setItemText(5, _translate("Main_GUI", "CPD_Rigid"))
-        self.channelRefModeCombo.setItemText(6, _translate("Main_GUI", "CPD_Similarity"))
-        self.channelRefModeCombo.setItemText(7, _translate("Main_GUI", "CPD_Affine"))
-        self.channelRefModeCombo.setItemText(8, _translate("Main_GUI", "CPD_2step"))
-        self.RegCalibPathLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
+        self.RegProcessLoadRegFile.setText(_translate("Main_GUI", "Use RegFile"))
+        self.RegProcessPathLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
 "bead) images acquired in each channel."))
-        self.RegCalibPathLabel.setText(_translate("Main_GUI", "Calibration:"))
-        self.RegCalibPathLineEdit.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
+        self.RegProcessPathLabel.setText(_translate("Main_GUI", "Calibration:"))
+        self.RegProcessPathLineEdit.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
 "bead) images acquired in each channel."))
-        self.RegCalibPathLineEdit.setPlaceholderText(_translate("Main_GUI", "Default: \"Registration\" folder in parent directory"))
-        self.RegCalibPathToolButton.setText(_translate("Main_GUI", "..."))
+        self.RegProcessPathLineEdit.setPlaceholderText(_translate("Main_GUI", " registration file or fiducial dataset..."))
+        self.RegProcessPathPushButton.setText(_translate("Main_GUI", "Use Dataset"))
         self.bleachCorrectionCheckBox.setToolTip(_translate("Main_GUI", "Modify intensity values of timelapse data to\n"
 "minimize the appearance of photobleaching."))
         self.bleachCorrectionCheckBox.setText(_translate("Main_GUI", "Do Bleach Correction"))
@@ -1164,6 +1211,48 @@ class Ui_Main_GUI(object):
         self.label.setText(_translate("Main_GUI", "Type:"))
         self.processingToolBox.setItemText(self.processingToolBox.indexOf(self.tool_postprocess), _translate("Main_GUI", "Post-Processing"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_process), _translate("Main_GUI", "Process"))
+        self.RegCalib_channelRefModeCombo.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
+"Translation=shift only\n"
+"Rigid=Shift and rotation\n"
+"Similarity=Rigid plus scaling\n"
+"Affine=Translation, Rotation, Scaling, Shear\n"
+"2-step=Affine in XY, Rigid in Z\n"
+"CPD=Coherent Point Drift algorithm\n"
+"(Myronenko, 2010)"))
+        self.RegCalibPathLineEdit.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
+"bead) images acquired in each channel."))
+        self.RegCalibPathLineEdit.setPlaceholderText(_translate("Main_GUI", " Folder with mult-channel fiducial stacks..."))
+        self.RegCalib_channelRefCombo.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
+"(this channel will not change)"))
+        self.RegCalibRefChannelsLabel.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
+"(this channel will not change)"))
+        self.RegCalibRefChannelsLabel.setText(_translate("Main_GUI", "Ref Channels:"))
+        self.GenerateRegFileButton.setText(_translate("Main_GUI", "Generate Registration File"))
+        self.RegCalibPathLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
+"bead) images acquired in each channel."))
+        self.RegCalibPathLabel.setText(_translate("Main_GUI", "Fiducial Data:"))
+        self.RegCalib_channelRefModeLabel.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
+"Translation=shift only\n"
+"Rigid=Shift and rotation\n"
+"Similarity=Rigid plus scaling\n"
+"Affine=Translation, Rotation, Scaling, Shear\n"
+"2-step=Affine in XY, Rigid in Z\n"
+"CPD=Coherent Point Drift algorithm\n"
+"(Myronenko, 2010)"))
+        self.RegCalib_channelRefModeLabel.setText(_translate("Main_GUI", "Mode:"))
+        self.RegCalibPathLoadButton.setText(_translate("Main_GUI", "load"))
+        self.RegFilePathLoadButton.setText(_translate("Main_GUI", "load"))
+        self.RegFilePathLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
+"bead) images acquired in each channel."))
+        self.RegFilePathLabel.setText(_translate("Main_GUI", "Registration File:"))
+        self.RegFilePath.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
+"bead) images acquired in each channel."))
+        self.RegFilePath.setPlaceholderText(_translate("Main_GUI", " Registration Tform file..."))
+        self.RegCalibPreviewButton.setText(_translate("Main_GUI", "Register Fiducial Data"))
+        self.RegCalib_channelRefLabel.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
+"(this channel will not change)"))
+        self.RegCalib_channelRefLabel.setText(_translate("Main_GUI", "Ref Channel:"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_registration), _translate("Main_GUI", "Registration"))
         self.confirmOnQuitCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
 "processed data, leaving only the original\n"
 "raw data.  This option retains any MIP\n"
@@ -1199,7 +1288,6 @@ class Ui_Main_GUI(object):
         self.disableSpimagineCheckBox.setText(_translate("Main_GUI", "Disable spimagine import (in case of WinError on Preview)"))
         self.watchDirLineEdit.setPlaceholderText(_translate("Main_GUI", "New items in watched folder will be automatically processed."))
         self.otfFolderLineEdit.setPlaceholderText(_translate("Main_GUI", "path to directory with PSFs/OTFs"))
-        self.cudaDeconvPathToolButton.setText(_translate("Main_GUI", "..."))
         self.saveMIPsDuringReduceCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
 "processed data, leaving only the original\n"
 "raw data.  This option retains any MIP\n"
@@ -1214,7 +1302,7 @@ class Ui_Main_GUI(object):
 "raw data.  This option retains any MIP\n"
 "folders found, as a smaller-sized\n"
 "preview of the dataset for later review."))
-        self.errorOptOutCheckBox.setText(_translate("Main_GUI", " Opt out of automatic error reporting. \n"
+        self.errorOptOutCheckBox.setText(_translate("Main_GUI", " Opt out of automatic error reporting.\n"
 " (Leaving this disabled helps us fix bugs in the program!)"))
         self.watchDirToolButton.setText(_translate("Main_GUI", "..."))
         self.genFlashParams.setText(_translate("Main_GUI", "Generate Camera Calibration File"))
@@ -1224,6 +1312,7 @@ class Ui_Main_GUI(object):
         self.cudaDeconvPathLabel_2.setToolTip(_translate("Main_GUI", "Toggle the GPUs that you want to use for processing.\n"
 " Work will be distributed among them"))
         self.cudaDeconvPathLabel_2.setText(_translate("Main_GUI", "GPUs"))
+        self.cudaDeconvPathToolButton.setText(_translate("Main_GUI", "..."))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_config), _translate("Main_GUI", "Config"))
         self.log.setHtml(_translate("Main_GUI", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
