@@ -8,7 +8,7 @@ from .camera import CameraParameters, selectiveMedianFilter
 from . import arrayfun
 
 from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
-from fiducialreg.fiducialreg import CloudSet
+from fiducialreg.fiducialreg import CloudSet, RegFile, RegistrationError
 
 try:
     import pathlib as plib
@@ -123,6 +123,56 @@ def move_corrected(path):
                     t += 1
 
 
+def get_refObj(regCalibPath):
+    """Detect whether provided path is a directory of tiffs with fiducials or
+    a pre-calibrated registration file"""
+    refObj = None
+    if (os.path.isfile(regCalibPath) and
+            regCalibPath.endswith(('.reg', '.txt', '.json'))):
+        refObj = RegFile(regCalibPath)
+        if not refObj.n_tforms > 0:
+            raise RegistrationError(
+                'No transforms found in file: {}'.format(regCalibPath))
+        logger.debug('RegCalib Path detected as registration file')
+    elif os.path.isdir(regCalibPath):  # path must be raw fidicial dataset
+        refObj = RegDir(regCalibPath)
+        if not refObj.isValid:
+            raise RegistrationError(
+                'Not a valid registration calibration dataset: {}'.format(regCalibPath))
+        logger.debug('RegCalib Path detected as fiducial dataset')
+    return refObj
+
+
+def register_image_to_wave(img, regCalibObj, imwave=None, refwave=488,
+                           voxsize=None, mode='2step'):
+    # voxsize must be an array of pixel sizes [dz, dy, dx]
+
+    if not isinstance(regCalibObj, (RegDir, RegFile)):
+        raise RegistrationError('Calibration object for register_image_to_wave '
+            'must be either RegDir or RegFile.  Received: %s' % str(type(regCalibObj)))
+
+    if isinstance(img, np.ndarray):
+        if imwave is None:
+            raise ValueError('Must provide wavelength when providing array '
+                'for registration.')
+    elif isinstance(img, str) and os.path.isfile(img):
+        if imwave is None:
+            try:
+                imwave = parse.parse_filename(img, 'wave')
+            except Exception:
+                pass
+            if not imwave:
+                raise ValueError('Could not detect image wavelength.')
+        img = util.imread(img)
+    else:
+        raise ValueError('Input to Registration must either be a np.array '
+            'or a path to a tif file')
+
+    tform = regCalibObj.get_tform(imwave, refwave, mode)
+    inv_tform = np.linalg.inv(tform)
+    return affineGPU(img, inv_tform, voxsize)
+
+
 def preview(exp, tR=0, cR=None, **kwargs):
     """Process LLS experiment, without file IO.
 
@@ -207,19 +257,21 @@ def preview(exp, tR=0, cR=None, **kwargs):
 
         # FIXME: this is going to be slow until we cache the tform Matrix results
         if P.doReg:
-            if P.regCalibDir is None:
-                logger.error('Skipping Registration: no Calibration Directory provided')
+            if P.regCalibPath is None:
+                logger.error(
+                    'Skipping Registration: no Calibration Object path provided')
             else:
-                RD = RegDir(P.regCalibDir)
-                if RD.isValid:
+                refObj = get_refObj(P.regCalibPath)
+                if isinstance(refObj, (RegDir, RegFile)) and refObj.isValid:
+                    voxsize = [exp.parameters.dzFinal, exp.parameters.dx, exp.parameters.dx]
                     for i, d in enumerate(zip(stacks, P.wavelength)):
                         stk, wave = d
                         if not wave == P.regRefWave:  # don't reg the reference channel
-                            stacks[i] = RD.register_image_to_wave(stk, imwave=wave,
-                                refwave=P.regRefWave, mode=P.regMode)
+                            stacks[i] = register_image_to_wave(stk, refObj, imwave=wave,
+                                refwave=P.regRefWave, mode=P.regMode, voxsize=voxsize)
                 else:
                     logger.error('Registration Calibration dir not valid'
-                        '{}'.format(P.regCalibDir))
+                        '{}'.format(P.regCalibPath))
 
         out.append(np.stack(stacks, 0))
 
@@ -305,7 +357,7 @@ def process(exp, binary=None, **kwargs):
 
     # FIXME: this is just a messy first try...
     if P.doReg:
-        exp.register(P.regRefWave, P.regMode, P.regCalibDir)
+        exp.register(P.regRefWave, P.regMode, P.regCalibPath)
 
     if P.mergeMIPs:
         exp.mergemips()
@@ -679,7 +731,7 @@ class LLSdir(object):
         'medianFilter': False, 'mergeMIPs': True, 'mergeMIPsraw': True,
         'mincount': 10, 'moveCorrected': True, 'nApodize': 15,
         'nIters': 0, 'nZblend': 0, 'otfDir': None, 'rMIP': (0, 0, 0),
-        'regCalibDir': None, 'regMode': '2step', 'regRefWave': 488,
+        'regCalibPath': None, 'regMode': '2step', 'regRefWave': 488,
         'reprocess': False, 'rotate': 31.5, 'saveDecon': True,
         'saveDeskewedRaw': False, 'shift': 0, 'tRange': [0],
         'trimX': (0, 0), 'trimY': (0, 0), 'trimZ': (0, 0), 'uint16': True,
@@ -741,7 +793,7 @@ class LLSdir(object):
         assert 0 <= S.width/2
 
         # add check for RegDIR
-        # RD = RegDir(P.regCalibDir)
+        # RD = RegDir(P.regCalibPath)
         # RD = self.path.parent.joinpath('tspeck')
         S.drdata = P.dx
         S.dzdata = P.dz
@@ -799,8 +851,12 @@ class LLSdir(object):
         # the "**" pattern means this directory and all subdirectories, recursively
         for MIPdir in subdir.glob('**/MIPs/'):
             # get dict with keys= axes(x,y,z) and values = numpy array
+            try:
+                interval = self.parameters.interval[0]
+            except IndexError:
+                interval = 0
             for axis in ['z', 'y', 'x']:
-                mergemips(MIPdir, axis, dx=self.parameters.dx, dt=self.parameters.interval[0])
+                mergemips(MIPdir, axis, dx=self.parameters.dx, dt=interval)
 
     def process(self, filepattern, otf, indir=None, binary=None, **opts):
         if binary is None:
@@ -982,27 +1038,29 @@ class LLSdir(object):
                 correctTimepoint(t, camparams, outpath, medianFilter, trimZ, trimY, trimX)
         return outpath
 
-    def register(self, regRefWave, regMode, regCalibDir):
+    def register(self, regRefWave, regMode, regCalibPath):
         if self.parameters.nc < 2:
             logger.error('Cannot register single channel dataset')
             return
-        RD = RegDir(regCalibDir)
-        if not RD.isValid:
-            logger.error('Registration Calibration dir not valid: {}'.format(regCalibDir))
-            return
-        RD.cloudset()  # optional, intialized the cloud...
 
-        subdirs = [x for x in self.path.iterdir() if x.is_dir() and
-                    x.name in ('GPUdecon', 'Deskewed')]
-        for D in subdirs:
-            files = [fn for fn in D.glob('*.tif') if not ('_REG' in fn.name or
-                str(regRefWave) in fn.name)]
-            for F in files:
-                outname = str(F).replace('.tif', '_REG.tif')
-                im = RD.register_image_to_wave(str(F), refwave=regRefWave, mode=regMode)
-                util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
-                    str(D.joinpath(outname)),
-                    dx=self.parameters.dx, dz=self.parameters.dzFinal)
+        refObj = get_refObj(regCalibPath)
+        if isinstance(refObj, (RegDir, RegFile)) and refObj.isValid:
+            voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
+            subdirs = [x for x in self.path.iterdir() if x.is_dir() and
+                       x.name in ('GPUdecon', 'Deskewed')]
+            for D in subdirs:
+                files = [fn for fn in D.glob('*.tif') if not ('_REG' in fn.name or
+                    str(regRefWave) in fn.name)]
+                for F in files:
+                    outname = str(F).replace('.tif', '_REG.tif')
+                    im = register_image_to_wave(str(F), refObj, refwave=regRefWave,
+                        mode=regMode, voxsize=voxsize)
+                    util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
+                        str(D.joinpath(outname)),
+                        dx=self.parameters.dx, dz=self.parameters.dzFinal)
+        else:
+            logger.error('Registration Calibration path not valid'
+                         '{}'.format(regCalibPath))
 
     def toJSON(self):
         import json
@@ -1100,33 +1158,68 @@ class RegDir(LLSdir):
     def reload_data(self):
         self.cloudset(redo=True)
 
-    def write_reg_file(self, outfile, **kwargs):
-        self.cloudset().write_all_tforms(outfile, **kwargs)
+    def write_reg_file(self, outfile, refs=None, **kwargs):
+        """write all of the tforms for this cloudset to file"""
+
+        class npEncoder(json.JSONEncoder):
+
+            def fixedString(self, obj):
+                numel = len(obj)
+                form = '[' + ','.join(['{:14.10f}'] * numel) + ']'
+                return form.format(*obj)
+
+            def default(self, obj):
+                if isinstance(obj, np.ndarray):
+                    if all(isinstance(i, np.ndarray) for i in obj):
+                        nestedList = obj.tolist()
+                        result = [self.fixedString(l) for l in nestedList]
+                        return result
+                    else:
+                        return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
+        tforms = self.cloudset().get_all_tforms(refs=refs, **kwargs)
+        outdict = {
+            'date': self.date.strftime('%Y/%m/%d-%H:%M'),
+            'path': str(self.path),
+            'dx': self.parameters.dx,
+            'dz': self.parameters.dzFinal,
+            'z_motion': self.parameters.z_motion,
+            # 'refs': refs,
+            # 'moving': list(set([t['moving'] for t in tforms])),
+            # 'modes': list(set([t['mode'] for t in tforms])),
+            'tforms': tforms,
+        }
+        outstring = json.dumps(outdict, cls=npEncoder, indent=2)
+        outstring = outstring.replace('"[', ' [').replace(']"', ']')
+        with open(outfile, 'w') as file:
+            file.write(outstring)
 
     def get_tform(self, movingWave, refWave=488, mode='2step'):
         return self.cloudset().tform(movingWave, refWave, mode)
 
-    def register_image_to_wave(self, img, imwave=None, refwave=488, mode='2step'):
-        if isinstance(img, np.ndarray):
-            if imwave is None:
-                raise ValueError('Must provide wavelength when providing array '
-                    'for registration.')
-        elif isinstance(img, str) and os.path.isfile(img):
-            if imwave is None:
-                try:
-                    imwave = parse.parse_filename(img, 'wave')
-                except Exception:
-                    pass
-                if not imwave:
-                    raise ValueError('Could not detect image wavelength.')
-            img = util.imread(img)
-        else:
-            raise ValueError('Input to Registration must either be a np.array '
-                'or a path to a tif file')
-        tform = self.get_tform(imwave, refwave, mode)
-        inv_tform = np.linalg.inv(tform)
-        voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
-        return affineGPU(img, inv_tform, voxsize)
+    # This function now module level at the top of the module...
+    # def register_image_to_wave(self, img, imwave=None, refwave=488, mode='2step'):
+    #     if isinstance(img, np.ndarray):
+    #         if imwave is None:
+    #             raise ValueError('Must provide wavelength when providing array '
+    #                 'for registration.')
+    #     elif isinstance(img, str) and os.path.isfile(img):
+    #         if imwave is None:
+    #             try:
+    #                 imwave = parse.parse_filename(img, 'wave')
+    #             except Exception:
+    #                 pass
+    #             if not imwave:
+    #                 raise ValueError('Could not detect image wavelength.')
+    #         img = util.imread(img)
+    #     else:
+    #         raise ValueError('Input to Registration must either be a np.array '
+    #             'or a path to a tif file')
+    #     tform = self.get_tform(imwave, refwave, mode)
+    #     inv_tform = np.linalg.inv(tform)
+    #     voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
+    #     return affineGPU(img, inv_tform, voxsize)
 
 
 def rename_iters(folder, splitpositions=True, verbose=False):

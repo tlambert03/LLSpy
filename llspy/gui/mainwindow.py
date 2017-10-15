@@ -402,7 +402,146 @@ class MainHandler(FileSystemEventHandler, QtCore.QObject):
                 self.lostListItem.emit(event.src_path)
 
 
-class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
+class RegistrationTab(object):
+
+    def __init__(self):
+        self.RegCalibPathLoadButton.clicked.connect(self.setRegCalibPath)
+        self.GenerateRegFileButton.clicked.connect(self.generateCalibrationFile)
+        self.RegCalibPreviewButton.clicked.connect(self.previewRegistration)
+        self.RegFilePathLoadButton.clicked.connect(self.loadRegistrationFile)
+        self.RegCalib_channelRefCombo.clear()
+        self.RegCalib_channelRefModeCombo.clear()
+
+    def setRegCalibPath(self):
+        dir = QtW.QFileDialog.getExistingDirectory(
+            self, 'Set Registration Calibration Directory',
+            '', QtW.QFileDialog.ShowDirsOnly)
+        if dir is None or dir is '':
+            return
+        RD = llspy.RegDir(dir)
+        if not RD.isValid:
+            raise err.RegistrationError(
+                'Registration Calibration dir not valid: {}'.format(RD.path))
+
+        self.RegCalibPathLineEdit.setText(dir)
+        layout = self.RegCalibRefGroupLayout
+        group = self.RegCalibRefChannelsGroup
+        for cb in group.findChildren(QtW.QCheckBox):
+            layout.removeWidget(cb)
+            cb.setParent(None)
+        for wave in RD.parameters.wavelength:
+            box = QtW.QCheckBox(str(wave), group)
+            layout.addWidget(box)
+            box.setChecked(True)
+
+    def generateCalibrationFile(self):
+        group = self.RegCalibRefChannelsGroup
+        refs = [int(cb.text()) for cb in group.findChildren(QtW.QCheckBox) if cb.isChecked()]
+        if not len(refs):
+            raise err.InvalidSettingsError('Select at least one reference channel')
+
+        RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
+        if not RD.isValid:
+            raise err.RegistrationError(
+                'Registration Calibration dir not valid: {}'.format(RD.path))
+        outfile = QtW.QFileDialog.getSaveFileName(self,
+            'Chose destination for registration file', '',
+            "Text Files (*.reg *.txt *.json)")[0]
+        if outfile is None or outfile is '':
+            return
+        logger.debug("registration file output: {}".format(outfile))
+
+        class RegThread(QtCore.QThread):
+            finished = QtCore.pyqtSignal(str)
+
+            def __init__(self, RD, outfile, refs):
+                QtCore.QThread.__init__(self)
+                self.RD = RD
+                self.outfile = outfile
+                self.refs = refs
+
+            def run(self):
+                self.RD.write_reg_file(outfile, refs=self.refs)
+                self.finished.emit(outfile)
+
+        def finishup(outfile):
+            self.statusBar.showMessage(
+                    'Registration file written: {}'.format(outfile), 5000)
+            self.loadRegistrationFile(outfile)
+
+        self.regthreads = []
+        regthread = RegThread(RD, outfile, refs)
+        regthread.finished.connect(finishup)
+        self.regthreads.append(regthread)
+        self.statusBar.showMessage(
+            'Calculating registrations for ref channels: {}...'.format(refs))
+        regthread.start()
+
+    def loadRegistrationFile(self, file=None):
+        if not file:
+            file = QtW.QFileDialog.getOpenFileName(self,
+                    'Choose registration file ',  os.path.expanduser('~'),
+                    "Text Files (*.reg *.txt *.json)")[0]
+
+            if file is None or file is '':
+                return
+        import json
+        try:
+            with open(file) as json_data:
+                regdict = json.load(json_data)
+            refs = sorted(list(set([t['reference'] for t in regdict['tforms']])))
+            # mov = set([t['moving'] for t in regdict['tforms']])
+            modes = ['None']
+            modes.extend(sorted(list(set(
+                [t['mode'].title().replace('Cpd', 'CPD') for t in regdict['tforms']]
+            ))))
+            self.RegCalib_channelRefCombo.clear()
+            self.RegCalib_channelRefCombo.addItems([str(r) for r in refs])
+            self.RegCalib_channelRefModeCombo.clear()
+            self.RegCalib_channelRefModeCombo.addItems(modes)
+            self.RegFilePath.setText(file)
+        except json.decoder.JSONDecodeError as e:
+            raise err.RegistrationError("Failed to parse registration file", str(e))
+        except Exception as e:
+            raise err.RegistrationError("Failed to load registration file", str(e))
+
+    def previewRegistration(self):
+        RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
+        if not RD.isValid:
+            raise err.RegistrationError(
+                'Registration Calibration dir not valid: {}'.format(RD.path))
+
+        @QtCore.pyqtSlot(np.ndarray, float, float, dict)
+        def displayRegPreview(array, dx=None, dz=None, params=None):
+            win = ImgDialog(array,
+                info=params,
+                title="Registration Mode: {} -- RefWave: {}".format(opts['regMode'], opts['regRefWave']))
+            win.overlayButton.click()
+            win.maxProjButton.click()
+            self.spimwins.append(win)
+
+        self.previewButton.setDisabled(True)
+        self.previewButton.setText('Working...')
+
+        opts = self.getValidatedOptions()
+        opts['regMode'] = self.RegCalib_channelRefModeCombo.currentText()
+        if opts['regMode'].lower() == 'none':
+            opts['doReg'] = False
+        else:
+            opts['doReg'] = True
+        opts['regRefWave'] = int(self.RegCalib_channelRefCombo.currentText())
+        opts['regCalibPath'] = self.RegCalibPathLineEdit.text()
+        w, thread = newWorkerThread(workers.TimePointWorker,
+            RD.path, [0], None, opts,
+            workerConnect={'previewReady': displayRegPreview},
+            start=True)
+
+        w.finished.connect(lambda: self.previewButton.setEnabled(True))
+        w.finished.connect(lambda: self.previewButton.setText('Preview'))
+        self.previewthreads = (w, thread)
+
+
+class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     """docstring for main_GUI"""
 
     sig_abort_LLSworkers = QtCore.pyqtSignal()
@@ -413,6 +552,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         super(main_GUI, self).__init__(parent)
         self.setupUi(self)  # method inherited from form_class to init UI
         self.setWindowTitle("LLSpy :: Lattice Light Sheet Processing")
+        RegistrationTab.__init__(self)
+
         self.LLSItemThreads = []
         self.compressionThreads = []
         self.argQueue = []  # holds all argument lists that will be sent to threads
@@ -510,27 +651,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
         self.previewTRangeLineEdit.setValidator(ctrangeValidator)
 
         # FIXME: this way of doing it clears the text field if you hit cancel
-        self.RegProcessPathToolButton.clicked.connect(self.setRegFile)
-        self.RegCalibPathLoadButton.clicked.connect(self.setRegCalibPath)
-        self.GenerateRegFileButton.clicked.connect(self.generateCalibrationFile)
-        self.RegCalibPreviewButton.clicked.connect(self.previewRegistration)
-
+        self.RegProcessPathPushButton.clicked.connect(self.setFiducialData)
+        self.RegProcessLoadRegFile.clicked.connect(self.loadProcessRegFile)
         self.cudaDeconvPathToolButton.clicked.connect(self.setCudaDeconvPath)
         self.otfFolderToolButton.clicked.connect(self.setOTFdirPath)
         self.camParamTiffToolButton.clicked.connect(self.setCamParamPath)
-
-        # self.defaultRegCalibPathToolButton.clicked.connect(lambda:
-        #     self.defaultRegCalibPathLineEdit.setText(
-        #         QtW.QFileDialog.getExistingDirectory(
-        #             self,
-        #             'Set default Registration Calibration Directory',
-        #             '', QtW.QFileDialog.ShowDirsOnly)))
-
-        self.RegProcessPathToolButton.clicked.connect(lambda:
-            self.RegCalibPathLineEdit.setText(
-                QtW.QFileDialog.getExistingDirectory(
-                    self, 'Set Registration Calibration Directory',
-                    '', QtW.QFileDialog.ShowDirsOnly)))
 
         self.disableSpimagineCheckBox.clicked.connect(lambda:
             QtW.QMessageBox.information(self, 'Restart Required',
@@ -629,110 +754,54 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             self.stopWatcher()
             self.startWatcher()
 
-    def setRegFile(self):
-        dir = QtW.QFileDialog.getExistingDirectory(
+    def setFiducialData(self):
+        path = QtW.QFileDialog.getExistingDirectory(
             self, 'Set Registration Calibration Directory',
             '', QtW.QFileDialog.ShowDirsOnly)
-        if dir is not None and dir is not '':
-            self.RegProcessPathLineEdit.setText(dir)
-
-    def setRegCalibPath(self):
-        dir = QtW.QFileDialog.getExistingDirectory(
-            self, 'Set Registration Calibration Directory',
-            '', QtW.QFileDialog.ShowDirsOnly)
-        if dir is None or dir is  '':
+        if path is None or path == '':
             return
-        RD = llspy.RegDir(dir)
+        RD = llspy.RegDir(path)
         if not RD.isValid:
-            raise err.RegistrationError(
-                'Registration Calibration dir not valid: {}'.format(RD.path))
-
-        self.RegCalibPathLineEdit.setText(dir)
-        layout = self.RegCalibRefGroupLayout
-        group = self.RegCalibRefChannelsGroup
-        for cb in group.findChildren(QtW.QCheckBox):
-            layout.removeWidget(cb)
-            cb.setParent(None)
-        for wave in RD.parameters.wavelength:
-            box = QtW.QCheckBox(str(wave), group)
-            layout.addWidget(box)
-            box.setChecked(True)
-
-    def generateCalibrationFile(self):
-        RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
-        if not RD.isValid:
-            raise err.RegistrationError(
-                'Registration Calibration dir not valid: {}'.format(RD.path))
-        outfile = QtW.QFileDialog.getSaveFileName(self,
-            'Chose destination for registration file', '',
-            "Text Files (*.txt *.json)")[0]
-        if outfile is None or outfile is '':
-            return
-        logger.debug("registration file output: {}".format(outfile))
-        group = self.RegCalibRefChannelsGroup
-        refs = [int(cb.text()) for cb in group.findChildren(QtW.QCheckBox) if cb.isChecked()]
-        RD.write_reg_file(outfile, refs=refs)
-
-    def previewRegistration(self):
-        RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
-        if not RD.isValid:
-            raise err.RegistrationError(
-                'Registration Calibration dir not valid: {}'.format(RD.path))
-
-        @QtCore.pyqtSlot(np.ndarray, float, float)
-        def displayRegPreview(array, dx=None, dz=None, df=None):
-            ims = []
-            for d in range(array.shape[0]):
-                im = array[d].astype(np.float).max(0)
-                im -= im.min()
-                im /= im.max()
-                ims.append(im*10000)
-
-            array = np.stack(ims, 0)
-            #from PIL import Image
-            #rgbArray = np.zeros((ims[0].shape[0], ims[0].shape[1], 3), 'uint8')
-            #rgbArray[..., 0] = ims[0]*256
-            #rgbArray[..., 1] = ims[1]*256
-            #rgbArray[..., 2] = ims[2]*256
-            #im = Image.fromarray(rgbArray)
-            #im.show()
-            win = ImgDialog(array,
-                info="info",
-                title="Registration Mode: {}".format(opts['regMode']))
-            self.spimwins.append(win)
-
-            #img = QtGui.QImage(array.shape[2], array.shape[1], QtGui.QImage.Format_RGB32)
-
-            # self.RegPreviewLabelXY.setScaledContents(True)
-            # self.RegPreviewLabelXY.setSizePolicy(
-            #     QtW.QSizePolicy.Ignored, QtW.QSizePolicy.Ignored)
-            # # import qimage2ndarray as qi
-            # # img = qi.array2qimage(self.data[0,0,0])
-            # self.RegPreviewLabelXY.setPixmap(QtGui.QPixmap.fromImage(img))
-
-        self.previewButton.setDisabled(True)
-        self.previewButton.setText('Working...')
-
-        opts = self.getValidatedOptions()
-        opts['regMode'] = self.RegCalib_channelRefModeCombo.currentText()
-        print(opts['regMode'])
-        if opts['regMode'].lower() == 'none':
-            opts['doReg'] = False
+            raise err.RegistrationError('That does not appear to be a valid fiducial dataset.',
+                'Registration requires a folder of multi-channel fiducial marker '
+                'tiff files, as well as a settings.txt file')
         else:
-            opts['doReg'] = True
-        opts['regRefWave'] = int(self.RegCalib_channelRefCombo.currentText())
-        opts['regCalibDir'] = self.RegCalibPathLineEdit.text()
-        w, thread = newWorkerThread(workers.TimePointWorker,
-            RD.path, [0], None, opts,
-            workerConnect={'previewReady': displayRegPreview},
-            start=True)
+            self.RegProcessPathLineEdit.setText(path)
+            self.RegProcessChannelRefCombo.clear()
+            self.RegProcessChannelRefCombo.addItems([str(r) for r in RD.waves])
+            self.RegProcessChannelRefModeCombo.clear()
+            modes = ['2step', 'Translation', 'Rigid', 'Similarity', 'Affine',
+                     'CPD_Affine', 'CPD_Rigid', 'CPD_Similarity', 'CPD_2step']
+            self.RegProcessChannelRefModeCombo.addItems(modes)
+            self.RegProcessPathLineEdit.setText(path)
 
-        w.finished.connect(lambda: self.previewButton.setEnabled(True))
-        w.finished.connect(lambda: self.previewButton.setText('Preview'))
-        w.error.connect(lambda: self.previewButton.setEnabled(True))
-        w.error.connect(lambda: self.previewButton.setText('Preview'))
-        self.previewthreads = (w, thread)
+    def loadProcessRegFile(self, file=None):
+        if not file:
+            file = QtW.QFileDialog.getOpenFileName(self,
+                    'Choose registration file ',  os.path.expanduser('~'),
+                    "Text Files (*.reg *.txt *.json)")[0]
 
+            if file is None or file is '':
+                return
+        import json
+        try:
+            with open(file) as json_data:
+                regdict = json.load(json_data)
+            refs = sorted(list(set([t['reference'] for t in regdict['tforms']])))
+            # mov = set([t['moving'] for t in regdict['tforms']])
+            modes = sorted(list(set([t['mode'].lower() for t in regdict['tforms']])))
+            self.RegProcessChannelRefCombo.clear()
+            self.RegProcessChannelRefCombo.addItems([str(r) for r in refs])
+            self.RegProcessChannelRefModeCombo.clear()
+            modeorder = ['2step', 'translation', 'rigid', 'similarity', 'affine',
+                     'cpd_affine', 'cpd_rigid', 'cpd_similarity', 'cpd_2step']
+            modes = [m.title().replace('Cpd', 'CPD') for m in modeorder if m in modes]
+            self.RegProcessChannelRefModeCombo.addItems(modes)
+            self.RegProcessPathLineEdit.setText(file)
+        except json.decoder.JSONDecodeError as e:
+            raise err.RegistrationError("Failed to parse registration file", str(e))
+        except Exception as e:
+            raise err.RegistrationError("Failed to load registration file", str(e))
 
     def saveCurrentAsDefault(self):
         if len(defaultSettings.childKeys()):
@@ -1100,8 +1169,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             'uint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
             'bleachCorrection': self.bleachCorrectionCheckBox.isChecked(),
             'doReg': self.doRegistrationGroupBox.isChecked(),
-            'regRefWave': int(self.channelRefCombo.currentText()),
-            'regMode': self.channelRefModeCombo.currentText(),
+            'regRefWave': int(self.RegProcessChannelRefCombo.currentText()),
+            'regMode': self.RegProcessChannelRefModeCombo.currentText(),
             'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
             'compressRaw': self.compressRawCheckBox.isChecked(),
             'compressionType': self.compressTypeCombo.currentText(),
@@ -1136,26 +1205,25 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI):
             options['camparamsPath'] = None
 
         rCalibText = self.RegCalibPathLineEdit.text()
-        # dCalibText = self.defaultRegCalibPathLineEdit.text()
         if rCalibText and rCalibText is not '':
-            options['regCalibDir'] = rCalibText
+            options['regCalibPath'] = rCalibText
         else:
-        #    if dCalibText and dCalibText is not '':
-        #        options['regCalibDir'] = dCalibText
-        #    else:
-            options['regCalibDir'] = None
+            options['regCalibPath'] = None
 
-        if options['doReg'] and options['regCalibDir'] is None:
+        if options['doReg'] and options['regCalibPath'] is None:
             raise err.InvalidSettingsError(
                 'Registration requested, but calibration folder not provided.',
                 'Check registration settings, or default registration folder '
                 'in config tab.')
 
-        if options['doReg'] and not osp.isdir(options['regCalibDir']):
-            raise err.InvalidSettingsError(
-                'Registration requested, but calibration folder not a directory.'
-                'Check registration settings, or default registration folder in '
-                'config tab.')
+        if options['doReg']:
+            ro = llspy.llsdir.get_refObj(options['regCalibPath'])
+            if not ro or not ro.isValid:
+                raise err.InvalidSettingsError(
+                    'Registration requested, but calibration path does not point to'
+                    ' either a valid registration file or a fiducial marker dataset.  '
+                    'Check registration settings, or default registration folder in '
+                    'config tab.')
 
         if self.croppingGroupBox.isChecked():
             if self.cropAutoRadio.isChecked():

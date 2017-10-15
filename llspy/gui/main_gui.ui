@@ -64,7 +64,7 @@
            <string>Drag and drop LLS experiment folders
 (containing a Settings.txt file) here, to
 add to the processing queue. Select
-and press delete to remove. 
+and press delete to remove.
 Press process button below when ready.</string>
           </property>
           <property name="dragEnabled">
@@ -770,7 +770,7 @@ the Z stack for each channel for background subtraction.</string>
                     <bool>true</bool>
                    </property>
                    <property name="toolTip">
-                    <string># of top and bottom sections to blend in 
+                    <string># of top and bottom sections to blend in
 to reduce axial ringing</string>
                    </property>
                    <property name="text">
@@ -784,7 +784,7 @@ to reduce axial ringing</string>
                     <bool>true</bool>
                    </property>
                    <property name="toolTip">
-                    <string># of top and bottom sections to blend in 
+                    <string># of top and bottom sections to blend in
 to reduce axial ringing</string>
                    </property>
                    <property name="maximum">
@@ -1146,9 +1146,9 @@ file that can be viewed easily in Fiji/ImageJ</string>
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
+             <y>-33</y>
              <width>534</width>
-             <height>299</height>
+             <height>310</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1515,230 +1515,141 @@ multi-channel dataset.</string>
               <property name="checked">
                <bool>true</bool>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_6">
-               <property name="leftMargin">
-                <number>4</number>
-               </property>
-               <property name="topMargin">
-                <number>4</number>
-               </property>
-               <property name="rightMargin">
-                <number>4</number>
-               </property>
-               <property name="bottomMargin">
-                <number>4</number>
-               </property>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_3">
-                 <property name="topMargin">
-                  <number>0</number>
+              <layout class="QGridLayout" name="gridLayout">
+               <item row="0" column="0">
+                <widget class="QLabel" name="channelRefLabel">
+                 <property name="enabled">
+                  <bool>true</bool>
                  </property>
-                 <item>
-                  <widget class="QLabel" name="channelRefLabel">
-                   <property name="enabled">
-                    <bool>true</bool>
-                   </property>
-                   <property name="toolTip">
-                    <string>Reference channel to which to register
+                 <property name="toolTip">
+                  <string>Reference channel to which to register
 (this channel will not change)</string>
-                   </property>
-                   <property name="text">
-                    <string>Reference Channel:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QComboBox" name="channelRefCombo">
-                   <property name="enabled">
-                    <bool>true</bool>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>70</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Reference channel to which to register
-(this channel will not change)</string>
-                   </property>
-                   <property name="currentText">
-                    <string>405</string>
-                   </property>
-                   <item>
-                    <property name="text">
-                     <string>405</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>488</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>560</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>592</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>642</string>
-                    </property>
-                   </item>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="rotatespacer2">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item alignment="Qt::AlignRight">
-                  <widget class="QLabel" name="channelRefModeLabel">
-                   <property name="toolTip">
-                    <string>Type of registration to perform:
-Translation=shift only
-Rigid=Shift and rotation
-Similarity=Rigid plus scaling
-Affine=Translation, Rotation, Scaling, Shear
-2-step=Affine in XY, Rigid in Z
-CPD=Coherent Point Drift algorithm
-(Myronenko, 2010)</string>
-                   </property>
-                   <property name="text">
-                    <string>Mode:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QComboBox" name="channelRefModeCombo">
-                   <property name="enabled">
-                    <bool>true</bool>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>70</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Type of registration to perform:
-Translation=shift only
-Rigid=Shift and rotation
-Similarity=Rigid plus scaling
-Affine=Translation, Rotation, Scaling, Shear
-2-step=Affine in XY, Rigid in Z
-CPD=Coherent Point Drift algorithm
-(Myronenko, 2010)</string>
-                   </property>
-                   <property name="currentText">
-                    <string>Translation</string>
-                   </property>
-                   <item>
-                    <property name="text">
-                     <string>Translation</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>Rigid</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>Similarity</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>Affine</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>2step</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>CPD_Rigid</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>CPD_Similarity</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>CPD_Affine</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>CPD_2step</string>
-                    </property>
-                   </item>
-                  </widget>
-                 </item>
-                </layout>
+                 </property>
+                 <property name="text">
+                  <string>Ref Wave:</string>
+                 </property>
+                </widget>
                </item>
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_2">
-                 <property name="topMargin">
-                  <number>0</number>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="RegProcessChannelRefCombo">
+                 <property name="enabled">
+                  <bool>true</bool>
                  </property>
-                 <item>
-                  <widget class="QLabel" name="RegProcessPathLabel">
-                   <property name="toolTip">
-                    <string>Specify folder with calibration (e.g. tetraspeck
+                 <property name="maximumSize">
+                  <size>
+                   <width>65</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Reference channel to which to register
+(this channel will not change)</string>
+                 </property>
+                 <property name="currentText">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QLabel" name="channelRefModeLabel">
+                 <property name="toolTip">
+                  <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+                 </property>
+                 <property name="text">
+                  <string>Mode:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="3">
+                <widget class="QComboBox" name="RegProcessChannelRefModeCombo">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>130</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>50</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+                 </property>
+                 <property name="currentText">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="4">
+                <spacer name="rotatespacer2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="5">
+                <widget class="QPushButton" name="RegProcessLoadRegFile">
+                 <property name="text">
+                  <string>Use RegFile</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="RegProcessPathLabel">
+                 <property name="toolTip">
+                  <string>Specify folder with calibration (e.g. tetraspeck
 bead) images acquired in each channel.</string>
-                   </property>
-                   <property name="text">
-                    <string>Calibration:</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLineEdit" name="RegProcessPathLineEdit">
-                   <property name="enabled">
-                    <bool>true</bool>
-                   </property>
-                   <property name="toolTip">
-                    <string>Specify folder with calibration (e.g. tetraspeck
+                 </property>
+                 <property name="text">
+                  <string>Calibration:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1" colspan="4">
+                <widget class="QLineEdit" name="RegProcessPathLineEdit">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Specify folder with calibration (e.g. tetraspeck
 bead) images acquired in each channel.</string>
-                   </property>
-                   <property name="placeholderText">
-                    <string> registration file or folder with multichannel fiducial stacks</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QToolButton" name="RegProcessPathToolButton">
-                   <property name="text">
-                    <string>...</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
+                 </property>
+                 <property name="placeholderText">
+                  <string> registration file or fiducial dataset...</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="5">
+                <widget class="QPushButton" name="RegProcessPathPushButton">
+                 <property name="text">
+                  <string>Use Dataset</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>
@@ -1857,21 +1768,7 @@ after processing to save space.</string>
         <string>Registration</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="4" column="3">
-         <widget class="QLabel" name="RegCalib_channelRefLabel">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="toolTip">
-           <string>Reference channel to which to register
-(this channel will not change)</string>
-          </property>
-          <property name="text">
-           <string>Ref Channel:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="6" colspan="3">
+        <item row="6" column="6" colspan="3">
          <widget class="QComboBox" name="RegCalib_channelRefModeCombo">
           <property name="enabled">
            <bool>true</bool>
@@ -1899,61 +1796,11 @@ CPD=Coherent Point Drift algorithm
 (Myronenko, 2010)</string>
           </property>
           <property name="currentText">
-           <string>CPD_Similarity</string>
+           <string/>
           </property>
           <property name="currentIndex">
-           <number>7</number>
+           <number>-1</number>
           </property>
-          <item>
-           <property name="text">
-            <string>None</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Translation</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Rigid</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Similarity</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Affine</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>2step</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CPD_Rigid</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CPD_Similarity</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CPD_Affine</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CPD_2step</string>
-           </property>
-          </item>
          </widget>
         </item>
         <item row="0" column="1" colspan="7">
@@ -1966,11 +1813,11 @@ CPD=Coherent Point Drift algorithm
 bead) images acquired in each channel.</string>
           </property>
           <property name="placeholderText">
-           <string> Folder with mult-channel fiducial stacks</string>
+           <string> Folder with mult-channel fiducial stacks...</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="4">
+        <item row="6" column="4">
          <widget class="QComboBox" name="RegCalib_channelRefCombo">
           <property name="enabled">
            <bool>true</bool>
@@ -1986,79 +1833,6 @@ bead) images acquired in each channel.</string>
 (this channel will not change)</string>
           </property>
           <property name="currentText">
-           <string>405</string>
-          </property>
-          <item>
-           <property name="text">
-            <string>405</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>488</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>560</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>592</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>642</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="0" column="8">
-         <widget class="QToolButton" name="RegCalibPathLoadButton">
-          <property name="text">
-           <string>load</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0" colspan="7">
-         <widget class="QLabel" name="RegPreviewLabelXY">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>350</height>
-           </size>
-          </property>
-          <property name="autoFillBackground">
-           <bool>false</bool>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background: #777</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Box</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Plain</enum>
-          </property>
-          <property name="lineWidth">
-           <number>1</number>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="7" colspan="2">
-         <widget class="QLabel" name="RegPreviewLabelYZ">
-          <property name="styleSheet">
-           <string notr="true">background: #777</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Box</enum>
-          </property>
-          <property name="text">
            <string/>
           </property>
          </widget>
@@ -2080,25 +1854,6 @@ bead) images acquired in each channel.</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="0" colspan="7">
-         <widget class="QLabel" name="RegPreviewLabelXZ">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>80</height>
-           </size>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background: #777</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Box</enum>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="0" colspan="2">
          <widget class="QPushButton" name="GenerateRegFileButton">
           <property name="minimumSize">
@@ -2112,38 +1867,30 @@ bead) images acquired in each channel.</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="0" colspan="3">
-         <widget class="QPushButton" name="RegCalibPreviewButton">
-          <property name="text">
-           <string>Preview Registration</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="4">
-         <spacer name="verticalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="0" column="0">
          <widget class="QLabel" name="RegCalibPathLabel">
+          <property name="minimumSize">
+           <size>
+            <width>95</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="toolTip">
            <string>Specify folder with calibration (e.g. tetraspeck
 bead) images acquired in each channel.</string>
           </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
           <property name="text">
-           <string>Calibration:</string>
+           <string>Fiducial Data:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
           </property>
          </widget>
         </item>
-        <item row="4" column="5">
+        <item row="6" column="5">
          <widget class="QLabel" name="RegCalib_channelRefModeLabel">
           <property name="maximumSize">
            <size>
@@ -2166,70 +1913,14 @@ CPD=Coherent Point Drift algorithm
           </property>
          </widget>
         </item>
-        <item row="1" column="4" colspan="5">
-         <widget class="QGroupBox" name="RegCalibRefChannelsGroup">
-          <property name="title">
-           <string/>
-          </property>
-          <layout class="QHBoxLayout" name="RegCalibRefGroupLayout">
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QCheckBox" name="checkBox">
-             <property name="text">
-              <string>405</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="checkBox_2">
-             <property name="text">
-              <string>488</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="checkBox_3">
-             <property name="text">
-              <string>560</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="checkBox_4">
-             <property name="text">
-              <string>642</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="7" column="7">
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="2" column="0" colspan="9">
-         <widget class="Line" name="regpreviewline">
+         <widget class="Line" name="horizline_1">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item row="8" column="4">
+        <item row="7" column="4">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -2242,21 +1933,89 @@ CPD=Coherent Point Drift algorithm
           </property>
          </spacer>
         </item>
-        <item row="5" column="4">
-         <spacer name="verticalSpacer_5">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
+        <item row="1" column="4" colspan="5">
+         <widget class="QGroupBox" name="RegCalibRefChannelsGroup">
+          <property name="title">
+           <string/>
           </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
+          <layout class="QHBoxLayout" name="RegCalibRefGroupLayout">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item row="0" column="8">
+         <widget class="QPushButton" name="RegCalibPathLoadButton">
+          <property name="text">
+           <string>load</string>
           </property>
-          <property name="sizeHint" stdset="0">
+         </widget>
+        </item>
+        <item row="4" column="8">
+         <widget class="QPushButton" name="RegFilePathLoadButton">
+          <property name="text">
+           <string>load</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="RegFilePathLabel">
+          <property name="minimumSize">
            <size>
-            <width>0</width>
-            <height>8</height>
+            <width>105</width>
+            <height>0</height>
            </size>
           </property>
-         </spacer>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="text">
+           <string>Registration File:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1" colspan="7">
+         <widget class="QLineEdit" name="RegFilePath">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string> Registration Tform file...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0" colspan="2">
+         <widget class="QPushButton" name="RegCalibPreviewButton">
+          <property name="text">
+           <string>Register Fiducial Data</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="2" colspan="2">
+         <widget class="QLabel" name="RegCalib_channelRefLabel">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Reference channel to which to register
+(this channel will not change)</string>
+          </property>
+          <property name="text">
+           <string>Ref Channel:</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -2546,16 +2305,6 @@ in the main window, and processed in turn.</string>
           </property>
          </spacer>
         </item>
-        <item row="2" column="6">
-         <widget class="QToolButton" name="cudaDeconvPathToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-          <property name="autoRaise">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
         <item row="10" column="2">
          <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
           <property name="toolTip">
@@ -2616,7 +2365,7 @@ folders found, as a smaller-sized
 preview of the dataset for later review.</string>
           </property>
           <property name="text">
-           <string> Opt out of automatic error reporting. 
+           <string> Opt out of automatic error reporting.
  (Leaving this disabled helps us fix bugs in the program!)</string>
           </property>
           <property name="checked">
@@ -2687,6 +2436,16 @@ preview of the dataset for later review.</string>
           </property>
           <property name="buddy">
            <cstring>cudaDeconvPathLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="6">
+         <widget class="QToolButton" name="cudaDeconvPathToolButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="autoRaise">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -2932,14 +2691,14 @@ p, li { white-space: pre-wrap; }
         </property>
         <property name="styleSheet">
          <string notr="true">QProgressBar {
-	border: 1px solid grey;
-	border-radius: 3px;
-	height: 20px;
-	margin: 0px 0px 0px 5px;
+  border: 1px solid grey;
+  border-radius: 3px;
+  height: 20px;
+  margin: 0px 0px 0px 5px;
 }
 
 QProgressBar::chunk:horizontal {
-	background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484DE7, stop: 1 #787DFF);
+  background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484DE7, stop: 1 #787DFF);
 }</string>
         </property>
         <property name="value">
@@ -3407,22 +3166,6 @@ and restore folder to it's original state
    </hints>
   </connection>
   <connection>
-   <sender>useBundledBinariesCheckBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>cudaDeconvPathToolButton</receiver>
-   <slot>setHidden(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>185</x>
-     <y>87</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>565</x>
-     <y>113</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>cropAutoRadio</sender>
    <signal>toggled(bool)</signal>
    <receiver>autocropPadLabel</receiver>
@@ -3579,6 +3322,22 @@ and restore folder to it's original state
     <hint type="destinationlabel">
      <x>457</x>
      <y>665</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cudaDeconvPathToolButton</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>185</x>
+     <y>87</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>565</x>
+     <y>113</y>
     </hint>
    </hints>
   </connection>
