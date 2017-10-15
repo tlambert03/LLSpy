@@ -26,7 +26,7 @@ bleachCorrection    False	     			do photobleach correction
 doReg               False	     			do channel registration
 regRefWave          488	       				reference wavelength when registering
 regMode             2step	   				transformation mode when registering
-regCalibDir         None	      			directory with registration calibration data
+regCalibPath         None	      			directory with registration calibration data
 mincount            10	        			minimum number of beads expected in regCal data
 reprocess           False	     			reprocess already-done data when processing
 tRange              None	      			time range to process (None means all)

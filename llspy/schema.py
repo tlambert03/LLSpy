@@ -80,7 +80,7 @@ __defaults__ = {
     'doReg'             : (False,         'do channel registration'),
     'regRefWave'        : (488,           'reference wavelength when registering'),
     'regMode'           : ('2step',       'transformation mode when registering'),
-    'regCalibDir'       : (None,          'directory with registration calibration data'),
+    'regCalibPath'       : (None,          'directory with registration calibration data'),
     'mincount'          : (10,            'minimum number of beads expected in regCal data'),
     'reprocess'         : (False,         'reprocess already-done data when processing'),
     'tRange'            : (None,          'time range to process (None means all)'),
@@ -137,7 +137,7 @@ __validator__ = {
             'cpd_affine', 'cpd_rigid', 'cpd_similarity', 'cpd_2step')),
         msg='Registration mode must be one of {translation, rigid, similarity, affine, 2step, '
             'cpd_affine, cpd_rigid, cpd_similarity, cpd_2step}'),
-    'regCalibDir'       : Any(None, dirpath,
+    'regCalibPath'       : Any(None, dirpath,
         msg='Unable to find Registration Calibration directory.  Check filepath'),
     'mincount'          : All(Coerce(int), Range(0, 500),
         msg='mincount (min number of beads to detect) must be between 0-500'),
