@@ -482,6 +482,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
                 self.infoButton.setChecked(False)
             else:
                 self.infoButton.setChecked(True)
+        elif event.key() == QtCore.Qt.Key_O:
+            self.overlayButton.click()
         elif event.key() == QtCore.Qt.Key_Space:
             if hasattr(self, 'timer') and self.timer.isActive():
                 self.stopMovie()
