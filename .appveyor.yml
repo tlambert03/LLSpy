@@ -28,6 +28,7 @@ platform:
 branches:
   only:
     - master
+    - appveyor
 
 install:
     # If there is a newer build queued for the same PR, cancel this one.
@@ -46,6 +47,8 @@ install:
     - cmd: conda config --set show_channel_urls true
     - cmd: appveyor-retry conda update --yes --quiet conda
     - cmd: appveyor-retry conda install --yes --quiet -c defaults conda-build anaconda-client
+    - cmd: conda update -y -c defaults conda-build
+    - cmd: conda build --version
 
 # Skip .NET project specific build phase.
 build: off
