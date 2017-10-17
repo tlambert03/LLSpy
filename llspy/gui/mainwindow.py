@@ -109,8 +109,43 @@ class LLSDragDropTable(QtW.QTableWidget):
         if len(self.findItems(path, QtCore.Qt.MatchExactly)):
             return
 
+        if llspy.util.pathHasPattern(path, '*Iter_*'):
+            if sessionSettings.value('warnIterFolder', True, type=bool):
+                box = QtW.QMessageBox()
+                box.setWindowTitle('Note')
+                box.setText('You have added a folder that appears to have been acquired'
+                    ' in Script Editor: it has "Iter_" in the filenames.\n\n'
+                    'LLSpy generally assumes that each folder contains '
+                    'a single position timelapse dataset (see docs for assumptions '
+                    'about data format).  Hit PROCESS ANYWAY to process this folder as is, '
+                    'but it may yield unexpected results. You may also RENAME ITERS, '
+                    'this will RENAME all files as if they were single experiments '
+                    'acquired at different positions and place them into their own '
+                    'folders (cannot be undone). Hit CANCEL to prevent adding this '
+                    'item to the queue.')
+                box.setIcon(QtW.QMessageBox.Warning)
+                box.addButton(QtW.QMessageBox.Cancel)
+                box.addButton("Process Anyway", QtW.QMessageBox.YesRole)
+                box.addButton("Rename Iters", QtW.QMessageBox.ActionRole)
+                box.setDefaultButton(QtW.QMessageBox.Cancel)
+                # pref = QtW.QCheckBox("Remember my answer")
+                # box.setCheckBox(pref)
+
+                reply = box.exec_()
+
+                if reply > 1000:  # cancel hit
+                    return
+                elif reply == 1:  # rename iters hit
+                    llspy.llsdir.rename_iters(path)
+                    self.removePath(path)
+                    [self.addPath(osp.join(path, p)) for p in os.listdir(path)]
+                    return
+                elif reply == 0:  # process anyway hit
+                    pass
+
         logger.info('Adding to queue: %s' % shortname(path))
         E = llspy.LLSdir(path)
+
         rowPosition = self.rowCount()
         self.insertRow(rowPosition)
         item = [path,
