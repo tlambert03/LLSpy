@@ -140,6 +140,25 @@ def main():
                 % (newestVersion, llspy.__version__),
                 QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
+        try:
+            llspy.libcudawrapper.cudaLib.Affine_interface_RA
+        except AttributeError:
+            msg = '''
+LLSpy v0.3.0 added some registration features that require an \
+update to your libcudaDeconv.{} library.  Without it you may \
+experience crashes or unexpected behavior.\n\nPlease grab the newest \
+version in the llspy_extra folder in the dropbox and install in \
+the usual way:\nlls install /path/to/llspy_extra
+'''
+            if sys.platform.startswith('win32'):
+                libext = 'dll'
+            elif sys.platform.startswith('darwin'):
+                libext = 'dylib'
+            else:
+                libext = 'so'
+            QtWidgets.QMessageBox.warning(mainGUI, "Outdated libcudaDeconv Library!",
+                msg.format(libext),
+                QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
         # ######################## TESTING
         # def tester():
