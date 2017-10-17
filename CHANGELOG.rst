@@ -10,10 +10,12 @@ Next Version
 
 **Added:**
 
-* new registration tab in gui with ability to quickly preview registration effectiveness `929f53b6 <https://github.com/tlambert03/LLSpy/commit/929f53b65396aa60aab69220b9ae5e8117dc65bf>`_
-* ability to create reusable registration file and new RegFile class to parse registration files`03b67345 <https://github.com/tlambert03/LLSpy/commit/03b6734589a792fad7269d1049002a32c72ea08d>`_
+* added new SLM Pattern generator feature.
 * ability to overlay channels in matplotlib viewer (still not possible in spimagine)
 * support for multiple GPUs. Work will be split across GPUs enabled in config tab. `a798788  <https://github.com/tlambert03/LLSpy/commit/a79878831edc0e66dd6a2f7a4700b64f908c7fb8>`_
+* new registration tab in gui with ability to quickly preview registration effectiveness `929f53b6 <https://github.com/tlambert03/LLSpy/commit/929f53b65396aa60aab69220b9ae5e8117dc65bf>`_
+* ability to create reusable registration file and new RegFile class to parse registration files`03b67345 <https://github.com/tlambert03/LLSpy/commit/03b6734589a792fad7269d1049002a32c72ea08d>`_
+
 
 **Changed:**
 
@@ -25,6 +27,7 @@ Next Version
 * fixed "long division or modulo by zero" error that sometimes appeared in matplotlib viewer
 * fixed bug that prevented processing of a subset of channels when the channel number was > 0
 * fixed bug when joining MIPs on a dataset with only 1 timepoint
+* various other small bug fixes
 
 
 `0.2.4`_
