@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import sys
 from numpy.fft import fft2, ifftshift, fftshift
 from scipy.interpolate import RectBivariateSpline, interp2d, RegularGridInterpolator
 from numba import jit
@@ -47,10 +48,16 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
 
     f = kx * spacing * np.cos(tilt) + ky * spacing * np.sin(tilt)
 
-    @jit(nopython=True, cache=True)
-    def calc(v, ii):
-        A = np.exp(1j * f * ii) + np.exp(-1j * f * ii)
-        return v + np.multiply(pupil_mask, A)
+    if getattr(sys, 'frozen', False):
+        @jit(nopython=True)
+        def calc(v, ii):
+            A = np.exp(1j * f * ii) + np.exp(-1j * f * ii)
+            return v + np.multiply(pupil_mask, A)
+    else:
+        @jit(nopython=True, cache=True)
+        def calc(v, ii):
+            A = np.exp(1j * f * ii) + np.exp(-1j * f * ii)
+            return v + np.multiply(pupil_mask, A)
 
     for ii in range(1, n_beam):
         # A = np.exp(1j * f * ii)
