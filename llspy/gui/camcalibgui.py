@@ -23,7 +23,7 @@ class CamCalibWorker(QtCore.QObject):
     setStatus = QtCore.pyqtSignal(str)
     error = QtCore.pyqtSignal()
 
-    def __init__(self, folder, darkavg=None, darkstd=None):
+    def __init__(self, folder, darkavg=None, darkstd=None, **kwargs):
         super(CamCalibWorker, self).__init__()
         self.folder = folder
         self.darkavg = darkavg
