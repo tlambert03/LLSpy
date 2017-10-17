@@ -502,9 +502,25 @@ class RegistrationTab(object):
                 self.refs = refs
 
             def run(self):
-                outfile = self.RD.write_reg_file(outdir, refs=self.refs)
-                self.finished.emit(outfile)
+                outfile, outstring = self.RD.write_reg_file(outdir, refs=self.refs)
+
+                # also write to appdir ... may use it later
+                # TODO: consider making app_dir a global APP attribute,
+                # like gpulist
+                from click import get_app_dir
+                appdir = get_app_dir('LLSpy')
+                if not os.path.isdir(appdir):
+                    os.mkdir(appdir)
+                regdir = os.path.join(appdir, 'regfiles')
+                if not os.path.isdir(regdir):
+                    os.mkdir(regdir)
+                outfile2 = os.path.join(regdir, os.path.basename(outfile))
+                with open(outfile2, 'w') as file:
+                    file.write(outstring)
+
                 logger.debug("registration file output: {}".format(outfile))
+                logger.debug("registration file output: {}".format(outfile2))
+                self.finished.emit(outfile)
 
         def finishup(outfile):
             self.statusBar.showMessage(
@@ -817,6 +833,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     @QtCore.pyqtSlot(str)
     def loadRegObject(self, path):
         if path in (None, ''):
+            return
+        if not os.path.exists(path):
+            self.RegProcessPathLineEdit.setText('')
             return
         try:
             RO = llspy.llsdir.get_regObj(path)
