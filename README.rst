@@ -46,6 +46,12 @@ The GUI provides access to the majority of functionality in LLSpy. It includes a
     :alt: LLSpy graphical interface
     :align: right
 
+*new in v0.3.0: SLM pattern generator:*
+
+.. image:: https://raw.githubusercontent.com/tlambert03/LLSpy/master/img/slmgen_screenshot.png
+    :alt: LLSpy graphical interface
+    :align: right
+
 
 .. .. image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2017/09/gui.png
 ..     :height: 825 px
