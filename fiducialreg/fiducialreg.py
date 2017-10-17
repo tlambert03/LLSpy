@@ -996,7 +996,7 @@ class RegFile(object):
             with open(self.path) as json_data:
                 regdict = json.load(json_data)
         except json.decoder.JSONDecodeError:
-            raise RegistrationError('Could not parse registration file as JSON {}.'.format(self.path))
+            raise
 
         if 'tforms' not in regdict:
             self.tforms = []
@@ -1011,7 +1011,7 @@ class RegFile(object):
             if self.date:
                 self.date = datetime.strptime(self.date, '%Y/%m/%d-%H:%M')
         except Exception:
-            logger.error('Could not parse registraion file date')
+            logger.error('Could not parse registration file date')
 
         self.dx = regdict.get('dx', None)
         self.dz = regdict.get('dz', None)
@@ -1037,6 +1037,7 @@ class RegFile(object):
         self.refwaves = sorted(list(set(self.refwaves)))
         self.movwaves = sorted(list(set(self.movwaves)))
         self.modes = sorted(list(set(self.modes)))
+        self.waves = self.refwaves  # to make it easier to substitute for RegDir
 
     @property
     def n_tforms(self):
