@@ -1093,7 +1093,8 @@ class RegDir(LLSdir):
             if self.path.joinpath('cloud.json').is_file():
                 with open(str(self.path.joinpath('cloud.json'))) as json_data:
                     self = self.fromJSON(json.load(json_data))
-        if t is None:
+        self.t = t
+        if self.has_lls_tiffs and t is None:
             self.t = min(self.parameters.tset)
         if self.isValid:
             self.data = self.getdata()
@@ -1103,7 +1104,9 @@ class RegDir(LLSdir):
 
     @property
     def isValid(self):
-        return bool(len(self.get_t(self.t)))
+        if self.t is not None:
+            return bool(len(self.get_t(self.t)))
+        return False
 
     def getdata(self):
         return [util.imread(f) for f in self.get_t(self.t)]
@@ -1207,7 +1210,7 @@ class RegDir(LLSdir):
         with open(outfile, 'w') as file:
             file.write(outstring)
 
-        return outfile
+        return (outfile, outstring)
 
     def get_tform(self, movingWave, refWave=488, mode='2step'):
         return self.cloudset().tform(movingWave, refWave, mode)
