@@ -54,11 +54,11 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         self.innerNASpin.valueChanged.connect(self.updateSpacing)
         self.autoSpacingCheckBox.toggled.connect(self.toggleAutoSpace)
 
-        # self.slmBinaryLabel.setGeometry(QtCore.QRect(0, 0, 300, 800))
         # self.slmBinaryLabel.setStyleSheet("background-color: rgb(111, 174, 255);")
         self.slmBinaryLabel = QtWidgets.QLabel(self)
         self.slmBinaryLabel.setBackgroundRole(QtGui.QPalette.Base)
         self.slmBinaryLabel.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        self.slmBinaryLabel.setGeometry(QtCore.QRect(0, 0, 450, 150))
         # self.slmBinaryLabel.setScaledContents(True)
 
         self.sampleIntensityLabel = QtWidgets.QLabel(self)
@@ -82,21 +82,21 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         font.setWeight(60)
 
         self.lowerLeftTitle = QtWidgets.QLabel(self.lowerLeftScroll)
-        self.lowerLeftTitle.setGeometry(QtCore.QRect(8, 139, 111, 16))
+        self.lowerLeftTitle.setGeometry(QtCore.QRect(5, 5, 111, 16))
         self.lowerLeftTitle.setFont(font)
         self.lowerLeftTitle.setStyleSheet("color:#777;")
         self.lowerLeftTitle.setObjectName("lowerLeftTitle")
         self.lowerLeftTitle.setText("binary SLM mask")
 
         self.lowerRightTitle = QtWidgets.QLabel(self.lowerRightScroll)
-        self.lowerRightTitle.setGeometry(QtCore.QRect(326, 139, 122, 16))
+        self.lowerRightTitle.setGeometry(QtCore.QRect(5, 5, 122, 16))
         self.lowerRightTitle.setFont(font)
         self.lowerRightTitle.setStyleSheet("color:#777;")
         self.lowerRightTitle.setObjectName("lowerRightTitle")
         self.lowerRightTitle.setText("Intensity At Sample")
 
         self.upperRightTitle = QtWidgets.QLabel(self.upperRightScroll)
-        self.upperRightTitle.setGeometry(QtCore.QRect(190, 4, 122, 16))
+        self.upperRightTitle.setGeometry(QtCore.QRect(5, 5, 122, 16))
         self.upperRightTitle.setFont(font)
         self.upperRightTitle.setStyleSheet("color:#777;")
         self.upperRightTitle.setObjectName("upperRightTitle")
@@ -186,8 +186,8 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         data *= 255
         data = data.astype(np.uint8)
         dh, dw = data.shape
-        w = self.maskIntensityLabel.width()/2
-        h = self.maskIntensityLabel.height()/2
+        w = 150
+        h = 150
         data = data[int(dh/2-h):int(dh/2+h), int(dw/2-w):int(dw/2+w)] * 1
         QI = QtGui.QImage(
             data, data.shape[1], data.shape[0], QtGui.QImage.Format_Indexed8)
