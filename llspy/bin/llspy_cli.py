@@ -471,6 +471,14 @@ def gui(_test):
 
 
 @cli.command()
+def slm():
+    """Launch LLSpy Graphical User Interface"""
+    from llspy.gui.slmwindow import main
+    main()
+
+
+
+@cli.command()
 def reg():
     """Channel registration"""
     print("Not yet implemented")

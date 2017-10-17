@@ -1146,7 +1146,7 @@ file that can be viewed easily in Fiji/ImageJ</string>
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-33</y>
+             <y>0</y>
              <width>534</width>
              <height>310</height>
             </rect>
@@ -1639,6 +1639,9 @@ bead) images acquired in each channel.</string>
                   <string>Specify folder with calibration (e.g. tetraspeck
 bead) images acquired in each channel.</string>
                  </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
                  <property name="placeholderText">
                   <string> registration file or fiducial dataset...</string>
                  </property>
@@ -2024,7 +2027,7 @@ bead) images acquired in each channel.</string>
         <string>Config</string>
        </attribute>
        <layout class="QGridLayout" name="configTabGridLayout">
-        <item row="11" column="2">
+        <item row="10" column="2">
          <widget class="QCheckBox" name="confirmOnQuitCheckBox">
           <property name="toolTip">
            <string>The &quot;reduce to raw&quot; function deletes all
@@ -2041,7 +2044,7 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="9" column="2">
+        <item row="8" column="2">
          <widget class="QCheckBox" name="reprocessCheckBox">
           <property name="toolTip">
            <string>The &quot;reduce to raw&quot; function deletes all
@@ -2065,42 +2068,11 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="15" column="2">
-         <widget class="QGroupBox" name="previewBackendGroupBox">
-          <property name="title">
-           <string notr="true"/>
+        <item row="11" column="2">
+         <widget class="QPushButton" name="genFlashParams">
+          <property name="text">
+           <string>Generate Camera Calibration File</string>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_10">
-           <property name="leftMargin">
-            <number>8</number>
-           </property>
-           <property name="topMargin">
-            <number>8</number>
-           </property>
-           <property name="rightMargin">
-            <number>8</number>
-           </property>
-           <property name="bottomMargin">
-            <number>8</number>
-           </property>
-           <item>
-            <widget class="QRadioButton" name="prevBackendSpimagineRadio">
-             <property name="text">
-              <string>spimagine</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="prevBackendMatplotlibRadio">
-             <property name="text">
-              <string>matplotlib</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
          </widget>
         </item>
         <item row="18" column="2">
@@ -2162,6 +2134,63 @@ in the main window, and processed in turn.</string>
           </layout>
          </widget>
         </item>
+        <item row="0" column="2">
+         <widget class="QGroupBox" name="gpusGroupBox">
+          <property name="toolTip">
+           <string>Toggle the GPUs that you want to use for processing.
+ Work will be distributed among them</string>
+          </property>
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QHBoxLayout" name="gpuGroupBoxLayout">
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item row="15" column="2">
+         <widget class="QGroupBox" name="previewBackendGroupBox">
+          <property name="title">
+           <string notr="true"/>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <property name="leftMargin">
+            <number>8</number>
+           </property>
+           <property name="topMargin">
+            <number>8</number>
+           </property>
+           <property name="rightMargin">
+            <number>8</number>
+           </property>
+           <property name="bottomMargin">
+            <number>8</number>
+           </property>
+           <item>
+            <widget class="QRadioButton" name="prevBackendSpimagineRadio">
+             <property name="text">
+              <string>spimagine</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="prevBackendMatplotlibRadio">
+             <property name="text">
+              <string>matplotlib</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
         <item row="2" column="2">
          <widget class="QLineEdit" name="cudaDeconvPathLineEdit">
           <property name="text">
@@ -2195,45 +2224,6 @@ in the main window, and processed in turn.</string>
           </property>
           <property name="checked">
            <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="6">
-         <widget class="QToolButton" name="defaultRegCalibPathToolButton">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="defaultRegCalibPathLabel">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Default Reg Calib</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>defaultRegCalibPathLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="2">
-         <widget class="QLineEdit" name="defaultRegCalibPathLineEdit">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="placeholderText">
-           <string>path to default registration calibration (tetraspeck) images</string>
           </property>
          </widget>
         </item>
@@ -2305,7 +2295,7 @@ in the main window, and processed in turn.</string>
           </property>
          </spacer>
         </item>
-        <item row="10" column="2">
+        <item row="9" column="2">
          <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
           <property name="toolTip">
            <string>The &quot;reduce to raw&quot; function deletes all
@@ -2383,13 +2373,6 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="2">
-         <widget class="QPushButton" name="genFlashParams">
-          <property name="text">
-           <string>Generate Camera Calibration File</string>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="cudaDeconvPathLabel">
           <property name="text">
@@ -2401,25 +2384,6 @@ preview of the dataset for later review.</string>
           <property name="buddy">
            <cstring>cudaDeconvPathLineEdit</cstring>
           </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QGroupBox" name="gpusGroupBox">
-          <property name="toolTip">
-           <string>Toggle the GPUs that you want to use for processing.
- Work will be distributed among them</string>
-          </property>
-          <property name="title">
-           <string/>
-          </property>
-          <layout class="QHBoxLayout" name="gpuGroupBoxLayout">
-           <property name="topMargin">
-            <number>2</number>
-           </property>
-           <property name="bottomMargin">
-            <number>2</number>
-           </property>
-          </layout>
          </widget>
         </item>
         <item row="0" column="0">
@@ -2446,6 +2410,13 @@ preview of the dataset for later review.</string>
           </property>
           <property name="autoRaise">
            <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="2">
+         <widget class="QPushButton" name="slmPatternGeneratorButton">
+          <property name="text">
+           <string>SLM Pattern Generator</string>
           </property>
          </widget>
         </item>
@@ -2799,10 +2770,18 @@ QProgressBar::chunk:horizontal {
     <addaction name="actionAbout_LLSpy"/>
     <addaction name="actionHelp"/>
    </widget>
-   <addaction name="menuLLSpy"/>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionCamera_Calibration"/>
+    <addaction name="actionSLM_Pattern_Generator"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuProcess"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuLLSpy"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="enabled">
@@ -2951,6 +2930,16 @@ and restore folder to it's original state
   <action name="actionHelp">
    <property name="text">
     <string>Help</string>
+   </property>
+  </action>
+  <action name="actionCamera_Calibration">
+   <property name="text">
+    <string>Camera Calibration</string>
+   </property>
+  </action>
+  <action name="actionSLM_Pattern_Generator">
+   <property name="text">
+    <string>SLM Pattern Generator</string>
    </property>
   </action>
  </widget>
