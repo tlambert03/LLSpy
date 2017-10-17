@@ -123,7 +123,7 @@ def move_corrected(path):
                     t += 1
 
 
-def get_refObj(regCalibPath):
+def get_regObj(regCalibPath):
     """Detect whether provided path is a directory of tiffs with fiducials or
     a pre-calibrated registration file"""
     refObj = None
@@ -137,8 +137,12 @@ def get_refObj(regCalibPath):
     elif os.path.isdir(regCalibPath):  # path must be raw fidicial dataset
         refObj = RegDir(regCalibPath)
         if not refObj.isValid:
-            raise RegistrationError(
-                'Not a valid registration calibration dataset: {}'.format(regCalibPath))
+            mes = """
+                  Not a valid registration calibration dataset: {path}\n\n
+                  Registration requires a folder of multi-channel fiducial marker
+                  tiff files, as well as a settings.txt file
+                  """
+            raise RegistrationError(mes.format(path=regCalibPath))
         logger.debug('RegCalib Path detected as fiducial dataset')
     return refObj
 
@@ -261,7 +265,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
                 logger.error(
                     'Skipping Registration: no Calibration Object path provided')
             else:
-                refObj = get_refObj(P.regCalibPath)
+                refObj = get_regObj(P.regCalibPath)
                 if isinstance(refObj, (RegDir, RegFile)) and refObj.isValid:
                     voxsize = [exp.parameters.dzFinal, exp.parameters.dx, exp.parameters.dx]
                     for i, d in enumerate(zip(stacks, P.wavelength)):
@@ -1043,7 +1047,7 @@ class LLSdir(object):
             logger.error('Cannot register single channel dataset')
             return
 
-        refObj = get_refObj(regCalibPath)
+        refObj = get_regObj(regCalibPath)
         if isinstance(refObj, (RegDir, RegFile)) and refObj.isValid:
             voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
             subdirs = [x for x in self.path.iterdir() if x.is_dir() and
@@ -1158,8 +1162,11 @@ class RegDir(LLSdir):
     def reload_data(self):
         self.cloudset(redo=True)
 
-    def write_reg_file(self, outfile, refs=None, **kwargs):
+    def write_reg_file(self, outdir, filename=None, refs=None, **kwargs):
         """write all of the tforms for this cloudset to file"""
+
+        if not os.path.isdir(outdir):
+            raise FileNotFoundError('Directory does not exist: {}'.format(outdir))
 
         class npEncoder(json.JSONEncoder):
 
@@ -1192,8 +1199,15 @@ class RegDir(LLSdir):
         }
         outstring = json.dumps(outdict, cls=npEncoder, indent=2)
         outstring = outstring.replace('"[', ' [').replace(']"', ']')
+
+        if filename is None or not isinstance(filename, str):
+            filename = 'LLSreg_{}_{}.reg'.format(self.date.strftime('%y%m%d'),
+                "".join(['r'+str(w) for w in refs]))
+        outfile = os.path.join(outdir, filename)
         with open(outfile, 'w') as file:
             file.write(outstring)
+
+        return outfile
 
     def get_tform(self, movingWave, refWave=488, mode='2step'):
         return self.cloudset().tform(movingWave, refWave, mode)
