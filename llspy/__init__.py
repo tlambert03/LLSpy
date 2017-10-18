@@ -1,8 +1,15 @@
 from .version import __version__
 
 import logging
-logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
 logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(levelname)s:%(name)s | %(message)s')
+
+import sys
+if '--debug' in sys.argv:
+    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(name)s | %(message)s')
+if 'install' in sys.argv:
+    logging.getLogger("llspy.libcudawrapper").setLevel(logging.CRITICAL)
+
 
 from . import config
 from . import otf
