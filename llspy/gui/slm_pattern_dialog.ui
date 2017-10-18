@@ -29,6 +29,97 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
+   <item row="1" column="0" colspan="2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QScrollArea" name="lowerLeftScroll">
+       <property name="minimumSize">
+        <size>
+         <width>450</width>
+         <height>150</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>450</width>
+         <height>150</height>
+        </size>
+       </property>
+       <property name="widgetResizable">
+        <bool>true</bool>
+       </property>
+       <widget class="QWidget" name="scrollAreaWidgetContents_5">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>448</width>
+          <height>148</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QScrollArea" name="lowerRightScroll">
+       <property name="minimumSize">
+        <size>
+         <width>450</width>
+         <height>150</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>450</width>
+         <height>150</height>
+        </size>
+       </property>
+       <property name="widgetResizable">
+        <bool>true</bool>
+       </property>
+       <widget class="QWidget" name="scrollAreaWidgetContents_4">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>448</width>
+          <height>148</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="1">
+    <widget class="QScrollArea" name="upperRightScroll">
+     <property name="minimumSize">
+      <size>
+       <width>300</width>
+       <height>300</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>300</width>
+       <height>300</height>
+      </size>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>298</width>
+        <height>298</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="minimumSize">
@@ -517,7 +608,7 @@ factor * wavelength/NA_inner</string>
        <string>Batch</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="0" column="0" colspan="2">
+       <item row="0" column="0" colspan="7">
         <widget class="QLabel" name="label_6">
          <property name="font">
           <font>
@@ -539,8 +630,8 @@ factor * wavelength/NA_inner</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEdit">
+       <item row="1" column="1" colspan="6">
+        <widget class="QLineEdit" name="batch_wave">
          <property name="placeholderText">
           <string> e.g.  488, 560, 640</string>
          </property>
@@ -556,8 +647,8 @@ factor * wavelength/NA_inner</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEdit_2">
+       <item row="2" column="1" colspan="6">
+        <widget class="QLineEdit" name="batch_innerNA">
          <property name="placeholderText">
           <string> e.g.  0.44, 0.325</string>
          </property>
@@ -573,8 +664,8 @@ factor * wavelength/NA_inner</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEdit_3">
+       <item row="3" column="1" colspan="6">
+        <widget class="QLineEdit" name="batch_outerNA">
          <property name="placeholderText">
           <string> e.g.  0.55, 0.40</string>
          </property>
@@ -583,15 +674,15 @@ factor * wavelength/NA_inner</string>
        <item row="4" column="0">
         <widget class="QLabel" name="label_20">
          <property name="text">
-          <string>(#beam, spacing):</string>
+          <string>(#beam, space):</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="lineEdit_4">
+       <item row="4" column="1" colspan="6">
+        <widget class="QLineEdit" name="batch_beamSpacing">
          <property name="placeholderText">
           <string> e.g.  (1,0), (3, 22), (fill, auto)</string>
          </property>
@@ -600,7 +691,7 @@ factor * wavelength/NA_inner</string>
        <item row="5" column="0">
         <widget class="QLabel" name="label_21">
          <property name="text">
-          <string>X offset:</string>
+          <string>X Shift:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -608,31 +699,99 @@ factor * wavelength/NA_inner</string>
         </widget>
        </item>
        <item row="5" column="1">
-        <widget class="QLineEdit" name="lineEdit_5">
+        <widget class="QLineEdit" name="batch_xShift">
+         <property name="minimumSize">
+          <size>
+           <width>95</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="placeholderText">
-          <string> e.g.  -4, -2, 0, 2, 4</string>
+          <string> start-stop-step</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="5" column="2">
         <widget class="QLabel" name="label_22">
          <property name="text">
-          <string>Y offset:</string>
+          <string>Y Shift:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QLineEdit" name="lineEdit_6">
+       <item row="5" column="3">
+        <widget class="QLineEdit" name="batch_yShift">
+         <property name="minimumSize">
+          <size>
+           <width>95</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="placeholderText">
-          <string> e.g.  -4, -2, 0, 2, 4</string>
+          <string> start-stop-step</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
-        <widget class="QPushButton" name="pushButton_3">
+       <item row="5" column="4">
+        <widget class="QLabel" name="label_23">
+         <property name="text">
+          <string>Tilt:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="5" colspan="2">
+        <widget class="QLineEdit" name="batch_tilt">
+         <property name="minimumSize">
+          <size>
+           <width>120</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="placeholderText">
+          <string> start-stop-step</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_24">
+         <property name="text">
+          <string>Output Dir:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1" colspan="5">
+        <widget class="QLineEdit" name="batch_outputDir">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="placeholderText">
+          <string> directory where files will be written...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="6">
+        <widget class="QPushButton" name="chooseBatchOutputDir">
+         <property name="text">
+          <string>Choose Dir</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" colspan="6">
+        <widget class="QPushButton" name="batchProcessButton">
          <property name="enabled">
           <bool>false</bool>
          </property>
@@ -857,97 +1016,6 @@ factor * wavelength/NA_inner</string>
         </spacer>
        </item>
       </layout>
-     </widget>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QScrollArea" name="lowerLeftScroll">
-       <property name="minimumSize">
-        <size>
-         <width>450</width>
-         <height>150</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>450</width>
-         <height>150</height>
-        </size>
-       </property>
-       <property name="widgetResizable">
-        <bool>true</bool>
-       </property>
-       <widget class="QWidget" name="scrollAreaWidgetContents_5">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>448</width>
-          <height>148</height>
-         </rect>
-        </property>
-       </widget>
-      </widget>
-     </item>
-     <item>
-      <widget class="QScrollArea" name="lowerRightScroll">
-       <property name="minimumSize">
-        <size>
-         <width>450</width>
-         <height>150</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>450</width>
-         <height>150</height>
-        </size>
-       </property>
-       <property name="widgetResizable">
-        <bool>true</bool>
-       </property>
-       <widget class="QWidget" name="scrollAreaWidgetContents_4">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>448</width>
-          <height>148</height>
-         </rect>
-        </property>
-       </widget>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="0" column="1">
-    <widget class="QScrollArea" name="upperRightScroll">
-     <property name="minimumSize">
-      <size>
-       <width>300</width>
-       <height>300</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>300</width>
-       <height>300</height>
-      </size>
-     </property>
-     <property name="widgetResizable">
-      <bool>true</bool>
-     </property>
-     <widget class="QWidget" name="scrollAreaWidgetContents">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>298</width>
-        <height>298</height>
-       </rect>
-      </property>
      </widget>
     </widget>
    </item>

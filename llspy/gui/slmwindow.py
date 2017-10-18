@@ -1,6 +1,5 @@
-import os
+import re
 import numpy as np
-import json
 from llspy import slm as _slm
 
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -40,6 +39,26 @@ SLMs = {
         'ypix': 1000,
     }
 }
+
+
+def str_is_float(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+class PatternGenThread(QtCore.QThread):
+    finished = QtCore.pyqtSignal(tuple)
+
+    def __init__(self, params):
+        QtCore.QThread.__init__(self)
+        self.params = params
+
+    def run(self):
+        output = _slm.makeSLMPattern(**self.params)
+        self.finished.emit(output)
 
 
 class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
@@ -82,21 +101,21 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         font.setWeight(60)
 
         self.lowerLeftTitle = QtWidgets.QLabel(self.lowerLeftScroll)
-        self.lowerLeftTitle.setGeometry(QtCore.QRect(5, 5, 111, 16))
+        self.lowerLeftTitle.setGeometry(QtCore.QRect(5, 5, 170, 16))
         self.lowerLeftTitle.setFont(font)
         self.lowerLeftTitle.setStyleSheet("color:#777;")
         self.lowerLeftTitle.setObjectName("lowerLeftTitle")
         self.lowerLeftTitle.setText("binary SLM mask")
 
         self.lowerRightTitle = QtWidgets.QLabel(self.lowerRightScroll)
-        self.lowerRightTitle.setGeometry(QtCore.QRect(5, 5, 122, 16))
+        self.lowerRightTitle.setGeometry(QtCore.QRect(5, 5, 170, 16))
         self.lowerRightTitle.setFont(font)
         self.lowerRightTitle.setStyleSheet("color:#777;")
         self.lowerRightTitle.setObjectName("lowerRightTitle")
         self.lowerRightTitle.setText("Intensity At Sample")
 
         self.upperRightTitle = QtWidgets.QLabel(self.upperRightScroll)
-        self.upperRightTitle.setGeometry(QtCore.QRect(5, 5, 122, 16))
+        self.upperRightTitle.setGeometry(QtCore.QRect(5, 5, 170, 16))
         self.upperRightTitle.setFont(font)
         self.upperRightTitle.setStyleSheet("color:#777;")
         self.upperRightTitle.setObjectName("upperRightTitle")
@@ -104,12 +123,28 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
 
         self.previewPatternButton.clicked.connect(self.previewPattern)
         self.writeFileButton.clicked.connect(self.writeFile)
+        self.batchProcessButton.clicked.connect(self.batchProcess)
+
         self.PatternPresetsCombo.currentTextChanged.connect(self.updatePreset)
         self.SLMmodelCombo.currentTextChanged.connect(self.setSLM)
         self.SLMmodelCombo.clear()
         self.SLMmodelCombo.addItems(SLMs.keys())
         self.setSLM('SXGA-3DM')
         self.PatternPresetsCombo.setCurrentText('Square Lattice, Fill Chip')
+
+        rangeRX = QtCore.QRegExp("[\d-]+-?([\d-]+)?-?([\d-]+)")
+        rangeValidator = QtGui.QRegExpValidator(rangeRX)
+        self.batch_xShift.setValidator(rangeValidator)
+        self.batch_yShift.setValidator(rangeValidator)
+        rangeRX = QtCore.QRegExp("[\d.]+-?([\d.]+)?-?([\d.]+)")
+        rangeValidator = QtGui.QRegExpValidator(rangeRX)
+        self.batch_tilt.setValidator(rangeValidator)
+        numCommaRX = QtCore.QRegExp("[\d,.]+")
+        numCommaValidator = QtGui.QRegExpValidator(numCommaRX)
+        self.batch_outerNA.setValidator(numCommaValidator)
+        self.batch_innerNA.setValidator(numCommaValidator)
+        numCommaRX = QtCore.QRegExp("[\d,]+")
+        self.batch_wave.setValidator(QtGui.QRegExpValidator(numCommaRX))
 
     def toggleAutoFill(self, val):
         dependents = [self.slm_pixelSize_spin, self.slm_xpix_spin,
@@ -150,55 +185,64 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         self.spacingSpin.setValue(spacing)
 
     def previewPattern(self):
+        self.previewPatternButton.setText('Calculating...')
+        self.previewPatternButton.setDisabled(True)
 
-        slm_binary, sample_intensity, mask_intensity = _slm.makeSLMPattern(**self.getparams())
+        def show(output):
+            slm_binary, sample_intensity, mask_intensity = output
 
-        data = slm_binary.astype(np.uint8)
-        dh, dw = data.shape
-        w = self.slmBinaryLabel.width()/2
-        h = self.slmBinaryLabel.height()/2
-        data = data[int(dh/2-h):int(dh/2+h), int(dw/2-w):int(dw/2+w)] * 255
-        QI = QtGui.QImage(
-            data, data.shape[1], data.shape[0], QtGui.QImage.Format_Indexed8)
-        p = QtGui.QPixmap.fromImage(QI)
-        self.slmBinaryLabel.setPixmap(p)
+            data = slm_binary.astype(np.uint8)
+            dh, dw = data.shape
+            w = self.slmBinaryLabel.width()/2
+            h = self.slmBinaryLabel.height()/2
+            data = data[int(dh/2-h):int(dh/2+h), int(dw/2-w):int(dw/2+w)] * 255
+            QI = QtGui.QImage(
+                data, data.shape[1], data.shape[0], QtGui.QImage.Format_Indexed8)
+            p = QtGui.QPixmap.fromImage(QI)
+            self.slmBinaryLabel.setPixmap(p)
 
-        data = sample_intensity
-        data -= data.min()
-        data /= data.max() * 0.65
-        data = np.minimum(data, 1)
-        data *= 255
-        data = data.astype(np.uint8)
-        dh, dw = data.shape
-        w = self.sampleIntensityLabel.width()/2
-        h = self.sampleIntensityLabel.height()/2
-        data = data[int(dh/2-h):int(dh/2+h), int(dw/2-w):int(dw/2+w)] * 1
-        QI = QtGui.QImage(
-            data, data.shape[1], data.shape[0], QtGui.QImage.Format_Indexed8)
-        QI.setColorTable(QLuts['VIRIDIS'])
-        p = QtGui.QPixmap.fromImage(QI)
-        self.sampleIntensityLabel.setPixmap(p)
+            data = sample_intensity
+            data -= data.min()
+            data /= data.max() * 0.65
+            data = np.minimum(data, 1)
+            data *= 255
+            data = data.astype(np.uint8)
+            dh, dw = data.shape
+            w = self.sampleIntensityLabel.width()/2
+            h = self.sampleIntensityLabel.height()/2
+            data = data[int(dh/2-h):int(dh/2+h), int(dw/2-w):int(dw/2+w)] * 1
+            QI = QtGui.QImage(
+                data, data.shape[1], data.shape[0], QtGui.QImage.Format_Indexed8)
+            QI.setColorTable(QLuts['VIRIDIS'])
+            p = QtGui.QPixmap.fromImage(QI)
+            self.sampleIntensityLabel.setPixmap(p)
 
-        data = mask_intensity
-        data -= data.min()
-        data /= data.max() * 0.65
-        data = np.minimum(data, 1)
-        data *= 255
-        data = data.astype(np.uint8)
-        dh, dw = data.shape
-        w = 150
-        h = 150
-        data = data[int(dh/2-h):int(dh/2+h), int(dw/2-w):int(dw/2+w)] * 1
-        QI = QtGui.QImage(
-            data, data.shape[1], data.shape[0], QtGui.QImage.Format_Indexed8)
-        QI.setColorTable(QLuts['INFERNO'])
-        p = QtGui.QPixmap.fromImage(QI)
-        self.maskIntensityLabel.setPixmap(p)
+            data = mask_intensity
+            data -= data.min()
+            data /= data.max() * 0.65
+            data = np.minimum(data, 1)
+            data *= 255
+            data = data.astype(np.uint8)
+            dh, dw = data.shape
+            w = 150
+            h = 150
+            data = data[int(dh/2-h):int(dh/2+h), int(dw/2-w):int(dw/2+w)] * 1
+            QI = QtGui.QImage(
+                data, data.shape[1], data.shape[0], QtGui.QImage.Format_Indexed8)
+            QI.setColorTable(QLuts['INFERNO'])
+            p = QtGui.QPixmap.fromImage(QI)
+            self.maskIntensityLabel.setPixmap(p)
 
+            self.previewPatternButton.setText('Preview Pattern')
+            self.previewPatternButton.setEnabled(True)
 
-        #w = self.slmBinaryLabel.width()
-        #h = self.slmBinaryLabel.height()
-        #self.slmBinaryLabel.setPixmap(p.scaled(w, h, QtCore.Qt.KeepAspectRatio))
+        self.patternThread = PatternGenThread(self.getparams())
+        self.patternThread.finished.connect(show)
+        self.patternThread.start()
+
+        # w = self.slmBinaryLabel.width()
+        # h = self.slmBinaryLabel.height()
+        # self.slmBinaryLabel.setPixmap(p.scaled(w, h, QtCore.Qt.KeepAspectRatio))
 
     def writeFile(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(
@@ -290,6 +334,137 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         opts['slm_ypix'] = self.slm_ypix_spin.value()
         logger.info("SLM params: {}".format(opts))
         return opts
+
+    def batchProcess(self):
+        self.getBatchParams()
+
+    def getBatchParams(self):
+        errors = []
+        waves = []
+        innerNAs = []
+        outerNAs = []
+        bstups = []
+
+        wave = self.batch_wave.text()
+        if not any(wave.split(',')):
+            errors.append('Must include at least one wavelength')
+        else:
+            for w in wave.split(','):
+                if not w:
+                    continue
+                elif not w.isdigit() or not (300 < int(w) < 800):
+                    errors.append('Wavelength "{}" not an integeger from 300-800'.format(w))
+                else:
+                    waves.append(float(w)/1000)
+
+        innerNA = self.batch_innerNA.text()
+        if not any(innerNA.split(',')):
+            errors.append('Must include at least one innerNA')
+        else:
+            for w in innerNA.split(','):
+                try:
+                    w = float(w)
+                    if not (0 < w < .7):
+                        raise ValueError('')
+                    else:
+                        innerNAs.append(w)
+                except ValueError:
+                    errors.append('InnerNA "{}" not a float from 0-0.7'.format(w))
+
+        outerNA = self.batch_outerNA.text()
+        if not any(outerNA.split(',')):
+            errors.append('Must include at least one outerNA')
+        else:
+            for w in outerNA.split(','):
+                try:
+                    w = float(w)
+                    if not (0 < w < .7):
+                        raise ValueError('')
+                    else:
+                        outerNAs.append(w)
+                except ValueError:
+                    errors.append('outerNA "{}" not a float from 0-0.7'.format(w))
+
+        beamSpacing = self.batch_beamSpacing.text()
+        tupstring = "(\\(.*?\\))"
+        tups = re.findall(tupstring, beamSpacing)
+        if not len(tups):
+            errors.append('Must include at least one "(beams, spacing)" tuple')
+        else:
+            from ast import literal_eval as make_tuple
+            for tup in tups:
+                try:
+                    t = make_tuple(tup)
+                    if len(t) != 2:
+                        errors.append('(beams, spacing) length not equal to 2: {}'.format(t))
+                    else:
+                        if not (1 <= t[0] <= 100):
+                            errors.append('Number of Beams "{}" not an int between 0-100'.format(t[0]))
+                        if not (0 < t[1] <= 50):
+                            errors.append('Beam Spacing "{}" not a float between 0-50'.format(t[1]))
+                        if (1 <= t[0] <= 100) and (0 < t[1] <= 50):
+                            bstups.append((int(t[0]), float(t[1])))
+                except ValueError:
+                    t = tup.strip('(').strip(')').split(',')
+                    if len(t) != 2:
+                        errors.append('(beams, spacing) length not equal to 2: {}'.format(t))
+                    else:
+                        if t[0].lower() == 'fill':
+                            t[0] = 'fill'
+                        elif t[0].isdigit() and (1 <= int(t[0]) <= 100):
+                            t[0] = int(t[0])
+                        else:
+                            errors.append('Number of Beams "{}" not an int between 0-100 or keyword "fill"'.format(t[0]))
+                            t[0] = None
+                        if t[1].lower() == 'auto':
+                            t[1] = 'auto'
+                        elif str_is_float(t[1]) and (0 < float(t[1]) <= 50):
+                            t[1] = float(t[1])
+                        else:
+                            errors.append('Beam Spacing "{}" must either be float between 0-50 or keyword "auto"'.format(t[1]))
+                            t[1] = None
+                        if all([t[0], t[1]]):
+                            bstups.append(tuple(t))
+
+        xshift = self.batch_xShift.text()
+        if not any(xshift.split('-')):
+            xshifts = [0]
+        else:
+            try:
+                a = [int(x) for x in xshift.split('-')]
+                xshifts = range(*a)
+            except TypeError as e:
+                errors.append('X Shift Range not valid: {}'.format(e))
+
+        yshift = self.batch_yShift.text()
+        if not any(yshift.split('-')):
+            yshifts = [0]
+        else:
+            try:
+                a = [int(y) for y in yshift.split('-')]
+                yshifts = range(*a)
+            except TypeError as e:
+                errors.append('Y Shift Range not valid: {}'.format(e))
+
+        tilt = self.batch_tilt.text()
+        if not any(tilt.split('-')):
+            tilts = [0]
+        else:
+            try:
+                a = [float(t) for t in tilt.split('-')]
+                tilts = range(*a)
+            except TypeError as e:
+                errors.append('Tilt Range not valid: {}'.format(e))
+
+        # yshift = self.batch_yShift.text()
+        # tilt = self.batch_tilt.text()
+        if len(errors):
+            self.show_error_window('There were some errors in the batch slm settings:',
+                title='Batch SLM Error', info='\n'.join(errors))
+        else:
+            print('ready')
+
+        # check for innerNA > outerNA
 
     @QtCore.pyqtSlot(str, str, str, str)
     def show_error_window(self, errMsg, title=None, info=None, detail=None):
