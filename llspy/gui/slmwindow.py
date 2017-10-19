@@ -49,7 +49,7 @@ def str_is_float(s):
         return False
 
 
-class PatternGenThread(QtCore.QThread):
+class PatternPreviewThread(QtCore.QThread):
     finished = QtCore.pyqtSignal(tuple)
 
     def __init__(self, params):
@@ -57,8 +57,22 @@ class PatternGenThread(QtCore.QThread):
         self.params = params
 
     def run(self):
-        output = _slm.makeSLMPattern(**self.params)
+        output = _slm.makeSLMPattern(pattern_only=False, **self.params)
         self.finished.emit(output)
+
+
+class PatternWriteThread(QtCore.QThread):
+    finished = QtCore.pyqtSignal()
+
+    def __init__(self, path, params):
+        QtCore.QThread.__init__(self)
+        self.params = params
+        self.path = path
+
+    def run(self):
+        logger.debug("Writing SLM pattern to " + self.path)
+        _slm.makeSLMPattern(outdir=self.path, pattern_only=True, **self.params)
+        self.finished.emit()
 
 
 class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
@@ -67,6 +81,7 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         self.setupUi(self)
         self.setWindowTitle('LLSpy :: SLM Pattern Generator')
         self.autofill = False
+        self.patternWriteThreads = []
 
         self.fudgeSpin.valueChanged.connect(self.updateSpacing)
         self.wavelengthSpin.valueChanged.connect(self.updateSpacing)
@@ -236,7 +251,7 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
             self.previewPatternButton.setText('Preview Pattern')
             self.previewPatternButton.setEnabled(True)
 
-        self.patternThread = PatternGenThread(self.getparams())
+        self.patternThread = PatternPreviewThread(self.getparams())
         self.patternThread.finished.connect(show)
         self.patternThread.start()
 
@@ -250,8 +265,10 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
             QtWidgets.QFileDialog.ShowDirsOnly)
         if path is None or path is '':
             return
-        logger.debug("Writing SLM pattern to " + path)
-        _slm.makeSLMPattern(outdir=path, **self.getparams())
+        thread = PatternWriteThread(path, self.getparams())
+        thread.finished.connect(thread.deleteLater)
+        thread.start()
+        self.patternWriteThreads.append(thread)
 
     def updatePreset(self, preset):
         logger.debug("SLM Preset changed to: " + preset)

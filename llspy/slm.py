@@ -2,13 +2,15 @@ import numpy as np
 import os
 import sys
 from numpy.fft import fft2, ifftshift, fftshift
-from scipy.interpolate import RectBivariateSpline, interp2d, RegularGridInterpolator
+from scipy.interpolate import RectBivariateSpline, RegularGridInterpolator
 from numba import jit
+
 
 def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
                    n_beam='fill', crop=0.15, tilt=0, shift_x=0, shift_y=0,
                    mag=167.364, pixel=13.662, slm_xpix=1280, slm_ypix=1024,
-                   fillchip=0.95, fudge=0.95, show=False, outdir=None):
+                   fillchip=0.95, fudge=0.95, show=False, outdir=None,
+                   pattern_only=True):
 
     # auto-choose good spacing
     if not spacing:
@@ -19,7 +21,7 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
         n_beam = int(np.floor(1 + ((fillchip * (slm_xpix * (pixel/mag)/2)) / spacing)))
 
     # expand cropping for single bessel
-    #if n_beam == 1:
+    # if n_beam == 1:
     #    crop = min((.0291, crop))
 
     # Populate real space array
@@ -112,6 +114,17 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
         plt.title('Cropped and pixelated phase from SLM pattern exiting the polarizing beam splitter')
         plt.axis('image')
 
+        plt.figure()
+        plt.imshow(slm_pattern_final, interpolation='nearest', cmap='gray')
+        plt.title('Binarized image to output to SLM')
+
+    if pattern_only:
+        if show:
+            plt.show()
+        return slm_pattern_final
+
+    # THIS SHOULD GO INTO SEPERATE FUNCTION
+
     # Convert SLM pattern to phase modulation
     # Interpolate back so that there is odd number of pixels for FFT calculation (want center at 0)
 
@@ -124,11 +137,6 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
     slm_field = np.exp(1j * slm_pattern_cal)
 
     # at this point, matlab has complex component = 0.0i
-
-    # interpolator = RectBivariateSpline(x_slm, y_slm, slm_pattern)
-    # interpolator = interp2d(x_slm, y_slm, slm_pattern)
-    # slm_pattern_cal = interpolator(x, y)
-    # slm_field = np.exp(1j * slm_pattern_cal)
 
     # Compute intensity impinging on annular mask
     pupil_field_impinging = fftshift(fft2(ifftshift(slm_field)))
@@ -156,29 +164,6 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
         plt.title('Actual intensity at sample')
         plt.axis('image')
 
-    # Account for rectangular aspect ratio of SLM and convert phase to binary
-    low = int(np.floor((slm_xpix/2)-(slm_ypix/2)-1))
-    high = int(low + slm_ypix)
-    slm_pattern_final = (slm_pattern[low:high, :] / np.pi) != 0
-    if show:
-        plt.figure()
-        plt.imshow(slm_pattern_final, interpolation='nearest', cmap='gray')
-        plt.title('Binarized image to output to SLM')
-
-    if outdir is not None:
-        outdir = os.path.abspath(os.path.expanduser(outdir))
-        if os.path.isdir(outdir):
-            from scipy.misc import imsave
-            namefmt = 'py{:.0f}_{:2d}b_s{:.2f}_c{:.2f}_na{:.0f}-{:.0f}_x{:02d}_y{:02d}_t{:0.3f}'
-            name = namefmt.format(wave*1000, n_beam*2-1, spacing, crop,
-                                  100*NA_outer, 100*NA_inner, shift_x, shift_y, tilt)
-            name = name.replace('.', 'p')
-            outpath = os.path.join(outdir, name + '.png')
-            # rgbout = np.tile(slm_pattern_final, (3, 1, 1)).transpose(1, 2, 0)
-            # rgbout = rgbout.astype(np.uint8) * 255
-            imsave(outpath, slm_pattern_final)
-
-    if show:
         plt.show()
 
     return (slm_pattern_final, intensity_final,
@@ -189,9 +174,14 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import time
     now = time.time()
-    a, b, c = makeSLMPattern(0.488, n_beam='fill', show=False,)
+    a = makeSLMPattern(0.488, n_beam='fill', show=False, outdir='~/Desktop')
     print("Time: {}".format(time.time()-now))
-    plt.figure()
-    plt.imshow(a, interpolation='nearest', cmap='gray')
-    plt.title('Binarized image to output to SLM')
-    plt.show()
+
+    now = time.time()
+    #a, b, c = makeSLMPattern(0.488, n_beam='fill', show=False, pattern_only=False)
+    print("Time: {}".format(time.time()-now))
+
+    # plt.figure()
+    # plt.imshow(a, interpolation='nearest', cmap='gray')
+    # plt.title('Binarized image to output to SLM')
+    # plt.show()
