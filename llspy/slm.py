@@ -87,6 +87,25 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
 
     # needed slightly higher cropping value for python
 
+    # Account for rectangular aspect ratio of SLM and convert phase to binary
+    low = int(np.floor((slm_xpix/2)-(slm_ypix/2)-1))
+    high = int(low + slm_ypix)
+    slm_pattern_final = (slm_pattern[low:high, :] / np.pi) != 0
+
+    if outdir is not None:
+        outdir = os.path.abspath(os.path.expanduser(outdir))
+        if os.path.isdir(outdir):
+            from PIL import Image
+            namefmt = '{:.0f}_{:2d}b_s{:.2f}_c{:.2f}_na{:.0f}-{:.0f}_x{:02d}_y{:02d}_t{:0.3f}'
+            name = namefmt.format(wave*1000, n_beam*2-1, spacing, crop,
+                                  100*NA_outer, 100*NA_inner, shift_x, shift_y, tilt)
+            name = name.replace('.', 'p')
+            outpath = os.path.join(outdir, name + '.png')
+
+            imout = Image.fromarray(slm_pattern_final.astype(np.uint8)*255)
+            imout = imout.convert('1')
+            imout.save(outpath)
+
     if show:
         plt.figure()
         plt.imshow(slm_pattern, interpolation='nearest')
