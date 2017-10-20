@@ -1,21 +1,25 @@
+.. _registration:
 
 Introduction to Channel Registration
 ====================================
 
 Because almost all multi-channel images have some degree of channel misregistration (particularly on multi-camera setups), LLSpy includes a standard fiducial-based channel registration procedure.  A calibration dataset is acquired with a sample of broad-spectrum diffraction limited objects (such as TetraSpeck beads).  The objects are then detected and localized by fitting to a 3D gaussian model, yielding a set of 3D coordinates (X, Y, Z) for each object, for each channel.  (In LLSpy, a single wavelength set of coordinates is instantiated by the :class:`fiducialreg.FiducialCloud` class and a set of FiducialClouds is instantiated by the :class:`fiducialreg.CloudSet` class).  A transformation can then be calculated that maps (or 'registers') a set of coordinates for one channel (the "moving" set) onto a set of coordinates for another channel (the 'reference' set).  Once calculated, that transformation matrix can then be used to register other data acquired in those two channels. (This of course assumes that nothing has changed in the microscope that would alter the spatial relationship between the images in those two channels... which is not always a safe assumption).
 
-Contraints can be enforced when calculating these transformation matrices, allowing varying degreese of freedom or "flexibility" when mapping one coordinate set onto another.
 
-* The simplest transformation is a 3D **translation**: which just states the number of pixels to shift the image of the "moving" channel in X, Y, and Z, relative to the reference channel.
+Transformation Modes
+********************
 
-In increasing degrees-of-freedom:
+Contraints can be enforced when calculating transformation matrices, allowing varying degreese of freedom or "flexibility" when mapping one coordinate set onto another.
 
-* a **rigid** transform allows for translation and rotation between two channels
-* a **similarity** transform additional allows for scaling/magnification differences between the two channels
-* a full **affine** transform additionally allows for shearing of one image with respect to the other.  When performing channel registraion, it is often beneficial to chose the "least flexible" transformation that "gets the job done", as increasing degrees of freedom can sometimes lead dramatically bad registrations.
+* **Translation**: simply corrects for translational shifts between channels
+* **Rigid**: correct for translation and rotation differences
+* **Similarity**: correct for translation, rotation, and scaling (magnification) differences.
+* **Affine**: corrects translation, rotation, scaling, and shearing
+* **2-step**: performs affine registration in XY and rigid registraion in Z
 
-CPD-Registration
-****************
+When performing channel registraion, it is often beneficial to chose the "least flexible" transformation that "gets the job done", as increasing degrees of freedom can sometimes lead dramatically bad registrations.
+
+**CPD Registration**
 
 The standard registration modes mentioned above require a one-to-one relationship between fidicual markers in each channel.  LLSpy will therefore attempt to discard any coordinate points that do not have a corresponding point in both datasets being registered.  Sometimes, that automated filtering fails, in which case the calculated registration will usually be nonsense.
 LLSpy also includes (experimental) support for `Coherent Point Drift <http://ieeexplore.ieee.org/document/5432191/>`_-based transformation estimation, using a slightly modified version of the `pycpd library <https://github.com/siavashk/pycpd>`_.  For registration modes with 'CPD' prepended to the name, a one-to-one relationship between fiducial markers across channels will **not** be enforced.  Please verify that your chosen registration mode correctly registers the fiducial dataset before applying it to experimental data, as described below in `A Typical Workflow`_.
@@ -64,6 +68,8 @@ Using this template, you may also generate your own registration transformations
 * **reference:** the reference wavelength
 * **moving:** the wavelength to be registered
 * **tform:** the (forward) transformation matrix that maps the moving dataset onto the reference dataset.  Must be a 4x4 matrix where the last row is [0,0,0,1].
+
+The *inworld* key in the example JSON file above indicates that the pixel coordinates have been converted into real-world (i.e. microns X/Y instead of pixels) coordinates prior to calculation of the transformation.  This is currently the default method in LLSpy, which should allow registration files to be used to register datasets whose voxel size differs from the fiducial calibration dataset used to generate the registration file.
 
 A Typical Workflow
 ------------------

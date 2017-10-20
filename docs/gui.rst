@@ -141,21 +141,8 @@ Rotate and interpolate data so that the Z axis of the image volume is orthogonal
 
 **Channel Registration (experimental)**
 
-When "Do Channel Registration" is checked, the deskewed/deconvolved data will be registered using the provided calibration folder, specified in the "Calibration" text field.  This calibration folder should contain at least one Z-stack, for each channel, of a fiducial marker that appears in all channels, such as tetraspeck beads.  The folder must also contain a Settings.txt file (simply acquiring more than one timepoint is an easy way to generate an appropriate folder).
+When "Do Channel Registration" is checked, the deskewed/deconvolved data will be registered using the provided registration file or calibration folder, specified in the "Calibration" text field.  If providing a calibration folder, it should contain at least one Z-stack, for each channel, of a fiducial marker that appears in all channels, such as tetraspeck beads.  The folder must also contain a Settings.txt file (simply acquiring more than one timepoint is an easy way to generate an appropriate folder).  A preferable method is to provide a pre-calculated registration file.  Please read more in the :ref:`registration` section.
 
-The beads will be detected and fit to a 3D gaussian to generate a point cloud of XYZ locations.  The algorithm then limits the point cloud to beads that appear in all channels.  This point cloud can then be used to calculate the transformation required to register the various channels in dataset to the specified "Reference Channel" chosen in the dropdown menu.
-
-*Modes:*
-   * Least-squares point cloud registration:
-      * Translation: simply corrects for translational shifts between channels
-      * Rigid: correct for translation and rotation differences
-      * Similarity: correct for translation, rotation, and scaling (magnifiation) differences.
-      * Affine: corrects translation, rotation, scaling, and shearing
-      * 2-step: performs affine registration in XY and rigid registraion in Z
-   * Coherent Point Drift registration
-      * These options use the coherent point drift algorithm (Myronenko 2010) instead of least-squares.  This can be a bit more robust with low SNR datasets, when the algorithm fails to correctly limit the fiducial point cloud to strictly one-to-one matching points.
-
-Note: some of these modes may fail/crash.  Test with preview prior to processing.  Bug reports welcome!
 
 **Bleach Correction**
 
@@ -181,11 +168,13 @@ The Preview button (Ctrl-P) is used to process and show the first timepoint (by 
 * click on the colorbar to the right, or press the "C" key to cycle the colormap through some LUTs.
 * Press the following keys for various projections.  To return to standard Z-scrolling mode, press the same key again.
 
-    * M - Max intensity projection
-    * N - Min intensity projection
-    * B - Mean intensity projection
-    * V - Standard Deviation intensity projection
-    * , - Median intensity projection
+  * M - Max intensity projection
+  * N - Min intensity projection
+  * B - Mean intensity projection
+  * V - Standard Deviation intensity projection
+  * , - Median intensity projection
+
+* To overlay multiple channels, click the "Overlay" button or press the "O" key on the keyboard.  You may then select the color and contrast for each channel.
 
 To preview multiple timepoints, or something other than the first timepoint, use the time subset field, which accepts a comma seperated string of (zero-indexed) timepoints, or ranges with start-stop[-step] syntax.
 
@@ -197,10 +186,10 @@ For instance:
 
 
 
-Process Button and Time/Channel Subset
---------------------------------------
+Process Button
+--------------
 
-The Preview button (Ctrl-P) is used to process and show the first timepoint (by default) allowing evaluation of the current settings prior to processing of the entire folder.
+The Process button (Ctrl-R) is used to process the entire dataset (by default) using cudaDeconv with the currently selected options.
 
 To process a subset of timepoints or channels, use the time subset and channel subset fields, which accept a comma seperated string of (zero-indexed) timepoints, or ranges with start-stop[-step] syntax.
 
@@ -209,7 +198,6 @@ For instance:
   * 0-2,9 - process the first three and 10th timepoints.
   * 1-5-2 - start-stop-step syntax, processes the 2nd, 4th, and 6th timepoints
   * 0,2-4,7-15-3 - combination of list, range, and range-with-step syntax
-
 
 
 Config Tab
@@ -249,12 +237,6 @@ In order to select and OTF based on mask pattern, the mask must be in the Settin
   [Annular Mask]
   outerNA = 0.5
   innerNA = 0.42
-
-
-Default Reg Calib
-*****************
-
-Not used at the moment.  Instead, use the "Calibration" field provided in the "Do Channel Registration" section of the of Post-Processing tab.
 
 
 .. _Generate Camera Calibration File:
