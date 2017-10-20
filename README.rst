@@ -295,6 +295,7 @@ To Do
 * handle case with multiple experiments in same folder better
 * comboMIP should use registered files when registration requested
 * registered files are always floating point when rest of data is not
+* allow processing of folders without settings.txt
 
 
 .. openCL troubleshooting on Linux
