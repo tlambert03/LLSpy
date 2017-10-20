@@ -28,6 +28,7 @@ Copyright |copy| 2017 Talley Lambert, Harvard Medical School.
    gui
    cli
    api
+   Channel Registration <registration>
 
 Indices and tables
 ==================
