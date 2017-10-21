@@ -124,7 +124,7 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
     if outdir is not None:
         outdir = os.path.abspath(os.path.expanduser(outdir))
         if os.path.isdir(outdir):
-            namefmt = '{:.0f}_{:2d}b_s{:.2f}_c{:.2f}_na{:.0f}-{:.0f}_x{:02d}_y{:02d}_t{:0.3f}'
+            namefmt = '{:.0f}_{:2d}b_s{:.2f}_c{:.2f}_na{:.0f}-{:.0f}_x{:02f}_y{:02f}_t{:0.3f}'
             name = namefmt.format(wave*1000, n_beam*2-1, spacing, crop,
                                   100*NA_outer, 100*NA_inner, shift_x, shift_y, tilt)
             name = name.replace('.', 'p')
