@@ -4,7 +4,7 @@ LLSpy Release History
 Next Version
 ============
 
-`0.3.1`_
+`0.3.2`_
 ========
 
 **Added:**
