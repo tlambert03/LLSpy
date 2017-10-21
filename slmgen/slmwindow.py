@@ -449,7 +449,7 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
             raise InvalidSettingsError('Outer NA must be greater than inner NA')
 
         if 'hex' in self.PatternPresetsCombo.currentText().lower():
-            opts['NA_ideal'] = self.innerNASpin.value()
+            opts['NA_ideal'] = self.idealNASpin.value()
             opts['fill_factor'] = self.hexFillFactorSpin.value()
             opts['bound'] = self.hexBoundCombo.currentText().lower()
         elif 'ronchi' in self.PatternPresetsCombo.currentText().lower():
@@ -482,15 +482,15 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         return path
 
     def batchProcess(self):
+        combos = self.getBatchParams()
+        if not combos:
+            return
+
         path = self.batch_outputDir.text()
         if path is None or path is '':
             path = self.setBatchOutput()
             if not path:
                 return
-
-        combos = self.getBatchParams()
-        if not combos and len(combos) > 0:
-            return
 
         self.threadpool = QtCore.QThreadPool()
         for combo in combos:
@@ -515,6 +515,7 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
 
             worker = PatternWriteThread(path, params)
             self.writeThreadpool.start(worker)
+        # TODO: disable the write button until the threadpool is done
 
     def getBatchParams(self):
         errors = []
@@ -646,7 +647,7 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
                 if len(a) > 1:
                     a[1] += .000001  # include stop index
                 tilts = np.arange(*a)
-                tilts = sorted(list(set([round(ti, 2) for ti in tilts if -1.5 <= t <= 1.5])))
+                tilts = sorted(list(set([round(ti, 2) for ti in tilts if -1.5 <= ti <= 1.5])))
             except TypeError as e:
                 errors.append('Tilt Range not valid: {}'.format(e))
 
@@ -687,7 +688,7 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
-            self.close()
+            pass
         elif event.key() in (QtCore.Qt.Key_P,):
             self.previewPatternButton.click()
         elif event.key() in (QtCore.Qt.Key_W,):
