@@ -376,11 +376,13 @@ def makeSLMPattern_hex(wave=0.488, pixel=13.665, mag=167.364,
         sigma = lattice_full_width / np.sqrt(2 * np.log(2)) / fill_factor
         envelope = np.tile(np.exp(-2 * (z / sigma)**2), (A[1], 1))
         RealE = RealE * envelope.T
+    elif bound == 'none':
+        pass
     else:
-        raise ValueError('invalid bounding function value: ', bound)
+        raise ValueError('bounding function value {} not one of \{step, gauss, none}', bound)
 
     # now rotate the E field as needed to get the pattern in the same plane as the detection objective:
-    RotatedRealE = rotate(RealE, np.rad2deg(tilt), reshape=False)
+    RotatedRealE = rotate(RealE, -np.rad2deg(tilt), reshape=False)
     # save the 4D SLM pattern:
     RotatedRealE = RotatedRealE / RotatedRealE.max()
     # truncate any values below the level of crop:
