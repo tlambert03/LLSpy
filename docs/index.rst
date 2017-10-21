@@ -29,6 +29,7 @@ Copyright |copy| 2017 Talley Lambert, Harvard Medical School.
    cli
    api
    Channel Registration <registration>
+   SLM Pattern Generator <slm>
 
 Indices and tables
 ==================
