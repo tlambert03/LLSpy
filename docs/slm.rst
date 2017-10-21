@@ -81,12 +81,12 @@ The pixel size and dimensions of the SLM can be adjusted on the `Settings Tab`_.
 Preview Pattern
 ***************
 
-The *Preview Pattern* button will generate the SLM mask using the currently selected parameters, and display a preview of the mask in the lower left image area.  The predicted intensity at the sample is shown to the bottom right, and the predicted intensity just after the annular mask is shown to the upper right.  The lookup-tables can be adjusted in the `Settings Tab`_. The **Dither** button in the *Intensity at Sample* window can be toggled to average the pattern in X, yielding a preview of the dithered sheet.  *Note: the tilt setting is not taken into consideration when dithering the pattern, which will yield a fat-looking sheet when dithering a tilted pattern.*
+The *Preview Pattern* button (or pressing the "P" key) will generate the SLM mask using the currently selected parameters, and display a preview of the mask in the lower left image area.  The predicted intensity at the sample is shown to the bottom right, and the predicted intensity just after the annular mask is shown to the upper right.  The lookup-tables can be adjusted in the `Settings Tab`_. The **Dither** button in the *Intensity at Sample* window can be toggled to average the pattern in X, yielding a preview of the dithered sheet (The "D" key will also toggle the dithered view).  *Note: the tilt setting is not taken into consideration when dithering the pattern, which will yield a fat-looking sheet when dithering a tilted pattern.*
 
 Write File
 **********
 
-The *Write File* button will generate a binary SLM mask using the currently selected parameters and write it to a 1-bit image (.png) file that can be uploaded to the SLM.  You will be prompted for the desired output directory.
+The *Write File* button (or pressing the "R" key) will generate a binary SLM mask using the currently selected parameters and write it to a 1-bit image (.png) file that can be uploaded to the SLM.  You will be prompted for the desired output directory.
 
 
 Batch Square Lattice Tab
