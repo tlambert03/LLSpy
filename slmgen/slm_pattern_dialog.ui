@@ -382,6 +382,9 @@
          <property name="maximum">
           <number>150</number>
          </property>
+         <property name="singleStep">
+          <number>2</number>
+         </property>
         </widget>
        </item>
        <item row="2" column="0">
@@ -830,6 +833,11 @@ factor * wavelength/NA_inner</string>
               <string>Step</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>None</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
@@ -895,7 +903,7 @@ factor * wavelength/NA_inner</string>
        <item row="1" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>wavelength:</string>
+          <string>Wavelength(nm):</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -956,7 +964,7 @@ factor * wavelength/NA_inner</string>
        <item row="3" column="0">
         <widget class="QLabel" name="label_19">
          <property name="text">
-          <string>outer NA:</string>
+          <string>Outer NA:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -966,7 +974,7 @@ factor * wavelength/NA_inner</string>
        <item row="2" column="0">
         <widget class="QLabel" name="label_18">
          <property name="text">
-          <string>inner NA:</string>
+          <string>Inner NA:</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1013,7 +1021,7 @@ factor * wavelength/NA_inner</string>
        <item row="4" column="0">
         <widget class="QLabel" name="label_20">
          <property name="text">
-          <string>(#beam, space):</string>
+          <string>(#Beam, Space):</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
