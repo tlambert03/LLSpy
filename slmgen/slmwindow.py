@@ -75,7 +75,6 @@ class PatternPreviewThread(QtCore.QThread):
 
 
 class PatternWriteThread(QtCore.QRunnable):
-    #finished = QtCore.pyqtSignal()
 
     def __init__(self, path, params, mode='square'):
         QtCore.QThread.__init__(self)
@@ -96,13 +95,8 @@ class PatternWriteThread(QtCore.QRunnable):
             width = self.params.get('width', 1)
             slm_xpix = self.params.get('slm_xpix', 1280)
             slm_ypix = self.params.get('slm_ypix', 1024)
-            #orientation = self.params.get('orientation', 'horizontal')
+            # orientation = self.params.get('orientation', 'horizontal')
             _slm.ronchi_ruling(width, slm_xpix, slm_ypix, outdir=self.path)
-        #self.finished.emit()
-
-    # def cleanup(self):
-    #     self.wait()
-    #     self.deleteLater()
 
 
 class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
@@ -296,10 +290,6 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         self.patternThread = PatternPreviewThread(self.getparams(), mode=self.mode)
         self.patternThread.finished.connect(show)
         self.patternThread.start()
-
-        # w = self.slmBinaryLabel.width()
-        # h = self.slmBinaryLabel.height()
-        # self.slmBinaryLabel.setPixmap(p.scaled(w, h, QtCore.Qt.KeepAspectRatio))
 
     def setDitherState(self, value):
         self.dithered = bool(value)
@@ -735,9 +725,36 @@ class ExceptionHandler(QtCore.QObject):
             self.errorMessage.emit(str(value), title, '', tbstring)
 
 
+def getAbsoluteResourcePath(relativePath):
+    """ Load relative path, in an environment agnostic way"""
+    import sys
+    import os
+
+    try:
+        # PyInstaller stores data files in a tmp folder refered to as _MEIPASS
+        basePath = sys._MEIPASS
+    except Exception:
+        # If not running as a PyInstaller created binary, try to find the data file as
+        # an installed Python egg
+        try:
+            basePath = os.path.dirname(sys.modules['slmgen'].__file__)
+        except Exception:
+            basePath = ''
+
+        # If the egg path does not exist, assume we're running as non-packaged
+        if not os.path.exists(os.path.join(basePath, relativePath)):
+            basePath = 'slmgen'
+
+    path = os.path.join(basePath, relativePath)
+    # If the path still doesn't exist, this function won't help you
+    if not os.path.exists(path):
+        return None
+
+    return path
+
+
 def main():
     import sys
-    from llspy.util import getAbsoluteResourcePath
 
     app = QtWidgets.QApplication(sys.argv)
     appicon = QtGui.QIcon(getAbsoluteResourcePath('gui/logo_dark.png'))
