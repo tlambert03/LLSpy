@@ -1,10 +1,36 @@
 import numpy as np
 import os
 import sys
+from PIL import Image
 from numpy.fft import fft2, ifftshift, fftshift
 from scipy.interpolate import RectBivariateSpline, RegularGridInterpolator
 from scipy.ndimage.interpolation import rotate
 from numba import jit
+
+
+def ronchi_ruling(width=1, slm_xpix=1280, slm_ypix=1024, orientation='horizontal',
+                  outdir=None):
+    out = np.zeros((slm_ypix, slm_xpix), np.int8)
+    if orientation.lower() == 'vertical':
+        for i in range(width):
+            out[i::width*2] = 1
+    elif orientation.lower() == 'horizontal':
+        for i in range(width):
+            out[:, i::width*2] = 1
+    else:
+        raise ValueError('orientation argument must be either "horizontal" or "vertical", '
+                         'got: '.format(orientation))
+
+    if outdir is not None:
+        outdir = os.path.abspath(os.path.expanduser(outdir))
+        if os.path.isdir(outdir):
+            name = 'Ronchi_{}pix'.format(width)
+            outpath = os.path.join(outdir, name + '.png')
+            imout = Image.fromarray(out.astype(np.uint8)*255)
+            imout = imout.convert('1')
+            imout.save(outpath)
+
+    return out
 
 
 def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
@@ -98,7 +124,6 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
     if outdir is not None:
         outdir = os.path.abspath(os.path.expanduser(outdir))
         if os.path.isdir(outdir):
-            from PIL import Image
             namefmt = '{:.0f}_{:2d}b_s{:.2f}_c{:.2f}_na{:.0f}-{:.0f}_x{:02d}_y{:02d}_t{:0.3f}'
             name = namefmt.format(wave*1000, n_beam*2-1, spacing, crop,
                                   100*NA_outer, 100*NA_inner, shift_x, shift_y, tilt)
@@ -171,11 +196,13 @@ def makeSLMPattern(wave=0.488, NA_inner=0.44, NA_outer=0.55, spacing=None,
     return slm_pattern_final, intensity_final, pupil_field
 
 
-def makeSLMPattern_hex(wave=0.488, pos_offset=(0, 0), pixel=13.665, mag=167.364,
-                       shift_x=0, shift_y=0, xyPol=(0, 1), NA_outer=0.6,
+def makeSLMPattern_hex(wave=0.488, pixel=13.665, mag=167.364,
+                       shift_x=0, shift_y=0, NA_outer=0.6,
                        NA_ideal=0.55, NA_inner=0.505, tilt=0, field_sign=1,
+                       slm_xpix=1280, slm_ypix=1024,
+                       xyPol=(0, 1), pos_offset=(0, 0),
                        bound='gauss', fill_factor=0.75, crop=0.15,
-                       pattern_only=True, outdir=None):
+                       pattern_only=True, outdir=None, **kwargs):
 
     f = 0.866025403784438
     PW = np.array([[1, 0, 0, 0, -1, 0],
@@ -187,7 +214,7 @@ def makeSLMPattern_hex(wave=0.488, pos_offset=(0, 0), pixel=13.665, mag=167.364,
 
     # define the plot dimensions for the lattice:
     SLMPixSize = pixel / mag  # SLM pixel size when projected to the sample, in microns
-    numpix = [640, 512]  # TODO: come back to this
+    numpix = [int(slm_xpix/2), int(slm_ypix/2)]
     pixsize = np.array([SLMPixSize, SLMPixSize]) / (wave / 1.33)
 
     # calc the cone angle for the wavevectors of the ideal 2D lattice
@@ -361,14 +388,15 @@ def makeSLMPattern_hex(wave=0.488, pos_offset=(0, 0), pixel=13.665, mag=167.364,
     # now create the binary phase function (0 or pi) for the SLM:
     eps = np.finfo(float).eps
     SLMPattern = np.round(np.sign(RotatedRealE + eps) / 2 + 0.5)
-    SLMPattern = SLMPattern[:1024, :1280]
+    SLMPattern = SLMPattern[:slm_ypix, :slm_xpix]
     SLM_offsetY = int(shift_y * mag / pixel)
+    SLM_offsetX = int(shift_x * mag / pixel)
     SLMPattern = np.roll(SLMPattern, SLM_offsetY, 0)  # y shift
+    SLMPattern = np.roll(SLMPattern, SLM_offsetX, 1)  # x shift
 
     if outdir is not None:
         outdir = os.path.abspath(os.path.expanduser(outdir))
         if os.path.isdir(outdir):
-            from PIL import Image
             namefmt = '{:.0f}_{}Hex_c{:.2f}_na{:.0f}-{:.0f}_naIdeal{:.0f}_y{:02d}_t{:0.3f}'
             name = namefmt.format(wave*1000, bound, crop, 100*NA_outer, 100*NA_inner,
                 100*NA_ideal, shift_y, tilt)
@@ -392,7 +420,8 @@ def makeSLMPattern_hex(wave=0.488, pos_offset=(0, 0), pixel=13.665, mag=167.364,
     # calc the electric field at the annular mask:
     ESLM = np.exp(1j * BinaryEPhase)
     # restrict the field to a square for simplicity of code:
-    ESLM = ESLM[:, 128:1153]
+    midpix = int(ESLM.shape[1] / 2)
+    ESLM = ESLM[:, midpix-int(ESLM.shape[0]/2):midpix+int(ESLM.shape[0]/2)+1]
     EMask = fftshift(fft2(ifftshift(ESLM)))  # complex electric field impinging on the annular mask
 
     # plot the intensity impinging on the annular mask:
@@ -421,15 +450,15 @@ def makeSLMPattern_hex(wave=0.488, pos_offset=(0, 0), pixel=13.665, mag=167.364,
 
     return SLMPattern, SampleIntensity, MaskIntensity
 
+
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
     import time
-    now = time.time()
-    a = makeSLMPattern(0.488, n_beam='fill', show=False, outdir='~/Desktop')
-    print("Time: {}".format(time.time()-now))
+    # now = time.time()
+    # a = makeSLMPattern(0.488, n_beam='fill', show=False, outdir='~/Desktop')
+    # print("Time: {}".format(time.time()-now))
 
     now = time.time()
-    #a, b, c = makeSLMPattern(0.488, n_beam='fill', show=False, pattern_only=False)
+    a, b, c = makeSLMPattern(0.488, n_beam='fill', show=True, pattern_only=False)
     print("Time: {}".format(time.time()-now))
 
     # plt.figure()
