@@ -7,13 +7,13 @@ import llspy.gui.exceptions as err
 from llspy.gui.main_gui import Ui_Main_GUI
 from llspy.gui import workers
 from llspy.gui.camcalibgui import CamCalibDialog
-from llspy.gui.slmwindow import SLMdialog
 from llspy.gui.helpers import (newWorkerThread,
     wait_for_file_close, wait_for_folder_finished,
     shortname, string_to_iterable, guisave, guirestore)
 from llspy.gui.img_dialog import ImgDialog
 from llspy.gui.qtlogger import NotificationHandler
 from fiducialreg.fiducialreg import RegFile, RegistrationError
+from slmgen.slmwindow import SLMdialog
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler

@@ -473,9 +473,8 @@ def gui(_test):
 @cli.command()
 def slm():
     """Launch LLSpy Graphical User Interface"""
-    from llspy.gui.slmwindow import main
+    from slmgen.slmwindow import main
     main()
-
 
 
 @cli.command()
