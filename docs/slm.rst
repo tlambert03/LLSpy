@@ -92,7 +92,7 @@ The *Write File* button (or pressing the "R" key) will generate a binary SLM mas
 Batch Square Lattice Tab
 ------------------------
 
-The **Batch Square** Tab allows generation of multiple SLM masks with a large number of parameter permutations.  The parameters are the same as described in the `Parameters`_ section, but are specified as a list.  The program will generate *all* permutations of parameters (this can quickly turn into a very large number!).  The example image shown below would generate *82 patterns* (3-waves x 3-beamPairs x 9-yShifts).
+The **Batch Square** Tab allows generation of multiple SLM masks with a large number of parameter permutations.  The parameters are the same as described in the `Parameters`_ section, but are specified as a list.  The program will generate *all* permutations of parameters (this can quickly turn into a very large number!).  The example image shown below would generate *81 patterns* (3-waves x 3-beamPairs x 9-yShifts).
 
 .. image:: img/batchgen_example.png
    :alt: Square Lattice Batch Pattern Generator
