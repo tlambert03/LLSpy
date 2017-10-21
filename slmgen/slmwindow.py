@@ -691,7 +691,7 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
             pass
         elif event.key() in (QtCore.Qt.Key_P,):
             self.previewPatternButton.click()
-        elif event.key() in (QtCore.Qt.Key_W,):
+        elif event.key() in (QtCore.Qt.Key_R,):
             self.writeFileButton.click()
         elif event.key() in (QtCore.Qt.Key_D,):
             self.ditherButton.click()
