@@ -450,6 +450,8 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
 
         if 'hex' in self.PatternPresetsCombo.currentText().lower():
             opts['NA_ideal'] = self.idealNASpin.value()
+            if not (opts['NA_outer'] <= opts['NA_ideal'] <= opts['NA_inner']):
+                raise InvalidSettingsError('Ideal NA must be between inner NA and outer NA')
             opts['fill_factor'] = self.hexFillFactorSpin.value()
             opts['bound'] = self.hexBoundCombo.currentText().lower()
         elif 'ronchi' in self.PatternPresetsCombo.currentText().lower():
