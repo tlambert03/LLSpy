@@ -74,8 +74,8 @@ class PatternPreviewThread(QtCore.QThread):
         self.finished.emit(output)
 
 
-class PatternWriteThread(QtCore.QThread):
-    finished = QtCore.pyqtSignal()
+class PatternWriteThread(QtCore.QRunnable):
+    #finished = QtCore.pyqtSignal()
 
     def __init__(self, path, params, mode='square'):
         QtCore.QThread.__init__(self)
@@ -84,7 +84,7 @@ class PatternWriteThread(QtCore.QThread):
         if mode not in ('square', 'hex', 'ronchi'):
             raise ValueError('Mode must be one of {square, hex, ronchi}, got: ', mode)
         self.mode = mode
-        self.finished.connect(self.cleanup)
+        # self.finished.connect(self.cleanup)
 
     def run(self):
         logger.debug("Writing {} SLM pattern to {}".format(self.mode, self.path))
@@ -98,11 +98,11 @@ class PatternWriteThread(QtCore.QThread):
             slm_ypix = self.params.get('slm_ypix', 1024)
             #orientation = self.params.get('orientation', 'horizontal')
             _slm.ronchi_ruling(width, slm_xpix, slm_ypix, outdir=self.path)
-        self.finished.emit()
+        #self.finished.emit()
 
-    def cleanup(self):
-        self.wait()
-        self.deleteLater()
+    # def cleanup(self):
+    #     self.wait()
+    #     self.deleteLater()
 
 
 class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
@@ -115,9 +115,9 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         self.setupUi(self)
         self.setWindowTitle('LLSpy :: SLM Pattern Generator')
         self.autofill = False
-        self.patternWriteThreads = []
         self.mode = 'square'
         self.dithered = False
+        self.writeThreadpool = QtCore.QThreadPool()
 
         self.PatternPresetsCombo.addItems(self.PRESETS)
 
@@ -356,10 +356,8 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         if not path:
             return
 
-        thread = PatternWriteThread(path, self.getparams(), mode=self.mode)
-        thread.finished.connect(thread.deleteLater)
-        thread.start()
-        self.patternWriteThreads.append(thread)
+        worker = PatternWriteThread(path, self.getparams(), mode=self.mode)
+        self.writeThreadpool.start(worker)
 
     def updatePreset(self, preset):
         logger.debug("SLM Preset changed to: " + preset)
@@ -514,9 +512,9 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
             elif isinstance(params['spacing'], float) and params['spacing'] >= 6:
                 params['crop'] = 0.06
             logger.debug("SLM batch params: {}".format(params))
-            thread = PatternWriteThread(path, params)
-            thread.start()
-            self.patternWriteThreads.append(thread)
+
+            worker = PatternWriteThread(path, params)
+            self.writeThreadpool.start(worker)
 
     def getBatchParams(self):
         errors = []
