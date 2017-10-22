@@ -2,15 +2,15 @@
 LLSpy: Lattice light-sheet post-processing utility
 ##################################################
 
-|license_shield| |python_shield| |travis_shield| |docs_shield|
+|license_shield| |python_shield| |travis_shield| |appveyor_shield| |docs_shield|
 
 .. |license_shield| image:: https://img.shields.io/badge/License-BSD%203--Clause-brightgreen.svg
    :target: https://opensource.org/licenses/BSD-3-Clause
 
 .. |python_shield| image:: https://img.shields.io/badge/Python-2.7%2C%203.5%2C%203.6-brightgreen.svg
 
-.. .. |appveyor_shield| image:: https://ci.appveyor.com/api/projects/status/tlambert03/LLSpy
-..    :target: https://ci.appveyor.com/project/tlambert03/llspy
+.. |appveyor_shield| image:: https://ci.appveyor.com/api/projects/status/tlambert03/LLSpy
+   :target: https://ci.appveyor.com/project/tlambert03/llspy
 
 .. |docs_shield| image:: https://readthedocs.org/projects/llspy/badge/?version=latest
    :target: http://llspy.readthedocs.io/en/latest/?badge=latest
@@ -289,10 +289,8 @@ To Do
 * allow cancel after hitting preview button
 * implement real-time data viewer during acquisition
 * implement real-time data processing with folder-monitoring
-* color overlay in matplotlib preview
 * allow cancel of camera calibration
 * MIPsSummary folder
-* handle case with multiple experiments in same folder better
 * comboMIP should use registered files when registration requested
 * registered files are always floating point when rest of data is not
 * allow processing of folders without settings.txt
