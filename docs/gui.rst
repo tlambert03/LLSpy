@@ -93,7 +93,7 @@ Sometimes, when the camera has not taken an image in a while, dark current will 
 
 Trimming in the Y direction is mostly used to simply crop excess pixels from the image to save space.
 
-**Background Subraction**
+**Background Subtraction**
 
 In addition to a manually set "Fixed Value", there is an option to "Autodetect" the background for each channel.  In this case, the mode value of the second image in the z stack is used as the background value for that channel.
 
