@@ -2,12 +2,13 @@
 export DYLD_LIBRARY_PATH="/Users/talley/DropboxHMS/Python/llspylibs/lib/:$DYLD_LIBRARY_PATH"
 rm -rf ./_dist
 rm -rf ./_build
+
 pyinstaller  --noconfirm --clean \
 	--log-level=INFO \
 	--distpath=./_dist \
 	--workpath=./_build \
 	--upx-dir="/usr/local/bin/" \
-	llspygui.spec
+	${1:-llspygui.spec}
 
 # create the dmg
 # echo "creating the dmg..."
