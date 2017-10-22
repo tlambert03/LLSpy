@@ -287,9 +287,15 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
             self.previewPatternButton.setText('Preview Pattern')
             self.previewPatternButton.setEnabled(True)
 
-        self.patternThread = PatternPreviewThread(self.getparams(), mode=self.mode)
-        self.patternThread.finished.connect(show)
-        self.patternThread.start()
+        try:
+            params = self.getparams()
+            self.patternThread = PatternPreviewThread(params, mode=self.mode)
+            self.patternThread.finished.connect(show)
+            self.patternThread.start()
+        except InvalidSettingsError:
+            self.previewPatternButton.setText('Preview Pattern')
+            self.previewPatternButton.setEnabled(True)
+            raise
 
     def setDitherState(self, value):
         self.dithered = bool(value)
@@ -346,8 +352,12 @@ class SLMdialog(QtWidgets.QDialog, Ui_Dialog):
         if not path:
             return
 
-        worker = PatternWriteThread(path, self.getparams(), mode=self.mode)
-        self.writeThreadpool.start(worker)
+        try:
+            params = self.getparams()
+            worker = PatternWriteThread(path, params, mode=self.mode)
+            self.writeThreadpool.start(worker)
+        except InvalidSettingsError:
+            pass
 
     def updatePreset(self, preset):
         logger.debug("SLM Preset changed to: " + preset)
