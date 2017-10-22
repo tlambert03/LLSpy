@@ -3,14 +3,12 @@ language: python
 python:
   - 3.6
   - 3.5
-#  - 2.7
+  - 2.7
 
 branches:
   only:
   - master
 
-before_install:
-  - echo "before install"
 
 install:
   - sudo apt-get update
@@ -22,10 +20,9 @@ install:
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
-  - export PKG_NAME=llspy
   - export USER=talley
   - export CONDA_BLD_PATH=~/conda-bld
-  - export VERSION=`date +%Y.%m.%d`
+
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda install conda-build anaconda-client
@@ -51,9 +48,11 @@ script:
 
 after_success:
   - echo $TRAVIS_TEST_RESULT
-  - conda convert -p osx-64 -o $CONDA_BLD_PATH $OUTPUT
-  - ls $CONDA_BLD_PATH/*
-  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u $USER --force
+  - anaconda -t $CONDA_UPLOAD_TOKEN -v upload --all -u $USER --force -s "Lattice Light Sheet Processing Tools" $OUTPUT
+
+#  - conda convert -p osx-64 -o $CONDA_BLD_PATH $OUTPUT
+#  - ls $CONDA_BLD_PATH/*
+#  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/osx-64/*.tar.bz2 -u $USER --force
 #  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/win-64/*.tar.bz2 -u $USER --force
-  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u $USER --force
+#  - anaconda -v -t $CONDA_UPLOAD_TOKEN upload $CONDA_BLD_PATH/linux-64/*.tar.bz2 -u $USER --force
 #  - test $TRAVIS_BRANCH = "master" && bash conda.recipe/conda_upload.sh
