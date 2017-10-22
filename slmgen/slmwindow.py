@@ -766,9 +766,16 @@ def getAbsoluteResourcePath(relativePath):
 def main():
     import sys
 
-    app = QtWidgets.QApplication(sys.argv)
-    appicon = QtGui.QIcon(getAbsoluteResourcePath('gui/logo_dark.png'))
-    app.setWindowIcon(appicon)
+    APP = QtWidgets.QApplication(sys.argv)
+
+    version = '0.1.0'
+    appicon = QtGui.QIcon(getAbsoluteResourcePath('slmgen_logo.png'))
+    APP.setWindowIcon(appicon)
+    # register icon with windows
+    if sys.platform.startswith('win32'):
+        import ctypes
+        myappid = 'llspy.LLSpySLMgen.' + version
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     main = SLMdialog()
     main.show()
@@ -778,7 +785,7 @@ def main():
     sys.excepthook = exceptionHandler.handler
     exceptionHandler.errorMessage.connect(main.show_error_window)
 
-    sys.exit(app.exec_())
+    sys.exit(APP.exec_())
 
 
 if __name__ == '__main__':
