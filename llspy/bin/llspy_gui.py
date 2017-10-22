@@ -72,6 +72,19 @@ def main():
         mainGUI = main_GUI()
         mainGUI.setWindowIcon(appicon)
 
+        # try to import slmgen and add to tools menu
+        try:
+            from slmgen import SLMdialog
+            mainGUI.slmDialog = SLMdialog(mainGUI)
+            mainGUI.actionSLMwindow = QtWidgets.QAction(mainGUI)
+            mainGUI.actionSLMwindow.setObjectName("actionSLMwindow")
+            mainGUI.menuTools.addAction(mainGUI.actionSLMwindow)
+            mainGUI.actionSLMwindow.setText("SLM Pattern Generator")
+            # mainGUI.slmPatternGeneratorButton.clicked.connect(mainGUI.slmDialog.show)
+            mainGUI.actionSLMwindow.triggered.connect(mainGUI.slmDialog.show)
+        except ImportError as e:
+            logger.error('Could not import slmgen. Cannot add SLM Generator to Tools menu.')
+
         if firstRun:
             box = QtWidgets.QMessageBox()
             box.setWindowTitle('Help improve LLSpy')

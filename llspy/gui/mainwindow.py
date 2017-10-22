@@ -13,7 +13,7 @@ from llspy.gui.helpers import (newWorkerThread,
 from llspy.gui.img_dialog import ImgDialog
 from llspy.gui.qtlogger import NotificationHandler
 from fiducialreg.fiducialreg import RegFile, RegistrationError
-from slmgen.slmwindow import SLMdialog
+
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, RegexMatchingEventHandler
@@ -639,10 +639,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.camcorDialog = CamCalibDialog()
         self.genFlashParams.clicked.connect(self.camcorDialog.show)
         self.actionCamera_Calibration.triggered.connect(self.camcorDialog.show)
-
-        self.slmDialog = SLMdialog()
-        self.slmPatternGeneratorButton.clicked.connect(self.slmDialog.show)
-        self.actionSLM_Pattern_Generator.triggered.connect(self.slmDialog.show)
 
         # connect buttons
         self.previewButton.clicked.connect(self.onPreview)

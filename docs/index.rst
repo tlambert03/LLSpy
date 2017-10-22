@@ -1,8 +1,3 @@
-.. LLSpy documentation master file, created by
-   sphinx-quickstart on Tue Oct  3 07:29:21 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to LLSpy's documentation!
 =================================
 
@@ -29,7 +24,6 @@ Copyright |copy| 2017 Talley Lambert, Harvard Medical School.
    cli
    api
    Channel Registration <registration>
-   SLM Pattern Generator <slm>
 
 Indices and tables
 ==================

@@ -19,3 +19,4 @@ dependencies:
   - pyopencl
   - spimagine
   - raven
+  - llspy-slm
