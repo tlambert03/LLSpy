@@ -4,24 +4,16 @@ LLSpy Release History
 `0.3.2`_
 ========
 
+*SLM pattern generator moved into seperate package: ```slmgen```.  Multiple additions and changes to SLM Pattern generator.  Please see https://github.com/tlambert03/llspy-slm for full changelog, and further development.*
+
 **Added:**
 
-* Hex pattern generator added to SLM Pattern Generator
-* Ronchi-ruling pattern generator added to SLMgen
-* Batch SLM pattern generation
-* Docs for SLM generator GUI
-* Docs for Registration
-* Option to dither SLM preview in SLM Pattern Generator
-* User-adjustable LUTs for SLM pattern previews
+* improved docs on registration
 
 **Changed:**
 
-* SLM pattern generator moved into seperate package: *slmgen*
-* Better multi-threading when batch-writing SLM patterns
-
-**Fixed:**
-
-* SLM pattern generator now writes 1-bit file usable on SLM, instead of 8-bit png (thank you for reporting Felix!)
+* removed confusing error seen when using ```lls path/to/llspy_extra```
+* modifications made to LLSpy to move SLMgen into seperate package.
 
 
 `0.3.1`_
