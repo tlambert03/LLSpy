@@ -43,6 +43,7 @@ requirements:
     - pigz
     - lbzip2 # [not win]
     - raven
+    - llspy-slm
 
 test:
   imports:
