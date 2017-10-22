@@ -1,0 +1,3 @@
+[submodule "llspy-slm"]
+	path = llspy-slm
+	url = git@github.com:tlambert03/llspy-slm.git
