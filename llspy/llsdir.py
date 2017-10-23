@@ -583,8 +583,10 @@ class LLSdir(object):
                 logger.warn('discarding small file:  {}'.format(f))
         self.tiff.rejected = list(
             set(self.tiff.raw).difference(set(self.tiff.all)))
-        if not len(self.tiff.raw):
-            raise IndexError('We seem to have discarded of all the tiffs!')
+        if len(self.tiff.all) and not len(self.tiff.raw):
+            raise LLSpyError('LLSpy attempts to exclude partially acquired files '
+                'from processing.  In this case, there are no files left! '
+                'Please check data structure assumptions in the docs. ')
 
     def detect_parameters(self):
         self.tiff.count = []  # per channel list of number of tiffs
@@ -893,7 +895,7 @@ class LLSdir(object):
             return None
 
         if not otfmodule.dir_has_otfs(otfpath):
-            raise LLSpyError("OTF directory has no OTFs! -> {}".format(otfpath))
+            raise otfmodule.OTFError("OTF directory has no OTFs! -> {}".format(otfpath))
 
         mask = None
         if hasattr(self.settings, 'mask'):
@@ -1392,3 +1394,4 @@ class LLSpyError(Exception):
     when raising this exception.
     """
     pass
+
