@@ -1083,7 +1083,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     (op['keepCorrected'] and (op['correctFlash'] or op['medianFilter'])) or
                     op['saveDeskewedRaw'] or
                     op['doReg']):
-                raise Exception('Nothing done! Check GUI options')
+                self.show_error_window('Nothing done!', 'Nothing done!',
+                    'No deconvolution, deskewing, image correction, '
+                    'or registration performed. Check GUI options.', '')
 
         except Exception:
             self.enableProcessButton()
