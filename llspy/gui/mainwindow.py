@@ -1243,8 +1243,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             'uint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
             'bleachCorrection': self.bleachCorrectionCheckBox.isChecked(),
             'doReg': self.doRegistrationGroupBox.isChecked(),
-            'regRefWave': (int(self.RegProcessChannelRefCombo.currentText())
-                if self.RegProcessChannelRefCombo.currentText() is not '' else 0),
             'regMode': (self.RegProcessChannelRefModeCombo.currentText()
                 if self.RegProcessChannelRefModeCombo.currentText() else 'none'),
             'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
@@ -1285,6 +1283,24 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             options['regCalibPath'] = rCalibText
         else:
             options['regCalibPath'] = None
+
+
+        if not self.RegProcessChannelRefCombo.currentText():
+            options['regRefWave'] = 0
+        else:
+            text = self.RegProcessChannelRefCombo.currentText()
+            if text.isdigit():
+                options['regRefWave'] = int(text)
+            else:
+                if options['doReg']:
+                    self.show_error_window('Problem with channel registration settings!',
+                        'Registration Error', 'Channel registration was selected, '
+                        'but the selected reference wavelength does not seem to be a '
+                        'number.  This may be an issue with filenaming convention.  '
+                        'Please read docs regarding data structure assumptions.')
+                else:
+                    options['regRefWave'] = 0
+
 
         if options['doReg'] and options['regCalibPath'] in (None, ''):
             raise err.InvalidSettingsError(
