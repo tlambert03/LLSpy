@@ -2755,6 +2755,8 @@ QProgressBar::chunk:horizontal {
     <addaction name="actionRun"/>
     <addaction name="actionAbort"/>
     <addaction name="separator"/>
+    <addaction name="actionRename_Iters"/>
+    <addaction name="actionUndo_Rename_Iters"/>
    </widget>
    <widget class="QMenu" name="menuLLSpy">
     <property name="title">
@@ -2927,6 +2929,16 @@ and restore folder to it's original state
   <action name="actionCamera_Calibration">
    <property name="text">
     <string>Camera Calibration</string>
+   </property>
+  </action>
+  <action name="actionRename_Iters">
+   <property name="text">
+    <string>Rename 'Iters_'</string>
+   </property>
+  </action>
+  <action name="actionUndo_Rename_Iters">
+   <property name="text">
+    <string>Undo Rename 'Iters_'</string>
    </property>
   </action>
  </widget>

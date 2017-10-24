@@ -1343,7 +1343,7 @@ def undo_rename_iters(path, deletelog=True):
     logfile = path
     if os.path.isdir(path):
         logfile = util.find_filepattern(path, 'renaming_log.txt')
-    if not os.path.isfile(logfile):
+    if not logfile or not os.path.isfile(logfile):
         logger.error("Could not find renaming_log to undo_rename_iters")
         return
     with open(logfile) as f:
