@@ -266,8 +266,8 @@ For greater convenience and sophistication, you can also place raw PSF files in 
 
   psffile_pattern = re.compile(r"""
     ^(?P<date>\d{6}|\d{8})      # 6 or 8 digit date
-    _(?P<wave>\d+).*            # wavelength ... only digits following _ are used
-    _(?P<slmpattern>[a-zA-Z_]*) # slm pattern
+    _(?P<wave>\d+)              # wavelength ... only digits following _ are used
+    _(?P<slmpattern>[a-zA-Z]+)  # slm pattern
     _(?P<outerNA>[0-9p.]+)      # outer NA, digits with . or p for decimal
     [-_](?P<innerNA>[0-9p.]+)   # inter NA, digits with . or p for decimal
     (?P<isotf>_otf)?.tif$""",   # optional _otf to specify that it is already an otf
