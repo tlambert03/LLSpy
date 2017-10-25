@@ -215,9 +215,9 @@ def load_lib(libname):
     """
     # first just try to find it on the search path
 
-    searchlist = ['./lib',
+    searchlist = [os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'Library', 'bin'),
                   os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'lib'),
-                  os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'Library', 'bin'),
+                  './lib',
                   '../../llspylibs/{}/lib/'.format(PLAT),
                   '../llspylibs/{}/lib/'.format(PLAT),
                   '.']
