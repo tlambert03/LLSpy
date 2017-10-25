@@ -34,7 +34,7 @@ Examples
 # to a stack from the 488 channel...
 >>> out = affine(im560, 560_to_488_rigid)
 """
-from __future__ import print_function
+from __future__ import print_function, division
 
 from scipy import ndimage, optimize, stats
 from os import path as osp
@@ -73,7 +73,7 @@ def bead_centroids(img, labeled, nlabels):
     return [ndimage.center_of_mass(img, labeled, l) for l in range(1, nlabels + 1)]
 
 
-def get_thresh(im, mincount=20, steps=100):
+def get_thresh(im, mincount=None, steps=100):
     """intelligently find coordinates of local maxima in an image
     by searching a range of threshold parameters to find_local_maxima
 
@@ -86,10 +86,16 @@ def get_thresh(im, mincount=20, steps=100):
     """
     if im.ndim == 3:
         im = im.max(0)
+    if mincount is None:
+        mincount = 20
     threshrange = np.linspace(im.min(), im.max(), steps)
     object_count = [ndimage.label(im > t)[1] for t in threshrange]
     object_count = np.array(object_count)
-    modecount = stats.mode(object_count[(object_count > mincount)], axis=None)[0][0]
+    if mincount > object_count.max():
+        raise RegistrationError(
+            'Could not detect minimum number of beads specified ({}), found: {}'.format(
+                mincount, object_count.max()))
+    modecount = stats.mode(object_count[(object_count >= mincount)], axis=None).mode[0]
     logging.debug('Threshold detected: {}'.format(threshrange[np.argmax(object_count == modecount)]))
     return threshrange[np.argmax(object_count == modecount)], modecount
 
@@ -457,7 +463,7 @@ class FiducialCloud(object):
 
     """
     def __init__(self, data=None, dz=1, dx=1, blurxysig=1, blurzsig=2.5,
-                 threshold='auto', mincount=20, imref=None, filtertype='blur'):
+                 threshold=None, mincount=None, imref=None, filtertype='blur'):
         # data is a numpy array or filename
         self.data = None
         if data is not None:
@@ -480,7 +486,7 @@ class FiducialCloud(object):
         self.dz = dz
         self.blurxysig = blurxysig
         self.blurzsig = blurzsig
-        self.threshold = threshold
+        self.threshold = threshold if threshold is not None else 'auto'
         self._mincount = mincount
         self.imref = imref
         self.coords = None
@@ -536,11 +542,16 @@ class FiducialCloud(object):
             return
         if thresh is None:
             thresh = self.threshold
-        if thresh == 'auto':
+        if thresh == 'auto' or not thresh:
             thresh = self.autothresh()
+        try:
+            thresh = float(thresh)
+            assert thresh > 0
+        except Exception:
+            raise RegistrationError('Threshold must be number greater than 0.  got: {}'.format(thresh))
+        logger.debug('Update_coords using threshold: {}'.format(thresh))
         labeled = ndimage.label(self.filtered > thresh)[0]
         objects = ndimage.find_objects(labeled)
-
         # FIXME: pass sigmas to wx and wz parameters of GaussFitter
         fitter = GaussFitter3D(self.data, dz=self.dz, dx=self.dx)
         gaussfits = []
@@ -560,6 +571,9 @@ class FiducialCloud(object):
         if not len(self.coords):
             logging.warning('PointCloud has no points! {}'.format(
                 self.filename if 'filename' in dir(self) else ''))
+        else:
+            logger.info("Registration found {} objects".format(self.count))
+
 
     @property
     def coords_inworld(self):
@@ -615,7 +629,7 @@ class CloudSet(object):
 
     """
 
-    def __init__(self, data=None, labels=None, dx=1, dz=1, **kwargs):
+    def __init__(self, data=None, labels=None, dx=1, dz=1, mincount=None, threshold=None, **kwargs):
         self.dx = dx
         self.dz = dz
         if data is not None:
@@ -632,8 +646,9 @@ class CloudSet(object):
             self.N = len(data)
             self.clouds = []
             for i, d in enumerate(data):
-                logger.debug("Creating FiducalCloud for label: {}".format(self.labels[i]))
-                self.clouds.append(FiducialCloud(d, dx=self.dx, dz=self.dz, **kwargs))
+                logger.info("Creating FiducalCloud for label: {}".format(self.labels[i]))
+                self.clouds.append(FiducialCloud(d, dx=self.dx, dz=self.dz,
+                    threshold=threshold, mincount=mincount, **kwargs))
         else:
             self.clouds = []
             self.N = 0
@@ -769,13 +784,17 @@ class CloudSet(object):
         D = []
         for moving, fixed in pairings:
             for mode in modes:
-                D.append({
-                    'mode': mode,
-                    'reference': fixed,
-                    'moving': moving,
-                    'inworld': inworld,
-                    'tform': self.tform(moving, fixed, mode, inworld=inworld)
-                })
+                try:
+                    D.append({
+                        'mode': mode,
+                        'reference': fixed,
+                        'moving': moving,
+                        'inworld': inworld,
+                        'tform': self.tform(moving, fixed, mode, inworld=inworld)
+                    })
+                except Exception:
+                    print("SKIPPING MODE: ", mode)
+                    logger.error('Failed to calculate mode "{}" in get_all_tforms.  Skipping.'.format(mode))
         return D
 
     def write_all_tforms(self, outfile, **kwargs):
@@ -868,7 +887,7 @@ class CloudSet(object):
                 moving = matching[movIdx]
                 fixed = matching[fixIdx]
                 tform = funcDict[mode](moving, fixed)
-            logger.debug('Measured {} Tform Matrix {}inWorld:\n'.format(mode, '' if inworld else 'not ' ) +
+            logger.info('Measured {} Tform Matrix {}inWorld:\n'.format(mode, '' if inworld else 'not ' ) +
                          str(tform))
             return tform
         else:

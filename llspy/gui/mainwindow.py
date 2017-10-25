@@ -485,7 +485,14 @@ class RegistrationTab(object):
         if not len(refs):
             raise err.InvalidSettingsError('Select at least one reference channel')
 
-        RD = llspy.RegDir(path)
+        autoThresh = self.RegAutoThreshCheckbox.isChecked()
+        if autoThresh:
+            minbeads = int(self.RegMinBeadsSpin.value())
+            RD = llspy.RegDir(path, usejson=False, threshold='auto', mincount=minbeads)
+        else:
+            threshold = int(self.RegBeadThreshSpin.value())
+            RD = llspy.RegDir(path, threshold=threshold, usejson=False)
+
         if not RD.isValid:
             raise err.RegistrationError(
                 'Registration Calibration dir not valid: {}'.format(RD.path))
@@ -498,6 +505,7 @@ class RegistrationTab(object):
 
         class RegThread(QtCore.QThread):
             finished = QtCore.pyqtSignal(str)
+            warning = QtCore.pyqtSignal(str, str)
 
             def __init__(self, RD, outdir, refs):
                 QtCore.QThread.__init__(self)
@@ -506,7 +514,18 @@ class RegistrationTab(object):
                 self.refs = refs
 
             def run(self):
-                outfile, outstring = self.RD.write_reg_file(outdir, refs=self.refs)
+                try:
+                    outfile, outstring = self.RD.write_reg_file(outdir, refs=self.refs)
+                    counts = self.RD.cloudset().count
+                    if np.std(counts) > 15:
+                        outstr = "\n".join(["wave: {}, beads: {}".format(
+                            channel, counts[i]) for i, channel in enumerate(self.RD.waves)])
+                        self.warning.emit('Suspicious Registration Result',
+                            "Warning: there was a large variation in the number "
+                            "of beads per channel.  Auto-detection may have failed.  "
+                            "Try changing 'Min number of beads'...\n\n" + outstr)
+                except RegistrationError as e:
+                    raise err.RegistrationError("Fiducial registration failed:", str(e))
 
                 # also write to appdir ... may use it later
                 # TODO: consider making app_dir a global APP attribute,
@@ -531,9 +550,13 @@ class RegistrationTab(object):
                     'Registration file written: {}'.format(outfile), 5000)
             self.loadRegistrationFile(outfile)
 
+        def notifyuser(title, msg):
+            QtW.QMessageBox.warning(self, title, msg, QtW.QMessageBox.Ok)
+
         self.regthreads = []
         regthread = RegThread(RD, outdir, refs)
         regthread.finished.connect(finishup)
+        regthread.warning.connect(notifyuser)
         self.regthreads.append(regthread)
         self.statusBar.showMessage(
             'Calculating registrations for ref channels: {}...'.format(refs))

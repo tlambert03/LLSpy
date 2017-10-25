@@ -1087,15 +1087,21 @@ class LLSdir(object):
 class RegDir(LLSdir):
     """Special type of LLSdir that holds image registraion data like
     tetraspeck beads
+
+    If threshold is integer value, it will be used as minimum intensity
+    for detected beads... otherwise mincount # beads will be required.
+    mincount default is set in fiducialreg.get_thresh()
     """
 
-    def __init__(self, path, t=None, **kwargs):
+    def __init__(self, path, t=None, mincount=None, threshold=None, usejson=True, **kwargs):
         super(RegDir, self).__init__(path, **kwargs)
         if self.path is not None:
-            if self.path.joinpath('cloud.json').is_file():
+            if self.path.joinpath('cloud.json').is_file() and usejson:
                 with open(str(self.path.joinpath('cloud.json'))) as json_data:
                     self = self.fromJSON(json.load(json_data))
         self.t = t
+        self.mincount = mincount
+        self.threshold = threshold
         if self.has_lls_tiffs and t is None:
             self.t = min(self.parameters.tset)
         if self.isValid:
@@ -1156,7 +1162,8 @@ class RegDir(LLSdir):
             return self._cloudset
         self._cloudset = CloudSet(self._deskewed() if self.deskew else self.data,
                                   labels=self.waves, dx=self.parameters.dx,
-                                  dz=self.parameters.dzFinal)
+                                  dz=self.parameters.dzFinal, mincount=self.mincount,
+                                  threshold=self.threshold)
         with open(self.path.joinpath('cloud.json'), 'w') as outfile:
             json.dump(self.toJSON(), outfile)
         return self._cloudset
