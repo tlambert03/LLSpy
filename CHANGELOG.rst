@@ -1,6 +1,26 @@
 LLSpy Release History
 #####################
 
+`0.3.3`_
+========
+
+**Added:**
+
+* exposed "min bead number" parameter for automated bead detection in the gui, as well as manual intensity threshold.
+* alert when automated bead detection gives suspicious results (dramatically different number of beads in each channel).
+* ability to undo "Rename Scriped" (rename_iters function), under Process Menu
+
+**Changed:**
+
+* more robust settings.txt file parsing (thanks for sample Carlos!)
+* refactored the rename_iters function to be more robust
+* slightly stricter OTF file naming regex.  updated docs accordingly
+
+**Fixed:**
+
+* fixed "invalid literal for int() with base 10" bug in refRegWave validation
+* (hopefully) fixed bug that bugs you to update llspy_extra when you've already done it.  If this still fails, consider reinstalling (deleting your 'llsenv' anaconda environment and starting again with a fresh one).
+
 `0.3.2`_
 ========
 
