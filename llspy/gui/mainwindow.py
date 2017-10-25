@@ -136,7 +136,11 @@ class LLSDragDropTable(QtW.QTableWidget):
                 if reply > 1000:  # cancel hit
                     return
                 elif reply == 1:  # rename iters hit
+                    if not hasattr(self, 'renamedPaths'):
+                        self.renamedPaths = []
                     llspy.llsdir.rename_iters(path)
+                    self.renamedPaths.append(path)
+                    print(self.renamedPaths)
                     self.removePath(path)
                     [self.addPath(osp.join(path, p)) for p in os.listdir(path)]
                     return
@@ -481,7 +485,14 @@ class RegistrationTab(object):
         if not len(refs):
             raise err.InvalidSettingsError('Select at least one reference channel')
 
-        RD = llspy.RegDir(path)
+        autoThresh = self.RegAutoThreshCheckbox.isChecked()
+        if autoThresh:
+            minbeads = int(self.RegMinBeadsSpin.value())
+            RD = llspy.RegDir(path, usejson=False, threshold='auto', mincount=minbeads)
+        else:
+            threshold = int(self.RegBeadThreshSpin.value())
+            RD = llspy.RegDir(path, threshold=threshold, usejson=False)
+
         if not RD.isValid:
             raise err.RegistrationError(
                 'Registration Calibration dir not valid: {}'.format(RD.path))
@@ -494,6 +505,7 @@ class RegistrationTab(object):
 
         class RegThread(QtCore.QThread):
             finished = QtCore.pyqtSignal(str)
+            warning = QtCore.pyqtSignal(str, str)
 
             def __init__(self, RD, outdir, refs):
                 QtCore.QThread.__init__(self)
@@ -502,7 +514,18 @@ class RegistrationTab(object):
                 self.refs = refs
 
             def run(self):
-                outfile, outstring = self.RD.write_reg_file(outdir, refs=self.refs)
+                try:
+                    outfile, outstring = self.RD.write_reg_file(outdir, refs=self.refs)
+                    counts = self.RD.cloudset().count
+                    if np.std(counts) > 15:
+                        outstr = "\n".join(["wave: {}, beads: {}".format(
+                            channel, counts[i]) for i, channel in enumerate(self.RD.waves)])
+                        self.warning.emit('Suspicious Registration Result',
+                            "Warning: there was a large variation in the number "
+                            "of beads per channel.  Auto-detection may have failed.  "
+                            "Try changing 'Min number of beads'...\n\n" + outstr)
+                except RegistrationError as e:
+                    raise err.RegistrationError("Fiducial registration failed:", str(e))
 
                 # also write to appdir ... may use it later
                 # TODO: consider making app_dir a global APP attribute,
@@ -527,9 +550,13 @@ class RegistrationTab(object):
                     'Registration file written: {}'.format(outfile), 5000)
             self.loadRegistrationFile(outfile)
 
+        def notifyuser(title, msg):
+            QtW.QMessageBox.warning(self, title, msg, QtW.QMessageBox.Ok)
+
         self.regthreads = []
         regthread = RegThread(RD, outdir, refs)
         regthread.finished.connect(finishup)
+        regthread.warning.connect(notifyuser)
         self.regthreads.append(regthread)
         self.statusBar.showMessage(
             'Calculating registrations for ref channels: {}...'.format(refs))
@@ -703,6 +730,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.actionDecompress_Folder.triggered.connect(self.decompressSelected)
         self.actionConcatenate.triggered.connect(self.concatenateSelected)
         self.actionRename_Scripted.triggered.connect(self.renameSelected)
+        self.actionUndo_Rename_Iters.triggered.connect(self.undoRenameSelected)
         self.actionAbout_LLSpy.triggered.connect(self.showAboutWindow)
         self.actionHelp.triggered.connect(self.showHelpWindow)
 
@@ -949,7 +977,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         if procCRangetext:
             cRange = string_to_iterable(procCRangetext)
             if (self.lastopts['correctFlash'] and
-                sessionSettings.value('warnCameraCorPreview', True, type=bool)):
+                    sessionSettings.value('warnCameraCorPreview', True, type=bool)):
                 box = QtW.QMessageBox()
                 box.setWindowTitle('Note')
                 box.setText("You have selected to preview a subset of channels, but "
@@ -970,11 +998,19 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     sessionSettings.sync()
 
                 pref.stateChanged.connect(dontRemind)
-                reply = box.exec_()
+                box.exec_()
         else:
             cRange = None  # means all channels
 
         self.previewPath = self.listbox.item(firstRowSelected, 0).text()
+
+        if not os.path.exists(self.previewPath):
+            self.statusBar.showMessage(
+                'Skipping! path no longer exists: {}'.format(self.previewPath), 5000)
+            self.listbox.removePath(self.previewPath)
+            self.previewButton.setEnabled(True)
+            self.previewButton.setText('Preview')
+            return
 
 
         w, thread = newWorkerThread(workers.TimePointWorker, self.previewPath, tRange, cRange, self.lastopts,
@@ -1083,7 +1119,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     (op['keepCorrected'] and (op['correctFlash'] or op['medianFilter'])) or
                     op['saveDeskewedRaw'] or
                     op['doReg']):
-                raise Exception('Nothing done! Check GUI options')
+                self.show_error_window('Nothing done!', 'Nothing done!',
+                    'No deconvolution, deskewing, image correction, '
+                    'or registration performed. Check GUI options.', '')
 
         except Exception:
             self.enableProcessButton()
@@ -1100,18 +1138,30 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.currentItem = self.listbox.item(0, 1).text()
         self.currentPath = self.listbox.item(0, 0).text()
 
+        def skip():
+            self.listbox.removePath(self.currentPath)
+            if self.listbox.rowCount() > 0:
+                self.process_next_item()
+            else:
+                self.inProcess = False
+                self.on_proc_finished()
+            return
+
+        if not os.path.exists(self.currentPath):
+            self.statusBar.showMessage(
+                'Skipping! path no longer exists: {}'.format(self.currentPath), 5000)
+            skip()
+            return
+
         idx = 0  # might use this later to spawn more threads
         opts = self.optionsOnProcessClick
 
         # check if already processed
         if llspy.util.pathHasPattern(self.currentPath, '*' + llspy.config.__OUTPUTLOG__):
             if not opts['reprocess']:
-                self.listbox.removePath(self.currentPath)
-                if self.listbox.rowCount() > 0:
-                    self.process_next_item()
-                else:
-                    self.inProcess = False
-                    self.on_proc_finished()
+                self.statusBar.showMessage(
+                    'Skipping! Path already processed: {}'.format(self.currentPath), 5000)
+                skip()
                 return
 
         if not len(QtCore.QCoreApplication.instance().gpuset):
@@ -1241,8 +1291,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             'uint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
             'bleachCorrection': self.bleachCorrectionCheckBox.isChecked(),
             'doReg': self.doRegistrationGroupBox.isChecked(),
-            'regRefWave': (int(self.RegProcessChannelRefCombo.currentText())
-                if self.RegProcessChannelRefCombo.currentText() is not '' else 0),
             'regMode': (self.RegProcessChannelRefModeCombo.currentText()
                 if self.RegProcessChannelRefModeCombo.currentText() else 'none'),
             'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
@@ -1283,6 +1331,24 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             options['regCalibPath'] = rCalibText
         else:
             options['regCalibPath'] = None
+
+
+        if not self.RegProcessChannelRefCombo.currentText():
+            options['regRefWave'] = 0
+        else:
+            text = self.RegProcessChannelRefCombo.currentText()
+            if text.isdigit():
+                options['regRefWave'] = int(text)
+            else:
+                if options['doReg']:
+                    self.show_error_window('Problem with channel registration settings!',
+                        'Registration Error', 'Channel registration was selected, '
+                        'but the selected reference wavelength does not seem to be a '
+                        'number.  This may be an issue with filenaming convention.  '
+                        'Please read docs regarding data structure assumptions.')
+                else:
+                    options['regRefWave'] = 0
+
 
         if options['doReg'] and options['regCalibPath'] in (None, ''):
             raise err.InvalidSettingsError(
@@ -1380,9 +1446,37 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             [self.listbox.removePath(p) for p in selectedPaths]
             [self.listbox.addPath(p) for p in selectedPaths]
 
+    def undoRenameSelected(self):
+
+        box = QtW.QMessageBox()
+        box.setWindowTitle('Undo Renaming')
+        box.setText("Do you want to undo all renaming that has occured in this session?, or chose a directory?")
+        box.setIcon(QtW.QMessageBox.Question)
+        box.addButton(QtW.QMessageBox.Cancel)
+        box.addButton("Undo Everything", QtW.QMessageBox.YesRole)
+        box.addButton("Choose Specific Directory", QtW.QMessageBox.ActionRole)
+        box.setDefaultButton(QtW.QMessageBox.Cancel)
+        reply = box.exec_()
+
+        if reply > 1000:  # cancel hit
+            return
+        elif reply == 1:  # action role  hit
+            path = QtW.QFileDialog.getExistingDirectory(self,
+                    'Choose Directory to Undo', os.path.expanduser('~'),
+                    QtW.QFileDialog.ShowDirsOnly)
+            if path:
+                llspy.llsdir.undo_rename_iters(path)
+        elif reply == 0:  # yes role  hit
+            for path in self.listbox.renamedPaths:
+                llspy.llsdir.undo_rename_iters(path)
+                self.listbox.renamedPaths.remove(path)
+
     def renameSelected(self):
+        if not hasattr(self.listbox, 'renamedPaths'):
+            self.listbox.renamedPaths = []
         for item in self.listbox.selectedPaths():
             llspy.llsdir.rename_iters(item)
+            self.listbox.renamedPaths.append(item)
             self.listbox.removePath(item)
             [self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
 

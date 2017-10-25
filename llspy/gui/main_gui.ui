@@ -628,8 +628,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>267</height>
+             <width>467</width>
+             <height>227</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1771,7 +1771,7 @@ after processing to save space.</string>
         <string>Registration</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="6" column="6" colspan="3">
+        <item row="8" column="6" colspan="3">
          <widget class="QComboBox" name="RegCalib_channelRefModeCombo">
           <property name="enabled">
            <bool>true</bool>
@@ -1820,7 +1820,7 @@ bead) images acquired in each channel.</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="4">
+        <item row="8" column="4">
          <widget class="QComboBox" name="RegCalib_channelRefCombo">
           <property name="enabled">
            <bool>true</bool>
@@ -1840,7 +1840,7 @@ bead) images acquired in each channel.</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="2" colspan="2">
+        <item row="3" column="2" colspan="2">
          <widget class="QLabel" name="RegCalibRefChannelsLabel">
           <property name="enabled">
            <bool>true</bool>
@@ -1857,7 +1857,7 @@ bead) images acquired in each channel.</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="2">
+        <item row="3" column="0" colspan="2">
          <widget class="QPushButton" name="GenerateRegFileButton">
           <property name="minimumSize">
            <size>
@@ -1891,9 +1891,12 @@ bead) images acquired in each channel.</string>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
           </property>
+          <property name="buddy">
+           <cstring>RegCalibPathLineEdit</cstring>
+          </property>
          </widget>
         </item>
-        <item row="6" column="5">
+        <item row="8" column="5">
          <widget class="QLabel" name="RegCalib_channelRefModeLabel">
           <property name="maximumSize">
            <size>
@@ -1914,16 +1917,19 @@ CPD=Coherent Point Drift algorithm
           <property name="text">
            <string>Mode:</string>
           </property>
+          <property name="buddy">
+           <cstring>RegCalib_channelRefModeCombo</cstring>
+          </property>
          </widget>
         </item>
-        <item row="2" column="0" colspan="9">
+        <item row="4" column="0" colspan="9">
          <widget class="Line" name="horizline_1">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item row="7" column="4">
+        <item row="9" column="4">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -1936,21 +1942,6 @@ CPD=Coherent Point Drift algorithm
           </property>
          </spacer>
         </item>
-        <item row="1" column="4" colspan="5">
-         <widget class="QGroupBox" name="RegCalibRefChannelsGroup">
-          <property name="title">
-           <string/>
-          </property>
-          <layout class="QHBoxLayout" name="RegCalibRefGroupLayout">
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-          </layout>
-         </widget>
-        </item>
         <item row="0" column="8">
          <widget class="QPushButton" name="RegCalibPathLoadButton">
           <property name="text">
@@ -1958,14 +1949,14 @@ CPD=Coherent Point Drift algorithm
           </property>
          </widget>
         </item>
-        <item row="4" column="8">
+        <item row="6" column="8">
          <widget class="QPushButton" name="RegFilePathLoadButton">
           <property name="text">
            <string>load</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="0">
+        <item row="6" column="0">
          <widget class="QLabel" name="RegFilePathLabel">
           <property name="minimumSize">
            <size>
@@ -1980,9 +1971,12 @@ bead) images acquired in each channel.</string>
           <property name="text">
            <string>Registration File:</string>
           </property>
+          <property name="buddy">
+           <cstring>RegFilePath</cstring>
+          </property>
          </widget>
         </item>
-        <item row="4" column="1" colspan="7">
+        <item row="6" column="1" colspan="7">
          <widget class="QLineEdit" name="RegFilePath">
           <property name="enabled">
            <bool>true</bool>
@@ -1999,14 +1993,14 @@ bead) images acquired in each channel.</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0" colspan="2">
+        <item row="8" column="0" colspan="2">
          <widget class="QPushButton" name="RegCalibPreviewButton">
           <property name="text">
            <string>Register Fiducial Data</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="2" colspan="2">
+        <item row="8" column="2" colspan="2">
          <widget class="QLabel" name="RegCalib_channelRefLabel">
           <property name="enabled">
            <bool>true</bool>
@@ -2017,6 +2011,99 @@ bead) images acquired in each channel.</string>
           </property>
           <property name="text">
            <string>Ref Channel:</string>
+          </property>
+          <property name="buddy">
+           <cstring>RegCalib_channelRefCombo</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="BeadThresholdLabel">
+          <property name="minimumSize">
+           <size>
+            <width>95</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>Bead Threshold:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>RegBeadThreshSpin</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4" colspan="5">
+         <widget class="QGroupBox" name="RegCalibRefChannelsGroup">
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QHBoxLayout" name="RegCalibRefGroupLayout">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="RegBeadThreshSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximum">
+           <number>65536</number>
+          </property>
+          <property name="value">
+           <number>1000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4" colspan="4">
+         <widget class="QLabel" name="RegMinBeadsLabel">
+          <property name="text">
+           <string>Min number of beads:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>RegMinBeadsSpin</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="8">
+         <widget class="QSpinBox" name="RegMinBeadsSpin">
+          <property name="maximum">
+           <number>200</number>
+          </property>
+          <property name="value">
+           <number>20</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2" colspan="2">
+         <widget class="QCheckBox" name="RegAutoThreshCheckbox">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>Autodetect</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -2755,6 +2842,8 @@ QProgressBar::chunk:horizontal {
     <addaction name="actionRun"/>
     <addaction name="actionAbort"/>
     <addaction name="separator"/>
+    <addaction name="actionRename_Iters"/>
+    <addaction name="actionUndo_Rename_Iters"/>
    </widget>
    <widget class="QMenu" name="menuLLSpy">
     <property name="title">
@@ -2929,6 +3018,16 @@ and restore folder to it's original state
     <string>Camera Calibration</string>
    </property>
   </action>
+  <action name="actionRename_Iters">
+   <property name="text">
+    <string>Rename 'Iters_'</string>
+   </property>
+  </action>
+  <action name="actionUndo_Rename_Iters">
+   <property name="text">
+    <string>Undo Rename 'Iters_'</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
@@ -2989,11 +3088,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>317</x>
-     <y>413</y>
+     <y>356</y>
     </hint>
     <hint type="destinationlabel">
      <x>438</x>
-     <y>415</y>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -3005,11 +3104,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>317</x>
-     <y>413</y>
+     <y>356</y>
     </hint>
     <hint type="destinationlabel">
      <x>536</x>
-     <y>415</y>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -3021,11 +3120,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>317</x>
-     <y>413</y>
+     <y>356</y>
     </hint>
     <hint type="destinationlabel">
      <x>380</x>
-     <y>415</y>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -3037,11 +3136,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>317</x>
-     <y>413</y>
+     <y>356</y>
     </hint>
     <hint type="destinationlabel">
      <x>480</x>
-     <y>415</y>
+     <y>358</y>
     </hint>
    </hints>
   </connection>
@@ -3053,11 +3152,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>474</x>
-     <y>481</y>
+     <y>424</y>
     </hint>
     <hint type="destinationlabel">
      <x>545</x>
-     <y>483</y>
+     <y>426</y>
     </hint>
    </hints>
   </connection>
@@ -3084,12 +3183,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>53</x>
-     <y>604</y>
+     <x>68</x>
+     <y>601</y>
     </hint>
     <hint type="destinationlabel">
-     <x>565</x>
-     <y>603</y>
+     <x>581</x>
+     <y>602</y>
     </hint>
    </hints>
   </connection>
@@ -3100,12 +3199,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>53</x>
-     <y>604</y>
+     <x>68</x>
+     <y>601</y>
     </hint>
     <hint type="destinationlabel">
-     <x>176</x>
-     <y>603</y>
+     <x>298</x>
+     <y>601</y>
     </hint>
    </hints>
   </connection>
@@ -3116,12 +3215,12 @@ and restore folder to it's original state
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>87</y>
+     <x>307</x>
+     <y>138</y>
     </hint>
     <hint type="destinationlabel">
-     <x>176</x>
-     <y>113</y>
+     <x>298</x>
+     <y>165</y>
     </hint>
    </hints>
   </connection>
@@ -3132,12 +3231,12 @@ and restore folder to it's original state
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>87</y>
+     <x>307</x>
+     <y>138</y>
     </hint>
     <hint type="destinationlabel">
-     <x>44</x>
-     <y>113</y>
+     <x>59</x>
+     <y>166</y>
     </hint>
    </hints>
   </connection>
@@ -3149,11 +3248,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>138</x>
-     <y>413</y>
+     <y>356</y>
     </hint>
     <hint type="destinationlabel">
      <x>172</x>
-     <y>418</y>
+     <y>361</y>
     </hint>
    </hints>
   </connection>
@@ -3165,11 +3264,11 @@ and restore folder to it's original state
    <hints>
     <hint type="sourcelabel">
      <x>138</x>
-     <y>413</y>
+     <y>356</y>
     </hint>
     <hint type="destinationlabel">
      <x>228</x>
-     <y>414</y>
+     <y>357</y>
     </hint>
    </hints>
   </connection>
@@ -3180,12 +3279,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>129</x>
-     <y>528</y>
+     <x>148</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>295</x>
-     <y>526</y>
+     <x>255</x>
+     <y>458</y>
     </hint>
    </hints>
   </connection>
@@ -3196,12 +3295,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>151</x>
-     <y>528</y>
+     <x>165</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>335</x>
-     <y>528</y>
+     <x>295</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -3212,12 +3311,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>151</x>
-     <y>528</y>
+     <x>165</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>370</x>
-     <y>528</y>
+     <x>330</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -3228,12 +3327,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>151</x>
-     <y>528</y>
+     <x>165</x>
+     <y>460</y>
     </hint>
     <hint type="destinationlabel">
-     <x>405</x>
-     <y>528</y>
+     <x>365</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -3244,8 +3343,8 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>53</x>
-     <y>604</y>
+     <x>68</x>
+     <y>601</y>
     </hint>
     <hint type="destinationlabel">
      <x>44</x>
@@ -3260,8 +3359,8 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>53</x>
-     <y>604</y>
+     <x>68</x>
+     <y>601</y>
     </hint>
     <hint type="destinationlabel">
      <x>176</x>
@@ -3276,12 +3375,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>53</x>
-     <y>604</y>
+     <x>68</x>
+     <y>601</y>
     </hint>
     <hint type="destinationlabel">
-     <x>272</x>
-     <y>665</y>
+     <x>347</x>
+     <y>643</y>
     </hint>
    </hints>
   </connection>
@@ -3292,12 +3391,12 @@ and restore folder to it's original state
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>53</x>
-     <y>604</y>
+     <x>68</x>
+     <y>601</y>
     </hint>
     <hint type="destinationlabel">
-     <x>457</x>
-     <y>665</y>
+     <x>532</x>
+     <y>643</y>
     </hint>
    </hints>
   </connection>
@@ -3308,12 +3407,60 @@ and restore folder to it's original state
    <slot>setHidden(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>87</y>
+     <x>307</x>
+     <y>138</y>
     </hint>
     <hint type="destinationlabel">
-     <x>565</x>
-     <y>113</y>
+     <x>581</x>
+     <y>166</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>RegAutoThreshCheckbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>RegBeadThreshSpin</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>273</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>168</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>RegAutoThreshCheckbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>RegMinBeadsLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>287</x>
+     <y>135</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>424</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>RegAutoThreshCheckbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>RegMinBeadsSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>259</x>
+     <y>136</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>554</x>
+     <y>142</y>
     </hint>
    </hints>
   </connection>

@@ -41,6 +41,8 @@ PIXEL_SIZE = {
     'C13440': 6.5,
 }
 
+class SettingsError(Exception):
+    pass
 
 class LLSsettings(object):
     '''Class for parsing and storing info from LLS Settings.txt.
@@ -92,16 +94,33 @@ class LLSsettings(object):
         sb = {k: v for k, v in self.__dict__.items() if k not in {'raw_text', 'SPIMproject'}}
         return pformat(sb)
 
+    def getSection(self, heading):
+        secHeading = '\*\*\*\*\*\s+{}.*?\n\*\*\*\*'
+        match = re.search(secHeading.format(heading), self.raw_text, re.DOTALL)
+        if match is not None:
+            #return match.group()
+            return match.group().split('*****')[-1].strip('*').strip()
+        else:
+            return None
+
     def parse(self):
         '''parse the settings file.'''
 
         # the settings file is seperated into sections by "*****"
-        settingsSplit = re.split('[*]{5}.*\n', self.raw_text)
-        general_settings = settingsSplit[1]
-        waveform_settings = settingsSplit[2]     # the top part with the experiment
-        camera_settings = settingsSplit[3]
+        # settingsSplit = re.split('[*]{5}.*\n', self.raw_text)
+        # general_settings = settingsSplit[1]
+        # waveform_settings = settingsSplit[2]     # the top part with the experiment
+        # camera_settings = settingsSplit[3]
         # timing_settings = settingsSplit[4]
-        ini_settings = settingsSplit[5]  # the bottom .ini part
+        # ini_settings = settingsSplit[5]  # the bottom .ini part
+
+        general_settings = self.getSection('General')
+        waveform_settings = self.getSection('Waveform')
+        camera_settings = self.getSection('Camera')
+        if not all([general_settings, waveform_settings, camera_settings]):
+            raise SettingsError('Could not parse at least one of the required'
+                ' sections of the Settings file')
+        ini_settings = self.raw_text.split('***** ***** *****')[-1]
 
         # parse the top part (general settings)
         datestring = re.search('Date\s*:\s*(.*)\n', general_settings).group(1)
@@ -124,9 +143,9 @@ class LLSsettings(object):
         self.software_version = re.search(
             'Version\s*:\s*v ([\d*.?]+)', general_settings).group(1)
         self.cycle_lasers = re.search(
-            'Cycle lasers\s*:\s*(.*)\n', waveform_settings).group(1)
+            'Cycle lasers\s*:\s*(.*)(?:$|\n)', waveform_settings).group(1)
         self.z_motion = re.search(
-            'Z motion\s*:\s*(.*)\n', waveform_settings).group(1)
+            'Z motion\s*:\s*(.*)(?:$|\n)', waveform_settings).group(1)
 
         # find repating patterns in settings file
         waveforms = [

@@ -583,8 +583,10 @@ class LLSdir(object):
                 logger.warn('discarding small file:  {}'.format(f))
         self.tiff.rejected = list(
             set(self.tiff.raw).difference(set(self.tiff.all)))
-        if not len(self.tiff.raw):
-            raise IndexError('We seem to have discarded of all the tiffs!')
+        if len(self.tiff.all) and not len(self.tiff.raw):
+            raise LLSpyError('LLSpy attempts to exclude partially acquired files '
+                'from processing.  In this case, there are no files left! '
+                'Please check data structure assumptions in the docs. ')
 
     def detect_parameters(self):
         self.tiff.count = []  # per channel list of number of tiffs
@@ -893,7 +895,7 @@ class LLSdir(object):
             return None
 
         if not otfmodule.dir_has_otfs(otfpath):
-            raise LLSpyError("OTF directory has no OTFs! -> {}".format(otfpath))
+            raise otfmodule.OTFError("OTF directory has no OTFs! -> {}".format(otfpath))
 
         mask = None
         if hasattr(self.settings, 'mask'):
@@ -1085,15 +1087,21 @@ class LLSdir(object):
 class RegDir(LLSdir):
     """Special type of LLSdir that holds image registraion data like
     tetraspeck beads
+
+    If threshold is integer value, it will be used as minimum intensity
+    for detected beads... otherwise mincount # beads will be required.
+    mincount default is set in fiducialreg.get_thresh()
     """
 
-    def __init__(self, path, t=None, **kwargs):
+    def __init__(self, path, t=None, mincount=None, threshold=None, usejson=True, **kwargs):
         super(RegDir, self).__init__(path, **kwargs)
         if self.path is not None:
-            if self.path.joinpath('cloud.json').is_file():
+            if self.path.joinpath('cloud.json').is_file() and usejson:
                 with open(str(self.path.joinpath('cloud.json'))) as json_data:
                     self = self.fromJSON(json.load(json_data))
         self.t = t
+        self.mincount = mincount
+        self.threshold = threshold
         if self.has_lls_tiffs and t is None:
             self.t = min(self.parameters.tset)
         if self.isValid:
@@ -1154,7 +1162,8 @@ class RegDir(LLSdir):
             return self._cloudset
         self._cloudset = CloudSet(self._deskewed() if self.deskew else self.data,
                                   labels=self.waves, dx=self.parameters.dx,
-                                  dz=self.parameters.dzFinal)
+                                  dz=self.parameters.dzFinal, mincount=self.mincount,
+                                  threshold=self.threshold)
         with open(self.path.joinpath('cloud.json'), 'w') as outfile:
             json.dump(self.toJSON(), outfile)
         return self._cloudset
@@ -1239,7 +1248,7 @@ class RegDir(LLSdir):
     #     return affineGPU(img, inv_tform, voxsize)
 
 
-def rename_iters(folder, splitpositions=True, verbose=False):
+def rename_iters(folder, splitpositions=True):
     """
     Rename files in a folder acquired with LLS multi-position script.
 
@@ -1257,50 +1266,65 @@ def rename_iters(folder, splitpositions=True, verbose=False):
     if splitpositions==True:
         files from different positions will be placed into subdirectories
     """
-    import re
 
     filelist = glob.glob(os.path.join(folder, '*Iter*stack*'))
-    nPositions = 0
-    if filelist:
-        nIters = max([int(f.split('Iter_')[1].split('_')[0]) for f in filelist]) + 1
-        nChan = 0
-        while True:
-            if any(['ch' + str(nChan) in f for f in filelist]):
-                nChan += 1
-            else:
-                break
-        nPositions = len(filelist) // (nChan * nIters)
+    if not filelist:
+        raise LLSpyError('No *Iter*stack* files found in {}'.format(folder))
+    try:
+        iterset = set([int(f.split('Iter_')[1].split('_')[0]) for f in filelist])
+        chanset = set([int(f.split('_ch')[1].split('_')[0]) for f in filelist])
+    except Exception:
+        raise LLSpyError('Failed to parse filenames to detect number of Iter_ files')
 
-        setlist = glob.glob(os.path.join(folder, '*Iter*Settings.txt'))
-        for pos in range(nPositions):
-            settingsFile = [f for f in setlist
-                            if 'Settings.txt' in f and 'Iter_%s' % pos in f][0]
-            if nPositions > 1:
-                newname = re.sub(r"Iter_\d+", 'pos%02d' % pos,
-                                os.path.basename(settingsFile))
-            else:
-                newname = re.sub(r"_Iter_\d+", '',
-                                os.path.basename(settingsFile))
-            os.rename(settingsFile, os.path.join(folder, newname))
-        for chan in range(nChan):
-            t0 = []
-            for i in range(nIters):
-                flist = sorted([f for f in filelist
-                            if 'ch%s' % chan in f and 'Iter_%s_' % i in f])
-                for pos in range(nPositions):
-                    base = os.path.basename(flist[pos])
-                    if i == 0:
-                        t0.append(int(base.split('msecAbs')[0].split('_')[-1]))
-                    newname = base.replace('stack0000', 'stack%04d' % i)
-                    deltaT = int(base.split('msecAbs')[0].split('_')[-1]) - t0[pos]
-                    newname = newname.replace('0000000msec_', '%07dmsec_' % deltaT)
-                    if nPositions > 1:
-                        newname = re.sub(r"Iter_\d+", 'pos%02d' % pos, newname)
-                    else:
-                        newname = re.sub(r"_Iter_\d+", '', newname)
-                    if verbose:
-                        logger.info("{} --> {}".format(base, newname))
-                    os.rename(flist[pos], os.path.join(folder, newname))
+    iterdict = {}
+    nPosList = []
+    for it in iterset:
+        iterdict[it] = {}
+        iterdict[it]['setfile'] = util.find_filepattern(folder, '*Iter_%s*Settings.txt' % it)
+        # all the files from this Iter group
+        g = [f for f in filelist if 'Iter_%s' % it in f]
+        # tuple of nFiles in each channel in this group
+        nPosList.append(tuple([len([f for f in g if 'ch%d' % d in f]) for d in chanset]))
+    posset = set(nPosList)
+    if len(posset) > 1:
+        raise LLSpyError('rename_iters function requires that each iteration '
+            'the same number of tiffs')
+    posset = set(posset.pop())
+    if len(posset) > 1:
+        raise LLSpyError('rename_iters function requires that each channel '
+            'have the same number of tiffs')
+    nPositions = posset.pop()
+
+    changelist = []
+    for it in iterset:
+        settingsFile = iterdict[it]['setfile']
+        if nPositions > 1:
+            newname = re.sub(r"Iter_\d+", 'pos%02d' % it,
+                            os.path.basename(settingsFile))
+        else:
+            newname = re.sub(r"_Iter_\d+", '',
+                            os.path.basename(settingsFile))
+        os.rename(settingsFile, os.path.join(folder, newname))
+        changelist.append((settingsFile, os.path.join(folder, newname)))
+    for chan in chanset:
+        t0 = []
+        for i in iterset:
+            flist = sorted([f for f in filelist
+                        if 'ch%s' % chan in f and 'Iter_%s_' % i in f])
+            for pos in range(nPositions):
+                base = os.path.basename(flist[pos])
+                if i == 0:
+                    t0.append(int(base.split('msecAbs')[0].split('_')[-1]))
+                newname = base.replace('stack0000', 'stack%04d' % i)
+                deltaT = int(base.split('msecAbs')[0].split('_')[-1]) - t0[pos]
+                newname = newname.replace('0000000msec_', '%07dmsec_' % deltaT)
+                if nPositions > 1:
+                    newname = re.sub(r"Iter_\d+", 'pos%02d' % pos, newname)
+                else:
+                    newname = re.sub(r"_Iter_\d+", '', newname)
+                logger.info("renaming {} --> {}".format(base, newname))
+                os.rename(flist[pos], os.path.join(folder, newname))
+                changelist.append((flist[pos], os.path.join(folder, newname)))
     if splitpositions and nPositions > 1:
         # files from different positions will be placed into subdirectories
         pos = 0
@@ -1312,9 +1336,41 @@ def rename_iters(folder, splitpositions=True, verbose=False):
             posfolder = os.path.join(folder, basename + '_pos%02d' % pos)
             if not os.path.exists(posfolder):
                     os.mkdir(posfolder)
+                    changelist.append((None, posfolder))
             for f in movelist:
                 os.rename(f, os.path.join(posfolder, os.path.basename(f)))
+                changelist.append((f, os.path.join(posfolder, os.path.basename(f))))
             pos += 1
+    if len(changelist):
+        with open(os.path.join(folder, 'renaming_log.txt'), 'w') as f:
+            json.dump(changelist, f)
+
+
+def undo_rename_iters(path, deletelog=True):
+    logfile = path
+    if os.path.isdir(path):
+        logfile = util.find_filepattern(path, 'renaming_log.txt')
+    if not logfile or not os.path.isfile(logfile):
+        logger.error("Could not find renaming_log to undo_rename_iters")
+        return
+    with open(logfile) as f:
+        changelist = json.load(f)
+    deletionlist = []
+    for item in reversed(changelist):
+        src = item[1]
+        dest = item[0]
+        if not dest:
+            deletionlist.append(src)
+            continue
+        logger.info("renaming {} --> {}".format(src, dest))
+        os.rename(src, dest)
+    for item in deletionlist:
+        if os.path.isdir(item):
+            os.rmdir(item)
+        elif os.path.isfile(item):
+            os.remove(item)
+    if deletelog:
+        os.remove(logfile)
 
 
 def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
@@ -1392,3 +1448,4 @@ class LLSpyError(Exception):
     when raising this exception.
     """
     pass
+
