@@ -52,7 +52,7 @@ def contains_LLSfiles(path):
 def parse_filename(fname, matchword=None, pattern=filename_pattern):
 	fname = os.path.basename(fname)
 	gd = pattern.search(fname).groupdict()
-	gd = {k: (int(v) if v.isdigit() else v) for k, v in gd.items()}
+	gd = {k: (int(v) if (v.isdigit() and k != 'basename') else v) for k, v in gd.items()}
 	if matchword in gd:
 		return gd[matchword]
 	else:
