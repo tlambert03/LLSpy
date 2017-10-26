@@ -1,6 +1,14 @@
 LLSpy Release History
 #####################
 
+`0.3.4`_
+========
+
+**Fixed:**
+
+* fixed bugs resulting when the base part of the filename is interpreted as a non-string integer. (such as unsupported operand type(s) for +: 'int' and 'str' during mipmerge)
+
+
 `0.3.3`_
 ========
 
