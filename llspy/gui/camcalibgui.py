@@ -15,7 +15,7 @@ thisDirectory = os.path.dirname(os.path.abspath(__file__))
 
 
 class CamCalibWorker(QtCore.QObject):
-    """docstring for TimePointWorker"""
+    """docstring for CamCalibWorker"""
 
     finished = QtCore.pyqtSignal()
     progress = QtCore.pyqtSignal(int)
