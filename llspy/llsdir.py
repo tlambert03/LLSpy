@@ -1061,7 +1061,7 @@ class LLSdir(object):
 
         """
         if not self.has_settings:
-            raise LLSpyError('Cannot correct flash pixels without settings.txt file')
+            raise LLSpyError('Cannot correct Flash pixels without settings.txt file')
         if not isinstance(camparamsPath, CameraParameters):
             if isinstance(camparamsPath, str):
                 camparams = CameraParameters(camparamsPath)

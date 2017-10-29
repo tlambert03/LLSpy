@@ -321,6 +321,7 @@ class LLSitemWorker(QtCore.QObject):
             self.P = self.E.localParams(**self.opts)
         except Exception:
             self.error.emit()
+            self.finished.emit()
             raise
 
         # we process one folder at a time. Progress bar updates per Z stack
@@ -334,8 +335,12 @@ class LLSitemWorker(QtCore.QObject):
         self._logger.debug('Parameters {}\n'.format(self.E.parameters))
 
         if self.P.correctFlash:
-            self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
-            self.E.path = self.E.correct_flash(**self.P)
+            try:
+                self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
+                self.E.path = self.E.correct_flash(**self.P)
+            except llspy.llsdir.LLSpyError:
+                self.error.emit()
+                raise
         # if not flash correcting but there is trimming/median filter requested
         elif (self.P.medianFilter or
               any([any(i) for i in (self.P.trimX, self.P.trimY, self.P.trimZ)])):
