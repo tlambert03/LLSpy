@@ -294,48 +294,4 @@ To Do
 * comboMIP should use registered files when registration requested
 * registered files are always floating point when rest of data is not
 * allow processing of folders without settings.txt
-
-
-.. openCL troubleshooting on Linux
-.. ===============================
-
-.. The conda installation will
-
-.. .. code:: bash
-
-..     # activate the conda environment that has pyopencl/gputools installed
-..     $ source activate <clenv>
-
-..     # use this to quickly test platform detection
-..     $ python -c "import pyopencl; pyopencl.get_platforms()"
-
-..     # the error i got the most was:
-..     $ python -c "import pyopencl; pyopencl.get_platforms()"
-..     Traceback (most recent call last):
-..       File "<string>", line 1, in <module>
-..       File "/opt/anaconda3/envs/testcl/lib/python3.6/site-packages/pyopencl/cffi_cl.py", line 672, in get_platforms
-..         _handle_error(_lib.get_platforms(platforms.ptr, platforms.size))
-..       File "/opt/anaconda3/envs/testcl/lib/python3.6/site-packages/pyopencl/cffi_cl.py", line 645, in _handle_error
-..         raise e
-..     pyopencl.cffi_cl.LogicError: clGetPlatformIDs failed: <unknown error -1001>
-
-..     # check the library loading path of pyopencl/_cffi.abi3.so
-..     $ ldd $CONDA_PREFIX/lib/python3.6/site-packages/pyopencl/_cffi.abi3.so
-..     # look specifically for the following line
-..         libOpenCL.so.1 => <CONDA_PREFIX>/lib/python3.6/site-packages/pyopencl/./../../../libOpenCL.so.1 (0x00007fdc13e50000)
-..         libOpenCL.so.1 => /usr/local/cuda/lib64/libOpenCL.so.1 (0x00007f3671ad7000)
-..         libOpenCL.so.1 => /usr/lib/x86_64-linux-gnu/libOpenCL.so.1 (0x00007f09c45c5000)
-
-.. in my case, i think it was an openCL version mismatch... by deleting/moving/renaming the files at
-
-.. ``<CONDA_PREFIX>/lib/python3.6/site-packages/pyopencl/./../../../libOpenCL.so.1``
-
-.. and
-
-.. ``/usr/local/cuda/lib64/libOpenCL.so.1``
-
-.. it eventually fell back on
-
-.. ``/usr/lib/x86_64-linux-gnu/libOpenCL.so.1``
-
-.. which *did* work...
+* allow option of loading partial tiffs in GUI
