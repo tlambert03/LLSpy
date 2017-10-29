@@ -572,7 +572,7 @@ class RegistrationTab(object):
         for cb in group.findChildren(QtW.QCheckBox):
             layout.removeWidget(cb)
             cb.setParent(None)
-        for wave in RD.parameters.wavelength:
+        for wave in RD.parameters.channels.values():
             box = QtW.QCheckBox(str(wave), group)
             layout.addWidget(box)
             box.setChecked(True)
