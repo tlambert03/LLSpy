@@ -192,7 +192,6 @@ def preview(exp, tR=0, cR=None, **kwargs):
 
 
     """
-
     if not isinstance(exp, LLSdir):
         if isinstance(exp, str):
             exp = LLSdir(exp)
@@ -210,9 +209,10 @@ def preview(exp, tR=0, cR=None, **kwargs):
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
             logger.warn('No TIFF files to process in {}'.format(exp.path))
-        if not exp.has_settings:
-            logger.warn('Could not find Settings.txt file in {}'.format(exp.path))
-        return
+            return
+        # if not exp.has_settings:
+        #     logger.warn('Could not find Settings.txt file in {}'.format(exp.path))
+        #     return
 
     kwargs['tRange'] = tR
     kwargs['cRange'] = cR
@@ -284,6 +284,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
         logger.debug("Preview finished. Output array shape = {}".format(combined.shape))
         return combined
     else:
+        logger.warning("Preview returned an empty array")
         return None
 
 
@@ -313,8 +314,8 @@ def process(exp, binary=None, **kwargs):
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
             logger.warn('No TIFF files to process in {}'.format(exp.path))
-        if not exp.has_settings:
-            logger.warn('Could not find Settings.txt file in {}'.format(exp.path))
+        if not exp.parameters.isReady():
+            logger.warn('Parameters are not valid: {}'.format(exp.path))
         return
 
     P = exp.localParams(**kwargs)
@@ -453,6 +454,62 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True):
         logger.error("ERROR: failed to merge MIPs from {}".format(str(folder)))
 
 
+class CoreParams(dict):
+    """dot.notation access to dictionary attributes"""
+
+    def __init__(self,  *args, **kwargs):
+        self['samplescan'] = False
+        self['dzFinal'] = 0
+        self['dz'] = 0
+        self['angle'] = None
+
+        super(CoreParams, self).__init__(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return self.get(name)
+
+    def __setattr__(self, name, value):
+        return self.__setitem__(name, value)
+
+    def __setitem__(self, name, value):
+        super(CoreParams, self).__setitem__(name, value)
+        if name == 'angle' and value is not None:
+            if value > 0:
+                super(CoreParams, self).__setitem__('samplescan', True)
+            else:
+                super(CoreParams, self).__setitem__('samplescan', False)
+        if name == 'samplescan':
+            if not value:
+                super(CoreParams, self).__setitem__('angle', 0)
+        if name in ('dz', 'angle'):
+            self._updatedZfinal()
+
+    def _updatedZfinal(self):
+        if self['samplescan'] and self['angle']:
+            self['dzFinal'] = self['dz'] * np.sin(self['angle'] * np.pi / 180)
+        else:
+            self['dzFinal'] = self['dz']
+
+    def isReady(self):
+        if (self['dz'] > 0 and hasattr(self, 'dx')):
+            return True
+        return False
+
+    def update(self, dic):
+        for key, value in dic.items():
+            if key == 'samplescan':
+                pass
+            else:
+                self[key] = value
+        # set samplescan last
+        if 'samplescan' in dic:
+            self['samplescan'] = dic['samplescan']
+            self._updatedZfinal()
+
+    def __dir__(self):
+        return self.keys()
+
+
 class LLSdir(object):
     '''Main class to encapsulate an LLS experiment.
 
@@ -508,7 +565,7 @@ class LLSdir(object):
             return
         self.basename = self.path.name
         self.date = None
-        self.parameters = util.dotdict()
+        self.parameters = CoreParams()
         self.tiff = util.dotdict()
         if self.has_settings:
             if len(self.settings_files) > 1:
@@ -516,6 +573,24 @@ class LLSdir(object):
             self.settings = LLSsettings(self.settings_files[0])
             self.date = self.settings.date
             self.parameters.update(self.settings.parameters)
+        # if no settings were found, there is probably no dz/dx/angle info
+        # check here and then look for a previously processed proclog.txt
+        if self.parameters.dz == 0:
+            proclog = util.find_filepattern(str(self.path), '*'+config.__OUTPUTLOG__)
+            try:
+                if proclog and os.path.isfile(proclog):
+                    with open(proclog, 'r') as f:
+                        procdict = json.load(f)
+                    if procdict:
+                        if 'dzdata' in procdict:
+                            self.parameters.dz = procdict['dzdata']
+                        if 'drdata' in procdict:
+                            self.parameters.dx = procdict['drdata']
+                        if 'deskew' in procdict:
+                            self.parameters.angle = procdict['deskew']
+            except Exception as e:
+                logger.warning('Exception reading {}: {}'.format(proclog, e))
+
         if self.has_lls_tiffs:
             self._register_tiffs()
 
@@ -531,7 +606,7 @@ class LLSdir(object):
     def ready_to_process(self):
         """Returns true if the path is a directory, has a settings.txt file and valid LLS tiffs."""
         if self.path.is_dir():
-            if self.has_lls_tiffs and self.has_settings:
+            if self.has_lls_tiffs and self.parameters.isReady():
                 return True
         return False
 
@@ -595,6 +670,9 @@ class LLSdir(object):
         stacknum = re.compile('_stack(\d{4})_')
         self.parameters.tset = list({int(t.group(1)) for t in
             [stacknum.search(s) for s in self.tiff.raw] if t})
+        channum = re.compile('_ch(\d{1})_')
+        self.parameters.cset = list({int(c.group(1)) for c in
+            [channum.search(s) for s in self.tiff.raw] if c})
         for c in range(6):
             q = [f for f in self.tiff.raw if '_ch' + str(c) in f]
             if len(q):
@@ -634,7 +712,7 @@ class LLSdir(object):
         return bool(len(zips))
 
     def has_been_processed(self):
-        return bool(len([s for s in self.path.glob('*' + config.__OUTPUTLOG__)]))
+        return util.pathHasPattern(str(self.path), '*' + config.__OUTPUTLOG__)
 
     def is_corrected(self):
         corpath = self.path.joinpath('Corrected')
@@ -654,20 +732,14 @@ class LLSdir(object):
 
     def decompress(self, subfolder='.', **kwargs):
         o = compress.decompress(str(self.path.joinpath(subfolder)))
-        if self._get_all_tiffs():
-            self.ditch_partial_tiffs()
-            self.detect_parameters()
-            self.read_tiff_header()
+        self._register_tiffs()
         return o
 
     def decompress_partial(self, subfolder='.', tRange=None):
         """attempt to extract a subset of the tarball,  tRange=None will yield t=0
         """
         compress.decompress_partial(str(self.path.joinpath(subfolder)), tRange)
-        if self._get_all_tiffs():
-            self.ditch_partial_tiffs()
-            self.detect_parameters()
-            self.read_tiff_header()
+        self._register_tiffs()
 
     def reduce_to_raw(self, keepmip=True, verbose=True):
         """
@@ -748,19 +820,20 @@ class LLSdir(object):
         if '_localParams' in dir(self) and not recalc:
             if all([self._localParams[k] == v for k, v in kwargs.items()]):
                 return self._localParams
-
-        P = self.parameters
         S = schema.procParams(kwargs)
-        assert sum(S.trimY) < P.ny, "TrimY sum must be less than number of Y pixels"
-        assert sum(S.trimX) < P.nx, "TrimX sum must be less than number of X pixels"
-        assert sum(S.trimZ) < P.nz, "TrimZ sum must be less than number of Z pixels"
+        assert sum(S.trimY) < self.parameters.ny, "TrimY sum must be less than number of Y pixels"
+        assert sum(S.trimX) < self.parameters.nx, "TrimX sum must be less than number of X pixels"
+        assert sum(S.trimZ) < self.parameters.nz, "TrimZ sum must be less than number of Z pixels"
 
         if S.cRange is None:
-            S.cRange = range(P.nc)
+            # S.cRange = range(self.parameters.nc)
+            S.cRange = self.parameters.cset
         else:
-            if np.max(list(S.cRange)) > (P.nc - 1):
-                logger.warn('cRange was larger than number of Channels! Excluding C > {}'.format(P.nc - 1))
-            S.cRange = sorted([n for n in S.cRange if n < P.nc])
+            if np.max(list(S.cRange)) > (self.parameters.nc - 1):
+                logger.warn(
+                    'cRange was larger than number of Channels! Excluding C > {}'.format(
+                        self.parameters.nc - 1))
+            S.cRange = sorted([n for n in S.cRange if n < self.parameters.nc])
 
         if S.tRange is None:
             S.tRange = self.parameters.tset
@@ -771,16 +844,19 @@ class LLSdir(object):
             logger.debug("preview maxT = %d" % maxT)
             logger.debug("preview minT = %d" % minT)
             S.tRange = sorted([n for n in S.tRange if minT <= n <= maxT])
+            if not S.tRange or len(S.tRange) == 0:
+                S.tRange = [minT]
             if max(list(S.tRange)) > maxT:
-                logger.warn('max tRange was greater than the last timepoint. Excluding T > {}'.format(maxT))
+                logger.warn(
+                    'max tRange was greater than the last timepoint. Excluding T > {}'.format(maxT))
             if min(list(S.tRange)) < minT:
-                logger.warn('min tRange was less than the first timepoint. Excluding < {}'.format(minT))
+                logger.warn(
+                    'min tRange was less than the first timepoint. Excluding < {}'.format(minT))
 
         # note: background should be forced to 0 if it is getting corrected
         # in the camera correction step
         if S.background < 0 and self.has_lls_tiffs:
-            B = self.get_background()
-            S.background = [B[i] for i in S.cRange]
+            S.background = self.get_background(S.cRange)
         else:
             S.background = [S.background] * len(list(S.cRange))
 
@@ -801,14 +877,14 @@ class LLSdir(object):
         # add check for RegDIR
         # RD = RegDir(P.regCalibPath)
         # RD = self.path.parent.joinpath('tspeck')
-        S.drdata = P.dx
-        S.dzdata = P.dz
-        S.dzFinal = P.dzFinal
-        S.wavelength = P.wavelength
-        S.deskew = P.angle if P.samplescan else 0
-        if not P.samplescan:
+        S.drdata = self.parameters.dx
+        S.dzdata = self.parameters.dz
+        S.wavelength = self.parameters.wavelength
+        S.dzFinal = self.parameters.dzFinal
+        S.deskew = self.parameters.angle
+        if not self.parameters.samplescan:
             S.rMIP = (0, 0, 0)
-        S.saveDeskewedRaw = S.saveDeskewedRaw if P.samplescan else False
+            S.saveDeskewedRaw = False
 
         # FIXME:
         # shouldn't have to get OTF if not deconvolving... though cudaDeconv
@@ -818,7 +894,7 @@ class LLSdir(object):
         if S.nIters > 0 or (S.deskew > 0 and S.saveDeskewedRaw):
             S.otfs = []
             for c in S.cRange:
-                wave = P.wavelength[c]
+                wave = self.parameters.wavelength[c]
                 S.otfs.append(self.get_otf(wave, otfpath=S.otfDir))
             if not len(S.otfs):
                 raise otfmodule.OTFError(
@@ -828,7 +904,7 @@ class LLSdir(object):
                     "Could not find OTF for every channel in OTFdir.")
 
         if S.bRotate:
-            S.rotate = S.rotate if S.rotate is not None else P.angle
+            S.rotate = S.rotate if S.rotate is not None else self.parameters.angle
         else:
             S.rotate = 0
 
@@ -841,6 +917,9 @@ class LLSdir(object):
         kwargs can be any keywords that are recognized by the LLS `Schema list`_.
         """
         return process(self, **kwargs)
+
+    def preview(self, tR=0, cR=None, **kwargs):
+        return preview(self, tR=tR, cR=cR, **kwargs)
 
     def mergemips(self, subdir=None, delete=True):
         """ look for MIP files in subdirectory, compress into single hyperstack
@@ -898,7 +977,7 @@ class LLSdir(object):
             raise otfmodule.OTFError("OTF directory has no OTFs! -> {}".format(otfpath))
 
         mask = None
-        if hasattr(self.settings, 'mask'):
+        if hasattr(self, 'settings') and hasattr(self.settings, 'mask'):
             innerNA = self.settings.mask.innerNA
             outerNA = self.settings.mask.outerNA
             mask = (innerNA, outerNA)
@@ -919,13 +998,15 @@ class LLSdir(object):
         return w
 
     # TODO: should calculate background of provided folder (e.g. Corrected)
-    def get_background(self, **kwargs):
+    def get_background(self, cRange=None, **kwargs):
+        if cRange is None:
+            cRange = self.parameters.cset
         if not self.has_lls_tiffs:
             logger.error('Cannot calculate background on folder with no Tiffs')
             return
         # defaults background and=100, pad=100, sigma=2
         bgrd = []
-        for c in range(self.parameters.nc):
+        for c in cRange:
             i = util.imread(self.get_files(c=c)[0]).squeeze()
             bgrd.append(arrayfun.detect_background(i))
         # self.parameters.background = bgrd

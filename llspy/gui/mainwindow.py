@@ -81,8 +81,9 @@ class LLSDragDropTable(QtW.QTableWidget):
         self.setAcceptDrops(True)
         self.setSelectionMode(QtW.QAbstractItemView.ExtendedSelection)
         self.setSelectionBehavior(QtW.QAbstractItemView.SelectRows)
-        self.setEditTriggers(QtW.QAbstractItemView.SelectedClicked)
+        self.setEditTriggers(QtW.QAbstractItemView.DoubleClicked)
         self.setGridStyle(3)  # dotted grid line
+        self.llsObjects = {}  # dict to hold LLSdir Objects when instantiated
 
         self.setHorizontalHeaderLabels(self.colHeaders)
         self.hideColumn(0)  # column 0 is a hidden col for the full pathname
@@ -96,15 +97,65 @@ class LLSDragDropTable(QtW.QTableWidget):
         header.resizeSection(7, 40)
         header.resizeSection(8, 48)
         header.resizeSection(9, 48)
+        self.cellChanged.connect(self.onCellChanged)
+
+    @QtCore.pyqtSlot(int, int)
+    def onCellChanged(self, row, col):
+        # if it's not one of the last few columns that changed, ignore
+        if col < 7:
+            return
+        # must be the ACTIVE column that changed...
+        if col == self.currentColumn():
+            self.cellChanged.disconnect(self.onCellChanged)
+            try:
+                val = float(self.currentItem().text())
+            except ValueError:
+                self.currentItem().setText('0.0')
+                raise err.InvalidSettingsError('Value entered was not a number')
+            try:
+                if col == 7:
+                    if not (-90 < val < 90):
+                        self.currentItem().setText('0.0')
+                        raise err.InvalidSettingsError('angle must be between -90 and 90')
+                    self.getLLSObjectByIndex(row).parameters['angle'] = val
+                if col == 8:
+                    if not (0 < val < 20):
+                        self.currentItem().setText('0.0')
+                        raise err.InvalidSettingsError('dz must be between 0 and 20 (microns)')
+                    self.getLLSObjectByIndex(row).parameters['dz'] = val
+                if col == 9:
+                    if not (0 < val < 5):
+                        self.currentItem().setText('0.0')
+                        raise err.InvalidSettingsError('dx must be between 0 and 5 (microns)')
+                    self.getLLSObjectByIndex(row).parameters['dx'] = val
+                # change color once updated
+            finally:
+                if ((col == 7 and not (-90 < val < 90)) or
+                        (col == 8 and not (0 < val < 20)) or
+                        (col == 9 and not (0 < val < 5))):
+                    self.currentItem().setForeground(QtCore.Qt.white)
+                    self.currentItem().setBackground(QtCore.Qt.red)
+                else:
+                    self.currentItem().setForeground(QtCore.Qt.black)
+                    self.currentItem().setBackground(QtCore.Qt.white)
+                self.cellChanged.connect(self.onCellChanged)
 
     @QtCore.pyqtSlot(str)
     def addPath(self, path):
+        try:
+            self.cellChanged.disconnect(self.onCellChanged)
+        except TypeError:
+            pass
         if not (osp.exists(path) and osp.isdir(path)):
             return
+
+        mainGUI = self.parent().parent().parent().parent().parent()
         # If this folder is not on the list yet, add it to the list:
         if not llspy.util.pathHasPattern(path, '*Settings.txt'):
-            logger.warning('No Settings.txt! Ignoring: {}'.format(path))
-            return
+            if not mainGUI.allowNoSettingsCheckBox.isChecked():
+                logger.warning('No Settings.txt! Ignoring: {}'.format(path))
+                return
+
         # if it's already on the list, don't add it
         if len(self.findItems(path, QtCore.Qt.MatchExactly)):
             return
@@ -140,15 +191,17 @@ class LLSDragDropTable(QtW.QTableWidget):
                         self.renamedPaths = []
                     llspy.llsdir.rename_iters(path)
                     self.renamedPaths.append(path)
-                    print(self.renamedPaths)
-                    self.removePath(path)
+                    # self.removePath(path)
                     [self.addPath(osp.join(path, p)) for p in os.listdir(path)]
                     return
                 elif reply == 0:  # process anyway hit
                     pass
 
-        logger.info('Adding to queue: %s' % shortname(path))
         E = llspy.LLSdir(path)
+        if not E.has_lls_tiffs and not E.has_settings:
+            logger.warning('No LLS tiff files detected! Ignoring: {}'.format(path))
+            return
+        logger.info('Adding to queue: %s' % shortname(path))
 
         rowPosition = self.rowCount()
         self.insertRow(rowPosition)
@@ -158,10 +211,24 @@ class LLSDragDropTable(QtW.QTableWidget):
                 str(E.parameters.nt),
                 str(E.parameters.nz),
                 str(E.parameters.ny),
-                str(E.parameters.nx),
+                str(E.parameters.nx)]
+        if E.has_settings:
+            item.extend([
                 "{:2.1f}".format(E.parameters.angle) if E.parameters.samplescan else "0",
                 "{:0.3f}".format(E.parameters.dz),
-                "{:0.3f}".format(E.parameters.dx)]
+                "{:0.3f}".format(E.parameters.dx)])
+        else:
+            dx = E.parameters.dx or mainGUI.defaultDxSpin.value()
+            dz = E.parameters.dz or mainGUI.defaultDzSpin.value()
+            angle = E.parameters.angle or mainGUI.defaultAngleSpin.value()
+            item.extend([
+                "{:2.1f}".format(angle),
+                "{:0.3f}".format(dz),
+                "{:0.3f}".format(dx)])
+            E.parameters.angle = angle
+            E.parameters.samplescan = True if angle > 0 else False
+            E.parameters.dx = dx
+            E.parameters.dz = dz
         for col, elem in enumerate(item):
             entry = QtW.QTableWidgetItem(elem)
             if col < 7:
@@ -171,25 +238,56 @@ class LLSDragDropTable(QtW.QTableWidget):
                 entry.setFlags(QtCore.Qt.ItemIsSelectable |
                                QtCore.Qt.ItemIsEnabled |
                                QtCore.Qt.ItemIsEditable)
+                if not E.has_settings:
+                    faintRed = QtGui.QBrush(QtGui.QColor(255, 0, 0, 30))
+                    lightGray = QtGui.QBrush(QtGui.QColor(160, 160, 160))
+                    entry.setForeground(lightGray)
+                    entry.setBackground(faintRed)
             self.setItem(rowPosition, col, entry)
+            if col > 7 and float(elem) == 0:
+                entry.setForeground(QtCore.Qt.white)
+                entry.setBackground(QtCore.Qt.red)
+        self.llsObjects[path] = E
+        self.cellChanged.connect(self.onCellChanged)
 
     def selectedPaths(self):
         selectedRows = self.selectionModel().selectedRows()
-        return [self.item(i.row(), 0).text() for i in selectedRows]
+        return [self.getPathByIndex(i.row()) for i in selectedRows]
 
     @QtCore.pyqtSlot(str)
     def removePath(self, path):
+        self.llsObjects.pop(path)
         items = self.findItems(path, QtCore.Qt.MatchExactly)
         for item in items:
             self.removeRow(item.row())
+        if hasattr(self, 'skipped_items'):
+            if path in self.skipped_items:
+                self.skipped_items.remove(path)
 
     def getPathByIndex(self, index):
         return self.item(index, 0).text()
 
+    def getLLSObjectByPath(self, path):
+        return self.llsObjects[path]
+
+    def getLLSObjectByIndex(self, index):
+        return self.llsObjects[self.getPathByIndex(index)]
+
     def setRowBackgroudColor(self, row, color):
-        grayBrush = QtGui.QBrush(QtGui.QColor(color))
+        try:
+            self.cellChanged.disconnect(self.onCellChanged)
+        except TypeError:
+            pass
+        if isinstance(color, QtGui.QColor):
+            brush = QtGui.QBrush(color)
+        else:
+            brush = QtGui.QBrush(QtGui.QColor(color))
         for col in range(self.nCOLS):
-            self.item(row, col).setBackground(grayBrush)
+            self.item(row, col).setBackground(brush)
+            if col > 7 and float(self.item(row, col).text()) == 0:
+                self.item(row, col).setForeground(QtCore.Qt.white)
+                self.item(row, col).setBackground(QtCore.Qt.red)
+        self.cellChanged.connect(self.onCellChanged)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls:
@@ -225,9 +323,9 @@ class LLSDragDropTable(QtW.QTableWidget):
             i = 0
             for index in sorted(indices):
                 removerow = index.row() - i
-                name = shortname(self.getPathByIndex(removerow))
-                logger.info('Removing from queue: %s' % name)
-                self.removeRow(removerow)
+                path = self.getPathByIndex(removerow)
+                logger.info('Removing from queue: %s' % shortname(path))
+                self.removePath(path)
                 i += 1
 
 
@@ -354,6 +452,9 @@ class ActiveWatcher(QtCore.QObject):
             timepoints = sorted(timepoints)
             cRange = None  # TODO: plug this in
             self.tQueue = []
+
+            # note: it was important NOT to ditch partial tiffs with the activate
+            # watcher since the files aren't finished yet...
             w, thread = newWorkerThread(workers.TimePointWorker, self.path,
                 timepoints, cRange, self.opts, False,
                 workerConnect={
@@ -656,7 +757,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         # delete and reintroduce custom LLSDragDropTable
         self.listbox.setParent(None)
-        self.listbox = LLSDragDropTable(self.tab_process)
+        self.listbox = LLSDragDropTable(self)
         self.process_tab_layout.insertWidget(0, self.listbox)
 
         handler = NotificationHandler()
@@ -1002,9 +1103,18 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         else:
             cRange = None  # means all channels
 
-        self.previewPath = self.listbox.item(firstRowSelected, 0).text()
+        self.previewPath = self.listbox.getPathByIndex(firstRowSelected)
+        obj = self.listbox.getLLSObjectByPath(self.previewPath)
+
+        if not obj.parameters.isReady():
+            self.previewButton.setEnabled(True)
+            self.previewButton.setText('Preview')
+            raise err.InvalidSettingsError("Parameters are incomplete for this item. "
+                "Please add any missing/higlighted parameters.")
 
         if not os.path.exists(self.previewPath):
+            self.statusBar.showMessage(
+                'Skipping! path no longer exists: {}'.format(self.previewPath), 5000)
             self.statusBar.showMessage(
                 'Skipping! path no longer exists: {}'.format(self.previewPath), 5000)
             self.listbox.removePath(self.previewPath)
@@ -1012,8 +1122,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.previewButton.setText('Preview')
             return
 
-
-        w, thread = newWorkerThread(workers.TimePointWorker, self.previewPath, tRange, cRange, self.lastopts,
+        w, thread = newWorkerThread(workers.TimePointWorker, obj, tRange, cRange, self.lastopts,
             workerConnect={
                             'previewReady': self.displayPreview,
                             'updateCrop': self.updateCrop,
@@ -1103,6 +1212,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     def onProcess(self):
         # prevent additional button clicks which processing
         self.disableProcessButton()
+        self.listbox.skipped_items = set()
 
         if self.listbox.rowCount() == 0:
             QtW.QMessageBox.warning(self, "Nothing Added!",
@@ -1135,21 +1245,20 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
     def process_next_item(self):
         # get path from first row and create a new LLSdir object
-        self.currentItem = self.listbox.item(0, 1).text()
-        self.currentPath = self.listbox.item(0, 0).text()
+        numskipped = len(self.listbox.skipped_items)
+        self.currentItem = self.listbox.item(numskipped, 1).text()
+        self.currentPath = self.listbox.getPathByIndex(numskipped)
+        obj = self.listbox.getLLSObjectByPath(self.currentPath)
 
         def skip():
             self.listbox.removePath(self.currentPath)
-            if self.listbox.rowCount() > 0:
-                self.process_next_item()
-            else:
-                self.inProcess = False
-                self.on_proc_finished()
+            self.look_for_next_item()
             return
 
         if not os.path.exists(self.currentPath):
-            self.statusBar.showMessage(
-                'Skipping! path no longer exists: {}'.format(self.currentPath), 5000)
+            msg = 'Skipping! path no longer exists: {}'.format(self.currentPath)
+            logger.info(msg)
+            self.statusBar.showMessage(msg, 5000)
             skip()
             return
 
@@ -1159,8 +1268,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         # check if already processed
         if llspy.util.pathHasPattern(self.currentPath, '*' + llspy.config.__OUTPUTLOG__):
             if not opts['reprocess']:
-                self.statusBar.showMessage(
-                    'Skipping! Path already processed: {}'.format(self.currentPath), 5000)
+                msg = 'Skipping! Path already processed: {}'.format(self.currentPath)
+                logger.info(msg)
+                self.statusBar.showMessage(msg, 5000)
                 skip()
                 return
 
@@ -1168,9 +1278,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.on_proc_finished()
             raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
 
-        self.statusBar.showMessage('Starting processing ...')
-        LLSworker, thread = newWorkerThread(workers.LLSitemWorker, idx, self.currentPath,
-            opts, workerConnect={
+        self.statusBar.showMessage('Starting processing on {} ...'.format(shortname(self.currentPath)))
+        LLSworker, thread = newWorkerThread(workers.LLSitemWorker,
+            obj, idx, opts, workerConnect={
                 'finished': self.on_item_finished,
                 'status_update': self.statusBar.showMessage,
                 'progressMaxVal': self.progressBar.setMaximum,
@@ -1178,6 +1288,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 'progressUp': self.incrementProgress,
                 'clockUpdate': self.clock.display,
                 'error': self.abort_workers,
+                'skipped': self.skip_item,
                 # 'error': self.errorstring  # implement error signal?
             })
 
@@ -1191,7 +1302,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         thread.start()  # this will emit 'started' and start thread's event loop
 
         # recolor the first row to indicate processing
-        self.listbox.setRowBackgroudColor(0, '#E9E9E9')
+        self.listbox.setRowBackgroudColor(numskipped, QtGui.QColor(0, 0, 255, 30))
         self.listbox.clearSelection()
         # start a timer in the main GUI to measure item processing time
         self.timer = QtCore.QTime()
@@ -1236,16 +1347,26 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         if self.aborted:
             self.sig_processing_done.emit()
         else:
-            itemTime = QtCore.QTime(0, 0).addMSecs(self.timer.elapsed()).toString()
-            logger.info(">" * 4 + " Item {} finished in {} ".format(
-                self.currentItem, itemTime) + "<" * 4)
+            try:
+                itemTime = QtCore.QTime(0, 0).addMSecs(self.timer.elapsed()).toString()
+                logger.info(">" * 4 + " Item {} finished in {} ".format(
+                    self.currentItem, itemTime) + "<" * 4)
+            except AttributeError:
+                pass
             self.listbox.removePath(self.currentPath)
             self.currentPath = None
             self.currentItem = None
-            if self.listbox.rowCount() > 0:
-                self.process_next_item()
-            else:
-                self.sig_processing_done.emit()
+            self.look_for_next_item()
+
+    @QtCore.pyqtSlot(str)
+    def skip_item(self, path):
+        if len(self.LLSItemThreads):
+            thread, worker = self.LLSItemThreads.pop(0)
+            thread.quit()
+            thread.wait()
+        self.listbox.setRowBackgroudColor(len(self.listbox.skipped_items), '#FFFFFF')
+        self.listbox.skipped_items.add(path)
+        self.look_for_next_item()
 
     @QtCore.pyqtSlot()
     def abort_workers(self):
@@ -1254,11 +1375,20 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         if len(self.LLSItemThreads):
             self.aborted = True
             self.sig_abort_LLSworkers.emit()
-            if self.listbox.rowCount():
-                self.listbox.setRowBackgroudColor(0, '#FFFFFF')
+            for row in range(self.listbox.rowCount()):
+                self.listbox.setRowBackgroudColor(row, '#FFFFFF')
             # self.processButton.setDisabled(True) # will be reenabled when workers done
         else:
             self.sig_processing_done.emit()
+
+    def look_for_next_item(self):
+        if self.listbox.rowCount() > len(self.listbox.skipped_items):
+            self.process_next_item()
+        else:
+            if self.listbox.rowCount() <= len(self.listbox.skipped_items):
+                self.sig_processing_done.emit()
+                for row in range(self.listbox.rowCount()):
+                    self.listbox.setRowBackgroudColor(row, '#FFFFFF')
 
     def getValidatedOptions(self):
         options = {
@@ -1430,14 +1560,19 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     'No .tar file found in ' + shortname(item), 4000)
                 continue
 
+            def onfinish():
+                self.listbox.llsObjects[item]._register_tiffs()
+                self.statusBar.showMessage('Decompression finished', 4000)
+
             worker, thread = newWorkerThread(workers.CompressionWorker, item, 'decompress',
                 self.compressTypeCombo.currentText(),
                 workerConnect={
                     'status_update': self.statusBar.showMessage,
-                    'finished': lambda: self.statusBar.showMessage('Decompression finished', 4000)
+                    'finished': onfinish
                 },
                 start=True)
             self.compressionThreads.append((worker, thread))
+
 
     def concatenateSelected(self):
         selectedPaths = self.listbox.selectedPaths()
@@ -1467,6 +1602,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             if path:
                 llspy.llsdir.undo_rename_iters(path)
         elif reply == 0:  # yes role  hit
+            if not hasattr(self.listbox, 'renamedPaths') or not self.listbox.renamedPaths:
+                return
             for path in self.listbox.renamedPaths:
                 llspy.llsdir.undo_rename_iters(path)
                 self.listbox.renamedPaths.remove(path)
