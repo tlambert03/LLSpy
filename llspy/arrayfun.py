@@ -123,7 +123,9 @@ def feature_width(E, background=None, pad=50, t=0):
     # first deskew just first and last timepoints of each channel
     P = E.parameters
     # first and last timepoint
-    raw_stacks = [imread(f) for f in E.get_files(t=(t, P.nt - 1))]
+    maxT = max(P.tset)
+    minT = min(P.tset)
+    raw_stacks = [imread(f) for f in E.get_files(t=(minT, maxT))]
     raw_stacks = [sub_background(f, background) for f in raw_stacks]
     if P.samplescan:
         deskewed_stacks = [deskew(s, P.dz, P.dx, P.angle) for s in raw_stacks]

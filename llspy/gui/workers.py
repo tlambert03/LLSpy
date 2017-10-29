@@ -198,12 +198,8 @@ class CompressionWorker(SubprocessWorker):
             self.args = ['-v', tarball]
             self.process.finished.connect(self.finished.emit)
 
-        print(self.name)
-        print(self.binary)
-        print(" ".join(self.args))
         msg = '\nRunning {} thread_{} with args:\n{}\n'.format(
             self.name, self.id, self.binary + " " + " ".join(self.args))
-        print(msg)
         self._logger.info('~' * 20 + msg)
 
         self.process.start(self.binary, self.args)
@@ -276,18 +272,28 @@ class LLSitemWorker(QtCore.QObject):
     finished = QtCore.pyqtSignal()
     sig_abort = QtCore.pyqtSignal()
     error = QtCore.pyqtSignal()
+    skipped = QtCore.pyqtSignal(str)
 
-    def __init__(self, wid, path, opts, **kwargs):
+    def __init__(self, path, wid, opts, **kwargs):
         super(LLSitemWorker, self).__init__()
+
+        if isinstance(path, str):
+            self.path = path
+            self.E = llspy.LLSdir(path)
+        elif isinstance(path, llspy.LLSdir):
+            self.E = path
+            self.path = str(self.E.path)
+        else:
+            raise err.LLSpyError('unexpected type as first argument for '
+                'LLSitemWorker: {}'.format(type(path)))
+
         self.__id = int(wid)
         self.opts = opts
-        self.E = llspy.LLSdir(path)
-        self.shortname = shortname(str(self.E.path))
+        self.shortname = shortname(self.path)
         self.aborted = False
         self.__argQueue = []  # holds all argument lists that will be sent to threads
         self.GPU_SET = QtCore.QCoreApplication.instance().gpuset
         self.__CUDAthreads = {gpu: None for gpu in self.GPU_SET}
-
         if not len(self.GPU_SET):
             self.error.emit()
             raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
@@ -303,10 +309,11 @@ class LLSitemWorker(QtCore.QObject):
         if not self.E.ready_to_process:
             if not self.E.has_lls_tiffs:
                 self._logger.warning(
-                    'No TIFF files to process in {}'.format(str(self.E.path)))
-            if not self.E.has_settings:
+                    'No TIFF files to process in {}'.format(self.path))
+            if not self.E.parameters.isReady():
                 self._logger.warning(
-                    'Could not find Settings.txt file in {}'.format(str(self.E.path)))
+                    'Incomplete parameters for: {}'.format(self.path))
+                self.skipped.emit(self.path)
             return
 
         # this needs to go here instead of __init__ in case folder is compressed
@@ -314,6 +321,7 @@ class LLSitemWorker(QtCore.QObject):
             self.P = self.E.localParams(**self.opts)
         except Exception:
             self.error.emit()
+            self.finished.emit()
             raise
 
         # we process one folder at a time. Progress bar updates per Z stack
@@ -323,12 +331,16 @@ class LLSitemWorker(QtCore.QObject):
         self._logger.info('#' * 50)
         self._logger.info('Processing {}'.format(self.E.basename))
         self._logger.info('#' * 50 + '\n')
-        self._logger.debug('Full path {}'.format(self.E.path))
+        self._logger.debug('Full path {}'.format(self.path))
         self._logger.debug('Parameters {}\n'.format(self.E.parameters))
 
         if self.P.correctFlash:
-            self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
-            self.E.path = self.E.correct_flash(**self.P)
+            try:
+                self.status_update.emit('Correcting Flash artifact on {}'.format(self.E.basename))
+                self.E.path = self.E.correct_flash(**self.P)
+            except llspy.llsdir.LLSpyError:
+                self.error.emit()
+                raise
         # if not flash correcting but there is trimming/median filter requested
         elif (self.P.medianFilter or
               any([any(i) for i in (self.P.trimX, self.P.trimY, self.P.trimZ)])):
@@ -536,17 +548,30 @@ class TimePointWorker(QtCore.QObject):
 
     def __init__(self, path, tRange, cRange, opts, ditch_partial=True, **kwargs):
         super(TimePointWorker, self).__init__()
-        self.path = path
+
+        if isinstance(path, str):
+            self.path = path
+            self.E = llspy.LLSdir(self.path, ditch_partial)
+        elif isinstance(path, llspy.LLSdir):
+            self.E = path
+            self.path = str(self.E.path)
+        else:
+            raise err.LLSpyError('unexpected type as first argument for '
+                'TimePointWorker: {}'.format(type(path)))
         self.tRange = tRange
         self.cRange = cRange
         self.opts = opts
-        self.E = llspy.LLSdir(self.path, ditch_partial)
         self._logger = logging.getLogger('llspy.worker.'+type(self).__name__)
 
     @QtCore.pyqtSlot()
     def work(self):
+        if not self.E.parameters.isReady():
+            self.finished.emit()
+            raise err.InvalidSettingsError("Parameters are incomplete for this item. "
+                "Please add any missing/higlighted parameters.")
+
         try:
-            previewStack = llspy.llsdir.preview(self.E, self.tRange, self.cRange, **self.opts)
+            previewStack = self.E.preview(self.tRange, self.cRange, **self.opts)
             if previewStack is not None:
                 self.previewReady.emit(previewStack, self.E.parameters.dx, self.E.parameters.dzFinal, self.E._localParams)
 

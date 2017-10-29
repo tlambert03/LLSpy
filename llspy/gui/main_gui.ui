@@ -628,8 +628,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>467</width>
-             <height>227</height>
+             <width>547</width>
+             <height>267</height>
             </rect>
            </property>
            <attribute name="label">
@@ -2113,175 +2113,7 @@ bead) images acquired in each channel.</string>
        <attribute name="title">
         <string>Config</string>
        </attribute>
-       <layout class="QGridLayout" name="configTabGridLayout">
-        <item row="10" column="2">
-         <widget class="QCheckBox" name="confirmOnQuitCheckBox">
-          <property name="toolTip">
-           <string>The &quot;reduce to raw&quot; function deletes all
-processed data, leaving only the original
-raw data.  This option retains any MIP
-folders found, as a smaller-sized
-preview of the dataset for later review.</string>
-          </property>
-          <property name="text">
-           <string>Warn when quitting with unprocessed items</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="2">
-         <widget class="QCheckBox" name="reprocessCheckBox">
-          <property name="toolTip">
-           <string>The &quot;reduce to raw&quot; function deletes all
-processed data, leaving only the original
-raw data.  This option retains any MIP
-folders found, as a smaller-sized
-preview of the dataset for later review.</string>
-          </property>
-          <property name="text">
-           <string>Reprocess folders that have already been processed</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="0">
-         <widget class="QCheckBox" name="watchDirCheckBox">
-          <property name="text">
-           <string>Watch Directory:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="2">
-         <widget class="QPushButton" name="genFlashParams">
-          <property name="text">
-           <string>Generate Camera Calibration File</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2">
-         <widget class="QLineEdit" name="otfFolderLineEdit">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-          <property name="placeholderText">
-           <string>path to directory with PSFs/OTFs</string>
-          </property>
-         </widget>
-        </item>
-        <item row="12" column="2">
-         <spacer name="configTabVertSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>600</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="9" column="2">
-         <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
-          <property name="toolTip">
-           <string>The &quot;reduce to raw&quot; function deletes all
-processed data, leaving only the original
-raw data.  This option retains any MIP
-folders found, as a smaller-sized
-preview of the dataset for later review.</string>
-          </property>
-          <property name="text">
-           <string>Save MIP folder during &quot;Reduce to Raw&quot;</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="6">
-         <widget class="QToolButton" name="otfFolderToolButton">
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="otfFolderPathLabel">
-          <property name="text">
-           <string>OTF directory</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>otfFolderLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="17" column="0">
-         <widget class="QLabel" name="watchModeLabel">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Watch Mode:</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="2">
-         <widget class="QCheckBox" name="errorOptOutCheckBox">
-          <property name="toolTip">
-           <string>The &quot;reduce to raw&quot; function deletes all
-processed data, leaving only the original
-raw data.  This option retains any MIP
-folders found, as a smaller-sized
-preview of the dataset for later review.</string>
-          </property>
-          <property name="text">
-           <string> Opt out of automatic error reporting.
- (Leaving this disabled helps us fix bugs in the program!)</string>
-          </property>
-          <property name="checked">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="6">
-         <widget class="QToolButton" name="watchDirToolButton">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>...</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="cudaDeconvPathLabel">
-          <property name="text">
-           <string>cudaDeconv binary</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>cudaDeconvPathLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
+       <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="0">
          <widget class="QLabel" name="cudaDeconvPathLabel_2">
           <property name="toolTip">
@@ -2299,7 +2131,62 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="6">
+        <item row="0" column="1" colspan="6">
+         <widget class="QGroupBox" name="gpusGroupBox">
+          <property name="toolTip">
+           <string>Toggle the GPUs that you want to use for processing.
+ Work will be distributed among them</string>
+          </property>
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QHBoxLayout" name="gpuGroupBoxLayout">
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item row="1" column="1" colspan="6">
+         <widget class="QCheckBox" name="useBundledBinariesCheckBox">
+          <property name="text">
+           <string>Use bundled cudaDeconv binary</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="cudaDeconvPathLabel">
+          <property name="text">
+           <string>cudaDeconv binary:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>cudaDeconvPathLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1" colspan="6">
+         <widget class="QLineEdit" name="cudaDeconvPathLineEdit">
+          <property name="text">
+           <string>/usr/local/cudaDeconv</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>path to cudaDeconv binary</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="7">
          <widget class="QToolButton" name="cudaDeconvPathToolButton">
           <property name="text">
            <string>...</string>
@@ -2309,7 +2196,339 @@ preview of the dataset for later review.</string>
           </property>
          </widget>
         </item>
-        <item row="17" column="2">
+        <item row="3" column="0">
+         <widget class="QLabel" name="otfFolderPathLabel">
+          <property name="text">
+           <string>OTF directory:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>otfFolderLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1" colspan="6">
+         <widget class="QLineEdit" name="otfFolderLineEdit">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>path to directory with PSFs/OTFs</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="7">
+         <widget class="QToolButton" name="otfFolderToolButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1" colspan="6">
+         <widget class="QCheckBox" name="allowNoSettingsCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>allow folders without Settings.txt files (will require input)</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultValuesLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>default values:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultDxLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>dx:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2">
+         <widget class="QDoubleSpinBox" name="defaultDxSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="3" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultDzLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>dz:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="4">
+         <widget class="QDoubleSpinBox" name="defaultDzSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.500000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="5" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultAngleLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>angle:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="6">
+         <widget class="QDoubleSpinBox" name="defaultAngleSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>31.500000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1" colspan="6">
+         <widget class="QCheckBox" name="reprocessCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Reprocess folders that have already been processed</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1" colspan="5">
+         <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Save MIP folder during &quot;Reduce to Raw&quot;</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1" colspan="5">
+         <widget class="QCheckBox" name="confirmOnQuitCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Warn when quitting with unprocessed items</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1" colspan="6">
+         <widget class="QPushButton" name="genFlashParams">
+          <property name="text">
+           <string>Generate Camera Calibration File</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="4">
+         <spacer name="configTabVertSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>600</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="11" column="1" colspan="6">
+         <widget class="QCheckBox" name="disableSpimagineCheckBox">
+          <property name="text">
+           <string>Disable spimagine import (in case of WinError on Preview)</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0">
+         <widget class="QLabel" name="previewBackendLabel">
+          <property name="text">
+           <string>Preview Type</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>otfFolderLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1" colspan="6">
+         <widget class="QGroupBox" name="previewBackendGroupBox">
+          <property name="title">
+           <string notr="true"/>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <property name="leftMargin">
+            <number>8</number>
+           </property>
+           <property name="topMargin">
+            <number>8</number>
+           </property>
+           <property name="rightMargin">
+            <number>8</number>
+           </property>
+           <property name="bottomMargin">
+            <number>8</number>
+           </property>
+           <item>
+            <widget class="QRadioButton" name="prevBackendSpimagineRadio">
+             <property name="text">
+              <string>spimagine</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="prevBackendMatplotlibRadio">
+             <property name="text">
+              <string>matplotlib</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="13" column="4">
+         <spacer name="configTabVertSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>600</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="14" column="0">
+         <widget class="QCheckBox" name="watchDirCheckBox">
+          <property name="text">
+           <string>Watch Directory:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="1" colspan="6">
+         <widget class="QLineEdit" name="watchDirLineEdit">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>New items in watched folder will be automatically processed.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="7">
+         <widget class="QToolButton" name="watchDirToolButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="0">
+         <widget class="QLabel" name="watchModeLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Watch Mode:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="1" colspan="6">
          <widget class="QGroupBox" name="watchModeGroupBox">
           <property name="enabled">
            <bool>false</bool>
@@ -2368,136 +2587,22 @@ in the main window, and processed in turn.</string>
           </layout>
          </widget>
         </item>
-        <item row="2" column="2">
-         <widget class="QLineEdit" name="cudaDeconvPathLineEdit">
-          <property name="text">
-           <string>/usr/local/cudaDeconv</string>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-          <property name="placeholderText">
-           <string>path to cudaDeconv binary</string>
-          </property>
-         </widget>
-        </item>
-        <item row="14" column="0">
-         <widget class="QLabel" name="previewBackendLabel">
-          <property name="text">
-           <string>Preview Type</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="buddy">
-           <cstring>otfFolderLineEdit</cstring>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QCheckBox" name="useBundledBinariesCheckBox">
-          <property name="text">
-           <string>Use bundled cudaDeconv binary</string>
-          </property>
-          <property name="checked">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="2">
-         <widget class="QCheckBox" name="disableSpimagineCheckBox">
-          <property name="text">
-           <string>Disable spimagine import (in case of WinError on Preview)</string>
-          </property>
-          <property name="checked">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="2">
-         <widget class="QLineEdit" name="watchDirLineEdit">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-          <property name="placeholderText">
-           <string>New items in watched folder will be automatically processed.</string>
-          </property>
-         </widget>
-        </item>
-        <item row="15" column="2">
-         <spacer name="configTabVertSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>600</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="2">
-         <widget class="QGroupBox" name="gpusGroupBox">
+        <item row="16" column="1" colspan="6">
+         <widget class="QCheckBox" name="errorOptOutCheckBox">
           <property name="toolTip">
-           <string>Toggle the GPUs that you want to use for processing.
- Work will be distributed among them</string>
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
           </property>
-          <property name="title">
-           <string/>
+          <property name="text">
+           <string> Opt out of automatic error reporting.
+ (Leaving this disabled helps us fix bugs in the program!)</string>
           </property>
-          <layout class="QHBoxLayout" name="gpuGroupBoxLayout">
-           <property name="topMargin">
-            <number>2</number>
-           </property>
-           <property name="bottomMargin">
-            <number>2</number>
-           </property>
-          </layout>
-         </widget>
-        </item>
-        <item row="14" column="2">
-         <widget class="QGroupBox" name="previewBackendGroupBox">
-          <property name="title">
-           <string notr="true"/>
+          <property name="checked">
+           <bool>false</bool>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_10">
-           <property name="leftMargin">
-            <number>8</number>
-           </property>
-           <property name="topMargin">
-            <number>8</number>
-           </property>
-           <property name="rightMargin">
-            <number>8</number>
-           </property>
-           <property name="bottomMargin">
-            <number>8</number>
-           </property>
-           <item>
-            <widget class="QRadioButton" name="prevBackendSpimagineRadio">
-             <property name="text">
-              <string>spimagine</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="prevBackendMatplotlibRadio">
-             <property name="text">
-              <string>matplotlib</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
          </widget>
         </item>
        </layout>
@@ -3461,6 +3566,118 @@ and restore folder to it's original state
     <hint type="destinationlabel">
      <x>554</x>
      <y>142</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultValuesLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>187</x>
+     <y>216</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDxSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>217</x>
+     <y>213</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>234</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDxLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>210</x>
+     <y>210</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>183</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDzLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>324</x>
+     <y>217</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>311</x>
+     <y>240</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDzSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>383</x>
+     <y>219</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>243</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultAngleLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>441</x>
+     <y>218</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>442</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultAngleSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>503</x>
+     <y>219</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>499</x>
+     <y>250</y>
     </hint>
    </hints>
   </connection>

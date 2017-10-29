@@ -237,15 +237,12 @@ class LLSsettings(object):
             'ny': self.camera.roi.width,  # camera is usually rotated 90deg
             'wavelength': [int(v['laser']) for k, v in self.channel.items()]
         })
-        if self.parameters.samplescan:
+        if self.z_motion == 'Sample piezo':
             self.parameters.dz = abs(float(self.channel[0]['S PZT']['interval']))
             self.parameters.nz = int(self.channel[0]['S PZT']['numpix'])
-            self.parameters.dzFinal = round(self.parameters.dz * math.sin(
-                                        self.sheet_angle * math.pi / 180), 4)
         else:
             self.parameters.dz = abs(float(self.channel[0]['Z PZT']['interval']))
             self.parameters.nz = int(self.channel[0]['Z PZT']['numpix'])
-            self.parameters.dzFinal = self.parameters.dz
 
     def write(self, outpath):
         """Write the raw text back to settings.txt file"""
