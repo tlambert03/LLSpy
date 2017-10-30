@@ -492,6 +492,11 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         elif event.key() == QtCore.Qt.Key_C:
             self.canvas.cycleCMAP()
 
+    def closeEvent(self, evnt):
+        del self.data.data
+        del self.data
+        super(ImgDialog, self).closeEvent(evnt)
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
