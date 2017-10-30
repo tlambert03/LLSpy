@@ -1,6 +1,7 @@
 from llspy import schema
 from llspy.cudabinwrapper import gpulist, CUDAbinException
 from PyQt5 import QtCore
+from raven import Client, fetch_git_sha, fetch_package_version, breadcrumbs
 import traceback
 import llspy
 import sys
@@ -11,7 +12,6 @@ import uuid
 import logging
 logger = logging.getLogger(__name__)
 
-from raven import Client, fetch_git_sha, fetch_package_version, breadcrumbs
 try:
     from urllib.request import urlopen
 except ImportError:
