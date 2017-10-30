@@ -160,6 +160,7 @@ class LLSDragDropTable(QtW.QTableWidget):
         if len(self.findItems(path, QtCore.Qt.MatchExactly)):
             return
 
+        # if it's a folder containing files with "_Iter_"  warn the user...
         if llspy.util.pathHasPattern(path, '*Iter_*'):
             if sessionSettings.value('warnIterFolder', True, type=bool):
                 box = QtW.QMessageBox()
@@ -198,8 +199,30 @@ class LLSDragDropTable(QtW.QTableWidget):
                     pass
 
         E = llspy.LLSdir(path)
-        if not E.has_lls_tiffs and not E.has_settings:
-            logger.warning('No LLS tiff files detected! Ignoring: {}'.format(path))
+        if not E.has_lls_tiffs:
+            if llspy.util.pathHasPattern(path, '*.tif'):
+                if sessionSettings.value('warnOnNoLLStiffs', True, type=bool):
+                    box = QtW.QMessageBox()
+                    box.setWindowTitle('Path has tiff files, but none of them match'
+                    ' the file naming convention assumed by LLSpy.')
+                    box.setText('Path has tiff files, but none of them match'
+                    ' the file naming convention assumed by LLSpy.  Please read '
+                    'Data Structure Assumptions in the documentation for more info.\n\n'
+                    'http://llspy.readthedocs.io/en/latest/main.html#data-structure-assumptions\n')
+                    box.setIcon(QtW.QMessageBox.Warning)
+                    box.addButton(QtW.QMessageBox.Ok)
+                    box.setDefaultButton(QtW.QMessageBox.Ok)
+                    pref = QtW.QCheckBox("Just skip these folders in the future")
+                    box.setCheckBox(pref)
+
+                    def setPref(value):
+                        sessionSettings.setValue('warnOnNoLLStiffs', bool(value))
+                        sessionSettings.sync()
+
+                    pref.stateChanged.connect(setPref)
+                    box.exec_()
+            else:
+                logger.info('No tiff files detected! Ignoring: {}'.format(path))
             return
         logger.info('Adding to queue: %s' % shortname(path))
 
