@@ -1176,11 +1176,11 @@ class Ui_Main_GUI(object):
         self.iterationsLabel.setText(_translate("Main_GUI", "Iterations:"))
         self.iterationsSpinBox.setToolTip(_translate("Main_GUI", "Number of deconvolution iterations"))
         self.apodizeLabel.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
-        self.apodizeLabel.setText(_translate("Main_GUI", "nApodize:"))
+        self.apodizeLabel.setText(_translate("Main_GUI", "napodize:"))
         self.apodizeSpinBox.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
         self.zblendLabel.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
 "to reduce axial ringing"))
-        self.zblendLabel.setText(_translate("Main_GUI", "nZblend"))
+        self.zblendLabel.setText(_translate("Main_GUI", "nzblend"))
         self.zblendSpinBox.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
 "to reduce axial ringing"))
         self.saveDeconvolvedCheckBox.setText(_translate("Main_GUI", "Save Stacks"))

@@ -1423,8 +1423,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             'trimY': (self.trimY0SpinBox.value(), self.trimY1SpinBox.value()),
             'trimX': (self.trimX0SpinBox.value(), self.trimX1SpinBox.value()),
             'nIters': self.iterationsSpinBox.value() if self.doDeconGroupBox.isChecked() else 0,
-            'nApodize': self.apodizeSpinBox.value(),
-            'nZblend': self.zblendSpinBox.value(),
+            'napodize': self.apodizeSpinBox.value(),
+            'nzblend': self.zblendSpinBox.value(),
             # if bRotate == True and rotateAngle is not none: rotate based on sheet angle
             # this will be done in the LLSdir function
             'bRotate': self.rotateGroupBox.isChecked(),
