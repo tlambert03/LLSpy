@@ -184,16 +184,23 @@ def cli():
 
 @cli.command()
 @click.argument('paths', metavar='LLSDIR', nargs=-1, type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.option('--showsize/--hidesize', '-s/-h', 'showsize', is_flag=True, default=True)
+@click.option('--recurse', '-r', is_flag=True)
+@click.option('--depth', '-d', type=int, default=1)
 @click.option('-v', '--verbose', count=True,
               help='Increase verbosity with additional -v flags, e.g. -vv')
-def info(paths, verbose):
+def info(paths, verbose, recurse, depth, showsize):
     """Get info on an LLSDIR.  Change verbosity with -v"""
-
+    logging.getLogger('llspy.llsdir').setLevel('CRITICAL')
     paths = list(paths)
+
+    if recurse:
+        depth = 1000
+
     for i, path in enumerate(paths):
         if not util.pathHasPattern(path, pattern='*Settings.txt'):
             paths.pop(i)
-            subf = sorted(util.get_subfolders_containing_filepattern(path))
+            subf = sorted(util.get_subfolders_containing_filepattern(path, level=depth))
             [paths.insert(i, s) for s in reversed(subf)]
 
     # remove duplicates
@@ -201,23 +208,38 @@ def info(paths, verbose):
 
     if verbose == 0 and len(paths):
         click.echo()
-        headers = ['Path', 'nC', 'nT', 'nZ', 'nY', 'nX', 'Angle', 'dZ', 'dXY', 'compressed']
-        row_format = "{:<47}{:<4}{:<5}{:<5}{:<6}{:<6}{:<7}{:<7}{:<7}{:<8}"
+        headers = ['Path', 'nC', 'nT', 'nZ', 'nY', 'nX', 'Angle', 'dZ', 'dXY', 'compr']
+        maxPathLen = max([len(util.shortname(str(p), 3)) for p in paths]) + 2
+        row_format = "{:<%d}{:<4}{:<5}{:<5}{:<6}{:<6}{:<7}{:<7}{:<7}{:<5}" % maxPathLen
+        if showsize:
+            headers.append('size')
+            row_format = row_format + "{:>7}"
         click.secho(row_format.format(*[str(i) for i in headers]), underline=True, fg='cyan', bold=True)
-        row_format = "{:<4}{:<5}{:<5}{:<6}{:<6}{:<7}{:<7}{:<7}{:<8}"
+        row_format = "{:<4}{:<5}{:<5}{:<6}{:<6}{:<7}{:<7}{:<7}{:<5}"
+        if showsize:
+            row_format = row_format + "{:>7}"
         for path in paths:
-            E = llsdir.LLSdir(path)
-            infolist = [E.parameters.nc,
-                        E.parameters.nt,
-                        E.parameters.nz,
-                        E.parameters.ny,
-                        E.parameters.nx,
-                        "{:2.1f}".format(E.parameters.angle) if E.parameters.samplescan else "0",
-                        "{:0.3f}".format(E.parameters.dz),
-                        "{:0.3f}".format(E.parameters.dx),
-                        "Yes" if E.is_compressed() else "No"]
-            click.secho("{:<47}".format(util.shortname(str(E.path))), nl=False, fg='yellow', bold=True)
-            click.echo(row_format.format(*[i for i in infolist]))
+            try:
+                E = llsdir.LLSdir(path)
+                infolist = [E.parameters.nc,
+                            E.parameters.nt,
+                            E.parameters.nz,
+                            E.parameters.ny,
+                            E.parameters.nx,
+                            "{:2.1f}".format(E.parameters.angle) if E.parameters.samplescan else "0",
+                            "{:0.3f}".format(E.parameters.dz),
+                            "{:0.3f}".format(E.parameters.dx),
+                            "Yes" if E.is_compressed() else "No"]
+                if showsize:
+                    foldersize = util.getfoldersize(path, recurse=True)
+                    infolist.append(util.format_size(foldersize))
+                f = "{:<%d}" % maxPathLen
+                short = f.format(util.shortname(str(E.path), 3))
+                click.secho(os.path.split(short)[0]+os.path.sep, nl=False, fg='magenta', bold=False)
+                click.secho(os.path.split(short)[1], nl=False, fg='yellow', bold=True)
+                click.echo(row_format.format(*[i for i in infolist]))
+            except llsdir.LLSpyError:
+                pass
     click.echo()
 
 

@@ -83,8 +83,8 @@ def getfoldersize(folder, recurse=False):
 
 def format_size(size):
     """Return file size as string from byte size."""
-    for unit in ('B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'):
-        if size < 2048:
+    for unit in ('B', 'KB', 'MB', 'GB', 'TB', 'PB'):
+        if size < 1024:
             return "%.f %s" % (size, unit)
         size /= 1024.0
 
