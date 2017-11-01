@@ -832,11 +832,18 @@ class LLSdir(object):
             # _schema.cRange = range(self.parameters.nc)
             _schema.cRange = list(self.parameters.channels.keys())
         else:
+            outrange = []
+            for chan in _schema.cRange:
+                if chan in self.parameters.channels.keys():
+                    outrange.append(chan)
+                else:
+                    logger.warn(
+                        'Channel {} not present in datset! Excluding.'.format(chan))
             if np.max(list(_schema.cRange)) > (self.parameters.nc - 1):
                 logger.warn(
                     'cRange was larger than number of Channels! Excluding C > {}'.format(
                         self.parameters.nc - 1))
-            _schema.cRange = sorted([n for n in _schema.cRange if n < self.parameters.nc])
+            _schema.cRange = outrange
 
         if _schema.tRange is None:
             _schema.tRange = self.parameters.tset
@@ -856,6 +863,8 @@ class LLSdir(object):
                 logger.warn(
                     'min tRange was less than the first timepoint. Excluding < {}'.format(minT))
 
+        assert len(_schema.tRange), 'No valid timepoints!'
+        assert len(_schema.cRange), 'No valid channels requested'
         # note: background should be forced to 0 if it is getting corrected
         # in the camera correction step
         if _schema.background < 0 and self.has_lls_tiffs:
