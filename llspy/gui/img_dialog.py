@@ -260,8 +260,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             if isinstance(info, dict):
                 txt = "\n".join(["{} = {}".format(k, v) for k, v in info.items()])
                 self.infoText.setText(txt)
-                if 'cRange' in info and 'wavelength' in info:
-                    self.waves = [info['wavelength'][i] for i in info['cRange']]
+                if 'wavelength' in info:
+                    self.waves = info['wavelength']
             elif isinstance(info, str):
                 self.infoText.setText(info)
 
@@ -495,8 +495,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def closeEvent(self, evnt):
         del self.data.data
         del self.data
+        self.deleteLater()
         super(ImgDialog, self).closeEvent(evnt)
-
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
