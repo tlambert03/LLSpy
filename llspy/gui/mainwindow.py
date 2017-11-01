@@ -199,11 +199,11 @@ class LLSDragDropTable(QtW.QTableWidget):
                     pass
 
         E = llspy.LLSdir(path)
-        if not E.has_lls_tiffs:
-            if llspy.util.pathHasPattern(path, '*.tif'):
+        if E.has_settings and not E.has_lls_tiffs:
+            if not E.is_compressed() and llspy.util.pathHasPattern(path, '*.tif'):
                 if sessionSettings.value('warnOnNoLLStiffs', True, type=bool):
                     box = QtW.QMessageBox()
-                    box.setWindowTitle('Path has tiff files, but none of them match'
+                    box.setWindowTitle('Path has tiff files and Settings.txt file, but none of them match'
                     ' the file naming convention assumed by LLSpy.')
                     box.setText('Path has tiff files, but none of them match'
                     ' the file naming convention assumed by LLSpy.  Please read '
@@ -221,9 +221,8 @@ class LLSDragDropTable(QtW.QTableWidget):
 
                     pref.stateChanged.connect(setPref)
                     box.exec_()
-            else:
-                logger.info('No tiff files detected! Ignoring: {}'.format(path))
-            return
+
+                return
         logger.info('Adding to queue: %s' % shortname(path))
 
         rowPosition = self.rowCount()
