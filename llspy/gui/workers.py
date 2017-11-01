@@ -375,7 +375,7 @@ class LLSitemWorker(QtCore.QObject):
                 cudaOpts['input-dir'] = str(self.E.path)
                 cudaOpts['otf-file'] = self.P.otfs[i]
                 cudaOpts['background'] = self.P.background[i] if not self.P.correctFlash else 0
-                cudaOpts['wavelength'] = float(self.P.wavelength[chan]) / 1000
+                cudaOpts['wavelength'] = float(self.E.parameters.channels[chan]) / 1000
 
                 for tRange in tRanges:
                     # filter by channel and trange
