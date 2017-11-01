@@ -1029,6 +1029,8 @@ class Ui_Main_GUI(object):
         self.actionRename_Iters.setObjectName("actionRename_Iters")
         self.actionUndo_Rename_Iters = QtWidgets.QAction(Main_GUI)
         self.actionUndo_Rename_Iters.setObjectName("actionUndo_Rename_Iters")
+        self.actionReveal = QtWidgets.QAction(Main_GUI)
+        self.actionReveal.setObjectName("actionReveal")
         self.menuFile.addAction(self.actionOpen_LLSdir)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionSave_Settings_as_Default)
@@ -1057,6 +1059,7 @@ class Ui_Main_GUI(object):
         self.mainToolBar.addAction(self.actionFreeze)
         self.mainToolBar.addAction(self.actionConcatenate)
         self.mainToolBar.addAction(self.actionRename_Scripted)
+        self.mainToolBar.addAction(self.actionReveal)
         self.camParamTiffLabel.setBuddy(self.camParamTiffLineEdit)
         self.autocropPadLabel.setBuddy(self.autocropPadSpinBox)
         self.RegCalibPathLabel.setBuddy(self.RegCalibPathLineEdit)
@@ -1176,11 +1179,11 @@ class Ui_Main_GUI(object):
         self.iterationsLabel.setText(_translate("Main_GUI", "Iterations:"))
         self.iterationsSpinBox.setToolTip(_translate("Main_GUI", "Number of deconvolution iterations"))
         self.apodizeLabel.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
-        self.apodizeLabel.setText(_translate("Main_GUI", "napodize:"))
+        self.apodizeLabel.setText(_translate("Main_GUI", "nApodize:"))
         self.apodizeSpinBox.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
         self.zblendLabel.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
 "to reduce axial ringing"))
-        self.zblendLabel.setText(_translate("Main_GUI", "nzblend"))
+        self.zblendLabel.setText(_translate("Main_GUI", "nZblend"))
         self.zblendSpinBox.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
 "to reduce axial ringing"))
         self.saveDeconvolvedCheckBox.setText(_translate("Main_GUI", "Save Stacks"))
@@ -1462,4 +1465,6 @@ class Ui_Main_GUI(object):
         self.actionCamera_Calibration.setText(_translate("Main_GUI", "Camera Calibration"))
         self.actionRename_Iters.setText(_translate("Main_GUI", "Rename \'Iters_\'"))
         self.actionUndo_Rename_Iters.setText(_translate("Main_GUI", "Undo Rename \'Iters_\'"))
+        self.actionReveal.setText(_translate("Main_GUI", "Reveal"))
+        self.actionReveal.setShortcut(_translate("Main_GUI", "Ctrl+Shift+O"))
 

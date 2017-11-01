@@ -158,3 +158,12 @@ def guirestore(widget, settings, default):
         except Exception:
             logging.warn('Unable to restore settings for object: {}'.format(name))
 
+
+def reveal(path):
+    proc = QtCore.QProcess()
+    if sys.platform.startswith('darwin'):
+        proc.startDetached('open', ['--', path])
+    elif sys.platform.startswith('linux'):
+        proc.startDetached('xdg-open', ['--', path])
+    elif sys.platform.startswith('win32'):
+        proc.startDetached('explorer', [path.replace('/', '\\')])

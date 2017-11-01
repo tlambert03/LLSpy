@@ -9,7 +9,7 @@ from llspy.gui import workers
 from llspy.gui.camcalibgui import CamCalibDialog
 from llspy.gui.helpers import (newWorkerThread,
     wait_for_file_close, wait_for_folder_finished,
-    shortname, string_to_iterable, guisave, guirestore)
+    shortname, string_to_iterable, guisave, guirestore, reveal)
 from llspy.gui.img_dialog import ImgDialog
 from llspy.gui.qtlogger import NotificationHandler
 from fiducialreg.fiducialreg import RegFile, RegistrationError
@@ -838,6 +838,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             lambda st: self.startWatcher() if st else self.stopWatcher())
 
         # connect actions
+        self.actionReveal.triggered.connect(self.revealSelected)
         self.actionOpen_LLSdir.triggered.connect(self.openLLSdir)
         self.actionRun.triggered.connect(self.onProcess)
         self.actionAbort.triggered.connect(self.abort_workers)
@@ -1595,6 +1596,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 start=True)
             self.compressionThreads.append((worker, thread))
 
+    def revealSelected(self):
+        selectedPaths = self.listbox.selectedPaths()
+        if len(selectedPaths):
+            for p in selectedPaths:
+                if os.path.exists(p):
+                    reveal(p)
 
     def concatenateSelected(self):
         selectedPaths = self.listbox.selectedPaths()

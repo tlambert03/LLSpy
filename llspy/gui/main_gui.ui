@@ -2985,6 +2985,7 @@ QProgressBar::chunk:horizontal {
    <addaction name="actionFreeze"/>
    <addaction name="actionConcatenate"/>
    <addaction name="actionRename_Scripted"/>
+   <addaction name="actionReveal"/>
   </widget>
   <widget class="QStatusBar" name="statusBar">
    <property name="minimumSize">
@@ -3131,6 +3132,14 @@ and restore folder to it's original state
   <action name="actionUndo_Rename_Iters">
    <property name="text">
     <string>Undo Rename 'Iters_'</string>
+   </property>
+  </action>
+  <action name="actionReveal">
+   <property name="text">
+    <string>Reveal</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
    </property>
   </action>
  </widget>
