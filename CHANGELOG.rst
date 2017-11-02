@@ -6,9 +6,25 @@ LLSpy Release History
 
 make a change
 
+**Added:**
+
+* new option (in config tab) to enable adding folders without settings.txt file.  Pick default values for missing options, and ability to directly change dx/dz/angle in the process queue.
+* new Merge Mips option under Tools menu (merge folder of individual MIPs after processing)
+* reveal in finder/explorer option
+
+**Changed:**
+
+* CLI ```lls info``` command now calculates sizes
+* CLI ```lls info``` recurses to specified depth
+* changed internals representing timepoints (tset) and channels (cset) in LLSdir.  Should prevent unexpected bugs in long run, may introduce unexpected things in the short term.
+* internal change, GUI queue box now stores/updates LLSdir instances.
+* give more meaningful error when folder is added that has tiffs and a settings.txt file, but not with the recognized naming convention.
+
 **Fixed:**
 
-* fixed bugs resulting when the base part of the filename is interpreted as a non-string integer. (such as unsupported operand type(s) for +: 'int' and 'str' during mipmerge)
+* memory leak when closing preview window (wasn't releasing RAM required for image)
+* bugs resulting when the base part of the filename is interpreted as a non-string integer. (such as unsupported operand type(s) for +: 'int' and 'str' during mipmerge)
+
 
 
 `0.3.3`_
