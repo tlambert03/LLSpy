@@ -276,6 +276,9 @@ class LLSDragDropTable(QtW.QTableWidget):
         selectedRows = self.selectionModel().selectedRows()
         return [self.getPathByIndex(i.row()) for i in selectedRows]
 
+    def selectedObjects(self):
+        return [self.getLLSObjectByPath(p) for p in self.selectedPaths()]
+
     @QtCore.pyqtSlot(str)
     def removePath(self, path):
         self.llsObjects.pop(path)
@@ -839,6 +842,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         # connect actions
         self.actionReveal.triggered.connect(self.revealSelected)
+        self.actionMerge_MIPs_from_folder.triggered.connect(self.mergeMIPtool)
         self.actionOpen_LLSdir.triggered.connect(self.openLLSdir)
         self.actionRun.triggered.connect(self.onProcess)
         self.actionAbort.triggered.connect(self.abort_workers)
@@ -1645,6 +1649,19 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.listbox.renamedPaths.append(item)
             self.listbox.removePath(item)
             [self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
+
+    def mergeMIPtool(self):
+
+        if len(self.listbox.selectedPaths()):
+            for obj in self.listbox.selectedObjects():
+                obj.mergemips()
+        else:
+            path = QtW.QFileDialog.getExistingDirectory(self,
+                    'Choose Directory with MIPs to merge', os.path.expanduser('~'),
+                    QtW.QFileDialog.ShowDirsOnly)
+            if path:
+                for axis in ['z', 'y', 'x']:
+                    llspy.llsdir.mergemips(path, axis, dx=0.102, delete=True)
 
     def toggleOptOut(self, value):
         err._OPTOUT = True if value else False

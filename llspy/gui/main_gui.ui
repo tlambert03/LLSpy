@@ -2962,6 +2962,7 @@ QProgressBar::chunk:horizontal {
      <string>Tools</string>
     </property>
     <addaction name="actionCamera_Calibration"/>
+    <addaction name="actionMerge_MIPs_from_folder"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -3113,6 +3114,9 @@ and restore folder to it's original state
    <property name="text">
     <string>Freeze</string>
    </property>
+   <property name="toolTip">
+    <string>Delete all processed data, and compress raw data for storage</string>
+   </property>
   </action>
   <action name="actionHelp">
    <property name="text">
@@ -3128,6 +3132,9 @@ and restore folder to it's original state
    <property name="text">
     <string>Rename 'Iters_'</string>
    </property>
+   <property name="toolTip">
+    <string>Rename files acquired with Script Editor mode, containing 'Iters_'</string>
+   </property>
   </action>
   <action name="actionUndo_Rename_Iters">
    <property name="text">
@@ -3138,8 +3145,16 @@ and restore folder to it's original state
    <property name="text">
     <string>Reveal</string>
    </property>
+   <property name="toolTip">
+    <string>Reveal Item in Explorer/Finder</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Shift+O</string>
+   </property>
+  </action>
+  <action name="actionMerge_MIPs_from_folder">
+   <property name="text">
+    <string>Merge MIPs</string>
    </property>
   </action>
  </widget>
