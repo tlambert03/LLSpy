@@ -1249,7 +1249,7 @@ class RegDir(LLSdir):
             self.deskewed = [deskewGPU(i, dz, dx, angle) for i in self.data]
             return self.deskewed
 
-    def cloudset(self, redo=False):
+    def cloudset(self, redo=False, tojson=False):
         """ actually generates the fiducial cloud """
         if '_cloudset' in dir(self) and not redo:
             return self._cloudset
@@ -1257,8 +1257,9 @@ class RegDir(LLSdir):
                                   labels=self.waves, dx=self.parameters.dx,
                                   dz=self.parameters.dzFinal, mincount=self.mincount,
                                   threshold=self.threshold)
-        with open(self.path.joinpath('cloud.json'), 'w') as outfile:
-            json.dump(self.toJSON(), outfile)
+        if tojson:
+            with open(str(self.path.joinpath('cloud.json')), 'w') as outfile:
+                json.dump(self.toJSON(), outfile)
         return self._cloudset
 
     def cloudset_has_data(self):

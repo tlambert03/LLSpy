@@ -748,8 +748,15 @@ class RegistrationTab(object):
             opts['doReg'] = True
         opts['regRefWave'] = int(self.RegCalib_channelRefCombo.currentText())
         opts['regCalibPath'] = self.RegCalibPathLineEdit.text()
+        opts['correctFlash'] = False
+        opts['medianFilter'] = False
+        opts['trimZ'] = (0, 0)
+        opts['trimY'] = (0, 0)
+        opts['trimX'] = (0, 0)
+        opts['nIters'] = 0
+
         w, thread = newWorkerThread(workers.TimePointWorker,
-            RD.path, [0], None, opts,
+            RD, [0], None, opts,
             workerConnect={'previewReady': displayRegPreview},
             start=True)
 

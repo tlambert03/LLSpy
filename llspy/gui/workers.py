@@ -274,18 +274,15 @@ class LLSitemWorker(QtCore.QObject):
     error = QtCore.pyqtSignal()
     skipped = QtCore.pyqtSignal(str)
 
-    def __init__(self, path, wid, opts, **kwargs):
+    def __init__(self, lls_dir, wid, opts, **kwargs):
         super(LLSitemWorker, self).__init__()
 
-        if isinstance(path, str):
-            self.path = path
-            self.E = llspy.LLSdir(path)
-        elif isinstance(path, llspy.LLSdir):
-            self.E = path
+        if isinstance(lls_dir, llspy.LLSdir):
+            self.E = lls_dir
             self.path = str(self.E.path)
         else:
-            raise err.LLSpyError('unexpected type as first argument for '
-                'LLSitemWorker: {}'.format(type(path)))
+            self.path = str(lls_dir)
+            self.E = llspy.LLSdir(self.path)
 
         self.__id = int(wid)
         self.opts = opts
@@ -546,18 +543,17 @@ class TimePointWorker(QtCore.QObject):
     previewReady = QtCore.pyqtSignal(np.ndarray, float, float, dict)
     updateCrop = QtCore.pyqtSignal(int, int)
 
-    def __init__(self, path, tRange, cRange, opts, ditch_partial=True, **kwargs):
+    def __init__(self, lls_dir, tRange, cRange, opts, ditch_partial=True, **kwargs):
         super(TimePointWorker, self).__init__()
 
-        if isinstance(path, str):
-            self.path = path
-            self.E = llspy.LLSdir(self.path, ditch_partial)
-        elif isinstance(path, llspy.LLSdir):
-            self.E = path
+        if isinstance(lls_dir, llspy.LLSdir):
+            self.E = lls_dir
             self.path = str(self.E.path)
         else:
-            raise err.LLSpyError('unexpected type as first argument for '
-                'TimePointWorker: {}'.format(type(path)))
+            # assume it's a string
+            self.path = str(lls_dir)
+            self.E = llspy.LLSdir(self.path, ditch_partial)
+
         self.tRange = tRange
         self.cRange = cRange
         self.opts = opts
