@@ -720,7 +720,14 @@ class RegistrationTab(object):
         RD = llspy.RegDir(self.RegCalibPathLineEdit.text())
         if not RD.isValid:
             raise err.RegistrationError(
-                'Registration Calibration dir not valid: {}'.format(RD.path))
+                'Registration Calibration dir not valid. Please check Fiducial Data path above.')
+
+        if not self.RegFilePath.text():
+            QtW.QMessageBox.warning(self, "Must load registration file!",
+                "No registration file!\n\nPlease click load, and load a "
+                "registration file.  Or use the generate button to generate and load a new one.",
+                QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
+            return
 
         @QtCore.pyqtSlot(np.ndarray, float, float, dict)
         def displayRegPreview(array, dx=None, dz=None, params=None):
@@ -747,7 +754,7 @@ class RegistrationTab(object):
         else:
             opts['doReg'] = True
         opts['regRefWave'] = int(self.RegCalib_channelRefCombo.currentText())
-        opts['regCalibPath'] = self.RegCalibPathLineEdit.text()
+        opts['regCalibPath'] = self.RegFilePath.text()
         opts['correctFlash'] = False
         opts['medianFilter'] = False
         opts['trimZ'] = (0, 0)
