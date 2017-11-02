@@ -2,6 +2,7 @@ import os
 import sys
 import stat
 import fnmatch
+import zipfile
 from shutil import copyfile
 
 
@@ -92,6 +93,19 @@ def install(dirpath, dryrun=False):
     dirpath = os.path.normpath(os.path.expanduser(dirpath))
     if not os.path.exists(dirpath):
         raise IOError('Could not find path: {}'.format(dirpath))
+
+    if zipfile.is_zipfile(dirpath):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tempdir:
+            basename = os.path.splitext(os.path.basename(dirpath))[0]
+            Z = zipfile.ZipFile(dirpath)
+            Z.extractall(path=tempdir)
+            extractedpath = os.path.join(tempdir, basename)
+            if os.path.isdir(extractedpath):
+                install(extractedpath)
+            else:
+                print('Failed to install llspy_extra zipfile')
+        return
 
     libpath = find_libpath(dirpath)
     binpath = find_binpath(dirpath)

@@ -595,7 +595,7 @@ def clean(config, all, configfile, logs):
 
 
 @cli.command(short_help='Install cudaDeconv libraries and binaries')
-@click.argument('path', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument('path', type=click.Path(exists=True, file_okay=True, resolve_path=True))
 @click.option('-n', '--dryrun', is_flag=True, default=False,
               help='Just show what files would be moved to where')
 def install(path, dryrun):
