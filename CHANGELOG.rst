@@ -20,6 +20,7 @@ LLSpy Release History
 
 **Fixed:**
 
+* bug: napodize and nzblend parameters were not getting passed to cudaDeconv
 * memory leak when closing preview window (wasn't releasing RAM required for image)
 * bugs resulting when the base part of the filename is interpreted as a non-string integer. (such as unsupported operand type(s) for +: 'int' and 'str' during mipmerge)
 
