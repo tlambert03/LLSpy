@@ -4,8 +4,6 @@ LLSpy Release History
 `0.3.4`_
 ========
 
-make a change
-
 **Added:**
 
 * new option (in config tab) to enable adding folders without settings.txt file.  Pick default values for missing options, and ability to directly change dx/dz/angle in the process queue.
