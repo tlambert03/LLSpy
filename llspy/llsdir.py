@@ -390,7 +390,7 @@ def process(exp, binary=None, **kwargs):
 
     # FIXME: this is just a messy first try...
     if P.doReg:
-        exp.register(P.regRefWave, P.regMode, P.regCalibPath)
+        exp.register(P.regRefWave, P.regMode, P.regCalibPath, P.deleteUnregistered)
 
     if P.mergeMIPs:
         exp.mergemips()
@@ -945,6 +945,7 @@ class LLSdir(object):
             _schema.rotate = 0
 
         self._localParams = util.dotdict(schema.__localSchema__(_schema))
+        print(self._localParams.deleteUnregistered)
         return self._localParams
 
     def autoprocess(self, **kwargs):
@@ -1161,7 +1162,7 @@ class LLSdir(object):
                 correctTimepoint(t, camparams, outpath, medianFilter, trimZ, trimY, trimX)
         return outpath
 
-    def register(self, regRefWave, regMode, regCalibPath):
+    def register(self, regRefWave, regMode, regCalibPath, discard=False):
         if self.parameters.nc < 2:
             logger.error('Cannot register single channel dataset')
             return
@@ -1172,7 +1173,7 @@ class LLSdir(object):
             subdirs = [x for x in self.path.iterdir() if x.is_dir() and
                        x.name in ('GPUdecon', 'Deskewed')]
             for D in subdirs:
-                register_folder(D, regRefWave, regMode, regObj, voxsize)
+                register_folder(D, regRefWave, regMode, regObj, voxsize, discard=discard)
         else:
             logger.error('Registration Calibration path not valid'
                          '{}'.format(regCalibPath))

@@ -480,7 +480,8 @@ class LLSitemWorker(QtCore.QObject):
             self.status_update.emit(
                 'Doing Channel Registration: {}'.format(self.E.basename))
             try:
-                self.E.register(self.P.regRefWave, self.P.regMode, self.P.regCalibPath)
+                self.E.register(self.P.regRefWave, self.P.regMode,
+                    self.P.regCalibPath, discard=self.P.deleteUnregistered)
             except Exception:
                 self._logger.error("REGISTRATION FAILED")
                 raise

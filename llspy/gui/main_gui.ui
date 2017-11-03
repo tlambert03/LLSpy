@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>617</width>
-    <height>849</height>
+    <height>861</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>803</height>
+    <height>861</height>
    </size>
   </property>
   <property name="focusPolicy">
@@ -148,7 +148,7 @@ Press process button below when ready.</string>
            </font>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
@@ -156,7 +156,7 @@ Press process button below when ready.</string>
              <x>0</x>
              <y>0</y>
              <width>547</width>
-             <height>292</height>
+             <height>304</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1147,8 +1147,8 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>534</width>
-             <height>310</height>
+             <width>547</width>
+             <height>337</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1651,6 +1651,21 @@ bead) images acquired in each channel.</string>
                 <widget class="QPushButton" name="RegProcessPathPushButton">
                  <property name="text">
                   <string>Use Dataset</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0" colspan="5">
+                <widget class="QCheckBox" name="discardUnregisteredCheckBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Specify that direction of stage travel
+during stage-scanning is reversed
+from conventional.</string>
+                 </property>
+                 <property name="text">
+                  <string>Discard un-registered files</string>
                  </property>
                 </widget>
                </item>

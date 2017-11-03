@@ -11,8 +11,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Main_GUI(object):
     def setupUi(self, Main_GUI):
         Main_GUI.setObjectName("Main_GUI")
-        Main_GUI.resize(617, 849)
-        Main_GUI.setMinimumSize(QtCore.QSize(0, 803))
+        Main_GUI.resize(617, 861)
+        Main_GUI.setMinimumSize(QtCore.QSize(0, 861))
         Main_GUI.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.centralWidget = QtWidgets.QWidget(Main_GUI)
         self.centralWidget.setObjectName("centralWidget")
@@ -71,7 +71,7 @@ class Ui_Main_GUI(object):
         self.processingToolBox.setFont(font)
         self.processingToolBox.setObjectName("processingToolBox")
         self.tool_preprocess = QtWidgets.QWidget()
-        self.tool_preprocess.setGeometry(QtCore.QRect(0, 0, 547, 292))
+        self.tool_preprocess.setGeometry(QtCore.QRect(0, 0, 547, 304))
         self.tool_preprocess.setObjectName("tool_preprocess")
         self.verticalLayout_16 = QtWidgets.QVBoxLayout(self.tool_preprocess)
         self.verticalLayout_16.setContentsMargins(11, 11, 11, 11)
@@ -394,7 +394,7 @@ class Ui_Main_GUI(object):
         self.verticalLayout_14.addItem(spacerItem14)
         self.processingToolBox.addItem(self.tool_deconvolution, "")
         self.tool_postprocess = QtWidgets.QWidget()
-        self.tool_postprocess.setGeometry(QtCore.QRect(0, 0, 534, 310))
+        self.tool_postprocess.setGeometry(QtCore.QRect(0, 0, 547, 337))
         self.tool_postprocess.setObjectName("tool_postprocess")
         self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.tool_postprocess)
         self.verticalLayout_12.setContentsMargins(11, 11, 11, 11)
@@ -545,6 +545,10 @@ class Ui_Main_GUI(object):
         self.RegProcessPathPushButton = QtWidgets.QPushButton(self.doRegistrationGroupBox)
         self.RegProcessPathPushButton.setObjectName("RegProcessPathPushButton")
         self.gridLayout.addWidget(self.RegProcessPathPushButton, 1, 5, 1, 1)
+        self.discardUnregisteredCheckBox = QtWidgets.QCheckBox(self.doRegistrationGroupBox)
+        self.discardUnregisteredCheckBox.setEnabled(True)
+        self.discardUnregisteredCheckBox.setObjectName("discardUnregisteredCheckBox")
+        self.gridLayout.addWidget(self.discardUnregisteredCheckBox, 2, 0, 1, 5)
         self.verticalLayout_12.addWidget(self.doRegistrationGroupBox)
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_4.setContentsMargins(11, 0, 11, 11)
@@ -1078,7 +1082,7 @@ class Ui_Main_GUI(object):
 
         self.retranslateUi(Main_GUI)
         self.tabWidget.setCurrentIndex(0)
-        self.processingToolBox.setCurrentIndex(0)
+        self.processingToolBox.setCurrentIndex(2)
         self.compressTypeCombo.setCurrentIndex(-1)
         self.RegCalib_channelRefModeCombo.setCurrentIndex(-1)
         self.actionQuit.triggered['bool'].connect(Main_GUI.close)
@@ -1289,6 +1293,10 @@ class Ui_Main_GUI(object):
 "bead) images acquired in each channel."))
         self.RegProcessPathLineEdit.setPlaceholderText(_translate("Main_GUI", " registration file or fiducial dataset..."))
         self.RegProcessPathPushButton.setText(_translate("Main_GUI", "Use Dataset"))
+        self.discardUnregisteredCheckBox.setToolTip(_translate("Main_GUI", "Specify that direction of stage travel\n"
+"during stage-scanning is reversed\n"
+"from conventional."))
+        self.discardUnregisteredCheckBox.setText(_translate("Main_GUI", "Discard un-registered files"))
         self.bleachCorrectionCheckBox.setToolTip(_translate("Main_GUI", "Modify intensity values of timelapse data to\n"
 "minimize the appearance of photobleaching."))
         self.bleachCorrectionCheckBox.setText(_translate("Main_GUI", "Do Bleach Correction"))

@@ -1462,6 +1462,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             'uint16raw': ('16' in self.deskewedBitDepthCombo.currentText()),
             'bleachCorrection': self.bleachCorrectionCheckBox.isChecked(),
             'doReg': self.doRegistrationGroupBox.isChecked(),
+            'deleteUnregistered': self.discardUnregisteredCheckBox.isChecked(),
             'regMode': (self.RegProcessChannelRefModeCombo.currentText()
                 if self.RegProcessChannelRefModeCombo.currentText() else 'none'),
             'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
@@ -1558,6 +1559,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         else:
             options['tRange'] = None
 
+        print(options['deleteUnregistered'])
         return options
 
     def reduceSelected(self):
