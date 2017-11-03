@@ -25,11 +25,21 @@ artifacts:
 platform:
     - x64
 
-branches:
-  only:
-    - master
-    - appveyor
-
+for:
+-
+  branches:
+    only:
+      - master
+    environment:
+      LABEL: 'main'
+      BRANCH: 'master'
+-
+  branches:
+    only:
+      - develop
+    environment:
+      LABEL: 'dev'
+      BRANCH: 'develop'
 
 install:
     # If there is a newer build queued for the same PR, cancel this one.
@@ -63,4 +73,4 @@ test_script:
     # make any conda packages created available as build artifacts in AppVeyor
 #   - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\win-32\*.bz2 conda_packages || cmd /c "exit /b 0"'
     - cmd: 'copy /Y %CONDA_INSTALL_LOCN%\conda-bld\win-64\*.bz2 conda_packages || cmd /c "exit /b 0"'
-    - cmd: anaconda -v -t %CONDA_UPLOAD_TOKEN% upload "%CONDA_INSTALL_LOCN%\conda-bld\win-64\*.tar.bz2" -u talley --force
+    - cmd: anaconda -v -t %CONDA_UPLOAD_TOKEN% upload "%CONDA_INSTALL_LOCN%\conda-bld\win-64\*.tar.bz2" -u talley --force --label %LABEL%
