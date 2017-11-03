@@ -1,15 +1,15 @@
 from . import util
 from . import camera
+from .exceptions import SettingsError
+from datetime import datetime
+
 import os
 import re
 import io
 import configparser
 import warnings
-import math
 import logging
 logger = logging.getLogger(__name__)
-
-from datetime import datetime
 
 
 # repating pattern definitions used for parsing settings file
@@ -41,8 +41,6 @@ PIXEL_SIZE = {
     'C13440': 6.5,
 }
 
-class SettingsError(Exception):
-    pass
 
 class LLSsettings(object):
     '''Class for parsing and storing info from LLS Settings.txt.

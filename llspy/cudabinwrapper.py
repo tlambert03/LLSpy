@@ -1,4 +1,6 @@
 from . import util
+from .exceptions import CUDAbinException, CUDAProcessError
+
 import os
 import sys
 import re
@@ -342,32 +344,6 @@ class CUDAbin(object):
     def help(self):
         """print the help string provided by cudaDeconv"""
         print(self.helpstring)
-
-
-class CUDAbinException(Exception):
-    """
-    Generic exception indicating anything relating to the execution
-    of cudaDeconDeskew. A string containing an error message should be supplied
-    when raising this exception.
-    """
-    pass
-
-
-class CUDAProcessError(CUDAbinException):
-    """
-    Exception to describe an cudaDeconv execution error.
-    """
-
-    def __init__(self, cmd, rtnCode, output):
-        """
-        cmd -- The string or byte array of the cudaDeconv command ran
-        rtnCode -- The process return code
-        output -- Any output from the failed process
-        """
-        self.cmd = cmd
-        self.rtnCode = rtnCode
-        self.output = output
-        self.message = "cudaDeconv returned a non-zero exit code"
 
 
 class CUDAbinResult():

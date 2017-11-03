@@ -1,10 +1,13 @@
 from .util import load_lib
+from .exceptions import LibCUDAException
+
 import ctypes
 import numpy as np
 import os
 import sys
 import logging
 logger = logging.getLogger(__name__)
+
 
 cudaLib = load_lib('libcudaDeconv')
 
@@ -293,15 +296,6 @@ def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
         return decon_result, deskew_result
     else:
         return decon_result
-
-
-class LibCUDAException(Exception):
-    """
-    Generic exception indicating anything relating to the execution
-    of cudaDeconDeskew. A string containing an error message should be supplied
-    when raising this exception.
-    """
-    pass
 
 
 if __name__ == "__main__":

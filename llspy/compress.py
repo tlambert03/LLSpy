@@ -1,4 +1,5 @@
 from . import util
+from .exceptions import CompressionError
 
 import tarfile
 import os
@@ -162,7 +163,3 @@ def decompress_partial(file, tRange, compression=None):
 		return None
 	logger.debug("doing partial decompression ({}) on folder {}".format(tRange, file))
 	unzip_partial(compressedtar, tRange, compression)
-
-
-class CompressionError(Exception):
-	pass

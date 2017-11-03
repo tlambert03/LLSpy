@@ -1,12 +1,12 @@
 from . import config
-from .settingstxt import LLSsettings
 from . import parse, compress, schema
 from . import otf as otfmodule
-from .cudabinwrapper import CUDAbin
-from . import util
-from .camera import CameraParameters, selectiveMedianFilter
 from . import arrayfun
-
+from . import util
+from .settingstxt import LLSsettings
+from .cudabinwrapper import CUDAbin
+from .camera import CameraParameters, selectiveMedianFilter
+from .exceptions import LLSpyError, OTFError
 from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
 from fiducialreg.fiducialreg import CloudSet, RegFile, RegistrationError
 
@@ -909,10 +909,10 @@ class LLSdir(object):
                 wave = self.parameters.channels[c]
                 _schema.otfs.append(self.get_otf(wave, otfpath=_schema.otfDir))
             if not len(_schema.otfs):
-                raise otfmodule.OTFError(
+                raise OTFError(
                     'Deconvolution requested but no OTF available.  Check OTF path')
             if not len(_schema.otfs) == len(list(_schema.cRange)):
-                raise otfmodule.OTFError(
+                raise OTFError(
                     "Could not find OTF for every channel in OTFdir.")
 
         if _schema.bRotate:
@@ -986,7 +986,7 @@ class LLSdir(object):
             return None
 
         if not otfmodule.dir_has_otfs(otfpath):
-            raise otfmodule.OTFError("OTF directory has no OTFs! -> {}".format(otfpath))
+            raise OTFError("OTF directory has no OTFs! -> {}".format(otfpath))
 
         mask = None
         if hasattr(self, 'settings') and hasattr(self.settings, 'mask'):
@@ -996,7 +996,7 @@ class LLSdir(object):
 
         otf = otfmodule.choose_otf(wave, otfpath, self.date, mask)
         if not otf or not os.path.isfile(otf):
-            raise otfmodule.OTFError('Could not find OTF for '
+            raise OTFError('Could not find OTF for '
                 'wave {} in path: {}'.format(wave, otfpath))
         return otf
 
@@ -1534,12 +1534,4 @@ def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
     with open(os.path.join(t0path, 'concatenationRecord.txt'), 'w') as outfile:
         json.dump(tzeros, outfile)
 
-
-class LLSpyError(Exception):
-    """
-    Generic exception indicating anything relating to the execution
-    of LLSpy. A string containing an error message should be supplied
-    when raising this exception.
-    """
-    pass
 

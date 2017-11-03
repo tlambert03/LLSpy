@@ -1,12 +1,14 @@
-from . import config
+from .exceptions import OTFError
+from .util import load_lib
+from datetime import datetime, timedelta
+
+import numpy as np
 import re
 import ctypes
 import os
 import logging
 logger = logging.getLogger(__name__)
-import numpy as np
-from .util import load_lib
-from datetime import datetime, timedelta
+
 
 try:
     import pathlib as plib
@@ -15,7 +17,6 @@ except (ImportError, AttributeError):
     import pathlib2 as plib
 except (ImportError, AttributeError):
     raise ImportError('no pathlib detected. For python2: pip install pathlib2')
-
 
 
 otflib = load_lib('libradialft')
@@ -208,6 +209,3 @@ def choose_otf(wave, otfpath, date=None, mask=None, direction='nearest', approxi
 
     return get_default_otf(wave, otfpath, approximate)
 
-
-class OTFError(Exception):
-    pass
