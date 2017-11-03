@@ -82,7 +82,7 @@ def clean_string(varStr):
 
 # ################### File list filtering functions ###################
 
-def filter_t(filelist, trange):
+def filter_t(filelist, trange, exclusive=False):
 	''' return a list of filenames whose stack numbers are within trange
 	trange is either a single int, or an iterator with a range of stack
 	numbers desired
@@ -94,13 +94,18 @@ def filter_t(filelist, trange):
 	except TypeError:
 		iterator = [trange]
 	q = []
-	for t in iterator:
-		q.extend(
-			[f for f in filelist if '_stack{:04d}_'.format(t) in f])
+	if exclusive:
+		for t in iterator:
+			q.extend(
+				[f for f in filelist if '_stack{:04d}_'.format(t) not in f])
+	else:
+		for t in iterator:
+			q.extend(
+				[f for f in filelist if '_stack{:04d}_'.format(t) in f])
 	return q
 
 
-def filter_c(filelist, channels):
+def filter_c(filelist, channels, exclusive=False):
 	''' return a list of filenames whose channel numbers are within trange
 	channels is either a single int, or an iterator with a range of channel
 	numbers desired
@@ -112,24 +117,33 @@ def filter_c(filelist, channels):
 	except TypeError:
 		iterator = [channels]
 	q = []
-	for c in iterator:
-		q.extend(
-			[f for f in filelist if '_ch{}_'.format(c) in f])
+	if exclusive:
+		for c in iterator:
+			q.extend(
+				[f for f in filelist if '_ch{}_'.format(c) not in f])
+	else:
+		for c in iterator:
+			q.extend(
+				[f for f in filelist if '_ch{}_'.format(c) in f])
+
 	return q
 
 
 # TODO: make this accept an iterator
-def filter_w(filelist, w):
+def filter_w(filelist, w, exclusive=False):
 	# f = [f for f in filelist if parse_filename(f, 'wave') == w]
 	# above is more robust... this is faster
 	# FIXME: this depends very much on the user's AOTF naming convention
 	if str(w).endswith('nm'):
 		w = str(w).strip('nm')
-	f = [f for f in filelist if '_{}nm_'.format(w) in f]
+	if exclusive:
+		f = [f for f in filelist if '_{}nm_'.format(w) not in f]
+	else:
+		f = [f for f in filelist if '_{}nm_'.format(w) in f]
 	return f
 
 
-def filter_reltime(filelist, trange):
+def filter_reltime(filelist, trange, exclusive=False):
 	''' return a list of filenames whose relative timepoints are within trange
 	trange is a tuple of (min, max) relative time in the experiment
 	'''
@@ -138,14 +152,20 @@ def filter_reltime(filelist, trange):
 	if not len(trange) == 2:
 		raise ValueError('relative time range must be a 2x tuple of min/max')
 	q = []
-	for f in filelist:
-		if (parse_filename(f, 'reltime') >= trange[0] and
-			parse_filename(f, 'reltime') <= trange[1]):
-			q.append(f)
+	if exclusive:
+		for f in filelist:
+			if (parse_filename(f, 'reltime') < trange[0] and
+				parse_filename(f, 'reltime') > trange[1]):
+				q.append(f)
+	else:
+		for f in filelist:
+			if (parse_filename(f, 'reltime') >= trange[0] and
+				parse_filename(f, 'reltime') <= trange[1]):
+				q.append(f)
 	return q
 
 
-def filter_files(filelist, **kwargs):
+def filter_files(filelist, exclusive=False, **kwargs):
 	''' Convenience function to filter a list of filenames according to
 	stack number, channel number, wavelength name, relative time
 
@@ -186,5 +206,5 @@ def filter_files(filelist, **kwargs):
 	for k in kwargs:
 		if k not in funcdict:
 			raise AttributeError('Did not recognize filter argument: {}'.format(k))
-		filelist = funcdict[k](filelist, kwargs[k])
+		filelist = funcdict[k](filelist, kwargs[k], exclusive=exclusive)
 	return filelist
