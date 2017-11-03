@@ -30,16 +30,16 @@ for:
   branches:
     only:
       - master
-    environment:
-      LABEL: 'main'
-      BRANCH: 'master'
+  environment:
+    LABEL: 'main'
+    BRANCH: 'master'
 -
   branches:
     only:
       - develop
-    environment:
-      LABEL: 'dev'
-      BRANCH: 'develop'
+  environment:
+    LABEL: 'dev'
+    BRANCH: 'develop'
 
 install:
     # If there is a newer build queued for the same PR, cancel this one.
