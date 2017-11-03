@@ -147,6 +147,30 @@ def get_regObj(regCalibPath):
     return refObj
 
 
+def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
+        discard=False):
+    """Register all (non-reference) wavelengths in a folder to the specified
+    reference wavelength, using the provided regObj.
+
+    voxsize must be an array of pixel sizes [dz, dy, dx]
+    """
+    if isinstance(regObj, str):
+        regObj = get_regObj(regObj)
+
+    # get all tiffs in folders
+    files = parse.filter_w(os.listdir(folder), regRefWave, exclusive=True)
+    files = [f for f in files if (f.endswith('.tif') and '_REG' not in f)]
+    for F in files:
+        outname = F.replace('.tif', '_REG.tif')
+        im = register_image_to_wave(os.path.join(folder, F), regObj,
+            refwave=regRefWave, mode=regMode, voxsize=voxsize)
+        util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
+            os.path.join(folder, outname),
+            dx=voxsize[2], dz=voxsize[0])
+        if discard:
+            os.remove(os.path.join(folder, F))
+
+
 def register_image_to_wave(img, regCalibObj, imwave=None, refwave=488,
                            voxsize=None, mode='2step'):
     # voxsize must be an array of pixel sizes [dz, dy, dx]
@@ -1142,21 +1166,13 @@ class LLSdir(object):
             logger.error('Cannot register single channel dataset')
             return
 
-        refObj = get_regObj(regCalibPath)
-        if isinstance(refObj, (RegDir, RegFile)) and refObj.isValid:
+        regObj = get_regObj(regCalibPath)
+        if isinstance(regObj, (RegDir, RegFile)) and regObj.isValid:
             voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
             subdirs = [x for x in self.path.iterdir() if x.is_dir() and
                        x.name in ('GPUdecon', 'Deskewed')]
             for D in subdirs:
-                files = [fn for fn in D.glob('*.tif') if not ('_REG' in fn.name or
-                    str(regRefWave) in fn.name)]
-                for F in files:
-                    outname = str(F).replace('.tif', '_REG.tif')
-                    im = register_image_to_wave(str(F), refObj, refwave=regRefWave,
-                        mode=regMode, voxsize=voxsize)
-                    util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
-                        str(D.joinpath(outname)),
-                        dx=self.parameters.dx, dz=self.parameters.dzFinal)
+                register_folder(D, regRefWave, regMode, regObj, voxsize)
         else:
             logger.error('Registration Calibration path not valid'
                          '{}'.format(regCalibPath))
