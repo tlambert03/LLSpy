@@ -1,7 +1,9 @@
+from .util import dotdict
+from .exceptions import ParametersError
 from voluptuous import (All, Any, Coerce, Lower, Strip, Length, Range,
                         Schema, Required, PREVENT_EXTRA, MultipleInvalid)
 from voluptuous.humanize import validate_with_humanized_errors
-from .util import dotdict
+
 import os
 
 intbool = Schema(lambda x: int(bool(x)))
@@ -216,7 +218,7 @@ def procParams(*args, **kwargs):
 
     S = validate_with_humanized_errors(kwargs, __schema__)
     if S['nIters'] > 0 and S['otfDir'] is None:
-        raise ValueError('oftDir cannot be type None with nIters > 0')
+        raise ParametersError('oftDir cannot be type None with nIters > 0')
     return dotdict(S)
 
 
