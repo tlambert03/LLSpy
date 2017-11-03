@@ -7,7 +7,7 @@ except ImportError:
     sys.path.append(os.path.join(thisDirectory, os.pardir, os.pardir))
     import llspy
 
-from llspy import llsdir, util, schema, otf, libinstall, compress
+from llspy import llsdir, util, schema, otf, libinstall, compress, exceptions
 import os
 import sys
 import click
@@ -48,7 +48,12 @@ class Config(dict):
         parser.read([filename])
         try:
             for s in parser.sections():
-                self.update(parser._sections[s])
+                section = parser._sections[s]
+                for key, val in section.items():
+                    if key in ('MIP', 'rMIP', 'trimZ', 'trimY', 'trimX'):
+                        from ast import literal_eval as make_tuple
+                        section[key] = make_tuple(val)
+                self.update(section)
         except configparser.NoSectionError:
             pass
 
@@ -385,7 +390,6 @@ def decon(config, path, **kwargs):
 
     def procfolder(dirpath, options):
         E = llsdir.LLSdir(dirpath)
-        print(options)
 
         # check whether folder has already been processed by the presence of a
         # ProcessingLog.txt file
@@ -529,7 +533,6 @@ def camera(calibrate):
         click.secho("Done! Calibration file has been written to: {}".format(calibrate),
                     bold=True, fg='yellow')
 
-
 @cli.command()
 @click.argument('path', metavar='LLSDIR', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('-f', '--freeze', is_flag=True, default=False,
@@ -594,8 +597,58 @@ def clean(config, all, configfile, logs):
             pass
 
 
-@cli.command(short_help='Install cudaDeconv libraries and binaries')
+@cli.command()
 @click.argument('path', type=click.Path(exists=True, file_okay=True, resolve_path=True))
+@click.option('-z', '--stack', 'stack', is_flag=True, default=False,
+              help='Show Z stack from first timepoint (otherwise look for MIP)')
+@click.option('-c', '--config', type=click.Path(exists=True, dir_okay=False),
+              callback=read_config, expose_value=False, multiple=True, is_eager=True,
+              help='Overwrite defaults with values in specified file.')
+@click.option('-t', '--timepoint', type=int, default=0)
+@pass_config
+def show(config, path, stack, timepoint):
+    from llspy.gui.img_dialog import ImgDialog
+    from PyQt5 import QtWidgets
+    import numpy as np
+
+    logging.getLogger('llspy.llsdir').setLevel('CRITICAL')
+    APP = QtWidgets.QApplication(sys.argv)
+
+    if os.path.isfile(path) and path.endswith('.tif'):
+        data = util.imread(path)
+    if os.path.isdir(path) and util.pathHasPattern(path):
+        try:
+            data = None
+            exp = llsdir.LLSdir(path)
+            if not stack:
+                if exp.path.joinpath('GPUdecon').joinpath('MIPs').exists():
+                    path = exp.path.joinpath('GPUdecon').joinpath('MIPs')
+                    zmip = util.find_filepattern(path, '*comboMIP_z.tif')
+                    data = util.imread(zmip)
+                    nt, ny, nx = data.shape
+                    data = np.reshape(data, (nt, 1, 1, ny, nx))
+                elif exp.path.joinpath('Deskewed').joinpath('MIPs').exists():
+                    path = exp.path.joinpath('Deskewed').joinpath('MIPs')
+                    zmip = util.find_filepattern(path, '*comboMIP_z.tif')
+                    data = util.imread(zmip)
+                    nt, ny, nx = data.shape
+                    data = np.reshape(data, (nt, 1, 1, ny, nx))
+
+            if data is None:
+                data = exp.preview(tR=timepoint, **config)
+                config = exp.localParams()
+
+        except exceptions.ParametersError as e:
+            click.secho(str(e), fg='red')
+            click.echo('Try setting missing parameters using "lls config"')
+            return
+    dialog = ImgDialog(data, info=config)
+    dialog.show()
+    sys.exit(APP.exec_())
+
+
+@cli.command(short_help='Install cudaDeconv libraries and binaries')
+@click.argument('path', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('-n', '--dryrun', is_flag=True, default=False,
               help='Just show what files would be moved to where')
 def install(path, dryrun):
