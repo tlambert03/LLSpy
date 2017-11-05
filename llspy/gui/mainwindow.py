@@ -1559,7 +1559,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         else:
             options['tRange'] = None
 
-        print(options['deleteUnregistered'])
         return options
 
     def reduceSelected(self):

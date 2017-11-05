@@ -156,6 +156,7 @@ def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
     """
     if isinstance(regObj, str):
         regObj = get_regObj(regObj)
+    folder = str(folder)
 
     # get all tiffs in folders
     files = parse.filter_w(os.listdir(folder), regRefWave, exclusive=True)
@@ -945,7 +946,6 @@ class LLSdir(object):
             _schema.rotate = 0
 
         self._localParams = util.dotdict(schema.__localSchema__(_schema))
-        print(self._localParams.deleteUnregistered)
         return self._localParams
 
     def autoprocess(self, **kwargs):
