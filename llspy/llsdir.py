@@ -734,9 +734,16 @@ class LLSdir(object):
                 self.tiff.bit_depth = firstTiff.pages[0].bits_per_sample
         self.parameters.nz, self.parameters.ny, self.parameters.nx = self.parameters.shape
 
-    def is_compressed(self, subdir='.'):
-        exts = "|".join(compress.EXTENTIONS.keys())
-        zips = [f for f in os.listdir(str(self.path.joinpath(subdir))) if re.search('.*({})$'.format(exts), f)]
+    def is_compressed(self, subdir=None):
+        if not subdir:
+            path = str(self.path)
+        elif self.path.joinpath(subdir).is_dir():
+            path = str(self.path.joinpath(subdir))
+        else:
+            raise ValueError('Subdirectory does not exists: {}'.format(subdir))
+
+        exts = tuple(compress.EXTENTIONS.keys())
+        zips = [f for f in os.listdir(path) if f.endswith(exts)]
         return bool(len(zips))
 
     def has_been_processed(self):
