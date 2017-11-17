@@ -28,7 +28,7 @@ def main(infile, nx, nz, sig=1, pad=12):
 	background = indat[:, :, 2].mean(1)
 	beadsums = beadslice.sum((1, 2)) - (4 * pad * pad * background)  # subtract background
 	xzpsf = np.reshape(beadsums, (int(nz), int(nx))).astype(np.float32)
-	tf.imsave(infile.replace('.tif', 'xzPSF.tif'), xzpsf)
+	tf.imsave(infile.replace('.tif', 'xzPSF_x%d_y%d.tif' % (maxx, maxy)), xzpsf)
 	return xzpsf
 
 
@@ -86,9 +86,10 @@ if __name__ == '__main__':
 	arg('-s', '--settings', type=str, default=None,
 		help='optional path to settings.txt (default is to autodetect)')
 	arg('-a', '--sigma', type=float, default=1,
-		help='sigma for gaussian filter during bead detection')
-	arg('-p', '--pad', type=int, default=12,
-		help='number of pixels on either side of maximum to include in beadsum')
+		help='sigma for gaussian filter during bead detection, (default=1)')
+	arg('-p', '--pad', type=int, default=4,
+		help='number of pixels on either side of maximum to include in beadsum,'
+		' (default=4)')
 
 	args = parser.parse_args()
 
