@@ -383,7 +383,7 @@ def decon(config, path, **kwargs):
     if not kwargs['batch'] and not util.pathHasPattern(path):
         click.secho('not a LLS data folder with *Settings.txt!\n'
                     'use --batch for batch processing', fg='red')
-        sys.exit()
+        sys.exit(1)
 
     # # allow for provided OTF directory
     # if not default_otfdir and options.otfdir is None:
@@ -462,13 +462,15 @@ def decon(config, path, **kwargs):
                     click.secho("VALIDATION ERROR: %s" % e, fg='red')
                 except exceptions.LLSpyError as e:
                     click.secho("ERROR: %s" % e, fg='red')
-            sys.exit('\n\nDone batch processing!')
+            click.echo('\n\nDone batch processing!')
+            sys.exit(0)
         except Exception:
             raise
     else:
         try:
             procfolder(path, config)
-            sys.exit('Done!')
+            click.echo('Done!')
+            sys.exit(0)
         except voluptuous.error.MultipleInvalid as e:
             e = str(e).replace("@ data['", 'for ')
             e = e.strip("'][0]")
