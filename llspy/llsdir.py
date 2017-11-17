@@ -1398,24 +1398,26 @@ def rename_iters(folder, splitpositions=True):
     nPosList = []
     for it in iterset:
         iterdict[it] = {}
-        iterdict[it]['setfile'] = util.find_filepattern(folder, '*Iter_%s*Settings.txt' % it)
+        iterdict[it]['setfile'] = util.find_filepattern(folder, '*Iter_%s_*Settings.txt' % it)
         # all the files from this Iter group
-        g = [f for f in filelist if 'Iter_%s' % it in f]
+        g = [f for f in filelist if 'Iter_%s_' % it in f]
         # tuple of nFiles in each channel in this group
         nPosList.append(tuple([len([f for f in g if 'ch%d' % d in f]) for d in chanset]))
     posset = set(nPosList)
     if len(posset) > 1:
-        raise LLSpyError('rename_iters function requires that each iteration '
+        raise LLSpyError('rename_iters function requires that each iteration has '
             'the same number of tiffs')
     posset = set(posset.pop())
     if len(posset) > 1:
-        raise LLSpyError('rename_iters function requires that each channel '
+        raise LLSpyError('rename_iters function requires that all channels '
             'have the same number of tiffs')
     nPositions = posset.pop()
 
     changelist = []
     for it in iterset:
         settingsFile = iterdict[it]['setfile']
+        if not settingsFile:
+            continue
         if nPositions > 1:
             newname = re.sub(r"Iter_\d+", 'pos%02d' % it,
                             os.path.basename(settingsFile))
@@ -1481,7 +1483,10 @@ def undo_rename_iters(path, deletelog=True):
             deletionlist.append(src)
             continue
         logger.info("renaming {} --> {}".format(src, dest))
-        os.rename(src, dest)
+        try:
+            os.rename(src, dest)
+        except FileNotFoundError as e:
+            logger.error(e)
     for item in deletionlist:
         if os.path.isdir(item):
             os.rmdir(item)
