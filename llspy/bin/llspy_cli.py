@@ -7,7 +7,7 @@ except ImportError:
     sys.path.append(os.path.join(thisDirectory, os.pardir, os.pardir))
     import llspy
 
-from llspy import llsdir, util, schema, otf, libinstall, compress, exceptions
+from llspy import llsdir, util, schema, otf, libinstall, exceptions
 import os
 import sys
 import click
@@ -243,7 +243,7 @@ def info(paths, verbose, recurse, depth, showsize):
                 click.secho(os.path.split(short)[0]+os.path.sep, nl=False, fg='magenta', bold=False)
                 click.secho(os.path.split(short)[1], nl=False, fg='yellow', bold=True)
                 click.echo(row_format.format(*[i for i in infolist]))
-            except llsdir.LLSpyError:
+            except exceptions.LLSpyError:
                 pass
     click.echo()
 
@@ -456,7 +456,7 @@ def decon(config, path, **kwargs):
                     e = str(e).replace("@ data['", 'for ')
                     e = e.strip("'][0]")
                     click.secho("VALIDATION ERROR: %s" % e, fg='red')
-                except llsdir.LLSpyError as e:
+                except exceptions.LLSpyError as e:
                     click.secho("ERROR: %s" % e, fg='red')
             sys.exit('\n\nDone batch processing!')
         except Exception:
@@ -469,7 +469,7 @@ def decon(config, path, **kwargs):
             e = str(e).replace("@ data['", 'for ')
             e = e.strip("'][0]")
             click.secho("VALIDATION ERROR: %s" % e, fg='red')
-        except llsdir.LLSpyError as e:
+        except exceptions.LLSpyError as e:
             click.secho("ERROR: %s" % e, fg='red')
 
     sys.exit(0)
@@ -533,6 +533,7 @@ def camera(calibrate):
         click.secho("Done! Calibration file has been written to: {}".format(calibrate),
                     bold=True, fg='yellow')
 
+
 @cli.command()
 @click.argument('path', metavar='LLSDIR', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('-f', '--freeze', is_flag=True, default=False,
@@ -559,7 +560,7 @@ def compress(path, freeze, _reduce, decompress, keepmips):
                 E.freeze(keepmip=keepmips)
             else:
                 E.compress()
-    except llspy.compress.CompressionError as e:
+    except exceptions.CompressionError as e:
         logger.warn(e)
 
 
