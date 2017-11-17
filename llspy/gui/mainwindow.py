@@ -190,10 +190,10 @@ class LLSDragDropTable(QtW.QTableWidget):
                 elif reply == 1:  # rename iters hit
                     if not hasattr(self, 'renamedPaths'):
                         self.renamedPaths = []
-                    llspy.llsdir.rename_iters(path)
+                    newfolders = llspy.llsdir.rename_iters(path)
                     self.renamedPaths.append(path)
                     # self.removePath(path)
-                    [self.addPath(osp.join(path, p)) for p in os.listdir(path)]
+                    [self.addPath(osp.join(path, p)) for p in newfolders]
                     return
                 elif reply == 0:  # process anyway hit
                     pass
@@ -281,7 +281,11 @@ class LLSDragDropTable(QtW.QTableWidget):
 
     @QtCore.pyqtSlot(str)
     def removePath(self, path):
-        self.llsObjects.pop(path)
+        try:
+            self.llsObjects.pop(path)
+        except KeyError:
+            logger.warning('Could not remove path {} ... not in queue'.format(path))
+            return
         items = self.findItems(path, QtCore.Qt.MatchExactly)
         for item in items:
             self.removeRow(item.row())
@@ -1648,13 +1652,22 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     'Choose Directory to Undo', os.path.expanduser('~'),
                     QtW.QFileDialog.ShowDirsOnly)
             if path:
-                llspy.llsdir.undo_rename_iters(path)
+                paths = [path]
+            else:
+                paths = []
         elif reply == 0:  # yes role  hit
             if not hasattr(self.listbox, 'renamedPaths') or not self.listbox.renamedPaths:
                 return
-            for path in self.listbox.renamedPaths:
-                llspy.llsdir.undo_rename_iters(path)
-                self.listbox.renamedPaths.remove(path)
+            paths = self.listbox.renamedPaths
+
+        for P in paths:
+            for root, subd, file in os.walk(P):
+                self.listbox.removePath(root)
+                for d in subd:
+                    self.listbox.removePath(os.path.join(root, d))
+            llspy.llsdir.undo_rename_iters(P)
+        self.listbox.renamedPaths = []
+
 
     def renameSelected(self):
         if not hasattr(self.listbox, 'renamedPaths'):

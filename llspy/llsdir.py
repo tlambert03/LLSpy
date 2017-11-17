@@ -1406,24 +1406,25 @@ def rename_iters(folder, splitpositions=True):
     except Exception:
         raise LLSpyError('Failed to parse filenames to detect number of Iter_ files')
 
+    returndirs = []
     iterdict = {}
-    nPosList = []
+    nFilesPerChannel = []
     for it in iterset:
         iterdict[it] = {}
         iterdict[it]['setfile'] = util.find_filepattern(folder, '*Iter_%s_*Settings.txt' % it)
         # all the files from this Iter group
         g = [f for f in filelist if 'Iter_%s_' % it in f]
         # tuple of nFiles in each channel in this group
-        nPosList.append(tuple([len([f for f in g if 'ch%d' % d in f]) for d in chanset]))
-    posset = set(nPosList)
-    if len(posset) > 1:
+        nFilesPerChannel.append(tuple([len([f for f in g if 'ch%d' % d in f]) for d in chanset]))
+    nFPCset = set(nFilesPerChannel)  # e.g. {(4,4)}, if all positions had 4 timepoints and 2 channels
+    if len(nFPCset) > 1:
         raise LLSpyError('rename_iters function requires that each iteration has '
             'the same number of tiffs')
-    posset = set(posset.pop())
-    if len(posset) > 1:
+    nPosSet = set(nFPCset.pop())  # e.g. {4}
+    if len(nPosSet) > 1:
         raise LLSpyError('rename_iters function requires that all channels '
             'have the same number of tiffs')
-    nPositions = posset.pop()
+    nPositions = nPosSet.pop()  # e.g. 4
 
     changelist = []
     for it in iterset:
@@ -1434,7 +1435,7 @@ def rename_iters(folder, splitpositions=True):
             newname = re.sub(r"Iter_\d+", 'pos%02d' % it,
                             os.path.basename(settingsFile))
         else:
-            newname = re.sub(r"_Iter_\d+", '',
+            newname = re.sub(r"Iter_\d+", 'stack%04d' % it,
                             os.path.basename(settingsFile))
         os.rename(settingsFile, os.path.join(folder, newname))
         changelist.append((settingsFile, os.path.join(folder, newname)))
@@ -1468,14 +1469,19 @@ def rename_iters(folder, splitpositions=True):
             posfolder = os.path.join(folder, basename + '_pos%02d' % pos)
             if not os.path.exists(posfolder):
                     os.mkdir(posfolder)
+                    returndirs.append(posfolder)
                     changelist.append((None, posfolder))
             for f in movelist:
                 os.rename(f, os.path.join(posfolder, os.path.basename(f)))
                 changelist.append((f, os.path.join(posfolder, os.path.basename(f))))
             pos += 1
+    else:
+        returndirs.append(folder)
     if len(changelist):
         with open(os.path.join(folder, 'renaming_log.txt'), 'w') as f:
             json.dump(changelist, f)
+
+    return returndirs
 
 
 def undo_rename_iters(path, deletelog=True):
@@ -1500,10 +1506,13 @@ def undo_rename_iters(path, deletelog=True):
         except FileNotFoundError as e:
             logger.error(e)
     for item in deletionlist:
-        if os.path.isdir(item):
-            os.rmdir(item)
-        elif os.path.isfile(item):
-            os.remove(item)
+        try:
+            if os.path.isdir(item):
+                os.rmdir(item)
+            elif os.path.isfile(item):
+                os.remove(item)
+        except OSError as e:
+            logger.error(e)
     if deletelog:
         os.remove(logfile)
 
