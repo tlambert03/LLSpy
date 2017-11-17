@@ -1,0 +1,298 @@
+***** ***** ***** General ***** ***** ***** 
+Date :	10/30/2017 5:23:25 PM
+Acq Mode :	Z stack
+Version :	v 4.03952.0012 Built on : 5/17/2017 10:55:08 AM, rev 3952
+
+***** ***** ***** Waveform ***** ***** ***** 
+Waveform type :	Linear
+
+X Galvo Offset, Interval (um), # of Pixels for Excitation (0) :	0	0.0325	201
+X Galvo Offset, Interval (um), # of Pixels for Excitation (1) :	0	0.0325	201
+
+Z Galvo Offset, Interval (um), # of Pixels for Excitation (0) :	-0.9	0	61
+Z Galvo Offset, Interval (um), # of Pixels for Excitation (1) :	-0.9	0	61
+
+Z PZT Offset, Interval (um), # of Pixels for Excitation (0) :	50	0	61
+Z PZT Offset, Interval (um), # of Pixels for Excitation (1) :	50	0	61
+
+S PZT Offset, Interval (um), # of Pixels for Excitation (0) :	52	0.4	61
+S PZT Offset, Interval (um), # of Pixels for Excitation (1) :	52	0.4	61
+
+# of stacks (0) :	10
+# of stacks (1) :	10
+
+Excitation Filter, Laser, Power (%), Exp(ms) (0) :	N/A	488	5	18
+Excitation Filter, Laser, Power (%), Exp(ms) (1) :	N/A	642	15	18
+
+Cycle lasers :	per Z
+
+Z motion :	Sample piezo
+
+
+***** ***** *****   Camera  ***** ***** ***** 
+Model :	C11440-22C
+Serial :	100740
+Frame Transfer :	OFF
+Trigger :	External
+Exp(s) :	0.01802
+Cycle(s) :	0.01911
+Cycle(Hz) :	52.33 Hz
+Frame Mode :	Run Till Abort
+Readout Mode :	Image
+ROI :	Left=905 Top=937 Right=1160 Bot=1136 
+Binning :	X=1 Y=1 
+# of Pixels :	X=2048 Y=2048 
+VSSspeed :	-1.0000
+HSSspeed :	0.0000
+VSSAmplitude :	Normal
+Output Amplifier :	EM Amp
+Temp(C) :	0.00000
+AD Channel :	0
+EM Gain :	0
+HS Speed index :	0
+Preamp Gain :	0
+Bit depth :	0
+Baseline Clamp :	Yes
+Spool :	Enabled?=No File stem=Unknown type # buffs=10 Method=16-buit TIFF 
+# of Exps :	1220 exp(s)
+Cropped :	On?=No # of pix=X=2048 Y=2048  Bin=X=1 Y=1  
+L ROI :	Left=905 Top=937 Right=0 Bot=1136 
+R ROI :	Left=0 Top=937 Right=1160 Bot=1136 
+FOV ROI :	Left=905 Top=937 Right=1160 Bot=1136 
+# of Imgs :	1220 img(s)
+subROIs :	Unknown type
+
+***** ***** *****   Advanced Timing  ***** ***** ***** 
+Trigger Mode :	SLM -> Cam
+# exp per SLM enable :	0
+Delay SLM Enable during SLM to Cam synch? :	FALSE
+SLM enable (ms) :	9.76854	9.76854	9.76854	9.76854
+
+***** ***** *****   .ini File  ***** ***** ***** 
+[Microns to Volt calibrations]
+Galvo cmd X um/X Volt = 118.5
+Galvo cmd Y um/Y Volt = NaN
+Galvo cmd Z um/Z Volt = 117.5
+Zpiezo um/Zpiezo Volt = 10.000
+Galvo position  cmd V/pos V = 0.500000
+XTile um/V = 62.8
+SamplePiezo um/SamplePiezo Volt = 10.000000
+Descanned X Galvo um/V = 1.963495
+Descanned Y Galvo um/V = 1.963495
+Z Galvo and Z Piezo point in the same direction? = FALSE
+
+[SRS SIM900 Settings]
+X Galvo Slot = 3
+Z Galvo Slot = 6
+Z Piezo Slot = -1
+SRS SIM900 = "COM11"
+Enable? = TRUE
+X Tile Galvo Slot = -1
+Sample Piezo Slot = -1
+Descan X Slot = -1
+Descan Y Slot = -1
+
+[Andor Camera Settings]
+Image Transform (None, Transpose, V Flip, H Flip, Diag Flip, Rot 90, Rot 180, Rot 270) = "None"
+Use External Trigger? = TRUE
+Andor Serial Number = -1
+Andor 2 Serial Number = -1
+
+[Detection optics]
+Magnification = 61.90476
+Magnification at Tiling Slit = 1.5
+
+[AOTF Settings]
+Number of channels = 6
+Number of simulateous stacks (max number of excitations) = 6
+
+[AOM Settings]
+AOM Channel(s) = 
+
+[Pulse Blast Settings]
+Pulse blast type = None
+Pulse duration (ms) = 2000.000000
+Laser pulse power (mW) = 14.500000,0.000000,0.000000,0.000000,0.000000
+Laser pulse location (um) = 4.402608,15.000000,-15.000000
+
+[Z Galvo Offsets (um)]
+Channel 0 = 0
+Channel 1 = -0.1
+Channel 2 = 0
+Channel 3 = -1
+Channel 4 = 0
+Channel 5 = 0
+Channel 6 = 0
+Channel 7 = 0
+Channel 8 = 0
+Channel 9 = 0
+
+[General]
+Camera type = "Orca4.0"
+# of exp per SLM enable = 0.5
+Cam Trigger mode = "SLM -> Cam"
+Shack-Hartmann Camera type = "Orca2.8"
+Objective PZT Controller (E-665, E-625) = "E-625"
+Delay SLM Enable during SLM to Cam synch? = FALSE    
+2nd Camera type = "Disabled"
+Twin cam mode? = TRUE
+SPIM type = "Lattice Lightsheet"
+
+[Pockel Settings]
+Pockel Channel(s) = "2"
+
+[Hamamatsu Camera Settings]
+Orca 2.8 SN = "0"
+Orca 4.0 SN = 300826
+Use Synch readout mode? = TRUE
+Orca4.0 : Image Transform (None, Transpose, V Flip, H Flip, Diag Flip, Rot 90, Rot 180, Rot 270) = "Rot 90"
+Orca 4.0 SN (Twin Camera) = 100740
+Orca4.0 (Twin) : Image Transform (None, Transpose, V Flip, H Flip, Diag Flip, Rot 90, Rot 180, Rot 270) = "V Flip"
+Orca 4.0 2 SN = "0"
+Orca 4.0 2 SN (Twin Camera) = "0"
+
+[Tiling Galvo]
+Offset (V) = 0.000000
+Vertical shift per um (pix) = 0.0230
+
+[Sample stage]
+Angle between stage and bessel beam (deg) = 31.0
+
+[SLM Config]
+SLM type = "-R5"
+Arm Cam Synch with SLM? = FALSE
+
+[Stage Settle]
+Add extra time = TRUE
+Added time (ms) = 17.500000
+
+[SLM]
+Enable? = TRUE
+Running Order = 81
+4D Serial Number = "0117002710"
+SLM enable (ms) 0 = 9.76854
+SLM enable (ms) 1 = 9.76854
+SLM enable (ms) 2 = 9.76854
+SLM enable (ms) 3 = 9.76854
+
+[C-867]
+Enabled = TRUE
+X Controller = "PI C-867 Piezomotor Controller SN 0115062592"
+Y Controller = "PI C-867 Piezomotor Controller SN 0115062592"
+X max speed (mm/s) = 100.000000
+Controller Type (C-867.160 or C-867.260) = "C-867.260"
+X Reference switch (Positive limit, Reference, Negative limit) = "Reference"
+Y Reference switch (Positive limit, Reference, Negative limit) = "Reference"
+
+[FPGA AI Labels]
+AI 0 = "AI 0"
+AI 1 = "AI 1"
+AI 2 = "AI 2"
+AI 3 = "AI 3"
+AI 4 = "AI 4"
+AI 5 = "AI 5"
+AI 6 = "AI 6"
+AI 7 = "AI 7"
+
+[AOTF controller]
+Enabled = TRUE
+COM Port = "COM1"
+FPGA AOTF index 0 is connected to AOTF controller input = 6
+FPGA AOTF index 1 is connected to AOTF controller input = 5
+FPGA AOTF index 2 is connected to AOTF controller input = 4
+FPGA AOTF index 3 is connected to AOTF controller input = 3
+FPGA AOTF index 4 is connected to AOTF controller input = 2
+FPGA AOTF index 5 is connected to AOTF controller input = 1
+FPGA AOTF index 6 is connected to AOTF controller input = 7
+FPGA AOTF index 7 is connected to AOTF controller input = 8
+Baud Rate = 19200
+
+
+[Autofocus]
+Grating period (um) = 0.6
+Grating Tolerance (fractional) = 0.25
+Depth of focus (um) = 1.5
+Depth of focus Tolerance (um) = 1
+Bessel width (um) = 0.5
+Bessel Tolerance (um) = 0.1
+Bead diameter (pixels) (-1 = use all pixels in ROI) = -1.000000
+Bead diameter (pixels) (-1 = use all pixels in ROI) = -1.000000
+Bead Gaussian filter enabled? = FALSE
+Minimum threshold (counts) = 130
+Bead diameter (pixels) (-1 use all pixels in ROI) = -1
+Rescan if peak near (%) of range edge = 0
+Rescan overlap with orginial range (%) = 30
+Max number of rescans = 3
+Variance is normalized? = TRUE
+
+[C-863]
+Enabled = TRUE
+Z Stage = "PI C-863 Mercury SN 0155500438"
+Stage 1 Lower Limit (mm) = 9.45
+Stage 1 Upper Limit (mm) = 10.3
+Reference switch (Positive limit, Reference, Negative limit) = "Negative limit"
+Max Z speed (mm/s) = 3.85965
+
+[Objective]
+Focal length (mm) = 12.500000
+Numerical Aperature = 0.800000
+Magnification from SLM to back pupil = 0.500000
+Magnification from galvo to back pupil = 0.500000
+
+[X Galvo Offsets (um)]
+Channel 0 = 0.000000
+Channel 1 = 0.000000
+Channel 2 = 1.145000
+Channel 3 = 0.000000
+Channel 4 = 0.166000
+Channel 5 = 0.000000
+Channel 6 = 0.000000
+
+[E-861]
+Stage 1 Lower Limit (mm) = 0.000000
+Stage 1 Upper Limit (mm) = 20.000000
+Enabled = FALSE
+Z Stage = "LPS stage"
+Reference switch (Positive limit, Reference, Negative limit) = "Reference"
+
+[G7]
+Path A (V) = -0.948905
+Path B (V) = 1.094891
+Path C (V) = 0.510949
+
+[G6]
+CAM 1 (V) = 0.000000
+CAM 2 (V) = 0.000000
+Last position = "CAM 1"
+
+[Descan X]
+Offset (um) = 0.000000
+Amplitude (um) = 0.000000
+Freq (Hz) = 0.000000
+Shape (Triangle, Sine) = "Sine"
+
+[Descan Y]
+Offset (um) = 0.000000
+Amplitude (um) = 0.000000
+Freq (Hz) = 0.000000
+Shape (Triangle, Sine) = "Triangle"
+
+[Matlab]
+Matlab <-> LabVIEW data exchange folder = "/C/Matlab data/Matlab_for_Labview"
+
+[AlpAO deformable mirror]
+Enable? = FALSE
+Serial number (BXXYYY) = ""
+Number of mirrors = 97
+
+[Cam 1]
+Enabled? = TRUE
+Type = "Orca4.0"
+FPGA Fire input line = "DIO 0"
+
+[PI stage]
+XY max speed (mm/s) = 52.6316
+
+[Annular Mask]
+outerNA = 0.4
+innerNA = 0.325
