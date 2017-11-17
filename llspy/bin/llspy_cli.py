@@ -172,6 +172,10 @@ def read_config(ctx, param, value):
         cfg.read_config(v)
     return value
 
+def exclusive(ctx_params, exclusive_params, error_message):
+    if sum([1 if ctx_params[p] else 0 for p in exclusive_params]) > 1:
+        raise click.UsageError(error_message)
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=llspy.__version__, prog_name='LLSpy')
@@ -535,7 +539,8 @@ def camera(calibrate):
 
 
 @cli.command()
-@click.argument('path', metavar='LLSDIR', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument('paths', metavar='LLSDIR', nargs=-1,
+              type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('-f', '--freeze', is_flag=True, default=False,
               help='Delete all processed data and compress raw data')
 @click.option('-r', '--reduce', '_reduce', is_flag=True, default=False,
@@ -545,23 +550,66 @@ def camera(calibrate):
               default=True, show_default=True)
 @click.option('-d', '--decompress', is_flag=True, default=False,
               help='Decompress folder if already compress.', show_default=True)
-def compress(path, freeze, _reduce, decompress, keepmips):
+@click.option('--recurse', is_flag=True, default=False,
+              help='Recurse through subdirectories (use --depth to limit '
+              'recursion depth or --age to set minimum experiment age)',
+              show_default=True)
+@click.option('--depth', type=int, default=1)
+@click.option('-n', '--dryrun', is_flag=True, default=False)
+@click.option('-a', '--age', 'minage', default=0,
+              help='Minimum age (days) of LLSdir to act on', show_default=True)
+def compress(paths, freeze, _reduce, decompress, recurse, minage, keepmips, depth, dryrun):
     """Compression & decompression of LLSdir"""
-    try:
-        E = llsdir.LLSdir(path)
-        if decompress:
-            E.decompress()
-            return
-        elif _reduce:
-            E.decompress(keepmip=keepmips)
-            return
-        else:
-            if freeze:
-                E.freeze(keepmip=keepmips)
+    exclusive(click.get_current_context().params, ['freeze', '_reduce', 'decompress'], 'options {freeze, reduce, decompress} are mutually exclusive')
+
+    logging.getLogger('llspy.llsdir').setLevel('CRITICAL')
+    paths = list(paths)
+
+    if recurse:
+        depth = 1000
+
+    # recurse and restrict to LLSdirs
+    for i, path in enumerate(paths):
+        if not util.pathHasPattern(path, pattern='*Settings.txt'):
+            paths.pop(i)
+            subf = sorted(util.get_subfolders_containing_filepattern(path, level=depth))
+            [paths.insert(i, s) for s in reversed(subf)]
+
+    # remove duplicates
+    paths = sorted(list(set(paths)))
+
+    for path in paths:
+        try:
+            E = llsdir.LLSdir(path)
+            if E.age < minage:
+                click.secho('      skip:', nl=False, underline=False, fg='blue')
+                click.secho('{} ({} days old)'.format(path, E.age), fg='blue')
+                continue
+            if decompress:
+                click.secho('decompress:     ', nl=False, underline=False, fg='yellow')
+                click.echo('{}'.format(path))
+                if not dryrun:
+                    E.decompress()
+                continue
+            elif _reduce:
+                click.secho('    reduce:', nl=False, underline=False, fg='yellow')
+                click.echo('{}'.format(path))
+                if not dryrun:
+                    E.reduce_to_raw(keepmip=keepmips)
+                continue
             else:
-                E.compress()
-    except exceptions.CompressionError as e:
-        logger.warn(e)
+                if freeze:
+                    click.secho('    freeze:', nl=False, underline=False, fg='yellow')
+                    click.echo('{}'.format(path))
+                    if not dryrun:
+                        E.freeze(keepmip=keepmips)
+                else:
+                    click.secho('  compress:', nl=False, underline=False, fg='yellow')
+                    click.echo('{}'.format(path))
+                    if not dryrun:
+                        E.compress()
+        except exceptions.CompressionError as e:
+            logger.warn(e)
 
 
 @cli.command()

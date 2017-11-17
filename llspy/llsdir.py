@@ -31,6 +31,7 @@ import glob
 import time
 import tifffile as tf
 import logging
+import datetime
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -649,6 +650,13 @@ class LLSdir(object):
                 if parse.filename_pattern.match(f.name):
                     return True
         return False
+
+    @property
+    def age(self):
+        """Returns true if the path is a directory and has a settings.txt file."""
+        if hasattr(self, 'date'):
+            delta = datetime.datetime.now() - self.date
+            return delta.days
 
     def get_settings_files(self):
         return [str(s) for s in self.path.glob('*Settings.txt')]
