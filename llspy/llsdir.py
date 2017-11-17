@@ -162,12 +162,14 @@ def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
     files = parse.filter_w(os.listdir(folder), regRefWave, exclusive=True)
     files = [f for f in files if (f.endswith('.tif') and '_REG' not in f)]
     for F in files:
-        outname = F.replace('.tif', '_REG.tif')
-        im = register_image_to_wave(os.path.join(folder, F), regObj,
-            refwave=regRefWave, mode=regMode, voxsize=voxsize)
-        util.imsave(util.reorderstack(np.squeeze(im), 'zyx'),
-            os.path.join(folder, outname),
-            dx=voxsize[2], dz=voxsize[0])
+        fname = os.path.join(folder, F)
+        outname = fname.replace('.tif', '_REG.tif')
+        imarray = util.imread(fname)
+        imwave = parse.parse_filename(fname, 'wave')
+        im_out = register_image_to_wave(imarray, regObj, imwave, regRefWave,
+            mode=regMode, voxsize=voxsize).astype(imarray.dtype)
+        util.imsave(util.reorderstack(np.squeeze(im_out), 'zyx'),
+            outname, dx=voxsize[2], dz=voxsize[0])
         if discard:
             os.remove(os.path.join(folder, F))
 
@@ -1081,7 +1083,9 @@ class LLSdir(object):
         for c, flist in enumerate(filenames):
             for f in flist:
                 bgrd = background[c]
-                outname = str(outpath.joinpath(os.path.basename(f.replace('.tif', '_COR.tif'))))
+                outname = str(outpath.joinpath(os.path.basename(f)))
+                if medianFilter:
+                    outname = outname.replace('.tif', '_COR.tif')
                 g.append((f, outname, self.parameters.dx, bgrd, trim, medianFilter))
 
         if sys.version_info >= (3, 4):
