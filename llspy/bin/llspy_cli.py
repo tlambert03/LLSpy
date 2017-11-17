@@ -541,21 +541,21 @@ def camera(calibrate):
 @cli.command()
 @click.argument('paths', metavar='LLSDIR', nargs=-1,
               type=click.Path(exists=True, file_okay=False, resolve_path=True))
-@click.option('-f', '--freeze', is_flag=True, default=False,
-              help='Delete all processed data and compress raw data')
 @click.option('-r', '--reduce', '_reduce', is_flag=True, default=False,
               help='Delete all processed data, returning data folder to post-acquisition state')
+@click.option('-f', '--freeze', is_flag=True, default=False,
+              help='Delete all processed data and compress raw data')
+@click.option('-d', '--decompress', is_flag=True, default=False,
+              help='Decompress folder if already compress.')
 @click.option('--keepmips/--removemips', 'keepmips',
               help="Keep MIPs (as preview) when reducing to raw or freezing.",
               default=True, show_default=True)
-@click.option('-d', '--decompress', is_flag=True, default=False,
-              help='Decompress folder if already compress.', show_default=True)
 @click.option('--recurse', is_flag=True, default=False,
               help='Recurse through subdirectories (use --depth to limit '
               'recursion depth or --age to set minimum experiment age)',
               show_default=True)
-@click.option('--depth', type=int, default=1)
-@click.option('-n', '--dryrun', is_flag=True, default=False)
+@click.option('--depth', type=int, default=1, help='recursion depth (used with --recurse)')
+@click.option('-n', '--dryrun', is_flag=True, default=False, help='test run only, nothing performed')
 @click.option('-a', '--age', 'minage', default=0,
               help='Minimum age (days) of LLSdir to act on', show_default=True)
 def compress(paths, freeze, _reduce, decompress, recurse, minage, keepmips, depth, dryrun):
@@ -578,6 +578,9 @@ def compress(paths, freeze, _reduce, decompress, recurse, minage, keepmips, dept
     # remove duplicates
     paths = sorted(list(set(paths)))
 
+    if dryrun:
+        click.secho("DRY RUN: NOTHING PERFORMED!", fg='red', underline=True)
+
     for path in paths:
         try:
             E = llsdir.LLSdir(path)
@@ -586,7 +589,7 @@ def compress(paths, freeze, _reduce, decompress, recurse, minage, keepmips, dept
                 click.secho('{} ({} days old)'.format(path, E.age), fg='blue')
                 continue
             if decompress:
-                click.secho('decompress:     ', nl=False, underline=False, fg='yellow')
+                click.secho('decompress:', nl=False, underline=False, fg='yellow')
                 click.echo('{}'.format(path))
                 if not dryrun:
                     E.decompress()
