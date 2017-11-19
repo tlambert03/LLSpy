@@ -1,6 +1,5 @@
 from PyQt5 import QtCore, QtGui
 from PyQt5 import QtWidgets as QtW
-import llspy
 from llspy import camcalib
 from llspy.util import getAbsoluteResourcePath, pathHasPattern
 import numpy as np
@@ -41,17 +40,21 @@ class CamCalibWorker(QtCore.QObject):
 
         try:
             # first handle dark images
-            self.setStatus.emit('Loading dark images... [Step 1 of 4]')
-            darklist = glob.glob(os.path.join(self.folder, '*dark*.tif'))
-            numdark = len(darklist)
-            self.setProgMax.emit(numdark*2)
             darkavg = self.darkavg
             darkstd = self.darkstd
             if not all([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]):
+                self.setStatus.emit('Loading dark images... [Step 1 of 4]')
+                darklist = glob.glob(os.path.join(self.folder, '*dark*.tif'))
+                numdark = len(darklist)
+                self.setProgMax.emit(numdark*2)
                 darkavg, darkstd = camcalib.process_dark_images(
                             self.folder, self.progress.emit, updatedarkstatus)
 
-            with tf.TiffFile(darklist[0]) as t:
+            filelist = glob.glob(os.path.join(self.folder, '*.tif'))
+            if not filelist:
+                raise IOError('No tiff files found in folder')
+
+            with tf.TiffFile(filelist[0]) as t:
                 nz, ny, nx = t.series[0].shape
 
             self.setProgMax.emit(ny*nx)
@@ -130,6 +133,28 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
                     ' Read documentation on camera calibration for more info.',
                     QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
                 return
+
+        if sum([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]) == 1:
+            if not pathHasPattern(folder, '*dark*.tif*'):
+                QtW.QMessageBox.warning(self, "No dark images!",
+                    'Camera calibration requires both a dark image average projection, '
+                    ' and a standard deviation projection, but only one of the'
+                    ' two was provided, and no *dark*.tif images '
+                    ' were detected in the specified folder.'
+                    ' Read documentation on camera calibration for more info.',
+                    QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
+                return
+            else:
+                reply = QtW.QMessageBox.question(self, "No dark images!",
+                    'Camera calibration requires both a dark image average projection, '
+                    ' and a standard deviation projection, but only one of the'
+                    ' two was provided. *dark*.tif images '
+                    ' were detected in the specified folder, and will still be '
+                    ' used to calculate the projection images.  Continue?',
+                    QtW.QMessageBox.Yes | QtW.QMessageBox.No,
+                    QtW.QMessageBox.No)
+                if reply != QtW.QMessageBox.Yes:
+                    return
 
         self.worker, self.thread = newWorkerThread(CamCalibWorker, folder,
             darkavg, darkstd,

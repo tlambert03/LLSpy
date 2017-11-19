@@ -158,11 +158,17 @@ def process_bright_images(folder, darkavg, darkstd, callback=None, save=True):
     results = util.reorderstack(results, 'zyx').astype(np.float32)
 
     if save:
-        E = llsdir.LLSdir(folder, ditch_partial=False)
-        outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
-            E.settings.camera.serial,
-            "-".join([str(i) for i in E.settings.camera.roi]),
-            E.date.strftime('%Y%m%d'))
+        try:
+            E = llsdir.LLSdir(folder, ditch_partial=False)
+            outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
+                E.settings.camera.serial,
+                "-".join([str(i) for i in E.settings.camera.roi]),
+                E.date.strftime('%Y%m%d'))
+        except Exception:
+            from datetime import datetime
+            outname = "FlashParam_roi{}_date{}.tif".format(
+                "-".join([0]*4),
+                datetime.now().strftime('%Y%m%d'))
 
         tf.imsave(os.path.join(folder, outname), results, imagej=True,
             resolution=(1 / E.parameters.dx, 1 / E.parameters.dx),
