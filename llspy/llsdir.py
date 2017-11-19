@@ -1403,6 +1403,10 @@ def rename_iters(folder, splitpositions=True):
     try:
         iterset = set([int(f.split('Iter_')[1].split('_')[0]) for f in filelist])
         chanset = set([int(f.split('_ch')[1].split('_')[0]) for f in filelist])
+    except ValueError:
+        raise LLSpyError('Failed to parse filenames to detect number of Iter_ files.'
+            'If this folder only has a single Iteration (not Iter_0, etc...), '
+            'it may be best not to try rename_iters...')
     except Exception:
         raise LLSpyError('Failed to parse filenames to detect number of Iter_ files')
 
