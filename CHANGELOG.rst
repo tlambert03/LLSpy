@@ -1,6 +1,41 @@
 LLSpy Release History
 #####################
 
+`0.3.6`_
+========
+
+**Added:**
+
+* lots of documentation on the Flash camera artifact and LLSpy camera corrections.
+* CLI ``lls compress`` command now has folder recursion and filtering by experiment age.  useful for data server maintenance: quickly compress/freeze old data.
+* option in gui to delete unregistered files when performing channel registration
+
+**Changed:**
+
+* llspy/parse.py filter functions now allow exclusive filtering in addition to inclusive
+* better error message in rename_iters when there is only a single Iteration being processed
+* ``lls install`` now accepts llspy_extra.zip file as well as llspy_extra directory
+
+**Fixed:**
+
+* fixed erroneous "each iteration the same number of tiffs" error in rename_iters
+* fixed "Cannot create a file" bug in rename_iters when there is only a single position in the acquisition script. (thanks Mathieu)
+* (hopefully) fix IndexError in rename_iters in cases where Iter_n does not start at Iter_0.
+* fixed IndexError when no *dark*.tif images are present in the camera calibration folder (thanks Mathieu)
+* registration was skipping timepoints when the reference wavelength string appeared in the filename (thanks Lin)
+
+`0.3.5`_
+========
+
+**Added:**
+
+* CLI ```lls show``` command: quickly preview LLSdir (MIPS or z-stack) from command line.
+
+**Fixed:**
+
+* bug: reg-preview was not using the just-generated registration file
+* many bug fixes related to previewing registration results
+
 `0.3.4`_
 ========
 
