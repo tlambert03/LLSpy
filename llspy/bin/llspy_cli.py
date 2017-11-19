@@ -661,6 +661,7 @@ def clean(config, all, configfile, logs):
 @click.option('-t', '--timepoint', type=int, default=0)
 @pass_config
 def show(config, path, stack, timepoint):
+    """Preview MIPS or single Z stack from LLSdir"""
     from llspy.gui.img_dialog import ImgDialog
     from PyQt5 import QtWidgets
     import numpy as np
@@ -668,13 +669,16 @@ def show(config, path, stack, timepoint):
     logging.getLogger('llspy.llsdir').setLevel('CRITICAL')
     APP = QtWidgets.QApplication(sys.argv)
 
+    # if the path provided is a tiff, just show it
     if os.path.isfile(path) and path.endswith('.tif'):
         data = util.imread(path)
-    if os.path.isdir(path) and util.pathHasPattern(path):
+    if os.path.isdir(path) and util.pathHasPattern(path, '*Settings.txt'):
         try:
             data = None
             exp = llsdir.LLSdir(path)
+            # unless z-stack was requested, look for mips
             if not stack:
+                # look for decon first, then deskewed
                 if exp.path.joinpath('GPUdecon').joinpath('MIPs').exists():
                     path = exp.path.joinpath('GPUdecon').joinpath('MIPs')
                     zmip = util.find_filepattern(path, '*comboMIP_z.tif')
