@@ -239,10 +239,10 @@ The simplest setup is to create a directory and include an OTF for each waveleng
 .. code::
 
   /home/myOTFs/
-  |-- 405_otf.tif
-  |-- 488_otf.tif
-  |-- 560_otf.tif
-  |-- 642_otf.tif
+  ├── 405_otf.tif
+  ├── 488_otf.tif
+  ├── 560_otf.tif
+  ├── 642_otf.tif
 
 *Note: you may also just name them 488.otf, 560.otf, etc...*
 
@@ -288,7 +288,7 @@ see more in the `OTF directory`_ section below.
 Flash4.0 Calibration
 --------------------
 
-In order to take advantage of the Flash synchronous trigger mode correction included in LLSpy, you must first characterize your camera by collecting a calibration dataset as described below in :ref:`Generate Camera Calibration File`, then direct LLSpy to that file on the Config Tab of the GUI, or using ``lls config --set camparamsPath PATH`` in the command line interface.  Support for more than one camera is in development.
+In order to take advantage of the Flash synchronous trigger mode correction included in LLSpy, you must first characterize your camera by collecting a calibration dataset as described in :ref:`camera`, then direct LLSpy to that file on the Config Tab of the GUI, or using ``lls config --set camparamsPath PATH`` in the command line interface.  Support for more than one camera is in development.
 
 
 Channel Registration
@@ -307,13 +307,13 @@ The main object in LLSpy is the :class:`llspy.llsdir.LLSdir` "data folder" objec
 .. code::
 
   /lls_experiment_1/
-  |-- cell5_ch0_stack0000_488nm_0000000msec_0020931273msecAbs.tif
-  |-- cell5_ch0_stack0001_488nm_0000880msec_0020932153msecAbs.tif
-  |-- cell5_ch0_stack0002_488nm_0001760msec_0020933033msecAbs.tif
-  |-- cell5_ch1_stack0000_560nm_0000000msec_0020931273msecAbs.tif
-  |-- cell5_ch1_stack0001_560nm_0000880msec_0020932153msecAbs.tif
-  |-- cell5_ch1_stack0002_560nm_0001760msec_0020933033msecAbs.tif
-  |-- cell5_Settings.txt
+  ├── cell5_ch0_stack0000_488nm_0000000msec_0020931273msecAbs.tif
+  ├── cell5_ch0_stack0001_488nm_0000880msec_0020932153msecAbs.tif
+  ├── cell5_ch0_stack0002_488nm_0001760msec_0020933033msecAbs.tif
+  ├── cell5_ch1_stack0000_560nm_0000000msec_0020931273msecAbs.tif
+  ├── cell5_ch1_stack0001_560nm_0000880msec_0020932153msecAbs.tif
+  ├── cell5_ch1_stack0002_560nm_0001760msec_0020933033msecAbs.tif
+  ├── cell5_Settings.txt
 
 .. _Parsing:
 
@@ -341,34 +341,34 @@ There is basic (but experimental) support for multi-point experiments that have 
 .. code::
 
   /lls_multipoint_samp/
-  |-- looptest_Iter_0_ch0_stack0000_488nm_0000000msec_0006417513msecAbs.tif
-  |-- looptest_Iter_0_ch0_stack0000_488nm_0000000msec_0006419755msecAbs.tif
-  |-- looptest_Iter_0_ch1_stack0000_560nm_0000000msec_0006417513msecAbs.tif
-  |-- looptest_Iter_0_ch1_stack0000_560nm_0000000msec_0006419755msecAbs.tif
-  |-- looptest_Iter_0_Settings.txt
-  |-- looptest_Iter_1_ch0_stack0000_488nm_0000000msec_0006429124msecAbs.tif
-  |-- looptest_Iter_1_ch0_stack0000_488nm_0000000msec_0006431503msecAbs.tif
-  |-- looptest_Iter_1_ch1_stack0000_560nm_0000000msec_0006429124msecAbs.tif
-  |-- looptest_Iter_1_ch1_stack0000_560nm_0000000msec_0006431503msecAbs.tif
-  |-- looptest_Iter_1_Settings.txt
+  ├── looptest_Iter_0_ch0_stack0000_488nm_0000000msec_0006417513msecAbs.tif
+  ├── looptest_Iter_0_ch0_stack0000_488nm_0000000msec_0006419755msecAbs.tif
+  ├── looptest_Iter_0_ch1_stack0000_560nm_0000000msec_0006417513msecAbs.tif
+  ├── looptest_Iter_0_ch1_stack0000_560nm_0000000msec_0006419755msecAbs.tif
+  ├── looptest_Iter_0_Settings.txt
+  ├── looptest_Iter_1_ch0_stack0000_488nm_0000000msec_0006429124msecAbs.tif
+  ├── looptest_Iter_1_ch0_stack0000_488nm_0000000msec_0006431503msecAbs.tif
+  ├── looptest_Iter_1_ch1_stack0000_560nm_0000000msec_0006429124msecAbs.tif
+  ├── looptest_Iter_1_ch1_stack0000_560nm_0000000msec_0006431503msecAbs.tif
+  ├── looptest_Iter_1_Settings.txt
 
 You can use the :func:`llspy.llsdir.rename_iters` function on this folder, or the ``Rename Scripted`` tool in the LLSpy GUI to convert this folder to multiple standard LLSdirs.  The result be something like this:
 
 .. code::
 
   /lls_multipoint_samp/
-  |-- /looptest_pos00/
-      |-- looptest_pos00_ch0_stack0000_488nm_0000000msec_0006417513msecAbs.tif
-      |-- looptest_pos00_ch0_stack0001_488nm_0011611msec_0006429124msecAbs.tif
-      |-- looptest_pos00_ch1_stack0000_560nm_0000000msec_0006417513msecAbs.tif
-      |-- looptest_pos00_ch1_stack0001_560nm_0011611msec_0006429124msecAbs.tif
-      |-- looptest_pos00_Settings.txt
-  |-- /looptest_pos01/
-      |-- looptest_pos01_ch0_stack0000_488nm_0000000msec_0006419755msecAbs.tif
-      |-- looptest_pos01_ch0_stack0001_488nm_0011748msec_0006431503msecAbs.tif
-      |-- looptest_pos01_ch1_stack0000_560nm_0000000msec_0006419755msecAbs.tif
-      |-- looptest_pos01_ch1_stack0001_560nm_0011748msec_0006431503msecAbs.tif
-      |-- looptest_pos01_Settings.txt
+  ├── /looptest_pos00/
+  |   ├── looptest_pos00_ch0_stack0000_488nm_0000000msec_0006417513msecAbs.tif
+  |   ├── looptest_pos00_ch0_stack0001_488nm_0011611msec_0006429124msecAbs.tif
+  |   ├── looptest_pos00_ch1_stack0000_560nm_0000000msec_0006417513msecAbs.tif
+  |   ├── looptest_pos00_ch1_stack0001_560nm_0011611msec_0006429124msecAbs.tif
+  |   ├── looptest_pos00_Settings.txt
+  ├── /looptest_pos01/
+  |   ├── looptest_pos01_ch0_stack0000_488nm_0000000msec_0006419755msecAbs.tif
+  |   ├── looptest_pos01_ch0_stack0001_488nm_0011748msec_0006431503msecAbs.tif
+  |   ├── looptest_pos01_ch1_stack0000_560nm_0000000msec_0006419755msecAbs.tif
+  |   ├── looptest_pos01_ch1_stack0001_560nm_0011748msec_0006431503msecAbs.tif
+  |   ├── looptest_pos01_Settings.txt
 
 
 .. Concatenating Dataset
