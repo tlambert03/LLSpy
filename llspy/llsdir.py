@@ -1444,14 +1444,14 @@ def rename_iters(folder, splitpositions=True):
         os.rename(settingsFile, os.path.join(folder, newname))
         changelist.append((settingsFile, os.path.join(folder, newname)))
     for chan in chanset:
-        t0 = []
+        t0 = [0] * nPositions
         for i in iterset:
             flist = sorted([f for f in filelist
                         if 'ch%s' % chan in f and 'Iter_%s_' % i in f])
             for pos in range(nPositions):
                 base = os.path.basename(flist[pos])
                 if i == 0:
-                    t0.append(int(base.split('msecAbs')[0].split('_')[-1]))
+                    t0[pos] = int(base.split('msecAbs')[0].split('_')[-1])
                 newname = base.replace('stack0000', 'stack%04d' % i)
                 deltaT = int(base.split('msecAbs')[0].split('_')[-1]) - t0[pos]
                 newname = newname.replace('0000000msec_', '%07dmsec_' % deltaT)
