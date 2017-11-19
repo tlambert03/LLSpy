@@ -279,5 +279,5 @@ To Do
 * MIPsSummary folder
 * comboMIP should use registered files when registration requested
 * registered files are always floating point when rest of data is not
-* allow processing of folders without settings.txt
 * allow option of loading partial tiffs in GUI
+* remove ditch_partial and prevent mipmerge errors another way
