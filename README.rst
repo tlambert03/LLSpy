@@ -2,7 +2,10 @@
 LLSpy: Lattice light-sheet post-processing utility
 ##################################################
 
-|license_shield| |python_shield| |conda_shield| |travis_shield| |docs_shield|
+|license_shield| |python_shield| |conda_shield| |travis_shield| |docs_shield| |doi_shield|
+
+.. |doi_shield| image:: https://zenodo.org/badge/96235902.svg
+   :target: https://zenodo.org/badge/latestdoi/96235902
 
 .. |license_shield| image:: https://img.shields.io/badge/License-BSD%203--Clause-brightgreen.svg
    :target: https://opensource.org/licenses/BSD-3-Clause
