@@ -4,6 +4,7 @@ from .util import imread
 from . import arrayfun
 
 import os
+import re
 import warnings
 import numpy as np
 from numba import jit
@@ -154,7 +155,7 @@ class CameraParameters(object):
 		#TODO: fourth plane = variance map
 	"""
 
-	def __init__(self, fname=config.__CAMPARAMS__, data=None, roi=[513, 769, 1536, 1280]):
+	def __init__(self, fname=config.__CAMPARAMS__, data=None, roi=None):
 		if data is None and fname is None:
 			raise ValueError('Must provide either filename or data array')
 		if data is not None:
@@ -165,10 +166,18 @@ class CameraParameters(object):
 			if not os.path.isfile(fname):
 				raise IOError("No such file: {}".format(fname))
 			self.path = fname
+			roi = re.search(r'roi(\d+)-(\d+)-(\d+)-(\d+)', fname)
+			if roi:
+				roi = [int(r) for r in roi.groups()]
 			self.basename = os.path.basename(fname)
 			# TODO: ignore warnings from tifffile
 			self.data = imread(fname).astype(np.float64)
 
+		if roi is None or not len(roi):
+			raise ValueError("Could not parse CamParams ROI from from filename. "
+				"If using a FlashParam file, please ensure that "
+				"'roi[left]-[top]-[right]-[bottom]' is in "
+				"the FlashParam filename.")
 		self.roi = CameraROI(roi)
 		self.shape = self.data.shape
 		if not self.shape[0] >= 3:
