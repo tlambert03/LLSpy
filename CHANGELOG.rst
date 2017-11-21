@@ -1,6 +1,13 @@
 LLSpy Release History
 #####################
 
+`0.3.7`_
+========
+
+**Fixed:**
+
+* hotfix: FlashParams filename roi was not getting correctly parsed, causing failure when the calibrated chip size was not 1024 x 512.
+
 `0.3.6`_
 ========
 

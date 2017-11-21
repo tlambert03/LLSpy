@@ -2,12 +2,15 @@
 LLSpy: Lattice light-sheet post-processing utility
 ##################################################
 
-|license_shield| |python_shield| |travis_shield| |docs_shield|
+|license_shield| |python_shield| |conda_shield| |travis_shield| |docs_shield|
 
 .. |license_shield| image:: https://img.shields.io/badge/License-BSD%203--Clause-brightgreen.svg
    :target: https://opensource.org/licenses/BSD-3-Clause
 
 .. |python_shield| image:: https://img.shields.io/badge/Python-2.7%2C%203.5%2C%203.6-brightgreen.svg
+
+.. |conda_shield| image:: https://anaconda.org/talley/llspy/badges/installer/conda.svg
+   :target: https://conda.anaconda.org/talley
 
 .. .. |appveyor_shield| image:: https://ci.appveyor.com/api/projects/status/tlambert03/LLSpy
 ..    :target: https://ci.appveyor.com/project/tlambert03/llspy
