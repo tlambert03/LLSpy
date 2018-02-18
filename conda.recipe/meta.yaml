@@ -31,22 +31,22 @@ requirements:
     - setuptools
   run:
     - python
-    - numpy
-    - scipy
-    - tifffile
-    - numba
-    - voluptuous
-    - watchdog
-    - pyqt >=5
-    - click
-    - matplotlib
+    - numpy ==
+    - scipy ==1.0.0
+    - tifffile ==0.12.1
+    - numba ==0.35.0
+    - voluptuous ==0.10.5
+    - watchdog ==0.8.3
+    - pyqt ==5.6.0
+    - click ==6.7
+    - matplotlib ==2.1.1
     - spimagine
     - llspylibs
     - pathlib2 # [py2k]
     - configparser # [py2k]
     - pigz
     - lbzip2 # [not win]
-    - raven
+    - raven ==6.5.0
     - llspy-slm
 
 test:
