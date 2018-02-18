@@ -741,7 +741,13 @@ class LLSdir(object):
             warnings.simplefilter("ignore")
             with tf.TiffFile(self.tiff.raw[0]) as firstTiff:
                 self.parameters.shape = firstTiff.series[0].shape
-                self.tiff.bit_depth = firstTiff.pages[0].bits_per_sample
+                bitstring = 'bits_per_sample'
+                try:
+                    if int(tf.__version__.split('.')[1]) >= 13:
+                        bitstring = 'bitspersample'
+                except Exception:
+                    pass
+                self.tiff.bit_depth = getattr(firstTiff.pages[0], bitstring)
         self.parameters.nz, self.parameters.ny, self.parameters.nx = self.parameters.shape
 
     def is_compressed(self, subdir=None):
@@ -1329,7 +1335,6 @@ class RegDir(LLSdir):
 
         tforms = self.cloudset().get_all_tforms(refs=refs, **kwargs)
         outdict = {
-            'date': self.date.strftime('%Y/%m/%d-%H:%M'),
             'path': str(self.path),
             'dx': self.parameters.dx,
             'dz': self.parameters.dzFinal,
@@ -1339,6 +1344,10 @@ class RegDir(LLSdir):
             # 'modes': list(set([t['mode'] for t in tforms])),
             'tforms': tforms,
         }
+        try:
+            outdict['date'] = self.date.strftime('%Y/%m/%d-%H:%M'),
+        except AttributeError:
+            pass
         outstring = json.dumps(outdict, cls=npEncoder, indent=2)
         outstring = outstring.replace('"[', ' [').replace(']"', ']')
 
