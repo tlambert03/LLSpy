@@ -11,6 +11,7 @@ branches:
   - develop
 
 install:
+  - echo "TRAVIS_PYTHON_VERSION=$TRAVIS_PYTHON_VERSION"
   - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
   - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH"
   - if [[ "$BRANCH" == "master" ]]; then
@@ -48,7 +49,7 @@ install:
 
 script:
   - conda build --py $TRAVIS_PYTHON_VERSION  conda.recipe
-  - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
+  - OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)
   - echo $OUTPUT
 
 after_success:

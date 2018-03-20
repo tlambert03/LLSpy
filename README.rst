@@ -28,8 +28,8 @@ LLSpy: Lattice light-sheet post-processing utility
 
 |
 
-.. image:: http://cbmf.hms.harvard.edu/wp-content/uploads/2015/07/logo-horizontal-small.png
-    :target: http://cbmf.hms.harvard.edu/lattice-light-sheet/
+.. image:: https://cbmf.hms.harvard.edu/wp-content/uploads/2015/07/logo-horizontal-small.png
+    :target: https://cbmf.hms.harvard.edu/lattice-light-sheet/
 
 
 
