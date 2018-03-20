@@ -3,7 +3,8 @@ import os
 import numpy as np
 import logging
 from PyQt5 import QtWidgets, QtCore, QtGui
-from llspy.gui.img_window import Ui_Dialog
+#from llspy.gui.img_window import Ui_Dialog
+from img_window import Ui_Dialog
 logger = logging.getLogger(__name__)
 
 import matplotlib
@@ -27,6 +28,7 @@ LUTS = {
 }
 
 preferredLUTs = ['Green', 'Magenta', 'Cyan', 'Blue']
+
 
 class channelSelector(QtWidgets.QWidget):
     def __init__(self, name, wave=None, parent=None):
@@ -70,10 +72,12 @@ class DataModel(QtCore.QObject):
 
     def __init__(self, data=None, projection=None):
         super(DataModel, self).__init__()
+        self.isComplex = False
         self.setData(data)
         self.projection = projection
         self._overlay = False
         self.curImgIdx = [0, 0, 0]  # T, C, Z
+        self.cplxAttrib = "Amp" # other choices: 'Real', 'Imag', 'Phase'
 
     @QtCore.pyqtSlot(str)
     def setProjType(self, projtype):
@@ -108,11 +112,22 @@ class DataModel(QtCore.QObject):
         self.chanSettings[chan]['scale'] = val/100.00
         self._dataChanged.emit()
 
+    @QtCore.pyqtSlot(str)
+    def setCplxAttrib(self, val):
+        ## Select which attribute of complex values to display:
+        if val in ("Amp", "Real", "Imag", "Phase"):
+            self.cplxAttrib = val
+        else:
+            self.cplxAttrib = None
+        self._dataChanged.emit()
+
     def setData(self, data):
         logger.debug('data changed')
         self.ndim = len(data.shape)
         if self.ndim < 2:
             raise ValueError("Not an image!")
+
+        self.isComplex = (data.dtype==np.complex64 or data.dtype==np.complex128)
 
         if self.ndim == 2:
             self.shape = (1, 1, 1) + data.shape
@@ -130,8 +145,12 @@ class DataModel(QtCore.QObject):
             raise TypeError("data should be 3-5 dimensional! shape = %s" % str(data.shape))
 
         self.nT, self.nC, self.nZ, self.nY, self.nX = self.data.shape
-        self.cmax = [self.data[:, c, :, :, :].max() for c in range(self.nC)]
-        self.cmin = [self.data[:, c, :, :, :].min() for c in range(self.nC)]
+        if not self.isComplex:
+            self.cmax = [self.data[:, c, :, :, :].max() for c in range(self.nC)]
+            self.cmin = [self.data[:, c, :, :, :].min() for c in range(self.nC)]
+        else:
+            self.cmax = [np.abs(self.data)[:, c, :, :, :].max() for c in range(self.nC)]
+            self.cmin = [0 for c in range(self.nC)]
 
         self.chanSettings = [{'active': True,
                               'lut': LUTS[preferredLUTs[c]],
@@ -150,12 +169,19 @@ class DataModel(QtCore.QObject):
         return self.curImgIdx[dim]
 
     def max(self):
-        return self.data.max()
+        if not self.isComplex:
+            return self.data.max()
+        else:
+            return (np.abs(self.data)).max()
 
     def min(self):
-        return self.data.min()
+        if not self.isComplex:
+            return self.data.min()
+        else:
+            return (np.abs(self.data)).min()
 
     def getCurrent(self):
+        dataToReturn = None
         if self._overlay:
             curT, curC, curZ = tuple(self.curImgIdx)
 
@@ -179,14 +205,29 @@ class DataModel(QtCore.QObject):
                 lutmask = np.tile(lut, (ny, nx, 1))
                 rgb += D * lutmask
 
-            return np.minimum(rgb, 1)
+            dataToReturn = np.minimum(rgb, 1)
 
         elif self.projection is not None:
             # generate 2D projection
-            return getattr(np, self.projection)(self.data[tuple(self.curImgIdx[:2])], 0)
+            dataToReturn = getattr(np, self.projection)(self.data[tuple(self.curImgIdx[:2])], 0)
         else:
             # use full 3D data
-            return self.data[tuple(self.curImgIdx)]
+            dataToReturn = self.data[tuple(self.curImgIdx)]
+
+        if self.isComplex:
+            if self.cplxAttrib == "Amp":
+                return np.abs(dataToReturn)
+            elif self.cplxAttrib == "Real":
+                return dataToReturn.real
+            elif self.cplxAttrib == "Imag":
+                return dataToReturn.imag
+            elif self.cplxAttrib == "Phase":
+                return np.angle(dataToReturn)
+            else:
+                pass
+        else:
+            return dataToReturn
+            
 
     def __getitem__(self, tczTuple):
         return np.squeeze(self.data[tuple(tczTuple)])
@@ -241,17 +282,23 @@ class MplCanvas(FigureCanvas):
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
         super(ImgDialog, self).__init__(parent)
-        self.setupUi(self)
+        self.setupUi(self)   #defined in class Ui_Dialog
         self.setWindowTitle(title)
 
         self.cmap = cmap
 
         self.infoText.hide()
-        self.gamSlider.hide()
-        self.gamLabel.hide()
+        #self.gamSlider.hide()
+        #self.gamLabel.hide()
         self.chanSelectWidget.hide()
 
         self.data = DataModel(data)
+
+        if self.data.isComplex:
+            self.complexAttrib.setEnabled(True)
+        else:
+            self.complexAttrib.setEnabled(False)
+
         self.canvas = MplCanvas()
         self.canvas.setData(self.data)
 
@@ -272,15 +319,18 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.meanProjButton.toggled.connect(self.setProjection)
         self.overlayButton.toggled.connect(self.setOverlay)
 
+        self.complexAttrib.currentTextChanged.connect(self.setComplexAttrib)
+        
         self.playButton.clicked.connect(self.playMovie)
         self.fpsSpin.valueChanged.connect(self.changeFPS)
 
         self.Zslider.valueChanged.connect(lambda val: self.setDimIdx(2, val))
         self.Cslider.valueChanged.connect(lambda val: self.setDimIdx(1, val))
         self.Tslider.valueChanged.connect(lambda val: self.setDimIdx(0, val))
+
         self.maxSlider.valueChanged.connect(lambda val: self.canvas.setContrast(vmax=val))
         self.minSlider.valueChanged.connect(lambda val: self.canvas.setContrast(vmin=val))
-        # self.gamSlider.valueChanged.connect(self.canvas.setGamma)
+        self.gamSlider.valueChanged.connect(lambda val: self.canvas.setGamma(val))
 
         self.infoButton.toggled.connect(self.toggleInfo)
 
@@ -439,6 +489,9 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
     def decDimIndex(self, dim):
         self.setDimIdx(dim, self.data.getIdx(dim)-1)
+
+    def setComplexAttrib(self, attrib):
+        self.data.setCplxAttrib(attrib)
 
     def playMovie(self):
         self.playButton.clicked.disconnect()

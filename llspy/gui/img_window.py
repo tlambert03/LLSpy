@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'llspy/gui/img_window.ui'
+# Form implementation generated from reading ui file 'img_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
 #
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(677, 695)
+        Dialog.resize(675, 693)
         font = QtGui.QFont()
         font.setKerning(True)
         Dialog.setFont(font)
@@ -67,6 +67,15 @@ class Ui_Dialog(object):
         self.overlayButton.setFlat(False)
         self.overlayButton.setObjectName("overlayButton")
         self.horizontalLayout.addWidget(self.overlayButton)
+        self.complexAttrib = QtWidgets.QComboBox(Dialog)
+        self.complexAttrib.setEnabled(False)
+        self.complexAttrib.setMaximumSize(QtCore.QSize(64, 16777215))
+        self.complexAttrib.setObjectName("complexAttrib")
+        self.complexAttrib.addItem("")
+        self.complexAttrib.addItem("")
+        self.complexAttrib.addItem("")
+        self.complexAttrib.addItem("")
+        self.horizontalLayout.addWidget(self.complexAttrib)
         self.mainLayout.addLayout(self.horizontalLayout)
         self.chanSelectWidget = QtWidgets.QWidget(Dialog)
         self.chanSelectWidget.setObjectName("chanSelectWidget")
@@ -80,7 +89,7 @@ class Ui_Dialog(object):
         self.imgLayout.setContentsMargins(-1, 0, 5, -1)
         self.imgLayout.setObjectName("imgLayout")
         self.verticalLayout = QtWidgets.QVBoxLayout()
-        self.verticalLayout.setContentsMargins(20, -1, -1, -1)
+        self.verticalLayout.setContentsMargins(10, -1, -1, -1)
         self.verticalLayout.setObjectName("verticalLayout")
         self.minSlider = QtWidgets.QSlider(Dialog)
         self.minSlider.setOrientation(QtCore.Qt.Vertical)
@@ -239,6 +248,10 @@ class Ui_Dialog(object):
         self.stdProjButton.setText(_translate("Dialog", "StdDev Proj"))
         self.infoButton.setText(_translate("Dialog", "Show Info"))
         self.overlayButton.setText(_translate("Dialog", "Overlay"))
+        self.complexAttrib.setItemText(0, _translate("Dialog", "Amp"))
+        self.complexAttrib.setItemText(1, _translate("Dialog", "Phase"))
+        self.complexAttrib.setItemText(2, _translate("Dialog", "Real"))
+        self.complexAttrib.setItemText(3, _translate("Dialog", "Imag"))
         self.minLabel.setText(_translate("Dialog", "Min"))
         self.maxLabel.setText(_translate("Dialog", "Max"))
         self.gamLabel.setText(_translate("Dialog", "Gam"))

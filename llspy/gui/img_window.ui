@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>677</width>
-    <height>695</height>
+    <width>675</width>
+    <height>693</height>
    </rect>
   </property>
   <property name="font">
@@ -37,7 +37,7 @@
    <item>
     <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0,0,0,0">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0">
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0">
        <property name="sizeConstraint">
         <enum>QLayout::SetDefaultConstraint</enum>
        </property>
@@ -178,6 +178,39 @@
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QComboBox" name="complexAttrib">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>64</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <item>
+          <property name="text">
+           <string>Amp</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Phase</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Real</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Imag</string>
+          </property>
+         </item>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -222,7 +255,7 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="leftMargin">
-          <number>20</number>
+          <number>10</number>
          </property>
          <item>
           <widget class="QSlider" name="minSlider">
