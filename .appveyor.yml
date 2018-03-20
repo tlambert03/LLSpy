@@ -58,7 +58,8 @@ install:
     - cmd: conda config --set show_channel_urls true
     - cmd: appveyor-retry conda update -n base --yes --quiet conda
     - cmd: appveyor-retry conda install --yes --quiet -c defaults anaconda-client
-    - cmd: appveyor-retry conda install --yes --quiet -c defaults conda-build=3.0.25
+    - cmd: appveyor-retry conda install --yes --quiet -c defaults conda-build
+    #- cmd: appveyor-retry conda install --yes --quiet -c defaults conda-build=3.0.25
     - cmd: conda build --version
 
 # Skip .NET project specific build phase.
