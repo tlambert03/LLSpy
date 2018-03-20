@@ -276,9 +276,18 @@ class MplCanvas(FigureCanvas):
         self.image.set_data(self.data.getCurrent())
         self.image.set_clim(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self.image.set_cmap(self.displayOptions['cmap'])
+        if self.displayOptions.has_key('norm'):
+            self.image.set_norm(self.displayOptions['norm'])
+            print(self.displayOptions['norm'](0.2))
         self.draw()
 
 
+    def setGamma(self, val):
+        self.displayOptions['norm'] = matplotlib.colors.PowerNorm(val/100., vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
+        # print self.displayOptions['vmin']
+        # print self.displayOptions['vmax']
+        self._contrastChanged.emit()
+        
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
         super(ImgDialog, self).__init__(parent)
@@ -410,12 +419,14 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         datamax = self.data.max()
         datamin = self.data.min()
         dataRange = datamax - datamin
-        vmin_init = datamin - dataRange * 0.03
-        vmax_init = datamax * 0.55
+        vmin_init = datamin# - dataRange * 0.03
+        vmax_init = datamax# * 0.55
 
         displayOptions = {
-            'vmin': int(vmin_init),
-            'vmax': int(vmax_init),
+            # 'vmin': int(vmin_init),
+            # 'vmax': int(vmax_init),
+            'vmin': vmin_init,
+            'vmax': vmax_init,
             'cmap': self.cmap,
         }
 
