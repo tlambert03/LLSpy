@@ -34,8 +34,8 @@ install:
 
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda install conda-build anaconda-client
-  - conda update -q conda conda-build
+  - conda install conda-build=3.0.25 anaconda-client
+  - conda update -q conda
   - conda config --add channels conda-forge
   - conda config --add channels talley
   - conda config --set show_channel_urls true
