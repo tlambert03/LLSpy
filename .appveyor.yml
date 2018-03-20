@@ -66,7 +66,7 @@ build: off
 
 test_script:
     - cmd: conda build conda.recipe --py %CONDA_PY% --output >outname.txt
-    - cmd: set /p OUTNAME=<outname.txt
+    #- cmd: set /p OUTNAME=<outname.txt
     - cmd: conda build conda.recipe --py %CONDA_PY%
     # copy any newly created conda packages into the conda_packages dir
     - cmd: mkdir conda_packages
