@@ -314,7 +314,10 @@ class MplCanvas(FigureCanvas):
 
     @QtCore.pyqtSlot(int)
     def setGamma(self, val):
-        self.displayOptions['norm'] = matplotlib.colors.PowerNorm(val/100., vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
+        if (val==100):
+            self.displayOptions['norm'] = matplotlib.colors.Normalize(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
+        else:
+            self.displayOptions['norm'] = matplotlib.colors.PowerNorm(val/100., vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self._contrastChanged.emit()
 
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
@@ -539,6 +542,10 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.data.recalcMinMax()
         self.canvas.setContrast(self.minSlider.value(), self.maxSlider.value())
         self.gamSlider.setValue(100)  # reset to default gamma; necessary?
+        if (attrib == 'Phase'):
+            self.gamSlider.setEnabled(False)
+        else:
+            self.gamSlider.setEnabled(True)
 
     def playMovie(self):
         self.playButton.clicked.disconnect()
