@@ -425,7 +425,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     @QtCore.pyqtSlot(bool)
     def setOverlay(self, val):
         group = (self.Cwidget, self.maxSlider, self.maxLabel,
-                 self.minSlider, self.minLabel)
+                 self.minSlider, self.minLabel, self.gamSlider, self.gamLabel)
         if val:
             self.data.setOverlay(True)
             [item.hide() for item in group]
@@ -608,6 +608,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         # Move min slider down if max slider drops below min slider
         if pos <= self.minSlider.sliderPosition():
             self.minSlider.setSliderPosition(pos-1)
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])
