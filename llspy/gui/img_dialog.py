@@ -538,8 +538,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.data.setCplxAttrib(attrib)
         self.data.recalcMinMax()
         self.canvas.setContrast(self.minSlider.value(), self.maxSlider.value())
-        self.gamSlider.setValue(100)
-        # self.canvas.setGamma(100)
+        self.gamSlider.setValue(100)  # reset to default gamma; necessary?
 
     def playMovie(self):
         self.playButton.clicked.disconnect()
