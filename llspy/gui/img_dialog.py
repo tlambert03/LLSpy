@@ -196,7 +196,7 @@ class DataModel(QtCore.QObject):
         else:
             logger.debug('recalcMinMax() called on non-complex data')
 
-                
+
     def max(self):
         return self.maxVal
 
@@ -253,7 +253,7 @@ class DataModel(QtCore.QObject):
                 pass
         else:
             return dataToReturn
-            
+
 
     def __getitem__(self, tczTuple):
         return np.squeeze(self.data[tuple(tczTuple)])
@@ -316,7 +316,7 @@ class MplCanvas(FigureCanvas):
     def setGamma(self, val):
         self.displayOptions['norm'] = matplotlib.colors.PowerNorm(val/100., vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self._contrastChanged.emit()
-        
+
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
         super(ImgDialog, self).__init__(parent)
@@ -356,7 +356,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.overlayButton.toggled.connect(self.setOverlay)
 
         self.complexAttrib.currentTextChanged.connect(self.setComplexAttrib)
-        
+
         self.playButton.clicked.connect(self.playMovie)
         self.fpsSpin.valueChanged.connect(self.changeFPS)
 
@@ -425,7 +425,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     @QtCore.pyqtSlot(bool)
     def setOverlay(self, val):
         group = (self.Cwidget, self.maxSlider, self.maxLabel,
-                 self.minSlider, self.minLabel)
+                 self.minSlider, self.minLabel, self.gamSlider, self.gamLabel)
         if val:
             self.data.setOverlay(True)
             [item.hide() for item in group]
@@ -608,10 +608,18 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         if pos <= self.minSlider.sliderPosition():
             self.minSlider.setSliderPosition(pos-1)
 
-if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
 
-    main = ImgDialog(np.random.rand(4,2,10,100,100)*32000)
+if __name__ == '__main__':
+    app = QtWidgets.QApplication([])
+    if len(sys.argv) > 1:
+        import tifffile as tf
+        path = sys.argv[1]
+        im = tf.imread(path)
+        if 'fft' in sys.argv:
+            im = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(im)))
+    else:
+        im = np.random.rand(4, 2, 10, 100, 100) * 32000
+    main = ImgDialog(im)
     main.show()
 
     sys.exit(app.exec_())
