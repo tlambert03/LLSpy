@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(675, 693)
+        Dialog.resize(673, 691)
         font = QtGui.QFont()
         font.setKerning(True)
         Dialog.setFont(font)
@@ -92,6 +92,8 @@ class Ui_Dialog(object):
         self.verticalLayout.setContentsMargins(10, -1, -1, -1)
         self.verticalLayout.setObjectName("verticalLayout")
         self.minSlider = QtWidgets.QSlider(Dialog)
+        self.minSlider.setMinimum(-5)
+        self.minSlider.setMaximum(104)
         self.minSlider.setOrientation(QtCore.Qt.Vertical)
         self.minSlider.setObjectName("minSlider")
         self.verticalLayout.addWidget(self.minSlider)
@@ -102,6 +104,8 @@ class Ui_Dialog(object):
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.maxSlider = QtWidgets.QSlider(Dialog)
+        self.maxSlider.setMinimum(-5)
+        self.maxSlider.setMaximum(104)
         self.maxSlider.setOrientation(QtCore.Qt.Vertical)
         self.maxSlider.setObjectName("maxSlider")
         self.verticalLayout_3.addWidget(self.maxSlider)

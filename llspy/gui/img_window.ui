@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>675</width>
-    <height>693</height>
+    <width>673</width>
+    <height>691</height>
    </rect>
   </property>
   <property name="font">
@@ -259,6 +259,12 @@
          </property>
          <item>
           <widget class="QSlider" name="minSlider">
+           <property name="minimum">
+            <number>-5</number>
+           </property>
+           <property name="maximum">
+            <number>104</number>
+           </property>
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>
@@ -277,6 +283,12 @@
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <widget class="QSlider" name="maxSlider">
+           <property name="minimum">
+            <number>-5</number>
+           </property>
+           <property name="maximum">
+            <number>104</number>
+           </property>
            <property name="orientation">
             <enum>Qt::Vertical</enum>
            </property>

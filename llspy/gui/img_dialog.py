@@ -157,6 +157,12 @@ class DataModel(QtCore.QObject):
                               'scale': 1.7}
                              for c in range(self.nC)]
 
+        if not self.isComplex:
+            self.maxVal = self.data.max()
+            self.minVal = self.data.min()
+        else:
+            self.maxVal = (np.abs(self.data)).max()
+            self.minVal = (np.abs(self.data)).min()
         self._dataChanged.emit()
 
     @QtCore.pyqtSlot(int, int)
@@ -168,17 +174,37 @@ class DataModel(QtCore.QObject):
     def getIdx(self, dim):
         return self.curImgIdx[dim]
 
-    def max(self):
-        if not self.isComplex:
-            return self.data.max()
+    def recalcMinMax(self):
+        # only necessary when data is complex-valued
+        if self.isComplex:
+            if self.cplxAttrib == "Amp":
+                ampArr = np.abs(self.data)
+                self.maxVal = ampArr.max()
+                self.minVal = ampArr.min()
+            elif self.cplxAttrib == "Phase":
+                phaseArr = np.angle(self.data)
+                self.maxVal = phaseArr.max()
+                self.minVal = phaseArr.min()
+            elif self.cplxAttrib == "Real":
+                self.maxVal = self.data.real.max()
+                self.minVal = self.data.real.min()
+            elif self.cplxAttrib == "Imag":
+                self.maxVal = self.data.imag.max()
+                self.minVal = self.data.imag.min()
+            else:
+                pass
         else:
-            return (np.abs(self.data)).max()
+            logger.debug('recalcMinMax() called on non-complex data')
+
+                
+    def max(self):
+        return self.maxVal
 
     def min(self):
-        if not self.isComplex:
-            return self.data.min()
-        else:
-            return (np.abs(self.data)).min()
+        return self.minVal
+
+    def range(self):
+        return self.maxVal - self.minVal
 
     def getCurrent(self):
         dataToReturn = None
@@ -245,19 +271,24 @@ class MplCanvas(FigureCanvas):
 
     def setData(self, data):
         self.data = data
+        # self.data_range = data.max() - data.min()
+        # self.data_min = data.min()
         self.data._idxChanged.connect(self.updateImage)
         self.data._dataChanged.connect(self.updateImage)
 
     def setDisplayOptions(self, options):
         self.displayOptions = options
-        if not hasattr(self.displayOptions, 'cmap'):
+        if not ('cmap' in self.displayOptions):
             self.displayOptions['cmap'] = 'cubehelix'
         self.cmaps = tuple({self.displayOptions['cmap'], 'gray', 'afmhot', 'cubehelix', 'inferno'})
         self.currentCmap = 1
 
-    @QtCore.pyqtSlot(dict)
-    def setContrast(self, **kwargs):
-        self.displayOptions.update(kwargs)
+    @QtCore.pyqtSlot(int, int)
+    def setContrast(self, valmin=None, valmax=None):
+        if valmin is not None:
+            self.displayOptions['vmin'] = self.data.min() + valmin/100.*self.data.range()
+        if valmax is not None:
+            self.displayOptions['vmax'] = self.data.min() + valmax/100.*self.data.range()
         self._contrastChanged.emit()
 
     def cycleCMAP(self):
@@ -276,16 +307,14 @@ class MplCanvas(FigureCanvas):
         self.image.set_data(self.data.getCurrent())
         self.image.set_clim(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self.image.set_cmap(self.displayOptions['cmap'])
-        if self.displayOptions.has_key('norm'):
+        if 'norm' in self.displayOptions:
             self.image.set_norm(self.displayOptions['norm'])
-            print(self.displayOptions['norm'](0.2))
+
         self.draw()
 
-
+    @QtCore.pyqtSlot(int)
     def setGamma(self, val):
         self.displayOptions['norm'] = matplotlib.colors.PowerNorm(val/100., vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
-        # print self.displayOptions['vmin']
-        # print self.displayOptions['vmax']
         self._contrastChanged.emit()
         
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
@@ -297,8 +326,6 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.cmap = cmap
 
         self.infoText.hide()
-        #self.gamSlider.hide()
-        #self.gamLabel.hide()
         self.chanSelectWidget.hide()
 
         self.data = DataModel(data)
@@ -337,8 +364,10 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.Cslider.valueChanged.connect(lambda val: self.setDimIdx(1, val))
         self.Tslider.valueChanged.connect(lambda val: self.setDimIdx(0, val))
 
-        self.maxSlider.valueChanged.connect(lambda val: self.canvas.setContrast(vmax=val))
-        self.minSlider.valueChanged.connect(lambda val: self.canvas.setContrast(vmin=val))
+        self.maxSlider.valueChanged.connect(lambda val: self.canvas.setContrast(valmax=val))
+        self.minSlider.valueChanged.connect(lambda val: self.canvas.setContrast(valmin=val))
+        self.minSlider.sliderMoved.connect(lambda val: self.minSliderMoved(val))
+        self.maxSlider.sliderMoved.connect(lambda val: self.maxSliderMoved(val))
         self.gamSlider.valueChanged.connect(lambda val: self.canvas.setGamma(val))
 
         self.infoButton.toggled.connect(self.toggleInfo)
@@ -418,7 +447,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
         datamax = self.data.max()
         datamin = self.data.min()
-        dataRange = datamax - datamin
+        # dataRange = datamax - datamin
         vmin_init = datamin# - dataRange * 0.03
         vmax_init = datamax# * 0.55
 
@@ -433,12 +462,16 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.canvas.setDisplayOptions(displayOptions)
         self.canvas.createImage()
 
-        self.minSlider.setMinimum(datamin - dataRange * 0.1)
-        self.minSlider.setMaximum(datamin + dataRange * 0.1)
-        self.minSlider.setValue(vmin_init)
-        self.maxSlider.setMinimum(datamin)
-        self.maxSlider.setMaximum(datamax)
-        self.maxSlider.setValue(vmax_init)
+        # self.minSlider.setMinimum(datamin - dataRange * 0.1)
+        # self.minSlider.setMaximum(datamin + dataRange * 0.1)
+        # self.minSlider.setValue(vmin_init)
+        self.minSlider.setRange(-5, 105)
+        self.minSlider.setValue(0)
+        # self.maxSlider.setMinimum(datamin)
+        # self.maxSlider.setMaximum(datamax)
+        # self.maxSlider.setValue(vmax_init)
+        self.maxSlider.setRange(-5, 105)
+        self.maxSlider.setValue(100)
 
         nT, nC, nZ, nY, nX = self.data.shape
         self.data.setIdx(2, int(nZ/2))
@@ -503,6 +536,10 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
     def setComplexAttrib(self, attrib):
         self.data.setCplxAttrib(attrib)
+        self.data.recalcMinMax()
+        self.canvas.setContrast(self.minSlider.value(), self.maxSlider.value())
+        self.gamSlider.setValue(100)
+        # self.canvas.setGamma(100)
 
     def playMovie(self):
         self.playButton.clicked.disconnect()
@@ -561,6 +598,16 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         del self.data
         self.deleteLater()
         super(ImgDialog, self).closeEvent(evnt)
+
+    def minSliderMoved(self, pos):
+        # Move max slider up if min slider is overtaking max slider
+        if pos >= self.maxSlider.sliderPosition():
+            self.maxSlider.setSliderPosition(pos+1)
+
+    def maxSliderMoved(self, pos):
+        # Move min slider down if max slider drops below min slider
+        if pos <= self.minSlider.sliderPosition():
+            self.minSlider.setSliderPosition(pos-1)
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
