@@ -372,11 +372,25 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.Cslider.valueChanged.connect(lambda val: self.setDimIdx(1, val))
         self.Tslider.valueChanged.connect(lambda val: self.setDimIdx(0, val))
 
-        self.maxSlider.valueChanged.connect(lambda val: self.canvas.setContrast(valmax=val))
-        self.minSlider.valueChanged.connect(lambda val: self.canvas.setContrast(valmin=val))
-        self.minSlider.sliderMoved.connect(lambda val: self.minSliderMoved(val))
-        self.maxSlider.sliderMoved.connect(lambda val: self.maxSliderMoved(val))
-        self.gamSlider.valueChanged.connect(lambda val: self.canvas.setGamma(val))
+        self.minSlider.valueChanged.connect(lambda val: self.minSliderMoved(val))
+        self.maxSlider.valueChanged.connect(lambda val: self.maxSliderMoved(val))
+        self.gamSlider.valueChanged.connect(lambda val: self.gamSliderMoved(val))
+
+        self.gammaText = QtWidgets.QLabel(self)
+        def verticalText_paintEvent(evt):
+            # To be able to draw gamma label vertically
+            painter = QtGui.QPainter(self.gammaText)
+            painter.setPen(QtCore.Qt.black)
+            painter.rotate(90)
+            painter.drawText(QtCore.QPoint(0,0), self.gammaText.text())
+
+        self.gammaText.paintEvent = verticalText_paintEvent
+
+        def gamSliderResizeEvent(evt):
+            # To keep gamma text next to handle when slider height changes
+            self.gammaLabelUpdate()
+
+        self.gamSlider.resizeEvent = gamSliderResizeEvent
 
         self.infoButton.toggled.connect(self.toggleInfo)
 
@@ -611,15 +625,32 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         super(ImgDialog, self).closeEvent(evnt)
 
     def minSliderMoved(self, pos):
-        # Move max slider up if min slider is overtaking max slider
+        # Also moves max slider up if min slider is overtaking max slider
         if pos >= self.maxSlider.sliderPosition():
             self.maxSlider.setSliderPosition(pos+1)
+        self.canvas.setContrast(valmin=pos)
 
     def maxSliderMoved(self, pos):
-        # Move min slider down if max slider drops below min slider
+        # Also moves min slider down if max slider drops below min slider
         if pos <= self.minSlider.sliderPosition():
             self.minSlider.setSliderPosition(pos-1)
+        self.canvas.setContrast(valmax=pos)
 
+    def gamSliderMoved(self, pos):
+        # Also updates gamma value label beside the handle
+        self.canvas.setGamma(pos)
+        self.gammaText.setNum(pos/100.)
+        self.gammaLabelUpdate()
+        
+    def gammaLabelUpdate(self):
+        sliderHeight = self.gamSlider.size().height()
+        sliderXorigin = self.gamSlider.pos().x()
+        sliderYorigin = self.gamSlider.pos().y()
+        handleVPos = (1. - float(self.gamSlider.value() - self.gamSlider.minimum()) / \
+                      (self.gamSlider.maximum() - self.gamSlider.minimum())) \
+                      * sliderHeight
+        self.gammaText.move(QtCore.QPoint(sliderXorigin + 13,
+                                          int(handleVPos)+sliderYorigin-30))
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])
