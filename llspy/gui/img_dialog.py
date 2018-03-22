@@ -276,6 +276,11 @@ class MplCanvas(FigureCanvas):
         self.data._idxChanged.connect(self.updateImage)
         self.data._dataChanged.connect(self.updateImage)
 
+        def f_c(x, y):
+            return 'x=%.2f  y=%.2f ' % (x, y)
+                
+        self.ax.format_coord = f_c
+
     def setDisplayOptions(self, options):
         self.displayOptions = options
         if not ('cmap' in self.displayOptions):
