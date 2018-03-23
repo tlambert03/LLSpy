@@ -1027,7 +1027,7 @@ class LLSdir(object):
             except IndexError:
                 interval = 0
             for axis in ['z', 'y', 'x']:
-                mergemips(MIPdir, axis, dx=self.parameters.dx, dt=interval, pattern=self.fname_pattern)
+                mergemips(MIPdir, axis, dx=self.parameters.dx, dt=interval, fpattern=self.fname_pattern)
 
     def process(self, filepattern, otf, indir=None, binary=None, **opts):
         if binary is None:
