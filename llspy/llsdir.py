@@ -75,6 +75,9 @@ if sys.platform.startswith('win'):
 from multiprocessing import Process, cpu_count, Pool
 
 
+__FPATTERN__ = '{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}'
+
+
 def correctTimepoint(fnames, camparams, outpath, medianFilter,
                     trimZ, trimY, trimX, flashCorrectTarget='cpu'):
     '''accepts a list of filenames (fnames) that represent Z stacks that have
@@ -159,6 +162,8 @@ def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
         regObj = get_regObj(regObj)
     folder = str(folder)
 
+    global __FPATTERN__
+
     # get all tiffs in folders
     files = parse.filter_w(os.listdir(folder), regRefWave, exclusive=True)
     files = [f for f in files if (f.endswith('.tif') and '_REG' not in f)]
@@ -166,7 +171,7 @@ def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
         fname = os.path.join(folder, F)
         outname = fname.replace('.tif', '_REG.tif')
         imarray = util.imread(fname)
-        imwave = parse.parse_filename(fname, 'wave')
+        imwave = parse.parse_filename(fname, 'wave', pattern=__FPATTERN__)
         im_out = register_image_to_wave(imarray, regObj, imwave, regRefWave,
             mode=regMode, voxsize=voxsize).astype(imarray.dtype)
         util.imsave(util.reorderstack(np.squeeze(im_out), 'zyx'),
@@ -179,6 +184,8 @@ def register_image_to_wave(img, regCalibObj, imwave=None, refwave=488,
                            voxsize=None, mode='2step'):
     # voxsize must be an array of pixel sizes [dz, dy, dx]
 
+    global __FPATTERN__
+
     if not isinstance(regCalibObj, (RegDir, RegFile)):
         raise RegistrationError('Calibration object for register_image_to_wave '
             'must be either RegDir or RegFile.  Received: %s' % str(type(regCalibObj)))
@@ -190,7 +197,7 @@ def register_image_to_wave(img, regCalibObj, imwave=None, refwave=488,
     elif isinstance(img, str) and os.path.isfile(img):
         if imwave is None:
             try:
-                imwave = parse.parse_filename(img, 'wave')
+                imwave = parse.parse_filename(img, 'wave', pattern=__FPATTERN__)
             except Exception:
                 pass
             if not imwave:
@@ -425,10 +432,13 @@ def process(exp, binary=None, **kwargs):
     return
 
 
-def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True):
+def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
     """combine folder of MIPs into a single multi-channel time stack.
     return dict with keys= axes(x,y,z) and values = numpy array
     """
+    if not fpattern:
+        global __FPATTERN__
+        fpattern = __FPATTERN__
     folder = plib.Path(folder)
     if not folder.is_dir():
         raise IOError('MIP folder does not exist: {}'.format(str(folder)))
@@ -465,7 +475,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True):
             stack = np.transpose(stack, (2, 1, 0, 3, 4))
 
         if write:
-            basename = parse.parse_filename(str(filelist[0]), 'basename')
+            basename = parse.parse_filename(str(filelist[0]), 'basename', pattern=fpattern)
             suffix = filelist[0].name.split('msecAbs')[1]
             if 'decon' in str(folder).lower():
                 miptype = '_decon_'
@@ -588,7 +598,14 @@ class LLSdir(object):
         >>> E.freeze()  # delete processed data and compress raw data
     '''
 
-    def __init__(self, path, ditch_partial=True):
+    def __init__(self, path, fname_pattern=None, ditch_partial=True):
+        global __FPATTERN__
+        if fname_pattern and isinstance(fname_pattern, str):
+            self.fname_pattern = fname_pattern
+        else:
+            self.fname_pattern = __FPATTERN__
+        self.fname_pattern += '{}'
+
         self.path = plib.Path(path)
         self.ditch_partial = ditch_partial
         self.settings_files = self.get_settings_files()
@@ -646,9 +663,7 @@ class LLSdir(object):
     def has_lls_tiffs(self):
         """Returns true if the folder has any tiffs mathing the filename regex."""
         if self.path.is_dir():
-            for f in self.path.iterdir():
-                if parse.filename_pattern.match(f.name):
-                    return True
+            return parse.contains_filepattern(self.path, self.fname_pattern)
         return False
 
     @property
@@ -706,22 +721,33 @@ class LLSdir(object):
         self.tiff.count = []  # per channel list of number of tiffs
         self.parameters.interval = []
         self.parameters.channels = {}
-        stacknum = re.compile('_stack(\d{4})_')
+        stacknum = re.compile('stack(\d{4})')
         self.parameters.tset = list({int(t.group(1)) for t in
             [stacknum.search(s) for s in self.tiff.raw] if t})
-        # FIXME: this caps the maximum number of channels at 6, somewhat arbitrarily
-        for c in range(6):
-            q = [f for f in self.tiff.raw if '_ch' + str(c) in f]
-            if len(q):
-                self.tiff.count.append(len(q))
-                parsed = parse.parse_filename(str(q[0]))
-                # self.parameters.wavelength.append(parsed['wave'])
-                self.parameters.channels[c] = parsed['wave']
-                if len(q) > 1:
-                    self.parameters.interval.append(
-                        parse.parse_filename(str(q[1]), 'reltime') / 1000)
+
+        self.tiff.count = [0] * 20
+        self.parameters.interval = [0] * 20
+        temp = [0] * 20
+        for f in self.tiff.raw:
+            N = parse.parse_filename(str(f), pattern=self.fname_pattern)
+            if 'channel' not in N:
+                raise LLSpyError('filepattern must specify a channel')
+            self.tiff.count[N['channel']] += 1
+            if 'wave' not in N:
+                raise LLSpyError('filepattern must specify a wave')
+            self.parameters.channels[N['channel']] = N['wave']
+
+            if 'abstime' in N:
+                if self.parameters.interval[N['channel']] == 0:
+                    if self.tiff.count[N['channel']] == 1:
+                        temp[N['channel']] = N['abstime']
+                    if self.tiff.count[N['channel']] == 2:
+                        temp[N['channel']] = N['abstime'] - temp[N['channel']]
+
+        self.tiff.count = [n for n in self.tiff.count if n != 0]
+        self.parameters.interval = [n for n in self.parameters.interval if n != 0]
+
         self.parameters.nc = len(self.tiff.count)
-        self.parameters.nt = len(self.parameters.tset)
 
         if len(set(self.tiff.count)) > 1:
             # different count for each channel ... decimated stacks?
@@ -1001,7 +1027,7 @@ class LLSdir(object):
             except IndexError:
                 interval = 0
             for axis in ['z', 'y', 'x']:
-                mergemips(MIPdir, axis, dx=self.parameters.dx, dt=interval)
+                mergemips(MIPdir, axis, dx=self.parameters.dx, dt=interval, pattern=self.fname_pattern)
 
     def process(self, filepattern, otf, indir=None, binary=None, **opts):
         if binary is None:
@@ -1241,8 +1267,10 @@ class RegDir(LLSdir):
             self.t = min(self.parameters.tset)
         if self.isValid:
             self.data = self.getdata()
-            self.waves = [parse.parse_filename(f, 'wave') for f in self.get_t(self.t)]
-            self.channels = [parse.parse_filename(f, 'channel') for f in self.get_t(self.t)]
+            self.waves = [parse.parse_filename(f, 'wave', pattern=self.fname_pattern)
+                for f in self.get_t(self.t)]
+            self.channels = [parse.parse_filename(f, 'channel', pattern=self.fname_pattern)
+                for f in self.get_t(self.t)]
             self.deskew = self.parameters.samplescan
 
     @property
@@ -1362,29 +1390,6 @@ class RegDir(LLSdir):
 
     def get_tform(self, movingWave, refWave=488, mode='2step'):
         return self.cloudset().tform(movingWave, refWave, mode)
-
-    # This function now module level at the top of the module...
-    # def register_image_to_wave(self, img, imwave=None, refwave=488, mode='2step'):
-    #     if isinstance(img, np.ndarray):
-    #         if imwave is None:
-    #             raise ValueError('Must provide wavelength when providing array '
-    #                 'for registration.')
-    #     elif isinstance(img, str) and os.path.isfile(img):
-    #         if imwave is None:
-    #             try:
-    #                 imwave = parse.parse_filename(img, 'wave')
-    #             except Exception:
-    #                 pass
-    #             if not imwave:
-    #                 raise ValueError('Could not detect image wavelength.')
-    #         img = util.imread(img)
-    #     else:
-    #         raise ValueError('Input to Registration must either be a np.array '
-    #             'or a path to a tif file')
-    #     tform = self.get_tform(imwave, refwave, mode)
-    #     inv_tform = np.linalg.inv(tform)
-    #     voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
-    #     return affineGPU(img, inv_tform, voxsize)
 
 
 def rename_iters(folder, splitpositions=True):
