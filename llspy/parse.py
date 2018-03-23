@@ -72,8 +72,6 @@ def parse_filename(fname, matchword=None, pattern=None):
 	if not (R and hasattr(R, 'named')):
 		raise ValueError('Could not parse filename:\n{} with pattern:\n{}'.format(fname, pattern))
 	named = R.named
-	print(named)
-	print(R.fixed)
 	if matchword in named:
 		return named[matchword]
 	else:
