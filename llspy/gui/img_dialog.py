@@ -278,7 +278,7 @@ class MplCanvas(FigureCanvas):
 
         def f_c(x, y):
             return 'x=%.2f  y=%.2f ' % (x, y)
-                
+
         self.ax.format_coord = f_c
 
     def setDisplayOptions(self, options):
@@ -291,9 +291,13 @@ class MplCanvas(FigureCanvas):
     @QtCore.pyqtSlot(int, int)
     def setContrast(self, valmin=None, valmax=None):
         if valmin is not None:
-            self.displayOptions['vmin'] = self.data.min() + valmin/100.*self.data.range()
+            self.displayOptions['vmin'] = self.data.min() + valmin/1000.*self.data.range()
         if valmax is not None:
-            self.displayOptions['vmax'] = self.data.min() + valmax/100.*self.data.range()
+            self.displayOptions['vmax'] = self.data.min() + valmax/1000.*self.data.range()
+        # this line seems required to avoid a race condition that causes a crash
+        # when moving the max/min sliders too quickly beyond the value of the other.
+        if self.displayOptions['vmax'] < self.displayOptions['vmin']:
+            self.displayOptions['vmax'] = self.displayOptions['vmin']
         self._contrastChanged.emit()
 
     def cycleCMAP(self):
@@ -487,12 +491,12 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         # self.minSlider.setMinimum(datamin - dataRange * 0.1)
         # self.minSlider.setMaximum(datamin + dataRange * 0.1)
         # self.minSlider.setValue(vmin_init)
-        self.minSlider.setRange(-5, 105)
+        self.minSlider.setRange(-50, 1050)
         self.minSlider.setValue(0)
         # self.maxSlider.setMinimum(datamin)
         # self.maxSlider.setMaximum(datamax)
         # self.maxSlider.setValue(vmax_init)
-        self.maxSlider.setRange(-5, 105)
+        self.maxSlider.setRange(-50, 1050)
         self.maxSlider.setValue(100)
 
         nT, nC, nZ, nY, nX = self.data.shape
@@ -641,7 +645,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.canvas.setGamma(pos)
         self.gammaText.setNum(pos/100.)
         self.gammaLabelUpdate()
-        
+
     def gammaLabelUpdate(self):
         sliderHeight = self.gamSlider.size().height()
         sliderXorigin = self.gamSlider.pos().x()
