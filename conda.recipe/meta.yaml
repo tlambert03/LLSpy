@@ -41,7 +41,7 @@ requirements:
     - click ==6.7
     - parse ==1.8.2
     - matplotlib ==2.1.1
-    - spimagine ==0.2.2
+    - spimagine
     - llspylibs
     - pathlib2 # [py2k]
     - configparser # [py2k]

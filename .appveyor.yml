@@ -56,7 +56,7 @@ install:
     - cmd: conda config --add channels conda-forge
     - cmd: conda config --add channels talley
     - cmd: conda config --set show_channel_urls true
-    - cmd: appveyor-retry conda update --yes --quiet conda
+    - cmd: appveyor-retry conda update --yes --quiet conda=4.4
     - cmd: appveyor-retry conda install --yes --quiet -c defaults anaconda-client
     - cmd: appveyor-retry conda install --yes --quiet -c defaults conda-build=3.0.25
     - cmd: conda build --version
@@ -66,7 +66,7 @@ build: off
 
 test_script:
     - cmd: conda build conda.recipe --py %CONDA_PY% --output >outname.txt
-    - cmd: set /p OUTNAME=<outname.txt
+    #- cmd: set /p OUTNAME=<outname.txt
     - cmd: conda build conda.recipe --py %CONDA_PY%
     # copy any newly created conda packages into the conda_packages dir
     - cmd: mkdir conda_packages
