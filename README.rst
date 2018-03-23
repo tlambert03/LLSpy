@@ -28,7 +28,7 @@ LLSpy: Lattice light-sheet post-processing utility
 
 |
 
-.. image:: https://cbmf.hms.harvard.edu/wp-content/uploads/2015/07/logo-horizontal-small.png
+.. image:: https://raw.githubusercontent.com/tlambert03/LLSpy/master/img/cbmflogo.png
     :target: https://cbmf.hms.harvard.edu/lattice-light-sheet/
 
 
