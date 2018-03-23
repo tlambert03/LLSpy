@@ -475,16 +475,18 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
             stack = np.transpose(stack, (2, 1, 0, 3, 4))
 
         if write:
+            # FIXME: this is getting ugly
             basename = parse.parse_filename(str(filelist[0]), 'basename', pattern=fpattern)
-            suffix = filelist[0].name.split('msecAbs')[1]
+            cor = '_COR' if '_COR' in str(filelist[0]) else ''
+            axis = str(filelist[0]).split('MIP_')[1][0]
+            _, ext = os.path.splitext(filelist[0])
             if 'decon' in str(folder).lower():
                 miptype = '_decon_'
             elif 'deskewed' in str(folder).lower():
                 miptype = '_deskewed_'
             else:
                 miptype = '_'
-            suffix = suffix.replace('MIP', miptype + 'comboMIP')
-            outname = basename + suffix
+            outname = basename + cor + miptype + 'comboMIP_' + axis + ext
             util.imsave(stack, str(folder.joinpath(outname)), dx=dx, dt=dt)
 
         if delete:

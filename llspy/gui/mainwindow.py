@@ -954,7 +954,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
     @QtCore.pyqtSlot()
     def set_fname_pattern(self):
-        llspy.llsdir.__FPATTERN__ = self.filenamePatternLineEdit.text()
+        llspy.llsdir.__FPATTERN__ = self.filenamePatternLineEdit.text() + '{}'
 
     @QtCore.pyqtSlot()
     def startWatcher(self):
