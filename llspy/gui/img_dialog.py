@@ -78,6 +78,7 @@ class DataModel(QtCore.QObject):
         self._overlay = False
         self.curImgIdx = [0, 0, 0]  # T, C, Z
         self.cplxAttrib = "Amp" # other choices: 'Real', 'Imag', 'Phase'
+        self.isFFTshifted = False
 
     @QtCore.pyqtSlot(str)
     def setProjType(self, projtype):
@@ -242,18 +243,27 @@ class DataModel(QtCore.QObject):
 
         if self.isComplex:
             if self.cplxAttrib == "Amp":
-                return np.abs(dataToReturn)
+                dataToReturn = np.abs(dataToReturn)
             elif self.cplxAttrib == "Real":
-                return dataToReturn.real
+                dataToReturn = dataToReturn.real
             elif self.cplxAttrib == "Imag":
-                return dataToReturn.imag
+                dataToReturn = dataToReturn.imag
             elif self.cplxAttrib == "Phase":
-                return np.angle(dataToReturn)
+                dataToReturn = np.angle(dataToReturn)
             else:
                 pass
+
+            if self.isFFTshifted:
+                return np.fft.fftshift(dataToReturn)
+            else:
+                return dataToReturn
         else:
             return dataToReturn
 
+    def setFFTshifted(self, tf):
+        self.isFFTshifted = tf;
+        self._dataChanged.emit()
+        # todo: also change Z index
 
     def __getitem__(self, tczTuple):
         return np.squeeze(self.data[tuple(tczTuple)])
@@ -264,6 +274,7 @@ class MplCanvas(FigureCanvas):
     _contrastChanged = QtCore.pyqtSignal()
 
     def __init__(self):
+#        self.figure = Figure(figsize=(5, 5), dpi=100, tight_layout=True, facecolor='r')
         self.figure = Figure(figsize=(15, 15), tight_layout=True, facecolor='r')
         self.figure.patch.set_alpha(0)  # transparent background
         self.ax = self.figure.add_subplot(111)
@@ -294,8 +305,9 @@ class MplCanvas(FigureCanvas):
             self.displayOptions['vmin'] = self.data.min() + valmin/1000.*self.data.range()
         if valmax is not None:
             self.displayOptions['vmax'] = self.data.min() + valmax/1000.*self.data.range()
-        # this line seems required to avoid a race condition that causes a crash
-        # when moving the max/min sliders too quickly beyond the value of the other.
+        # The following "if" seems required on a Mac to avoid a race condition
+        # that causes a crash when moving the max/min sliders too quickly
+        # beyond the value of the other.
         if self.displayOptions['vmax'] < self.displayOptions['vmin']:
             self.displayOptions['vmax'] = self.displayOptions['vmin']
         self._contrastChanged.emit()
@@ -308,16 +320,19 @@ class MplCanvas(FigureCanvas):
 
     def createImage(self):
         self.image = self.ax.imshow(self.data.getCurrent(), **self.displayOptions)
+        #, interpolation="none"
         self.cbar = self.figure.colorbar(self.image, fraction=0.045, pad=0.04)
         self._contrastChanged.connect(self.updateImage)
         self.draw()
 
     def updateImage(self):
         self.image.set_data(self.data.getCurrent())
-        self.image.set_clim(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self.image.set_cmap(self.displayOptions['cmap'])
+
         if 'norm' in self.displayOptions:
             self.image.set_norm(self.displayOptions['norm'])
+
+        self.image.set_clim(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
 
         self.draw()
 
@@ -361,6 +376,17 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
                 self.infoText.setText(info)
 
         self.initialize()
+
+        fftMenu = QtWidgets.QMenu(self)
+        fftMenu.addAction("Forward", self.popupFFT)
+        fftMenu.addAction("Backward", self.popupIFFT)
+        fftMenu.addAction("2D Forward", self.popupFFT2)
+        fftMenu.addAction("2D Backward", self.popupIFFT2)
+        menuitem = fftMenu.addAction("FFTshifted")
+        menuitem.setCheckable(True)
+        menuitem.triggered.connect(lambda checked : self.fftShiftChecked(checked))
+        
+        self.fftButton.setMenu(fftMenu)
 
         self.maxProjButton.toggled.connect(self.setProjection)
         self.stdProjButton.toggled.connect(self.setProjection)
@@ -488,16 +514,10 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.canvas.setDisplayOptions(displayOptions)
         self.canvas.createImage()
 
-        # self.minSlider.setMinimum(datamin - dataRange * 0.1)
-        # self.minSlider.setMaximum(datamin + dataRange * 0.1)
-        # self.minSlider.setValue(vmin_init)
         self.minSlider.setRange(-50, 1050)
         self.minSlider.setValue(0)
-        # self.maxSlider.setMinimum(datamin)
-        # self.maxSlider.setMaximum(datamax)
-        # self.maxSlider.setValue(vmax_init)
         self.maxSlider.setRange(-50, 1050)
-        self.maxSlider.setValue(100)
+        self.maxSlider.setValue(1000)
 
         nT, nC, nZ, nY, nX = self.data.shape
         self.data.setIdx(2, int(nZ/2))
@@ -655,6 +675,51 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
                       * sliderHeight
         self.gammaText.move(QtCore.QPoint(sliderXorigin + 13,
                                           int(handleVPos)+sliderYorigin-30))
+
+
+    @QtCore.pyqtSlot()
+    def popupFFT(self):
+        curT, curC, curZ = tuple(self.data.curImgIdx)
+        nT, nC, nZ, nY, nX = self.data.shape
+        fft = np.empty((nC, nZ, nY, nX), np.complex64)
+        for c in range(self.data.shape[1]):
+            fft[c] = np.fft.fftn(self.data[curT, c])
+        fftWin = ImgDialog(fft)
+        fftWin.show()
+
+    @QtCore.pyqtSlot()
+    def popupIFFT(self):
+        curT, curC, curZ = tuple(self.data.curImgIdx)
+        nT, nC, nZ, nY, nX = self.data.shape
+        fft = np.empty((nC, nZ, nY, nX), np.complex64)
+        for c in range(self.data.shape[1]):
+            fft[c] = np.fft.ifftn(self.data[curT, c])
+        fftWin = ImgDialog(fft)
+        fftWin.show()
+        
+    @QtCore.pyqtSlot()
+    def popupFFT2(self):
+        curT, curC, curZ = tuple(self.data.curImgIdx)
+        nT, nC, nZ, nY, nX = self.data.shape
+        fft = np.empty((nC, nZ, nY, nX), np.complex64)
+        for c in range(self.data.shape[1]):
+            fft[c] = np.fft.fft2(self.data[curT, c])
+        fftWin = ImgDialog(fft)
+        fftWin.show()
+
+    @QtCore.pyqtSlot()
+    def popupIFFT2(self):
+        curT, curC, curZ = tuple(self.data.curImgIdx)
+        nT, nC, nZ, nY, nX = self.data.shape
+        fft = np.empty((nC, nZ, nY, nX), np.complex64)
+        for c in range(self.data.shape[1]):
+            fft[c] = np.fft.ifft2(self.data[curT, c])
+        fftWin = ImgDialog(fft)
+        fftWin.show()
+
+    @QtCore.pyqtSlot()
+    def fftShiftChecked(self, checked):
+        self.data.setFFTshifted(checked)
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])
