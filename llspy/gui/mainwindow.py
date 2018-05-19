@@ -58,11 +58,13 @@ programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 
 if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
     try:
-        #raise ImportError("skipping")
-        from spimagine import DataModel, NumpyData
-        from spimagine.gui.mainwidget import MainWidget as spimagineWidget
-        _SPIMAGINE_IMPORTED = True
-    except ImportError:
+        # raise ImportError("skipping")
+        with llspy.util.HiddenPrints():
+            from spimagine import DataModel, NumpyData
+            from spimagine.gui.mainwidget import MainWidget as spimagineWidget
+            _SPIMAGINE_IMPORTED = True
+    except ImportError as e:
+        print(e)
         logger.error("could not import spimagine!  falling back to matplotlib")
 
 

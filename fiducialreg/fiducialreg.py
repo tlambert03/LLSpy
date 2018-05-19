@@ -42,8 +42,11 @@ import itertools
 import numpy as np
 import logging
 import json
+
+# using Qt5Agg causes "window focus loss" in interpreter for some reason
 import matplotlib
 matplotlib.use('Qt5Agg')
+
 import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)

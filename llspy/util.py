@@ -25,6 +25,15 @@ class dotdict(dict):
         return self.keys()
 
 
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = None
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = self._original_stdout
+
+
 def pathHasPattern(path, pattern='*Settings.txt'):
     for file in os.listdir(path):
         if fnmatch.fnmatch(file, pattern):
