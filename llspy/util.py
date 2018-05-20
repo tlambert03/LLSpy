@@ -127,7 +127,8 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
 
-        binpaths = ['bin', 'Library/bin', '../../llspylibs/{}/bin'.format(PLAT)]
+        # binpaths = ['bin', 'Library/bin', '../../llspylibs/{}/bin'.format(PLAT)]
+        binpaths = ('bin', 'Library/bin')
         for path in binpaths:
             path = getAbsoluteResourcePath(path)
             if path:
@@ -227,8 +228,8 @@ def load_lib(libname):
     searchlist = [os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'Library', 'bin'),
                   os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'lib'),
                   './lib',
-                  '../../llspylibs/{}/lib/'.format(PLAT),
-                  '../llspylibs/{}/lib/'.format(PLAT),
+                  # '../../llspylibs/{}/lib/'.format(PLAT),
+                  # '../llspylibs/{}/lib/'.format(PLAT),
                   '.']
 
     ext = {'linux': '.so',
