@@ -229,7 +229,7 @@
           <string>FFT...</string>
          </property>
          <property name="popupMode">
-          <enum>QToolButton::DelayedPopup</enum>
+          <enum>QToolButton::InstantPopup</enum>
          </property>
         </widget>
        </item>

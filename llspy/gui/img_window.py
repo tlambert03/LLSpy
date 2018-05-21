@@ -75,7 +75,7 @@ class Ui_Dialog(object):
         self.fftButton = QtWidgets.QToolButton(Dialog)
         self.fftButton.setMinimumSize(QtCore.QSize(0, 35))
         self.fftButton.setMaximumSize(QtCore.QSize(16777215, 16777215))
-        self.fftButton.setPopupMode(QtWidgets.QToolButton.DelayedPopup)
+        self.fftButton.setPopupMode(QtWidgets.QToolButton.InstantPopup)
         self.fftButton.setObjectName("fftButton")
         self.horizontalLayout.addWidget(self.fftButton)
         self.complexAttrib = QtWidgets.QComboBox(Dialog)

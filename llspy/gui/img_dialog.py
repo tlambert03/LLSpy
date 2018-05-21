@@ -239,7 +239,12 @@ class DataModel(QtCore.QObject):
             dataToReturn = getattr(np, self.projection)(self.data[tuple(self.curImgIdx[:2])], 0)
         else:
             # use full 3D data
-            dataToReturn = self.data[tuple(self.curImgIdx)]
+            if self.isFFTshifted:
+                imgIdx = self.curImgIdx[:]
+                imgIdx[2] = self._getFFTshiftedKz()
+                dataToReturn = self.data[tuple(imgIdx)]
+            else:
+                dataToReturn = self.data[tuple(self.curImgIdx)]
 
         if self.isComplex:
             if self.cplxAttrib == "Amp":
@@ -263,7 +268,17 @@ class DataModel(QtCore.QObject):
     def setFFTshifted(self, tf):
         self.isFFTshifted = tf;
         self._dataChanged.emit()
-        # todo: also change Z index
+
+    def _getFFTshiftedKz(self):
+        ## Z indexing needs shifted after FFTshift() calls
+        curZ = self.getIdx(2)
+        nz = self.data.shape[-3]
+        # middle of stack becomes kz=0
+        newKz = curZ + nz//2
+        if newKz >= nz:
+            newKz -= nz
+        return newKz
+
 
     def __getitem__(self, tczTuple):
         return np.squeeze(self.data[tuple(tczTuple)])
@@ -685,6 +700,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.fftn(self.data[curT, c])
         fftWin = ImgDialog(fft)
+        fftWin.setDimIdx(2, 0)  # default to kz=0 in the FFT ImgDialog
         fftWin.show()
 
     @QtCore.pyqtSlot()
