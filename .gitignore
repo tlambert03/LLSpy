@@ -110,3 +110,5 @@ ENV/
 /FlashParam_sn100740_roi513-769-1536-1280_date20161219.tif
 
 /.pytest_cache/
+
+.dropbox.attr
