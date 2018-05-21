@@ -1030,10 +1030,12 @@ class RegFile(object):
         try:
             from datetime import datetime
             self.date = regdict.get('date', None)
+            if isinstance(self.date, list):  # backwards compatibility
+                self.date = self.date[0]
             if self.date:
                 self.date = datetime.strptime(self.date, '%Y/%m/%d-%H:%M')
-        except Exception:
-            logger.error('Could not parse registration file date')
+        except Exception as e:
+            logger.error('Could not parse registration file date: {}'.format(e))
 
         self.dx = regdict.get('dx', None)
         self.dz = regdict.get('dz', None)
