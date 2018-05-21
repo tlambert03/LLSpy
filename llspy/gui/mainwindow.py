@@ -1818,8 +1818,9 @@ The cudaDeconv deconvolution program is owned and licensed by HHMI, Janelia Rese
         else:
             self.quitProgram()
 
-    def quitProgram(self):
-        guisave(self, sessionSettings)
+    def quitProgram(self, save=True):
+        if save:
+            guisave(self, sessionSettings)
         sessionSettings.setValue('cleanExit', True)
         sessionSettings.sync()
         QtW.QApplication.quit()
