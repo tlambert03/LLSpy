@@ -28,3 +28,4 @@ dependencies:
   - pigz
   - lbzip2
   - tar ==1.29
+  - pytest
