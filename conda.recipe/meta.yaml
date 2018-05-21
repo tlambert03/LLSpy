@@ -53,13 +53,18 @@ requirements:
     - llspy-slm
 
 test:
+  requires:
+    - pytest
+    - pytestqt
+    - llscd
   imports:
     - llspy # [not py2k]
   commands:
     # - which lls  # [unix]
     # - where lls  # [win]
     - lls --help # [not py2k]
-    - lls gui --test # [not linux]
+    # - lls gui --test # [not linux]
+    - pytest
 #    - spimagine
 
 about:
