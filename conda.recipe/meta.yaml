@@ -55,7 +55,7 @@ requirements:
 test:
   requires:
     - pytest
-    - pytestqt
+    - pytest-qt
     - llscd
   imports:
     - llspy # [not py2k]

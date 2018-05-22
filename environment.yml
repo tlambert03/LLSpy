@@ -26,6 +26,7 @@ dependencies:
   - llscd
   - parse
   - pigz
-  - lbzip2
-  - tar ==1.29
+#  - lbzip2   # mac linux only
+#  - tar ==1.29  # mac/linux only
   - pytest
+  - pytest-qt

@@ -112,3 +112,5 @@ ENV/
 /.pytest_cache/
 
 .dropbox.attr
+
+tests/testdata/sample/MIPs/
