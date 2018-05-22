@@ -1066,6 +1066,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 return
         guisave(self, defaultSettings)
 
+    def loadProgramDefaults(self):
+        guirestore(self, QtCore.QSettings(), programDefaults)
+
     def loadDefaultSettings(self):
         if not len(defaultSettings.childKeys()):
             reply = QtW.QMessageBox.information(self, 'Load Settings',
