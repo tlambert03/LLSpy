@@ -354,15 +354,19 @@ class MplCanvas(FigureCanvas):
     @QtCore.pyqtSlot(int)
     def setGamma(self, val):
         if (val==100):
-            self.displayOptions['norm'] = matplotlib.colors.Normalize(vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
+            self.displayOptions['norm'] = matplotlib.colors.Normalize(
+                vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         else:
-            self.displayOptions['norm'] = matplotlib.colors.PowerNorm(val/100., vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
+            self.displayOptions['norm'] = matplotlib.colors.PowerNorm(
+                val/100., vmin=self.displayOptions['vmin'], vmax=self.displayOptions['vmax'])
         self._contrastChanged.emit()
+
 
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
         super(ImgDialog, self).__init__(parent)
-        self.setupUi(self)   #defined in class Ui_Dialog
+        self.setupUi(self)  # defined in class Ui_Dialog
+        self.title = title
         self.setWindowTitle(title)
 
         self.cmap = cmap
@@ -400,7 +404,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         menuitem = fftMenu.addAction("FFTshifted")
         menuitem.setCheckable(True)
         menuitem.triggered.connect(lambda checked : self.fftShiftChecked(checked))
-        
+
         self.fftButton.setMenu(fftMenu)
 
         self.maxProjButton.toggled.connect(self.setProjection)
@@ -699,7 +703,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.fftn(self.data[curT, c])
-        fftWin = ImgDialog(fft)
+        fftWin = ImgDialog(fft, title=self.title + ' FFT')
         fftWin.setDimIdx(2, 0)  # default to kz=0 in the FFT ImgDialog
         fftWin.show()
 
@@ -710,9 +714,9 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.ifftn(self.data[curT, c])
-        fftWin = ImgDialog(fft)
+        fftWin = ImgDialog(fft, title=self.title + ' IFFT')
         fftWin.show()
-        
+
     @QtCore.pyqtSlot()
     def popupFFT2(self):
         curT, curC, curZ = tuple(self.data.curImgIdx)
@@ -720,7 +724,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.fft2(self.data[curT, c])
-        fftWin = ImgDialog(fft)
+        fftWin = ImgDialog(fft, title=self.title + ' 2DFFT')
         fftWin.show()
 
     @QtCore.pyqtSlot()
@@ -730,12 +734,13 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.ifft2(self.data[curT, c])
-        fftWin = ImgDialog(fft)
+        fftWin = ImgDialog(fft, title=self.title + ' FFT')
         fftWin.show()
 
     @QtCore.pyqtSlot()
     def fftShiftChecked(self, checked):
         self.data.setFFTshifted(checked)
+
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])
@@ -745,9 +750,11 @@ if __name__ == '__main__':
         im = tf.imread(path)
         if 'fft' in sys.argv:
             im = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(im)))
+        path = os.path.basename(path)
     else:
+        path=None
         im = np.random.rand(4, 2, 10, 100, 100) * 32000
-    main = ImgDialog(im)
+    main = ImgDialog(im, title=path or 'Figure')
     main.show()
 
     sys.exit(app.exec_())
