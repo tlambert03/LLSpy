@@ -58,11 +58,13 @@ programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 
 if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
     try:
-        #raise ImportError("skipping")
-        from spimagine import DataModel, NumpyData
-        from spimagine.gui.mainwidget import MainWidget as spimagineWidget
-        _SPIMAGINE_IMPORTED = True
-    except ImportError:
+        # raise ImportError("skipping")
+        with llspy.util.HiddenPrints():
+            from spimagine import DataModel, NumpyData
+            from spimagine.gui.mainwidget import MainWidget as spimagineWidget
+            _SPIMAGINE_IMPORTED = True
+    except ImportError as e:
+        print(e)
         logger.error("could not import spimagine!  falling back to matplotlib")
 
 
@@ -166,15 +168,15 @@ class LLSDragDropTable(QtW.QTableWidget):
                 box = QtW.QMessageBox()
                 box.setWindowTitle('Note')
                 box.setText('You have added a folder that appears to have been acquired'
-                    ' in Script Editor: it has "Iter_" in the filenames.\n\n'
-                    'LLSpy generally assumes that each folder contains '
-                    'a single position timelapse dataset (see docs for assumptions '
-                    'about data format).  Hit PROCESS ANYWAY to process this folder as is, '
-                    'but it may yield unexpected results. You may also RENAME ITERS, '
-                    'this will RENAME all files as if they were single experiments '
-                    'acquired at different positions and place them into their own '
-                    'folders (cannot be undone). Hit CANCEL to prevent adding this '
-                    'item to the queue.')
+                            ' in Script Editor: it has "Iter_" in the filenames.\n\n'
+                            'LLSpy generally assumes that each folder contains '
+                            'a single position timelapse dataset (see docs for assumptions '
+                            'about data format).  Hit PROCESS ANYWAY to process this folder as is, '
+                            'but it may yield unexpected results. You may also RENAME ITERS, '
+                            'this will RENAME all files as if they were single experiments '
+                            'acquired at different positions and place them into their own '
+                            'folders (cannot be undone). Hit CANCEL to prevent adding this '
+                            'item to the queue.')
                 box.setIcon(QtW.QMessageBox.Warning)
                 box.addButton(QtW.QMessageBox.Cancel)
                 box.addButton("Process Anyway", QtW.QMessageBox.YesRole)
@@ -204,22 +206,22 @@ class LLSDragDropTable(QtW.QTableWidget):
                 if sessionSettings.value('warnOnNoLLStiffs', True, type=bool):
                     box = QtW.QMessageBox()
                     box.setWindowTitle('Path has tiff files and Settings.txt file, but none of them match'
-                    ' the file naming convention assumed by LLSpy.')
+                                       ' the file pattern.')
                     box.setText('Path has tiff files, but none of them match'
-                    ' the file naming convention assumed by LLSpy.  Please read '
-                    'Data Structure Assumptions in the documentation for more info.\n\n'
-                    'http://llspy.readthedocs.io/en/latest/main.html#data-structure-assumptions\n')
+                                ' the file pattern specified in the config tab.  Please read '
+                                'the section on filename parsing in the documentation for more info.\n\n'
+                                'http://llspy.readthedocs.io/en/latest/main.html#parsing\n')
                     box.setIcon(QtW.QMessageBox.Warning)
                     box.addButton(QtW.QMessageBox.Ok)
                     box.setDefaultButton(QtW.QMessageBox.Ok)
-                    pref = QtW.QCheckBox("Just skip these folders in the future")
-                    box.setCheckBox(pref)
+                    # pref = QtW.QCheckBox("Just skip these folders in the future")
+                    # box.setCheckBox(pref)
 
                     def setPref(value):
                         sessionSettings.setValue('warnOnNoLLStiffs', bool(value))
                         sessionSettings.sync()
 
-                    pref.stateChanged.connect(setPref)
+                    # pref.stateChanged.connect(setPref)
                     box.exec_()
 
                 return
@@ -439,8 +441,8 @@ class ActiveWatcher(QtCore.QObject):
         fpattern = '^.+_ch\d_stack\d{4}_\D*\d+.*_\d{7}msec_\d{10}msecAbs.*.tif'
         # fpattern = '.*.tif'
         handler = ActiveHandler(str(self.E.path),
-            self.E.parameters.nc, self.E.parameters.nt,
-            regexes=[fpattern], ignore_directories=True)
+                                self.E.parameters.nc, self.E.parameters.nt,
+                                regexes=[fpattern], ignore_directories=True)
         handler.tReady.connect(self.add_ready)
         handler.allReceived.connect(self.all_received)
         handler.newfile.connect(self.newfile)
@@ -485,11 +487,11 @@ class ActiveWatcher(QtCore.QObject):
             # note: it was important NOT to ditch partial tiffs with the activate
             # watcher since the files aren't finished yet...
             w, thread = newWorkerThread(workers.TimePointWorker, self.path,
-                timepoints, cRange, self.opts, False,
-                workerConnect={
-                    'previewReady': self.writeFile
-                },
-                start=True)
+                                        timepoints, cRange, self.opts, False,
+                                        workerConnect={
+                                            'previewReady': self.writeFile
+                                        },
+                                        start=True)
             self.worker = (timepoints, w, thread)
         elif not any((self.inProcess, len(self.tQueue), not self.allReceived)):
             self.terminate()
@@ -513,12 +515,13 @@ class ActiveWatcher(QtCore.QObject):
             filename = basename.replace('.tif', corstring + proctype + '.tif')
             outpath = str(self.E.path.joinpath(outfolder, filename))
             llspy.util.imsave(llspy.util.reorderstack(np.squeeze(s), 'zyx'),
-                outpath, dx=self.E.parameters.dx, dz=self.E.parameters.dzFinal)
+                              outpath, dx=self.E.parameters.dx,
+                              dz=self.E.parameters.dzFinal)
 
         if stack.ndim == 5:
             if not stack.shape[0] == len(timepoints):
                 raise ValueError('Processed stacks length not equal to requested'
-                    ' number of timepoints processed')
+                                 ' number of timepoints processed')
             for t in range(stack.shape[0]):
                 for c in range(stack.shape[1]):
                     s = stack[t][c]
@@ -627,9 +630,9 @@ class RegistrationTab(object):
             raise err.RegistrationError(
                 'Registration Calibration dir not valid: {}'.format(RD.path))
 
-        outdir = QtW.QFileDialog.getExistingDirectory(
-                    self, 'Chose destination for registration file', '',
-                    QtW.QFileDialog.ShowDirsOnly)
+        outdir = QtW.QFileDialog \
+                    .getExistingDirectory(self, 'Chose destination for registration file', '',
+                                          QtW.QFileDialog.ShowDirsOnly)
         if outdir is None or outdir is '':
             return
 
@@ -651,9 +654,9 @@ class RegistrationTab(object):
                         outstr = "\n".join(["wave: {}, beads: {}".format(
                             channel, counts[i]) for i, channel in enumerate(self.RD.waves)])
                         self.warning.emit('Suspicious Registration Result',
-                            "Warning: there was a large variation in the number "
-                            "of beads per channel.  Auto-detection may have failed.  "
-                            "Try changing 'Min number of beads'...\n\n" + outstr)
+                                          "Warning: there was a large variation in the number "
+                                          "of beads per channel.  Auto-detection may have failed.  "
+                                          "Try changing 'Min number of beads'...\n\n" + outstr)
                 except RegistrationError as e:
                     raise err.RegistrationError("Fiducial registration failed:", str(e))
 
@@ -677,7 +680,7 @@ class RegistrationTab(object):
 
         def finishup(outfile):
             self.statusBar.showMessage(
-                    'Registration file written: {}'.format(outfile), 5000)
+                'Registration file written: {}'.format(outfile), 5000)
             self.loadRegistrationFile(outfile)
 
         def notifyuser(title, msg):
@@ -695,8 +698,9 @@ class RegistrationTab(object):
     # TODO: this is mostly duplicate functionality of loadRegObject below
     def loadRegistrationFile(self, file=None):
         if not file:
-            file = QtW.QFileDialog.getOpenFileName(self,
-                    'Choose registration file ',  os.path.expanduser('~'),
+            file = QtW.QFileDialog \
+                .getOpenFileName(
+                    self, 'Choose registration file ', os.path.expanduser('~'),
                     "Text Files (*.reg *.txt *.json)")[0]
 
             if file is None or file is '':
@@ -728,16 +732,17 @@ class RegistrationTab(object):
 
         if not self.RegFilePath.text():
             QtW.QMessageBox.warning(self, "Must load registration file!",
-                "No registration file!\n\nPlease click load, and load a "
-                "registration file.  Or use the generate button to generate and load a new one.",
-                QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
+                                    "No registration file!\n\nPlease click load, "
+                                    "and load a registration file.  Or use the "
+                                    "generate button to generate and load a new one.",
+                                    QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
             return
 
         @QtCore.pyqtSlot(np.ndarray, float, float, dict)
         def displayRegPreview(array, dx=None, dz=None, params=None):
-            win = ImgDialog(array,
-                info=params,
-                title="Registration Mode: {} -- RefWave: {}".format(opts['regMode'], opts['regRefWave']))
+            win = ImgDialog(array, info=params,
+                            title="Registration Mode: {} -- RefWave: {}".format(
+                                opts['regMode'], opts['regRefWave']))
             win.overlayButton.click()
             win.maxProjButton.click()
             self.spimwins.append(win)
@@ -767,9 +772,9 @@ class RegistrationTab(object):
         opts['nIters'] = 0
 
         w, thread = newWorkerThread(workers.TimePointWorker,
-            RD, [0], None, opts,
-            workerConnect={'previewReady': displayRegPreview},
-            start=True)
+                                    RD, [0], None, opts,
+                                    workerConnect={'previewReady': displayRegPreview},
+                                    start=True)
 
         w.finished.connect(lambda: self.previewButton.setEnabled(True))
         w.finished.connect(lambda: self.previewButton.setText('Preview'))
@@ -851,7 +856,8 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 label.setText('No CUDA-capabled GPUs detected')
                 self.gpuGroupBoxLayout.addWidget(label)
 
-        except llspy.cudabinwrapper.CUDAbinException:
+        except llspy.cudabinwrapper.CUDAbinException as e:
+            logger.warn(e)
             pass
 
         self.watchDirToolButton.clicked.connect(self.changeWatchDir)
@@ -897,6 +903,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         self.RegProcessPathLineEdit.setText('')
         self.RegProcessPathLineEdit.textChanged.connect(self.loadRegObject)
+        self.filenamePatternLineEdit.textChanged.connect(self.set_fname_pattern)
 
         self.disableSpimagineCheckBox.clicked.connect(lambda:
             QtW.QMessageBox.information(self, 'Restart Required',
@@ -950,6 +957,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         if self.watchDirCheckBox.isChecked():
             self.startWatcher()
+
+    @QtCore.pyqtSlot()
+    def set_fname_pattern(self):
+        llspy.llsdir.__FPATTERN__ = self.filenamePatternLineEdit.text() + '{}'
 
     @QtCore.pyqtSlot()
     def startWatcher(self):
@@ -1058,6 +1069,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             if reply != QtW.QMessageBox.Yes:
                 return
         guisave(self, defaultSettings)
+
+    def loadProgramDefaults(self):
+        guirestore(self, QtCore.QSettings(), programDefaults)
 
     def loadDefaultSettings(self):
         if not len(defaultSettings.childKeys()):
@@ -1811,8 +1825,9 @@ The cudaDeconv deconvolution program is owned and licensed by HHMI, Janelia Rese
         else:
             self.quitProgram()
 
-    def quitProgram(self):
-        guisave(self, sessionSettings)
+    def quitProgram(self, save=True):
+        if save:
+            guisave(self, sessionSettings)
         sessionSettings.setValue('cleanExit', True)
         sessionSettings.sync()
         QtW.QApplication.quit()

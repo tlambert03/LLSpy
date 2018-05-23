@@ -64,18 +64,18 @@ def get_bundled_binary(name='cudaDeconv'):
     if getattr(sys, 'frozen', False):
         binPath = sys._MEIPASS
     else:
-        thisDirectory = os.path.dirname(__file__)
-        binPath = os.path.join(thisDirectory, os.pardir, os.pardir, 'llspylibs', PLAT, 'bin')
-        binPath = os.path.abspath(binPath)
-        if not os.path.isdir(binPath):
-            if os.environ.get('CONDA_PREFIX', False):
-                base = os.environ['CONDA_PREFIX']
-                if PLAT == 'win32':
-                    binPath = os.path.join(base, 'Library', 'bin')
-                else:
-                    binPath = os.path.join(base, 'bin')
+        if os.environ.get('CONDA_PREFIX', False):
+            base = os.environ['CONDA_PREFIX']
+            if PLAT == 'win32':
+                binPath = os.path.join(base, 'Library', 'bin')
             else:
-                binPath = ''
+                binPath = os.path.join(base, 'bin')
+        else:
+            binPath = ''
+        if not os.path.isdir(binPath):
+            thisDirectory = os.path.dirname(__file__)
+            binPath = os.path.join(thisDirectory, os.pardir, os.pardir, 'llspylibs', PLAT, 'bin')
+            binPath = os.path.abspath(binPath)
 
     # get specific binary by platform
     binary = os.path.join(binPath, name)

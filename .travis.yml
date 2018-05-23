@@ -11,6 +11,7 @@ branches:
   - develop
 
 install:
+  - echo "TRAVIS_PYTHON_VERSION=$TRAVIS_PYTHON_VERSION"
   - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
   - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH"
   - if [[ "$BRANCH" == "master" ]]; then
@@ -34,9 +35,11 @@ install:
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda install conda-build anaconda-client
-  - conda update -q conda conda-build
+  - conda update -q conda
+  - conda config --add channels anaconda
   - conda config --add channels conda-forge
   - conda config --add channels talley
+  - conda config --add channels talley/label/dev
   - conda config --set show_channel_urls true
   - conda info -a
 
@@ -48,7 +51,7 @@ install:
 
 script:
   - conda build --py $TRAVIS_PYTHON_VERSION  conda.recipe
-  - OUTPUT="$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)"
+  - OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --output conda.recipe)
   - echo $OUTPUT
 
 after_success:

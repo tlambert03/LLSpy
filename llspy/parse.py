@@ -3,6 +3,7 @@ from __future__ import division, print_function
 import os
 import re
 import warnings
+import parse
 
 
 # ############### Patterns and regex constants ####################
@@ -49,14 +50,32 @@ def contains_LLSfiles(path):
 	return False
 
 
-def parse_filename(fname, matchword=None, pattern=filename_pattern):
+def contains_filepattern(path, pattern):
+	for item in os.listdir(path):
+		if parse.parse(pattern, item):
+			return True
+	return False
+
+
+def parse_filename(fname, matchword=None, pattern=None):
 	fname = os.path.basename(fname)
-	gd = pattern.search(fname).groupdict()
-	gd = {k: (int(v) if (v.isdigit() and k != 'basename') else v) for k, v in gd.items()}
-	if matchword in gd:
-		return gd[matchword]
+	# if not pattern:
+	# 	pattern = filename_pattern
+	# 	gd = pattern.search(fname)
+	# 	if not hasattr(gd, 'groupdict'):
+	# 		raise ValueError('Could not parse filename {}'.format(fname))
+	# 	gd = gd.groupdict()
+	# 	named = {k: (int(v) if (v.isdigit() and k != 'basename') else v) for k, v in gd.items()}
+	if not pattern:
+		pattern = '{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}'
+	R = parse.parse(pattern, fname)
+	if not (R and hasattr(R, 'named')):
+		raise ValueError('Could not parse filename:\n{} with pattern:\n{}'.format(fname, pattern))
+	named = R.named
+	if matchword in named:
+		return named[matchword]
 	else:
-		return gd
+		return named
 
 
 def gen_filename(d, template=FNAME_TEMPLATE):
