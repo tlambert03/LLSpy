@@ -268,7 +268,6 @@ def divide_arg_queue(E, n_gpus, binary):
 
     P = E.localParams()
     cudaOpts = P.copy()
-    n_channels = len(P.cRange)
     n_time = len(P.tRange)
 
     for i, chan in enumerate(P.cRange):
