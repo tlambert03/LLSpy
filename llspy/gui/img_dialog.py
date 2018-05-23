@@ -4,7 +4,7 @@ import numpy as np
 import logging
 from PyQt5 import QtWidgets, QtCore, QtGui
 #from llspy.gui.img_window import Ui_Dialog
-from img_window import Ui_Dialog
+from .img_window import Ui_Dialog
 logger = logging.getLogger(__name__)
 
 import matplotlib
