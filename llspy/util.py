@@ -25,6 +25,15 @@ class dotdict(dict):
         return self.keys()
 
 
+class HiddenPrints:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = None
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = self._original_stdout
+
+
 def pathHasPattern(path, pattern='*Settings.txt'):
     for file in os.listdir(path):
         if fnmatch.fnmatch(file, pattern):
@@ -118,7 +127,8 @@ def which(program):
             if is_exe(exe_file):
                 return exe_file
 
-        binpaths = ['bin', 'Library/bin', '../../llspylibs/{}/bin'.format(PLAT)]
+        # binpaths = ['bin', 'Library/bin', '../../llspylibs/{}/bin'.format(PLAT)]
+        binpaths = ('bin', 'Library/bin')
         for path in binpaths:
             path = getAbsoluteResourcePath(path)
             if path:
@@ -218,8 +228,8 @@ def load_lib(libname):
     searchlist = [os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'Library', 'bin'),
                   os.path.join(os.environ.get('CONDA_PREFIX', '.'), 'lib'),
                   './lib',
-                  '../../llspylibs/{}/lib/'.format(PLAT),
-                  '../llspylibs/{}/lib/'.format(PLAT),
+                  # '../../llspylibs/{}/lib/'.format(PLAT),
+                  # '../llspylibs/{}/lib/'.format(PLAT),
                   '.']
 
     ext = {'linux': '.so',

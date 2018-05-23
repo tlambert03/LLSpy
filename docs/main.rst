@@ -302,7 +302,7 @@ Data Structure Assumptions
 
 I have made a number of assumptions about the structure of the data folder being processed with LLSpy.  If you organize your data different than I have, it may cause unexpected results or bugs.  It's likely that these problems can be fixed, so if your data organization conventions differ from those described below, just `submit an issue on github <https://github.com/tlambert03/LLSpy/issues>`_ describing the problem or `contact Talley`_ with an example of your data folder format.
 
-The main object in LLSpy is the :class:`llspy.llsdir.LLSdir` "data folder" object (see :ref:`api`).  This object assumes that each experiment (e.g. single multi-channel timelapse) is contained in a single folder, with all of the raw tiffs, and one \*Settings.txt file.  It also assumes that you are using the file naming convention used by Dan Milkie's Labview acquisition software.  A typical LLSdir folder structure might look like this:
+The main object in LLSpy is the :class:`llspy.llsdir.LLSdir` "data folder" object (see :ref:`api`).  This object assumes that each experiment (e.g. single multi-channel timelapse) is contained in a single folder, with all of the raw tiffs, and one \*Settings.txt file.  A typical LLSdir folder structure might look like this:
 
 .. code::
 
@@ -317,7 +317,12 @@ The main object in LLSpy is the :class:`llspy.llsdir.LLSdir` "data folder" objec
 
 .. _Parsing:
 
-*Filenames are parsed according to the following regex:*
+Filename Parsing
+----------------
+
+*In order to perform many of the automated functions that LLSpy performs, it is necessary to extract information from the filename, such as the channel, wavelength, timepoint, etc...  If this step is unsuccessful, many things will break.*
+
+**Prior to version 0.3.9**, LLSpy assumed that you are using the file naming convention used by Dan Milkie's Labview acquisition software, and filenames were parsed according to the following regular expression.
 
 .. code:: python
 
@@ -330,8 +335,30 @@ The main object in LLSpy is the :class:`llspy.llsdir.LLSdir` "data folder" objec
     _(?P<abstime>\d{10})msecAbs # 10 digits after _ and before msecAbs
     """, re.VERBOSE)
 
+**As of version 0.3.9**, LLSpy allows the user to define a filename pattern using relatively simple syntax (thanks to the `parse <https://pypi.python.org/pypi/parse>`_ library).  The filename pattern can be changed in the config tab.  The default pattern, which should work for the original Lattice Scope software released by Dan Milkie is as follows:
 
-If your folder structure or filenaming convention varies much from this, you will likely run into difficulties.  You can `contact Talley`_ with an example filename, or change it directly in :mod:`llspy.parse`.
+.. code::
+
+  {basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs
+
+*The syntax for the filename pattern is as follows:*
+
+* Anything inside of brackets ``{}`` is a placeholder
+* Anthing *NOT* inside of a bracket is taken as a literal/constant that will be present in the filename (such as "_stack" or "_ch").
+* Words inside of brackets (e.g. ``{basename}``) specify the variable that placeholder represents.
+* The variable names recognized by LLSpy are as follows (note, required variables must be present in your filename pattern):
+
+  * ``basename`` (**required**)
+  * ``channel:d`` (**required**)
+  * ``stack:d`` (**required**)
+  * ``wave:d`` (**required**)
+  * ``reltime:d``
+  * ``abstime:d``
+
+* a colon folowed by the letter d (e.g. ``{wave:d}``) specifies that the variable is an integer (``:d`` *must* be used for the channel, stack, and wave variables and any other number variables)
+* an empty bracket ``{}`` can be used as a "wildcard" to consume any text in the name that may be causing difficulty with filename parsing, LLSpy will simply ignore it.  LLSpy adds a ``{}`` to all filename patterns (which means, for example, that it is not necessary to include the '.tif' at the end of the filename pattern)
+
+If you are struggling with filename parsing or data structure issues, please `submit an issue on github <https://github.com/tlambert03/LLSpy/issues>`_ and include details on your filename patterns and data structure.
 
 Script-editor datasets
 ----------------------

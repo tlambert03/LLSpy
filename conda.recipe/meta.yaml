@@ -4,22 +4,22 @@
 package:
   name: {{ name }}
   {% if environ.get('BRANCH') == "master" %}
-  version: {{ setupdata['version'] }}
+  version: {{ setupdata.get('version') }}
   {% else %}
   version: "{{ GIT_DESCRIBE_TAG }}_{{ GIT_BUILD_STR }}"
   {% endif %}
 
 source:
-  # path: ..
-  git_url: https://github.com/tlambert03/LLSpy
-  git_rev: "{{ environ.get('BRANCH') }}"
+  path: ..
+  # git_url: https://github.com/tlambert03/LLSpy
+  # git_rev: "{{ environ.get('BRANCH') }}"
 
 build:
   number: 0
   string: 'py{{ PY_VER|replace(".", "") }}_{{ PKG_BUILDNUM }}'
   script: python setup.py install --single-version-externally-managed --record record.txt
   entry_points:
-    {% for key, list in setupdata['entry_points'].items() %}
+    {% for key, list in setupdata.get('entry_points').items() %}
       {% for item in list %}
     - {{item}}
       {% endfor %}
@@ -32,38 +32,46 @@ requirements:
   run:
     - python
     - numpy
-    - scipy
-    - tifffile
-    - numba
-    - voluptuous
-    - watchdog
-    - pyqt >=5
-    - click
-    - matplotlib
-    - spimagine
-    - llspylibs
+    - scipy >=1.0.0
+    - tifffile >=0.14.0
+    - numba >=0.38.0
+    - voluptuous ==0.11.1
+    - watchdog >=0.8.3
+    - pyqt ==5.9.2 # [py3k]
+    - pyqt ==5.6.0 # [py2k]
+    - click ==6.7
+    - parse ==1.8.2
+    - matplotlib >=2.1.1
+    - spimagine >=0.2.5
+    - tar ==1.29 # [not win]
+    - llspylibs >=0.1.3
     - pathlib2 # [py2k]
     - configparser # [py2k]
     - pigz
     - lbzip2 # [not win]
-    - raven
+    - raven >=6.8.0
     - llspy-slm
 
 test:
+  requires:
+    - pytest
+    - pytest-qt
+    - llscd
   imports:
     - llspy # [not py2k]
   commands:
     # - which lls  # [unix]
     # - where lls  # [win]
     - lls --help # [not py2k]
-    - lls gui --test # [not linux]
+    # - lls gui --test # [not linux]
+    - pytest
 #    - spimagine
 
 about:
-  home: {{ setupdata['url'] }}
-  license: {{ setupdata['license'] }}
+  home: {{ setupdata.get('url') }}
+  license: {{ setupdata.get('license') }}
   license_file: LICENSE
-  summary: {{ setupdata['description'] }}
+  summary: {{ setupdata.get('description') }}
 
 # app:
 #   entry: lls-gui

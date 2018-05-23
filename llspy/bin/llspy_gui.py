@@ -144,14 +144,18 @@ def main():
                 QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
         projectURL = "https://api.github.com/repos/tlambert03/LLSpy/releases/latest"
-        newestVersion = json.loads(urlopen(projectURL).read().decode('utf-8'))['tag_name']
-        if StrictVersion(newestVersion) > StrictVersion(llspy.__version__):
-            QtWidgets.QMessageBox.information(mainGUI, "Newer Version Available!",
-                'Update available: v%s\n\nYou are using v%s\n\nIf you are using '
-                'anaconda, you may update by typing "conda update -c talley llspy" '
-                'at the anaconda prompt'
-                % (newestVersion, llspy.__version__),
-                QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
+        try:
+            newestVersion = json.loads(urlopen(projectURL).read().decode('utf-8'))['tag_name']
+            if StrictVersion(newestVersion) > StrictVersion(llspy.__version__):
+                QtWidgets.QMessageBox.information(mainGUI, "Newer Version Available!",
+                    'Update available: v%s\n\nYou are using v%s\n\nIf you are using '
+                    'anaconda, you may update by typing "conda update -c talley llspy" '
+                    'at the anaconda prompt'
+                    % (newestVersion, llspy.__version__),
+                    QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
+        except Exception:
+            pass
+
 
         try:
             llspy.libcudawrapper.cudaLib.Affine_interface_RA

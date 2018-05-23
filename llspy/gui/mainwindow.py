@@ -58,11 +58,13 @@ programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 
 if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
     try:
-        #raise ImportError("skipping")
-        from spimagine import DataModel, NumpyData
-        from spimagine.gui.mainwidget import MainWidget as spimagineWidget
-        _SPIMAGINE_IMPORTED = True
-    except ImportError:
+        # raise ImportError("skipping")
+        with llspy.util.HiddenPrints():
+            from spimagine import DataModel, NumpyData
+            from spimagine.gui.mainwidget import MainWidget as spimagineWidget
+            _SPIMAGINE_IMPORTED = True
+    except ImportError as e:
+        print(e)
         logger.error("could not import spimagine!  falling back to matplotlib")
 
 
@@ -204,22 +206,22 @@ class LLSDragDropTable(QtW.QTableWidget):
                 if sessionSettings.value('warnOnNoLLStiffs', True, type=bool):
                     box = QtW.QMessageBox()
                     box.setWindowTitle('Path has tiff files and Settings.txt file, but none of them match'
-                    ' the file naming convention assumed by LLSpy.')
+                    ' the file pattern.')
                     box.setText('Path has tiff files, but none of them match'
-                    ' the file naming convention assumed by LLSpy.  Please read '
-                    'Data Structure Assumptions in the documentation for more info.\n\n'
-                    'http://llspy.readthedocs.io/en/latest/main.html#data-structure-assumptions\n')
+                    ' the file pattern specified in the config tab.  Please read '
+                    'the section on filename parsing in the documentation for more info.\n\n'
+                    'http://llspy.readthedocs.io/en/latest/main.html#parsing\n')
                     box.setIcon(QtW.QMessageBox.Warning)
                     box.addButton(QtW.QMessageBox.Ok)
                     box.setDefaultButton(QtW.QMessageBox.Ok)
-                    pref = QtW.QCheckBox("Just skip these folders in the future")
-                    box.setCheckBox(pref)
+                    #pref = QtW.QCheckBox("Just skip these folders in the future")
+                    #box.setCheckBox(pref)
 
                     def setPref(value):
                         sessionSettings.setValue('warnOnNoLLStiffs', bool(value))
                         sessionSettings.sync()
 
-                    pref.stateChanged.connect(setPref)
+                    #pref.stateChanged.connect(setPref)
                     box.exec_()
 
                 return
@@ -897,6 +899,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         self.RegProcessPathLineEdit.setText('')
         self.RegProcessPathLineEdit.textChanged.connect(self.loadRegObject)
+        self.filenamePatternLineEdit.textChanged.connect(self.set_fname_pattern)
 
         self.disableSpimagineCheckBox.clicked.connect(lambda:
             QtW.QMessageBox.information(self, 'Restart Required',
@@ -950,6 +953,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         if self.watchDirCheckBox.isChecked():
             self.startWatcher()
+
+    @QtCore.pyqtSlot()
+    def set_fname_pattern(self):
+        llspy.llsdir.__FPATTERN__ = self.filenamePatternLineEdit.text() + '{}'
 
     @QtCore.pyqtSlot()
     def startWatcher(self):
@@ -1058,6 +1065,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             if reply != QtW.QMessageBox.Yes:
                 return
         guisave(self, defaultSettings)
+
+    def loadProgramDefaults(self):
+        guirestore(self, QtCore.QSettings(), programDefaults)
 
     def loadDefaultSettings(self):
         if not len(defaultSettings.childKeys()):
@@ -1811,8 +1821,9 @@ The cudaDeconv deconvolution program is owned and licensed by HHMI, Janelia Rese
         else:
             self.quitProgram()
 
-    def quitProgram(self):
-        guisave(self, sessionSettings)
+    def quitProgram(self, save=True):
+        if save:
+            guisave(self, sessionSettings)
         sessionSettings.setValue('cleanExit', True)
         sessionSettings.sync()
         QtW.QApplication.quit()

@@ -258,6 +258,54 @@ class CompressionWorker(SubprocessWorker):
 #         self.finished.emit()
 
 
+def divide_arg_queue(E, n_gpus, binary):
+    """generate all the channel specific cudaDeconv arguments for this item."""
+    argQueue = []
+
+    def split(a, n):
+        k, m = divmod(len(a), n)
+        return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
+
+    P = E.localParams()
+    cudaOpts = P.copy()
+    n_channels = len(P.cRange)
+    n_time = len(P.tRange)
+
+    for i, chan in enumerate(P.cRange):
+        # generate channel and gpu specific options
+        cudaOpts['input-dir'] = str(E.path)
+        cudaOpts['otf-file'] = P.otfs[i]
+        cudaOpts['background'] = P.background[i] if not P.correctFlash else 0
+        cudaOpts['wavelength'] = float(E.parameters.channels[chan]) / 1000
+
+        # if the number of GPUs is less than or equal to
+        # the number of timepoints being processed
+        # then split the work across GPUs by processing each channel,
+        # diving time across the available GPUS
+        if n_gpus <= n_time:
+            tRanges = list(split(P.tRange, n_gpus))
+
+            for tRange in tRanges:
+                # filter by channel and trange
+                if len(tRange) == E.parameters.nt:
+                    cudaOpts['filename-pattern'] = '_ch{}_'.format(chan)
+                else:
+                    cudaOpts['filename-pattern'] = '_ch{}_stack{}'.format(chan,
+                        llspy.util.pyrange_to_perlregex(tRange))
+
+                argQueue.append(binary.assemble_args(**cudaOpts))
+
+        # if there are more GPUs than timepoints available
+        # (e.g. single stack of multiple channels)
+        # then if there are enough gpus to cover all channels,
+        # divide channels across gpus
+        else:
+            cudaOpts['filename-pattern'] = '_ch{}_'.format(chan)
+            argQueue.append(binary.assemble_args(**cudaOpts))
+
+    return argQueue
+
+
 class LLSitemWorker(QtCore.QObject):
 
     sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
@@ -360,30 +408,8 @@ class LLSitemWorker(QtCore.QObject):
                 self.error.emit()
                 raise
 
-            def split(a, n):
-                k, m = divmod(len(a), n)
-                return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
+            self.__argQueue = divide_arg_queue(self.E, len(self.GPU_SET), binary)
 
-            # generate all the channel specific cudaDeconv arguments for this item
-            cudaOpts = self.P.copy()
-            tRanges = list(split(self.P.tRange, len(self.GPU_SET)))
-            for i, chan in enumerate(self.P.cRange):
-                # generate channel and gpu specific options
-                cudaOpts['input-dir'] = str(self.E.path)
-                cudaOpts['otf-file'] = self.P.otfs[i]
-                cudaOpts['background'] = self.P.background[i] if not self.P.correctFlash else 0
-                cudaOpts['wavelength'] = float(self.E.parameters.channels[chan]) / 1000
-
-                for tRange in tRanges:
-                    # filter by channel and trange
-                    if len(tRange) == self.E.parameters.nt:
-                        cudaOpts['filename-pattern'] = '_ch{}_'.format(chan)
-                    else:
-                        cudaOpts['filename-pattern'] = '_ch{}_stack{}'.format(chan,
-                            llspy.util.pyrange_to_perlregex(tRange))
-
-                    args = binary.assemble_args(**cudaOpts)
-                    self.__argQueue.append(args)
             # with the argQueue populated, we can now start the workers
             if not len(self.__argQueue):
                 self._logger.error('No channel arguments to process in LLSitem: %s' % self.shortname)
@@ -400,6 +426,8 @@ class LLSitemWorker(QtCore.QObject):
 
     def startCUDAWorkers(self):
         # initialize the workers and threads
+
+        print(len(self.__argQueue))
 
         for gpu in self.GPU_SET:
             # create new CUDAworker for every thread

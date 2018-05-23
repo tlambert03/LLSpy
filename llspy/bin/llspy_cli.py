@@ -706,7 +706,7 @@ def show(config, path, stack, timepoint):
 
 
 @cli.command(short_help='Install cudaDeconv libraries and binaries')
-@click.argument('path', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument('path', type=click.Path(exists=True, file_okay=True, resolve_path=True))
 @click.option('-n', '--dryrun', is_flag=True, default=False,
               help='Just show what files would be moved to where')
 def install(path, dryrun):
@@ -717,12 +717,12 @@ def install(path, dryrun):
     library and binary files will be installed to the LLSpy installation.
 
     """
-    if os.environ.get('CONDA_DEFAULT_ENV', '') == 'root':
+    if os.environ.get('CONDA_DEFAULT_ENV', '') in ('root', 'base'):
         if not click.confirm('It looks like you\'re in the root conda environment... '
         'It is recommended that you install llspy in its own environment.\n'
         'Continue?'):
             return
-    libinstall.install(path)
+    libinstall.install(path, dryrun)
 
 
 def del_sysconfig(ctx, param, value):

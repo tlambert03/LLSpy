@@ -1,6 +1,15 @@
 LLSpy Release History
 #####################
 
+`0.3.8`_
+========
+
+**Fixed:**
+
+* tifffile update broke ability to read tiff bit depth.
+* dependency versions now explicity listed
+
+
 `0.3.7`_
 ========
 
