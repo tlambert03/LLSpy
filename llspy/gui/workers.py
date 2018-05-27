@@ -426,8 +426,6 @@ class LLSitemWorker(QtCore.QObject):
     def startCUDAWorkers(self):
         # initialize the workers and threads
 
-        print(len(self.__argQueue))
-
         for gpu in self.GPU_SET:
             # create new CUDAworker for every thread
             # each CUDAworker will control one cudaDeconv process (which only gets
