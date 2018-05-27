@@ -3,7 +3,7 @@ from llspy.gui.mainwindow import main_GUI
 from PyQt5 import QtWidgets, QtCore
 from pytestqt import qtbot
 from llspy.llsdir import LLSdir
-import time
+
 
 def test_basic_processing(qtbot):
     testdata = os.path.join(os.path.dirname(__file__), 'testdata', 'sample')
@@ -42,12 +42,12 @@ def test_spimagine_preview(qtbot):
     assert mainGUI.listbox.rowCount() == 0
     mainGUI.listbox.addPath(testdata)
     assert mainGUI.listbox.rowCount() == 1
+
     def preview_exists():
         assert len(mainGUI.spimwins)
-
     mainGUI.prevBackendSpimagineRadio.setChecked(True)
     qtbot.mouseClick(mainGUI.previewButton, QtCore.Qt.LeftButton)
-    qtbot.waitUntil(preview_exists, timeout=4000)
+    qtbot.waitUntil(preview_exists, timeout=10000)
     mainGUI.close_all_previews()
     assert len(mainGUI.spimwins) == 0
     mainGUI.quitProgram(save=False)
@@ -63,11 +63,12 @@ def test_matplotlib_preview(qtbot):
     assert mainGUI.listbox.rowCount() == 0
     mainGUI.listbox.addPath(testdata)
     assert mainGUI.listbox.rowCount() == 1
+
     def preview_exists():
         assert len(mainGUI.spimwins)
     mainGUI.prevBackendMatplotlibRadio.setChecked(True)
     qtbot.mouseClick(mainGUI.previewButton, QtCore.Qt.LeftButton)
-    qtbot.waitUntil(preview_exists, timeout=4000)
+    qtbot.waitUntil(preview_exists, timeout=10000)
     mainGUI.close_all_previews()
     assert len(mainGUI.spimwins) == 0
     mainGUI.quitProgram(save=False)
