@@ -169,7 +169,7 @@ def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
     files = [f for f in files if (f.endswith('.tif') and '_REG' not in f)]
     for F in files:
         fname = os.path.join(folder, F)
-        outname = fname.replace('.tif', '_REG.tif')
+        outname = fname.replace('.tif', '_REG{}.tif'.format(regRefWave))
         imarray = util.imread(fname)
         imwave = parse.parse_filename(fname, 'wave', pattern=__FPATTERN__)
         im_out = register_image_to_wave(imarray, regObj, imwave, regRefWave,
@@ -178,6 +178,12 @@ def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
             outname, dx=voxsize[2], dz=voxsize[0])
         if discard:
             os.remove(os.path.join(folder, F))
+
+    # rename refwave files too
+    for F in parse.filter_w(os.listdir(folder), regRefWave, exclusive=False):
+        fname = os.path.join(folder, F)
+        outname = fname.replace('.tif', '_REG{}.tif'.format(regRefWave))
+        os.rename(fname, outname)
 
 
 def register_image_to_wave(img, regCalibObj, imwave=None, refwave=488,
