@@ -25,6 +25,13 @@ class dotdict(dict):
         return self.keys()
 
 
+def mode1(x):
+    """Returns the mode value of a one-dimensional array"""
+    values, counts = np.unique(x, return_counts=True)
+    m = counts.argmax()
+    return values[m]
+
+
 class HiddenPrints:
     def __enter__(self):
         self._original_stdout = sys.stdout
@@ -32,6 +39,25 @@ class HiddenPrints:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout = self._original_stdout
+
+
+def py23_unpack(first, *rest):
+    return first, rest
+
+
+def numberdict(dct):
+    """ convert all numeric values in a dict to their appropriate type """
+    o = {}
+    for k, v in dct.items():
+        if v.isdigit():
+            v = int(v)
+        else:
+            try:
+                v = float(v)
+            except ValueError:
+                v = v
+        o.update({k: v})
+    return o
 
 
 def pathHasPattern(path, pattern='*Settings.txt'):

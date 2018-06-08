@@ -144,7 +144,7 @@ def camcor_init(rawdata_shape, camparams):
 def camcor(imstack):
     requireCUDAlib()
     if not np.issubdtype(imstack.dtype, np.uint16):
-        print('CONVERTING')
+        logger.warning('CONVERTING datatype for camera correction')
         imstack = imstack.astype(np.uint16)
     nz, ny, nx = imstack.shape
     result = np.empty_like(imstack)
@@ -271,26 +271,62 @@ def RL_init(rawdata_shape, otfpath, drdata=0.104, dzdata=0.5, drpsf=0.104,
             dzpsf=0.1, deskew=31.5, rotate=0, width=0, **kwargs):
     requireCUDAlib()
     nz, ny, nx = rawdata_shape
-    RL_interface_init(nx, ny, nz, drdata, dzdata, drpsf, dzpsf, deskew, rotate,
-        width, otfpath.encode())
+    RL_interface_init(nx, ny, nz, drdata, dzdata, drpsf, dzpsf, deskew,
+                      rotate, width, otfpath.encode())
+
+
+class RLContext(object):
+    """ Context manager to setup the GPU for RL decon
+
+    Takes care of handing the OTF to the GPU and cleaning up after decon
+    """
+    def __init__(self, shape, otfpath, dz, dzpsf=0.1, dr=0.1, drpsf=0.1,
+                 deskew=31.5, rotate=0, width=0, **kwargs):
+        self.nz, self.ny, self.nx = shape
+        self.dr = dr
+        self.dz = dz
+        self.drpsf = drpsf
+        self.dzpsf = dzpsf
+        self.deskew = deskew
+        self.rotate = rotate
+        self.width = width
+        self.otfpath = otfpath
+        self.out_shape = None
+
+    def __enter__(self):
+        """ Setup the context and return the ZYX shape of the output image """
+        RL_interface_init(self.nx, self.ny, self.nz, self.dr, self.dz,
+                          self.drpsf, self.dzpsf, self.deskew,
+                          self.rotate, self.width, self.otfpath.encode())
+        self.out_shape = (get_output_nz(), get_output_ny(), get_output_nx())
+        return self
+
+    def __exit__(self, typ, val, traceback):
+        # exit receives a tuple with any exceptions raised during processing
+        # if __exit__ returns True, exceptions will be supressed
+        RL_cleanup()
 
 
 def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
-             rescale=False, **kwargs):
+             rescale=False, output_shape=None, **kwargs):
     requireCUDAlib()
     nz, ny, nx = im.shape
-    decon_result = np.empty((get_output_nz(), get_output_ny(),
-            get_output_nx()), dtype=np.float32)
+    if output_shape is None:
+        output_shape = (get_output_nz(), get_output_ny(), get_output_nx())
+    else:
+        assert len(output_shape) == 3, 'Decon output shape must have length==3'
+    decon_result = np.empty(tuple(output_shape), dtype=np.float32)
 
     if savedeskew:
         deskew_result = np.empty_like(decon_result)
     else:
         deskew_result = np.empty(1, dtype=np.float32)
 
+    # must be 16 bit going in
     if not np.issubdtype(im.dtype, np.uint16):
         im = im.astype(np.uint16)
     RL_interface(im, nx, ny, nz, decon_result, deskew_result,
-                background, rescale, savedeskew, nIters, shift)
+                 background, rescale, savedeskew, nIters, shift)
 
     if savedeskew:
         return decon_result, deskew_result
@@ -352,19 +388,6 @@ if __name__ == "__main__":
             import time
 
             E = llsdir.LLSdir(samples.stickypix)
-
-            # from llspy.util import util
-            # from llspy.camera.camera import CameraParameters, CameraROI
-
-            # camparams = CameraParameters()
-            # camparams = camparams.get_subroi(CameraROI(E.settings.camera.roi))
-
-            # camparams.init_CUDAcamcor((E.parameters.nz*E.parameters.nc,
-            #   E.parameters.ny, E.parameters.nx))
-
-            # stacks = [util.imread(f) for f in E.get_t(0)]
-            # interleaved = np.stack(stacks, 1).reshape((-1, E.parameters.ny, E.parameters.nx))
-            # corrected = camcor(interleaved)
 
             start = time.time()
             E.correct_flash(target='cuda', median=False)

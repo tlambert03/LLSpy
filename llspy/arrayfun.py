@@ -94,6 +94,24 @@ def cropX(im, width=0, shift=0):
     return im
 
 
+def interleave(data):
+    """ interleave timepoints into the channel axis
+
+    for instance, convert an array of shape (10,3,512,512) to
+    one with shape (30, 512, 512) where the first axis is alternating
+    between three channels
+    """
+    if data.ndim == 4:
+        ny, nx = data.shape[-2:]
+        data = data.transpose(1, 0, 2, 3).reshape((-1, ny, nx))
+    return data
+
+
+def deinterleave(data, nc):
+    """ undo the interleave function"""
+    return np.stack([data[i::nc] for i in range(nc)]) if nc > 1 else data
+
+
 def imcontentbounds(im, sigma=2):
     """Get image content bounding box via gaussian filter and threshold."""
     # get rid of the first two planes in case of high dark noise

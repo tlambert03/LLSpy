@@ -1,24 +1,29 @@
-from . import util
-from . import camera
-from .exceptions import SettingsError
-from datetime import datetime
+from __future__ import division
 
-import os
 import re
 import io
-import configparser
-import warnings
 import logging
+import dateutil.parser as dp
+from collections import defaultdict
+from configparser import ConfigParser
+from .util import py23_unpack, numberdict, dotdict
+from .camera import CameraROI
+try:
+    from pathlib import Path
+    Path().expanduser()
+except (ImportError, AttributeError):
+    from pathlib2 import Path
+
 logger = logging.getLogger(__name__)
 
 
 # repating pattern definitions used for parsing settings file
-numstack_pattern = re.compile(r"""
+numstk_regx = re.compile(r"""
     \#\sof\sstacks\s\((?P<channel>\d)\) # channel number inside parentheses
     \s:\s+(?P<numstacks_requested>\d+)  # number of stacks after the colon
     """, re.MULTILINE | re.VERBOSE)
 
-waveform_pattern = re.compile(r"""
+wavfrm_regx = re.compile(r"""
     ^(?P<waveform>.*)\sOffset,  # Waveform type, newline followed by description
     .*\((?P<channel>\d+)\)\s    # get channel number inside of parentheses
     :\s*(?P<offset>[-\d]*\.?\d*)    # float offset value after colon
@@ -26,7 +31,7 @@ waveform_pattern = re.compile(r"""
     \s*(?P<numpix>\d+)          # integer number of pixels last
     """, re.MULTILINE | re.VERBOSE)
 
-excitation_pattern = re.compile(r"""
+exc_regx = re.compile(r"""
     Excitation\sFilter,\s+Laser,    # Waveform type, newline followed by description
     .*\((?P<channel>\d+)\)\s    # get channel number inside of parentheses
     :\s+(?P<exfilter>[^\s]*)        # excitation filter: anything but whitespace
@@ -42,216 +47,132 @@ PIXEL_SIZE = {
 }
 
 
-class LLSsettings(object):
-    '''Class for parsing and storing info from LLS Settings.txt.
+class SettingsParserError(Exception):
+    pass
 
-    Args:
-        fname (:obj:`str`): path to settings.txt file
 
-    Attributes:
-        path: path to settings.txt file
-        basename: basename of settings file
-        date: :obj:`datetime` instance representing date of acquisition
-        acq_mode: Lattice Scope acquisition mode (i.e. Z-stack)
-        software_version: Lattice Scope software version
-        cycle_lasers: laser cycling mode, e.g. 'per Z'
-        z_motion: stage or objective scan
-        channel: dict with waveform params for each channel
-        camera: dict with camera settings
-        SPIMproject: configparser object with full SPIMproject.ini data
-        sheet_angle: light sheet angle
-        mag: magnification in settings file
-        pixel_size: calculated based on mag and dict of camera photodiode sizes
-        parameters: most important parameters extracted from settings file
-        raw_text: full settings.txt text string
-    '''
+def parse_settings(path, pattern='*Settings.txt'):
+    """ Parse LLS Settings.txt file and return dict of info """
+    path = Path(path)
+    if path.is_dir():
+        sfiles = [s for s in path.glob(pattern)]
+        if len(sfiles) == 0:
+            return {}
+        if len(sfiles) > 1:
+            logger.warn('Multiple Settings.txt files detected. '
+                        'Using first one.')
+        path = sfiles[0]
+    if not path.is_file():
+        raise IOError('Could not read file: %s' % str(path))
+    with io.open(str(path), 'r', encoding='utf-8') as f:
+        text = f.read()
 
-    def __init__(self, fname):
-        self.path = os.path.abspath(fname)
-        self.basename = os.path.basename(fname)
-        if self.read():
-            self.parse()
+    sections = [t.strip()for t in
+                re.split(r'(?:[\*\s]+)([^\*]+)', text)
+                if t.strip()]
+    if len(sections) % 2:
+        raise SettingsParserError('Section headings not properly parsed')
+    sections = dict(zip(sections[::2], sections[1::2]))
+    for k in ('General', 'Waveform', 'Camera'):
+        if k not in sections:
+            raise SettingsParserError('Cannot parse settings file without '
+                                      '"{}"" section'.format(k))
 
-    def printDate(self):
-        print(self.date.strftime('%x %X %p'))
+    def _search(regex, default=None, func=lambda x: x, section=text):
+        match = re.search(regex, sections[section])
+        if match and len(match.groups()):
+            return func(match.group(1).strip())
+        return default
 
-    def read(self):
-        # io.open grants py2/3 compatibility
-        try:
-            with io.open(self.path, 'r', encoding='utf-8') as f:
-                self.raw_text = f.read()
-            return 1
-        except IOError:
-            warnings.warn('Settings file not found at {}'.format(self.path))
-            return 0
-        except Exception:
-            return 0
+    _D = dotdict(
+        params=dotdict(),
+        camera=dotdict(),
+        mask=None,
+        channels=defaultdict(lambda: defaultdict(dict))
+    )
 
-    def __repr__(self):
-        from pprint import pformat
-        sb = {k: v for k, v in self.__dict__.items() if k not in {'raw_text', 'SPIMproject'}}
-        return pformat(sb)
+    # basic stuff from General section
+    searches = [
+        # Section     label    regex               default         formatter
+        ('General', ('date', r'Date\s*:\s*(.*)\n', None, dp.parse),),
+        ('General', ('acq_mode', r'Acq Mode\s*:\s*(.*)\n'),),
+        ('General', ('software_version', r'Version\s*:\s*v ([\d*.?]+)'),),
+        ('Waveform', ('cycle_lasers', r'Cycle lasers\s*:\s*(.*)(?:$|\n)'),),
+        ('Waveform', ('z_motion', r'Z motion\s*:\s*(.*)(?:$|\n)'),),
+    ]
+    for section, item in searches:
+        key, patrn = py23_unpack(*item)
+        _D[key] = _search(*patrn, section=section)
 
-    def getSection(self, heading):
-        secHeading = '\*\*\*\*\*\s+{}.*?\n\*\*\*\*'
-        match = re.search(secHeading.format(heading), self.raw_text, re.DOTALL)
-        if match is not None:
-            #return match.group()
-            return match.group().split('*****')[-1].strip('*').strip()
-        else:
-            return None
+    # channel-specific information
+    for regx in (wavfrm_regx, exc_regx, numstk_regx):
+        for item in regx.finditer(sections['Waveform']):
+            i = item.groupdict()
+            c = int(i.pop('channel'))
+            w = i.pop('waveform', False)
+            if w:
+                _D['channels'][c][w].update(numberdict(i))
+            else:
+                _D['channels'][c].update(numberdict(i))
 
-    def parse(self):
-        '''parse the settings file.'''
+    # camera section
+    cp = ConfigParser(strict=False)
+    cp.read_string('[Section]\n' + sections['Camera'])
+    cp = cp[cp.sections()[0]]
+    for s in ('model', 'serial', 'exp(s)', 'cycle(s)', 'cycle(hz)', 'roi'):
+        _D['camera'].update({re.sub(r'(\()(.+)(\))', r"_\2", s): cp.get(s)})
+    if _D['camera'].get('roi'):
+        _D['camera']['roi'] = CameraROI([int(q) for q in re.findall(r'\d+', cp.get('roi'))])
+    try:
+        _D['camera']['pixel'] = PIXEL_SIZE[_D['camera']['model'].split('-')[0]]
+    except Exception:
+        _D['camera']['pixel'] = None
 
-        # the settings file is seperated into sections by "*****"
-        # settingsSplit = re.split('[*]{5}.*\n', self.raw_text)
-        # general_settings = settingsSplit[1]
-        # waveform_settings = settingsSplit[2]     # the top part with the experiment
-        # camera_settings = settingsSplit[3]
-        # timing_settings = settingsSplit[4]
-        # ini_settings = settingsSplit[5]  # the bottom .ini part
+    # general .ini File section
 
-        general_settings = self.getSection('General')
-        waveform_settings = self.getSection('Waveform')
-        camera_settings = self.getSection('Camera')
-        if not all([general_settings, waveform_settings, camera_settings]):
-            raise SettingsError('Could not parse at least one of the required'
-                ' sections of the Settings file')
-        ini_settings = self.raw_text.split('***** ***** *****')[-1]
+    # parse the ini part
+    cp = ConfigParser(strict=False)
+    cp.optionxform = str    # leave case in keys
+    cp.read_string(sections['.ini File'])
+    # not everyone will have added Annular mask to their settings ini
+    for n in ['Mask', 'Annular Mask', 'Annulus']:
+        if cp.has_section(n):
+            _D['mask'] = {}
+            for k, v in cp['Annular Mask'].items():
+                _D['mask'][k] = float(v)
+    _D['params']['angle'] = cp.getfloat('Sample stage',
+                                        'Angle between stage and bessel beam (deg)')
+    _D['mag'] = cp.getfloat('Detection optics', 'Magnification')
+    _D['camera']['name'] = cp.get('General', 'Camera type')
+    _D['camera']['trigger_mode'] = cp.get('General', 'Cam Trigger mode')
+    _D['mag'] = cp.getfloat('Detection optics', 'Magnification')
+    _D['camera']['twincam'] = cp.getboolean('General', 'Twin cam mode?')
 
-        # parse the top part (general settings)
-        datestring = re.search('Date\s*:\s*(.*)\n', general_settings).group(1)
-        dateformats = ('%m/%d/%Y %I:%M:%S %p',
-                       '%m/%d/%Y %I:%M:%S',
-                       '%m/%d/%Y %H:%M:%S')
-        self.date = None
-        for fmt in dateformats:
-            try:
-                self.date = datetime.strptime(datestring, fmt)
-            except ValueError:
-                continue
-        if self.date is None:
-            logger.error('Error, could not parse datestring {} with any of formats {}'.format(datestring, dateformats))
+    try:
+        _D['camera']['cam2_name'] = cp.get('General', '2nd Camera type')
+    except Exception:
+        _D['camera']['cam2_name'] = 'Disabled'
+    _D['ini'] = cp
+    if _D['camera']['pixel'] and _D['mag']:
+        _D['params']['dx'] = round(_D['camera']['pixel'] / _D['mag'], 4)
+    else:
+        _D['params']['dx'] = None
+    _D['params']['nc'] = len(_D['channels'])
+    if _D['channels'][0]['numstacks_requested']:
+        _D['params']['nt'] = int(_D['channels'][0]['numstacks_requested'])
+    else:
+        _D['params']['nt'] = None
+    _D['params']['nx'] = None  # .camera.roi.height
+    _D['params']['ny'] = None  # .camera.roi.width
+    _D['params']['wavelengths'] = [_D['channels'][v]['laser'] for v in
+                                   sorted(_D['channels'].keys())]
+    _D['params']['samplescan'] = _D['z_motion'] == 'Sample piezo'
+    k = 'S PZT' if _D['z_motion'] == 'Sample piezo' else 'Z PZT'
+    try:
+        _D['params']['nz'] = _D['channels'][0][k]['numpix']
+        _D['params']['dz'] = abs(_D['channels'][0][k]['interval'])
+    except Exception:
+        _D['params']['dz'] = None
 
-        # print that with dateobject.strftime('%x %X %p')
-
-        self.acq_mode = re.search(
-            'Acq Mode\s*:\s*(.*)\n', general_settings).group(1)
-        self.software_version = re.search(
-            'Version\s*:\s*v ([\d*.?]+)', general_settings).group(1)
-        self.cycle_lasers = re.search(
-            'Cycle lasers\s*:\s*(.*)(?:$|\n)', waveform_settings).group(1)
-        self.z_motion = re.search(
-            'Z motion\s*:\s*(.*)(?:$|\n)', waveform_settings).group(1)
-
-        # find repating patterns in settings file
-        waveforms = [
-            m.groupdict() for m in waveform_pattern.finditer(waveform_settings)]
-        excitations = [
-            m.groupdict() for m in excitation_pattern.finditer(waveform_settings)]
-        numstacks = [
-            m.groupdict() for m in numstack_pattern.finditer(waveform_settings)]
-
-        # organize into channel dict
-        self.channel = {}
-        for item in waveforms:
-            cnum = int(item.pop('channel'))
-            if cnum not in self.channel:
-                self.channel[cnum] = util.dotdict()
-            wavename = item.pop('waveform')
-            self.channel[cnum][wavename] = item
-        for L in [excitations, numstacks]:
-            for item in L:
-                cnum = int(item.pop('channel'))
-                if cnum not in self.channel:
-                    self.channel[cnum] = {}
-                self.channel[cnum].update(item)
-        del excitations
-        del numstacks
-        del waveforms
-
-        # parse the camera part
-        cp = configparser.ConfigParser(strict=False)
-        cp.read_string('[Camera Settings]\n' + camera_settings)
-        # self.camera = cp[cp.sections()[0]]
-        cp = cp[cp.sections()[0]]
-        self.camera = util.dotdict()
-        self.camera.model = cp.get('model')
-        self.camera.serial = cp.get('serial')
-        self.camera.exp = cp.get('exp(s)')
-        self.camera.cycle = cp.get('cycle(s)')
-        self.camera.cycleHz = cp.get('cycle(hz)')
-        self.camera.roi = camera.CameraROI([int(i) for i in re.findall(
-            r'\d+', cp.get('roi'))])
-        self.camera.pixel = PIXEL_SIZE[self.camera.model.split('-')[0]]
-
-        # parse the timing part
-        # cp = configparser.ConfigParser(strict=False)
-        # cp.read_string('[Timing Settings]\n' + timing_settings)
-        # self.timing = cp[cp.sections()[0]]
-
-        # parse the ini part
-        cp = configparser.ConfigParser(strict=False)
-        cp.optionxform = str    # leave case in keys
-        cp.read_string(ini_settings)
-        self.SPIMproject = cp
-        # read it (for example)
-        # cp.getfloat('Sample stage',
-        #               'Angle between stage and bessel beam (deg)')
-        self.sheet_angle = self.SPIMproject.getfloat(
-            'Sample stage', 'Angle between stage and bessel beam (deg)')
-        self.mag = self.SPIMproject.getfloat(
-            'Detection optics', 'Magnification')
-        self.camera.name = self.SPIMproject.get('General', 'Camera type')
-        self.camera.trigger_mode = self.SPIMproject.get(
-            'General', 'Cam Trigger mode')
-        self.camera.twincam = self.SPIMproject.get(
-            'General', 'Twin cam mode?') in ['TRUE', 'True', 1, 'YES', 'Yes']
-        try:
-            self.camera.cam2name = self.SPIMproject.get('General', '2nd Camera type')
-        except Exception:
-            self.camera.cam2name = 'Disabled'
-        self.pixel_size = round(self.camera.pixel / self.mag, 4)
-
-        # not everyone will have added Annular mask to their settings ini
-        for n in ['Mask', 'Annular Mask', 'Annulus']:
-            if self.SPIMproject.has_section(n):
-                self.mask = util.dotdict()
-                for k, v in self.SPIMproject['Annular Mask'].items():
-                    self.mask[k] = float(v)
-
-        # these will be overriden by the LLSDir file detection, but write anyway
-
-        self.parameters = util.dotdict()
-        self.parameters.update({
-            'dx': self.pixel_size,
-            'z_motion': self.z_motion,
-            'samplescan': bool(self.z_motion == 'Sample piezo'),
-            'angle': self.sheet_angle,
-            'nc': len(self.channel),
-            'nt': int(self.channel[0]['numstacks_requested']),
-            'nx': self.camera.roi.height,  # camera is usually rotated 90deg
-            'ny': self.camera.roi.width,  # camera is usually rotated 90deg
-            'wavelength': [int(v['laser']) for k, v in self.channel.items()]
-        })
-        if self.z_motion == 'Sample piezo':
-            self.parameters.dz = abs(float(self.channel[0]['S PZT']['interval']))
-            self.parameters.nz = int(self.channel[0]['S PZT']['numpix'])
-        else:
-            self.parameters.dz = abs(float(self.channel[0]['Z PZT']['interval']))
-            self.parameters.nz = int(self.channel[0]['Z PZT']['numpix'])
-
-    def write(self, outpath):
-        """Write the raw text back to settings.txt file"""
-        with open(outpath, 'w') as outfile:
-            outfile.write(self.raw_text)
-
-    def write_ini(self, outpath):
-        """Write just the SPIMProject.ini portion to file.
-
-        The file written by this function should match the SPIMProject.ini file
-        that was used to acquire the data.
-        """
-        with open(outpath, 'w') as outfile:
-            self.SPIMproject.write(outfile)
+    _D['channels'] = {k: dict(v) for k, v in _D['channels'].items()}
+    return _D
