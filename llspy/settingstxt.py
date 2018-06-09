@@ -167,6 +167,8 @@ def parse_settings(path, pattern='*Settings.txt'):
     _D['params']['wavelengths'] = [_D['channels'][v]['laser'] for v in
                                    sorted(_D['channels'].keys())]
     _D['params']['samplescan'] = _D['z_motion'] == 'Sample piezo'
+    _D['params']['roi'] = _D['camera']['roi']
+
     k = 'S PZT' if _D['z_motion'] == 'Sample piezo' else 'Z PZT'
     try:
         _D['params']['nz'] = _D['channels'][0][k]['numpix']

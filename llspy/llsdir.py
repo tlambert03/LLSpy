@@ -41,6 +41,7 @@ class LLSParams(MutableMapping):
             interval: mode interval of timepoints
         channels (dict): information from each channel
         wavelengths (list): list of wavelengths for each channel
+        roi (CameraRoi): ndarray with left/top/bot/right camera ROI boundary
 
     """
 

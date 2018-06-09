@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 import logging
+import os
 import numpy as np
 from llspy.libcudawrapper import (get_output_nx, get_output_ny, get_output_nz,
                                   RL_interface, camcor, camcor_init, RLContext)
 from llspy.camera import CameraParameters, calc_correction, selectiveMedianFilter
 from llspy.arrayfun import interleave, deinterleave
+from llspy.util import imsave
+
 logger = logging.getLogger()
 
 
@@ -29,12 +32,13 @@ class ImgProcessor(ABC):
     def __init__(self):
         super().__init__()
 
-    def __call__(self, data, callback=None, *args, **kwargs):
+    def __call__(self, data, *args, **kwargs):
         assert isinstance(data, np.ndarray), 'Input to ImgProcessor must be np.ndarray'
-        logger.debug('{} called on data with shape {}'.format(self, data.shape))
-        data = self.process(data)
-        if callback:
-            callback(data, *args, **kwargs)
+        logger.debug('{} called with args {} on data with shape {}'
+                     .format(self, args, data.shape))
+        data = self.process(data, *args, **kwargs)
+        if kwargs.get('callback', False):
+            kwargs.get('callback')(data, *args, **kwargs)
         return data
 
     @abstractmethod
@@ -216,8 +220,6 @@ class CUDADeconProcessor(ImgProcessor):
         if hasattr(data, 'has_background'):
             if not data.has_background:
                 self.background = 0
-
-        print(data.shape)
         nz, ny, nx = data.shape
         # must be 16 bit going in
         if not np.issubdtype(data.dtype, np.uint16):
@@ -278,3 +280,16 @@ class RotateYProcessor(AffineProcessor):
     @classmethod
     def from_llsdir(cls, llsdir, *args, **kwargs):
         return cls(*args, **kwargs)
+
+
+class TiffWriter(ImgProcessor):
+    """ Subclass of affine processor, for simplified rotation of the image in Y """
+
+    def __init__(self, outdir, frmt='{t:04d}.tif'):
+        self.outdir = outdir
+        self.format = frmt
+
+    def process(self, data, nt):
+        outpath = os.path.join(self.outdir, self.format.format(t=nt))
+        imsave(data, outpath, dx=1, dz=1, dt=1, unit='micron')
+        return data
