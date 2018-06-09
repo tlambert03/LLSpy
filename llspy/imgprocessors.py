@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 import os
 import numpy as np
+from enum import Enum
 from llspy.libcudawrapper import (get_output_nx, get_output_ny, get_output_nz,
                                   RL_interface, camcor, camcor_init, RLContext)
 from llspy.camera import CameraParameters, calc_correction, selectiveMedianFilter
@@ -69,12 +70,17 @@ class ImgProcessor(ABC):
 class FlashProcessor(ImgProcessor):
     """ Corrects flash artifact """
 
-    data_specific = ('data_roi', 'data_shape')
+    class Target(Enum):
+        CPU = 'CPU'
+        GPU = 'GPU'
 
-    def __init__(self, cam_params, data_roi, target='cpu', data_shape=None):
-        if target not in ('cpu', 'cuda', 'gpu'):
-            raise ValueError('Unrecognized target ""{}" for FlashProcessor'
-                             .format(target))
+    def __init__(self, cam_params, data_roi, target=Target.CPU, data_shape=None):
+        if not isinstance(target, self.Target):
+            try:
+                target = self.Target(target.upper())
+            except ValueError:
+                raise ValueError('"{}" is not a valid FlashProcessor target'
+                                 .format(target))
         if not isinstance(cam_params, CameraParameters):
             try:
                 cam_params = CameraParameters(cam_params)
@@ -83,9 +89,8 @@ class FlashProcessor(ImgProcessor):
                                              .format(e))
         # may raise an error... should catch here?
         self.cam_params = cam_params.get_subroi(data_roi)
-        self.data_roi = data_roi
         self.target = target
-        if self.target == 'gpu':
+        if self.target == self.Target.GPU:
             if not data_shape:
                 raise self.ImgProcessorError('data_shape must be provided '
                                              'when requesting FlashProcessor '
@@ -98,7 +103,7 @@ class FlashProcessor(ImgProcessor):
     @interleaved
     def process(self, data):
         """ interleaves and corrects 4D data, or just correct 3D """
-        if self.target == 'cpu':
+        if self.target == self.Target.CPU:
             a, b, offset = self.cam_params.data[:3]
             return calc_correction(data, a, b, offset)
         else:
@@ -106,9 +111,9 @@ class FlashProcessor(ImgProcessor):
 
     @classmethod
     def from_llsdir(cls, llsdir, *args, **kwargs):
-        data_roi = llsdir.settings.camera.roi
+        data_roi = llsdir.params.roi
         data_shape = llsdir.data.shape[-4:]
-        return cls(cam_params, data_roi, target=target, data_shape=data_shape, **kwargs)
+        return cls(data_roi, data_shape=data_shape, **kwargs)
 
 
 class SelectiveMedianProcessor(ImgProcessor):
@@ -207,7 +212,7 @@ class CUDADeconProcessor(ImgProcessor):
     requires_context = (RLContext,)
     data_specific = ('background')
 
-    def __init__(self, background=80, n_iters=10, shift=0,
+    def __init__(self, background=80, n_iters=10, shift=0.0,
                  save_deskewed=False, rescale=False, out_shape=None):
         self.background = background
         self.n_iters = n_iters
