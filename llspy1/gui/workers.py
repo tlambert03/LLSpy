@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)  # set root logger
 
 try:
     _CUDABIN = llspy.cudabinwrapper.get_bundled_binary()
-except Exception:
+except llspy.cudabinwrapper.CUDAbinException:
     _CUDABIN = None
 
 

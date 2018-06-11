@@ -59,8 +59,8 @@ class ImgProcessor(ABC):
         return "{}{}".format(name, attrs)
 
     @classmethod
-    def from_llsdir(cls, *args, **kwargs):
-        return cls(*args, **kwargs)
+    def from_llsdir(cls, llsdir=None, **kwargs):
+        return cls(**kwargs)
 
     class ImgProcessorError(Exception):
         """ generic ImgProcessor Exception Class """
@@ -70,11 +70,13 @@ class ImgProcessor(ABC):
 class FlashProcessor(ImgProcessor):
     """ Corrects flash artifact """
 
+    verbose_name = 'Flash Artifact Correction'
+
     class Target(Enum):
         CPU = 'CPU'
         GPU = 'GPU'
 
-    def __init__(self, cam_params, data_roi, target=Target.CPU, data_shape=None):
+    def __init__(self, data_roi, cam_params='', target=Target.CPU, data_shape=None):
         if not isinstance(target, self.Target):
             try:
                 target = self.Target(target.upper())
@@ -110,16 +112,22 @@ class FlashProcessor(ImgProcessor):
             return camcor(data)
 
     @classmethod
-    def from_llsdir(cls, llsdir, *args, **kwargs):
+    def from_llsdir(cls, llsdir, **kwargs):
+        kwargs.pop('data_roi')
         data_roi = llsdir.params.roi
-        data_shape = llsdir.data.shape[-4:]
-        return cls(data_roi, data_shape=data_shape, **kwargs)
+        kwargs['data_shape'] = llsdir.data.shape[-4:]
+        return cls(data_roi, **kwargs)
 
 
 class SelectiveMedianProcessor(ImgProcessor):
     """correct bad pixels on sCMOS camera.    """
 
-    data_specific = ('background')
+    verbose_name = 'Selective Median Filter'
+    gui_layout = {
+        'background': (0, 1),
+        'median_range': (0, 0),
+        'with_mean': (0, 2),
+    }
 
     def __init__(self, background=0, median_range=3, with_mean=False):
         super(SelectiveMedianProcessor, self).__init__()
@@ -167,7 +175,7 @@ class BleachCorrectionProcessor(ImgProcessor):
 
     data_specific = ('first_timepoint')
 
-    def __init__(self, first_timepoint):
+    def __init__(self, first_timepoint=5):
         # convert first_timepoint into divisor
         # get mean above background
         zyx = range(first_timepoint.ndim)[-3:]
@@ -208,11 +216,16 @@ class CUDADeconProcessor(ImgProcessor):
     NOTE: needs to be called within a RLContext()
     """
 
-    channel_specific = ('background',)
-    requires_context = (RLContext,)
-    data_specific = ('background')
+    verbose_name = 'Deconvolution/Deskewing'
+    gui_layout = {
+        'background': (0, 1),
+        'n_iters': (0, 0),
+        'shift': (0, 2),
+        'save_deskewed': (1, 0),
+        'rescale': (1, 1),
+    }
 
-    def __init__(self, background=80, n_iters=10, shift=0.0,
+    def __init__(self, background=80.0, n_iters=10, shift=0,
                  save_deskewed=False, rescale=False, out_shape=None):
         self.background = background
         self.n_iters = n_iters

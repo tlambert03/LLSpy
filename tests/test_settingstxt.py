@@ -1,4 +1,4 @@
-from llspy.settingstxt import LLSsettings
+from llspy.settingstxt import parse_settings
 import datetime
 import sys
 import os
@@ -45,7 +45,7 @@ settings_dict = {
 		'z_motion': 'Sample piezo'
 		}
 example_file_path = os.path.join(TESTSDIR, 'testdata', 'example_Settings.txt')
-setobj = LLSsettings(example_file_path)
+setobj = parse_settings(example_file_path)
 
 
 def test_parse_settings():

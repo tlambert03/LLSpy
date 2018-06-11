@@ -1,0 +1,3756 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Main_GUI</class>
+ <widget class="QMainWindow" name="Main_GUI">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>617</width>
+    <height>861</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>861</height>
+   </size>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::ClickFocus</enum>
+  </property>
+  <property name="windowTitle">
+   <string>Main_GUI</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout_4">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="minimumSize">
+       <size>
+        <width>593</width>
+        <height>500</height>
+       </size>
+      </property>
+      <property name="tabPosition">
+       <enum>QTabWidget::North</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <property name="elideMode">
+       <enum>Qt::ElideRight</enum>
+      </property>
+      <widget class="QWidget" name="tab_process">
+       <attribute name="title">
+        <string>Process</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="process_tab_layout">
+        <item>
+         <widget class="QTableWidget" name="listbox">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>200</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Drag and drop LLS experiment folders
+(containing a Settings.txt file) here, to
+add to the processing queue. Select
+and press delete to remove.
+Press process button below when ready.</string>
+          </property>
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="dragDropOverwriteMode">
+           <bool>false</bool>
+          </property>
+          <property name="dragDropMode">
+           <enum>QAbstractItemView::InternalMove</enum>
+          </property>
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="showGrid">
+           <bool>true</bool>
+          </property>
+          <property name="gridStyle">
+           <enum>Qt::DashLine</enum>
+          </property>
+          <property name="wordWrap">
+           <bool>false</bool>
+          </property>
+          <property name="cornerButtonEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="columnCount">
+           <number>7</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>basename</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>nC</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>nT</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>nX</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>nY</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>nZ</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>desQ</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolBox" name="processingToolBox">
+          <property name="font">
+           <font>
+            <weight>50</weight>
+            <italic>false</italic>
+            <bold>false</bold>
+            <strikeout>false</strikeout>
+           </font>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="tool_preprocess">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>547</width>
+             <height>304</height>
+            </rect>
+           </property>
+           <attribute name="label">
+            <string>Pre-Processing</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_16">
+            <item>
+             <widget class="QGroupBox" name="camcorGroupBox">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Camera Correction</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_2">
+               <item row="0" column="0" colspan="2">
+                <widget class="QCheckBox" name="camcorCheckBox">
+                 <property name="toolTip">
+                  <string>Perform per-pixel residual electron correction for
+Flash4.0 using CamaraParam Tiff file selected on
+config tab.  See help for details</string>
+                 </property>
+                 <property name="text">
+                  <string>Do Flash Correction</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QComboBox" name="camcorTargetCombo">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Target for camera correction (performace may vary from system to system)</string>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>CPU</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Parallel</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>CUDA</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item row="0" column="4">
+                <widget class="QCheckBox" name="medianFilterCheckBox">
+                 <property name="mouseTracking">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Perform selective median filter correction
+on particularly noisy pixels.
+As done in Amat et al 2015</string>
+                 </property>
+                 <property name="text">
+                  <string>Do Median Filter</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="5" colspan="2">
+                <widget class="QCheckBox" name="saveCamCorrectedCheckBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Save the Raw-Corrected files after processing
+(otherwise corrected files will be deleted)</string>
+                 </property>
+                 <property name="text">
+                  <string>Save Corrected</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="6">
+                <widget class="QToolButton" name="camParamTiffToolButton">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="camParamTiffLabel">
+                 <property name="text">
+                  <string>CameraParam Tiff</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="buddy">
+                  <cstring>camParamTiffLineEdit</cstring>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1" colspan="5">
+                <widget class="QLineEdit" name="camParamTiffLineEdit">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                 <property name="placeholderText">
+                  <string>path to TIFF file with measured camera parameters</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="3">
+                <spacer name="horizontalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="trimEdgesGroupBox">
+              <property name="toolTip">
+               <string>Trims N pixels from the corresponding volume edge.
+This is BEFORE processing, mostly to eliminate
+bright-edge camera artifacts prior to deskewing</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Trim Edges</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_23" columnstretch="0,0,0,0,0,0,0,0">
+               <property name="leftMargin">
+                <number>8</number>
+               </property>
+               <property name="topMargin">
+                <number>8</number>
+               </property>
+               <property name="bottomMargin">
+                <number>8</number>
+               </property>
+               <item row="1" column="7">
+                <widget class="QSpinBox" name="trimZ1SpinBox">
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QSpinBox" name="trimX1SpinBox">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                 <property name="value">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="4">
+                <widget class="QSpinBox" name="trimY1SpinBox">
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="6" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="trimZ0Label">
+                 <property name="text">
+                  <string>Trim Z first</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QSpinBox" name="trimX0SpinBox">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="autoFillBackground">
+                  <bool>false</bool>
+                 </property>
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                 <property name="value">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="7">
+                <widget class="QSpinBox" name="trimZ0SpinBox">
+                 <property name="autoFillBackground">
+                  <bool>false</bool>
+                 </property>
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                 <property name="value">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="3" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="trimY0Label">
+                 <property name="text">
+                  <string>Trim Y Top</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="6" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="trimZ1Label">
+                 <property name="text">
+                  <string>Trim Z last</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="trimX0Label">
+                 <property name="text">
+                  <string>Trim X Left</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="3" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="trimY1Label">
+                 <property name="text">
+                  <string>Trim Y Bottom</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <spacer name="trimspacer3">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="4">
+                <widget class="QSpinBox" name="trimY0SpinBox">
+                 <property name="maximum">
+                  <number>999</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0" alignment="Qt::AlignRight">
+                <widget class="QLabel" name="trimX1Label">
+                 <property name="text">
+                  <string>Trim X Right</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <spacer name="trimspacer1">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="1" column="5">
+                <spacer name="trimspacer4">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="5">
+                <spacer name="trimspacer2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+              <zorder>trimX0Label</zorder>
+              <zorder>trimX0SpinBox</zorder>
+              <zorder>trimY0Label</zorder>
+              <zorder>trimY0SpinBox</zorder>
+              <zorder>trimZ0Label</zorder>
+              <zorder>trimZ0SpinBox</zorder>
+              <zorder>trimspacer1</zorder>
+              <zorder>trimspacer2</zorder>
+              <zorder>trimX1Label</zorder>
+              <zorder>trimX1SpinBox</zorder>
+              <zorder>trimY1SpinBox</zorder>
+              <zorder>trimY1Label</zorder>
+              <zorder>trimZ1SpinBox</zorder>
+              <zorder>trimZ1Label</zorder>
+              <zorder>trimspacer4</zorder>
+              <zorder>trimspacer3</zorder>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="backgroundGroupBox">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Background Subtraction</string>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <property name="leftMargin">
+                <number>8</number>
+               </property>
+               <property name="topMargin">
+                <number>8</number>
+               </property>
+               <property name="bottomMargin">
+                <number>8</number>
+               </property>
+               <item>
+                <widget class="QRadioButton" name="backgroundAutoRadio">
+                 <property name="toolTip">
+                  <string>Use the mode intensity value from the second plane in
+the Z stack for each channel for background subtraction.</string>
+                 </property>
+                 <property name="text">
+                  <string>Autodetect</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="bgrdspacer1">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="backgroundFixedRadio">
+                 <property name="toolTip">
+                  <string>Use specified intensity value for background subtraction.</string>
+                 </property>
+                 <property name="text">
+                  <string>Fixed value</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="backgroundFixedSpinBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="autoFillBackground">
+                  <bool>false</bool>
+                 </property>
+                 <property name="maximum">
+                  <number>1000</number>
+                 </property>
+                 <property name="value">
+                  <number>90</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="bgrdspacer2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="backgroundRollingRadio">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Not implemented</string>
+                 </property>
+                 <property name="text">
+                  <string>Rolling Ball Radius:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="backgroundRollingSpinBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="value">
+                  <number>10</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <spacer name="preprocessSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tool_deconvolution">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>467</width>
+             <height>227</height>
+            </rect>
+           </property>
+           <attribute name="label">
+            <string>Deskew/Deconvolution/Saving</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_14">
+            <item>
+             <widget class="QGroupBox" name="doDeconGroupBox">
+              <property name="toolTip">
+               <string/>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Do Deconvolution</string>
+              </property>
+              <property name="flat">
+               <bool>false</bool>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout">
+               <property name="leftMargin">
+                <number>6</number>
+               </property>
+               <property name="topMargin">
+                <number>6</number>
+               </property>
+               <property name="rightMargin">
+                <number>6</number>
+               </property>
+               <property name="bottomMargin">
+                <number>6</number>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="deconParamsLayout">
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="iterationsLabel">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string>Number of deconvolution iterations</string>
+                   </property>
+                   <property name="text">
+                    <string>Iterations:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="iterationsSpinBox">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string>Number of deconvolution iterations</string>
+                   </property>
+                   <property name="maximum">
+                    <number>20</number>
+                   </property>
+                   <property name="value">
+                    <number>10</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="savingspacer1_3">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="apodizeLabel">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string># of pixels to soften edge with prior to deconvolution</string>
+                   </property>
+                   <property name="text">
+                    <string>nApodize:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="apodizeSpinBox">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string># of pixels to soften edge with prior to deconvolution</string>
+                   </property>
+                   <property name="maximum">
+                    <number>40</number>
+                   </property>
+                   <property name="value">
+                    <number>15</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="savingspacer1_5">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="zblendLabel">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string># of top and bottom sections to blend in
+to reduce axial ringing</string>
+                   </property>
+                   <property name="text">
+                    <string>nZblend</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="zblendSpinBox">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string># of top and bottom sections to blend in
+to reduce axial ringing</string>
+                   </property>
+                   <property name="maximum">
+                    <number>20</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="deconvSaveLayout">
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QCheckBox" name="saveDeconvolvedCheckBox">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="text">
+                    <string>Save Stacks</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="savingspacer1">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="deconvolvedMIPFrame">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="toolTip">
+                    <string>Save maximum-intensity-projection
+images along the specified axis</string>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::Panel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_25">
+                    <property name="leftMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>5</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="deconSaveMIPSLabel">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
+                      <property name="text">
+                       <string>Save MIPs:</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="deconXMIPCheckBox">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
+                      <property name="text">
+                       <string>X</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="deconYMIPCheckBox">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
+                      <property name="text">
+                       <string>Y</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="deconZMIPCheckBox">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
+                      <property name="text">
+                       <string>Z</string>
+                      </property>
+                      <property name="checked">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="deconspacer2">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="deconvolvedBitDepthCombo">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>100</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Bit depth of resulting deconvolved images.</string>
+                   </property>
+                   <property name="currentText">
+                    <string>16-bit</string>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>16-bit</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>32-bit</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="deskewedGroupBox">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Raw Deskewed</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_7">
+               <property name="leftMargin">
+                <number>4</number>
+               </property>
+               <property name="topMargin">
+                <number>4</number>
+               </property>
+               <property name="rightMargin">
+                <number>8</number>
+               </property>
+               <property name="bottomMargin">
+                <number>8</number>
+               </property>
+               <item row="0" column="1">
+                <spacer name="savingspacer1_4">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="3">
+                <spacer name="savingspacer1_2">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="2">
+                <widget class="QFrame" name="deskewedMIPFrame">
+                 <property name="toolTip">
+                  <string>Save maximum-intensity-projection
+images along the specified axis</string>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::Panel</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Raised</enum>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_21">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="deconSaveMIPSLabel_2">
+                    <property name="enabled">
+                     <bool>true</bool>
+                    </property>
+                    <property name="text">
+                     <string>Save MIPs:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QCheckBox" name="deskewedXMIPCheckBox">
+                    <property name="text">
+                     <string>X</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QCheckBox" name="deskewedYMIPCheckBox">
+                    <property name="text">
+                     <string>Y</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QCheckBox" name="deskewedZMIPCheckBox">
+                    <property name="text">
+                     <string>Z</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QCheckBox" name="saveDeskewedCheckBox">
+                 <property name="toolTip">
+                  <string>Save raw deskewed data.</string>
+                 </property>
+                 <property name="text">
+                  <string>Save Deskwed</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="4">
+                <widget class="QComboBox" name="deskewedBitDepthCombo">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>100</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="currentText">
+                  <string>16-bit</string>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>16-bit</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>32-bit</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="deconJoinMIPCheckBox">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Join maximum intensity projection images
+into a single multi-dimensional (XYZCT)
+file that can be viewed easily in Fiji/ImageJ</string>
+              </property>
+              <property name="layoutDirection">
+               <enum>Qt::LeftToRight</enum>
+              </property>
+              <property name="text">
+               <string>Join MIP files into single hyperstack</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="deconSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tool_postprocess">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>534</width>
+             <height>337</height>
+            </rect>
+           </property>
+           <attribute name="label">
+            <string>Post-Processing</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_12">
+            <item>
+             <widget class="QGroupBox" name="croppingGroupBox">
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Crop Result</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_7" stretch="0,0,0,0,0,0">
+               <property name="leftMargin">
+                <number>8</number>
+               </property>
+               <property name="topMargin">
+                <number>5</number>
+               </property>
+               <property name="bottomMargin">
+                <number>5</number>
+               </property>
+               <item>
+                <widget class="QRadioButton" name="cropAutoRadio">
+                 <property name="toolTip">
+                  <string>Auto-detect features in the image and
+crop to center around features.  Pad
+value adds extra space around features.</string>
+                 </property>
+                 <property name="text">
+                  <string>AutoCrop</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="autocropPadLabel">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="text">
+                  <string>Pad</string>
+                 </property>
+                 <property name="scaledContents">
+                  <bool>false</bool>
+                 </property>
+                 <property name="buddy">
+                  <cstring>autocropPadSpinBox</cstring>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="autocropPadSpinBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>48</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Auto-detect features in the image and
+crop to center around features.  Pad
+value adds extra space around features.</string>
+                 </property>
+                 <property name="maximum">
+                  <number>500</number>
+                 </property>
+                 <property name="value">
+                  <number>50</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="cropspacer2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="cropManualRadio">
+                 <property name="toolTip">
+                  <string>Manually specify the width of the resulting
+image after deskewing.  Use shift to change
+the middle position.  Use preview button
+below to check result.</string>
+                 </property>
+                 <property name="text">
+                  <string>Manual</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="cropManualGroupBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Manually specify the width of the resulting
+image after deskewing.  Use shift to change
+the middle position.  Use preview button
+below to check result.</string>
+                 </property>
+                 <property name="title">
+                  <string/>
+                 </property>
+                 <property name="flat">
+                  <bool>false</bool>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout">
+                  <property name="leftMargin">
+                   <number>4</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="cropWidthLabel">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="text">
+                     <string>Width:</string>
+                    </property>
+                    <property name="scaledContents">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSpinBox" name="cropWidthSpinBox">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>50</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="maximum">
+                     <number>2000</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLabel" name="cropShiftLabel">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="text">
+                     <string>Shift:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QSpinBox" name="cropShiftSpinBox">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>48</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="minimum">
+                     <number>-1000</number>
+                    </property>
+                    <property name="maximum">
+                     <number>1000</number>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="rotateGroupBox">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="toolTip">
+               <string>Transform final image around the
+Y-axis so that the Z-axis in the
+image is orthogonal to the coverslip.
+This entails interpolation.</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Rotate to coverslip coordinates</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0,0,0,0,0">
+               <property name="leftMargin">
+                <number>8</number>
+               </property>
+               <property name="topMargin">
+                <number>4</number>
+               </property>
+               <property name="rightMargin">
+                <number>8</number>
+               </property>
+               <property name="bottomMargin">
+                <number>4</number>
+               </property>
+               <item>
+                <widget class="QCheckBox" name="rotateReverseCheckBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Specify that direction of stage travel
+during stage-scanning is reversed
+from conventional.</string>
+                 </property>
+                 <property name="text">
+                  <string>Reverse</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="rotatespacer1">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="rotateCropCheckBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="text">
+                  <string>Crop</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="rotatespacer1_3">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item alignment="Qt::AlignRight">
+                <widget class="QCheckBox" name="rotateOverrideCheckBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Override the angle of rotation.  Otherwise,
+use the angle value detected in the settings
+file (the same value used for deskewing).</string>
+                 </property>
+                 <property name="text">
+                  <string>Override angle:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QDoubleSpinBox" name="rotateOverrideSpinBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>70</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Override the angle of rotation.  Otherwise,
+use the angle value detected in the settings
+file (the same value used for deskewing).</string>
+                 </property>
+                 <property name="minimum">
+                  <double>-180.000000000000000</double>
+                 </property>
+                 <property name="maximum">
+                  <double>180.000000000000000</double>
+                 </property>
+                 <property name="singleStep">
+                  <double>0.500000000000000</double>
+                 </property>
+                 <property name="value">
+                  <double>31.500000000000000</double>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="doRegistrationGroupBox">
+              <property name="toolTip">
+               <string>Use provided fiducial-based calibration
+dataset (e.g. tetraspeck bead images)
+to register different channels of a
+multi-channel dataset.</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}</string>
+              </property>
+              <property name="title">
+               <string>Do Channel Registration</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+              <layout class="QGridLayout" name="gridLayout">
+               <item row="0" column="0">
+                <widget class="QLabel" name="channelRefLabel">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Reference channel to which to register
+(this channel will not change)</string>
+                 </property>
+                 <property name="text">
+                  <string>Ref Wave:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="RegProcessChannelRefCombo">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>65</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Reference channel to which to register
+(this channel will not change)</string>
+                 </property>
+                 <property name="currentText">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="2">
+                <widget class="QLabel" name="channelRefModeLabel">
+                 <property name="toolTip">
+                  <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+                 </property>
+                 <property name="text">
+                  <string>Mode:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="3">
+                <widget class="QComboBox" name="RegProcessChannelRefModeCombo">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>130</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>50</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+                 </property>
+                 <property name="currentText">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="4">
+                <spacer name="rotatespacer2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="0" column="5">
+                <widget class="QPushButton" name="RegProcessLoadRegFile">
+                 <property name="text">
+                  <string>Use RegFile</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="RegProcessPathLabel">
+                 <property name="toolTip">
+                  <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+                 </property>
+                 <property name="text">
+                  <string>Calibration:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1" colspan="4">
+                <widget class="QLineEdit" name="RegProcessPathLineEdit">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                 <property name="placeholderText">
+                  <string> registration file or fiducial dataset...</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="5">
+                <widget class="QPushButton" name="RegProcessPathPushButton">
+                 <property name="text">
+                  <string>Use Dataset</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0" colspan="5">
+                <widget class="QCheckBox" name="discardUnregisteredCheckBox">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Specify that direction of stage travel
+during stage-scanning is reversed
+from conventional.</string>
+                 </property>
+                 <property name="text">
+                  <string>Discard un-registered files</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QCheckBox" name="bleachCorrectionCheckBox">
+                <property name="toolTip">
+                 <string>Modify intensity values of timelapse data to
+minimize the appearance of photobleaching.</string>
+                </property>
+                <property name="text">
+                 <string>Do Bleach Correction</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="compressRawCheckBox">
+                <property name="toolTip">
+                 <string>Compress the raw data files
+after processing to save space.</string>
+                </property>
+                <property name="text">
+                 <string>Compress Raw Data</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>Type:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="compressTypeCombo">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="editable">
+                 <bool>false</bool>
+                </property>
+                <property name="currentIndex">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="postprocessSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_registration">
+       <attribute name="title">
+        <string>Registration</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="8" column="6" colspan="3">
+         <widget class="QComboBox" name="RegCalib_channelRefModeCombo">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>1606000</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+          </property>
+          <property name="currentText">
+           <string/>
+          </property>
+          <property name="currentIndex">
+           <number>-1</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" colspan="7">
+         <widget class="QLineEdit" name="RegCalibPathLineEdit">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="placeholderText">
+           <string> Folder with mult-channel fiducial stacks...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="4">
+         <widget class="QComboBox" name="RegCalib_channelRefCombo">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>70</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Reference channel to which to register
+(this channel will not change)</string>
+          </property>
+          <property name="currentText">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2" colspan="2">
+         <widget class="QLabel" name="RegCalibRefChannelsLabel">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Reference channel to which to register
+(this channel will not change)</string>
+          </property>
+          <property name="text">
+           <string>Ref Channels:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="2">
+         <widget class="QPushButton" name="GenerateRegFileButton">
+          <property name="minimumSize">
+           <size>
+            <width>190</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Generate Registration File</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="RegCalibPathLabel">
+          <property name="minimumSize">
+           <size>
+            <width>95</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>Fiducial Data:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>RegCalibPathLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="5">
+         <widget class="QLabel" name="RegCalib_channelRefModeLabel">
+          <property name="maximumSize">
+           <size>
+            <width>50</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Type of registration to perform:
+Translation=shift only
+Rigid=Shift and rotation
+Similarity=Rigid plus scaling
+Affine=Translation, Rotation, Scaling, Shear
+2-step=Affine in XY, Rigid in Z
+CPD=Coherent Point Drift algorithm
+(Myronenko, 2010)</string>
+          </property>
+          <property name="text">
+           <string>Mode:</string>
+          </property>
+          <property name="buddy">
+           <cstring>RegCalib_channelRefModeCombo</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0" colspan="9">
+         <widget class="Line" name="horizline_1">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="4">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="8">
+         <widget class="QPushButton" name="RegCalibPathLoadButton">
+          <property name="text">
+           <string>load</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="8">
+         <widget class="QPushButton" name="RegFilePathLoadButton">
+          <property name="text">
+           <string>load</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="RegFilePathLabel">
+          <property name="minimumSize">
+           <size>
+            <width>105</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="text">
+           <string>Registration File:</string>
+          </property>
+          <property name="buddy">
+           <cstring>RegFilePath</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1" colspan="7">
+         <widget class="QLineEdit" name="RegFilePath">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string> Registration Tform file...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <widget class="QPushButton" name="RegCalibPreviewButton">
+          <property name="text">
+           <string>Register Fiducial Data</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2" colspan="2">
+         <widget class="QLabel" name="RegCalib_channelRefLabel">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Reference channel to which to register
+(this channel will not change)</string>
+          </property>
+          <property name="text">
+           <string>Ref Channel:</string>
+          </property>
+          <property name="buddy">
+           <cstring>RegCalib_channelRefCombo</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="BeadThresholdLabel">
+          <property name="minimumSize">
+           <size>
+            <width>95</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Specify folder with calibration (e.g. tetraspeck
+bead) images acquired in each channel.</string>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>Bead Threshold:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>RegBeadThreshSpin</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="4" colspan="5">
+         <widget class="QGroupBox" name="RegCalibRefChannelsGroup">
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QHBoxLayout" name="RegCalibRefGroupLayout">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="RegBeadThreshSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximum">
+           <number>65536</number>
+          </property>
+          <property name="value">
+           <number>1000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4" colspan="4">
+         <widget class="QLabel" name="RegMinBeadsLabel">
+          <property name="text">
+           <string>Min number of beads:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>RegMinBeadsSpin</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="8">
+         <widget class="QSpinBox" name="RegMinBeadsSpin">
+          <property name="maximum">
+           <number>200</number>
+          </property>
+          <property name="value">
+           <number>20</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2" colspan="2">
+         <widget class="QCheckBox" name="RegAutoThreshCheckbox">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>Autodetect</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_config">
+       <attribute name="title">
+        <string>Config</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="3" column="0">
+         <widget class="QLabel" name="filenamePatternLabel">
+          <property name="text">
+           <string>filename pattern:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>cudaDeconvPathLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="cudaDeconvPathLabel_2">
+          <property name="toolTip">
+           <string>Toggle the GPUs that you want to use for processing.
+ Work will be distributed among them</string>
+          </property>
+          <property name="text">
+           <string>GPUs</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>cudaDeconvPathLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" colspan="6">
+         <widget class="QCheckBox" name="useBundledBinariesCheckBox">
+          <property name="text">
+           <string>Use bundled cudaDeconv binary</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="cudaDeconvPathLabel">
+          <property name="text">
+           <string>cudaDeconv binary:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>cudaDeconvPathLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1" colspan="6">
+         <widget class="QLineEdit" name="cudaDeconvPathLineEdit">
+          <property name="text">
+           <string>/usr/local/cudaDeconv</string>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>path to cudaDeconv binary</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="7">
+         <widget class="QToolButton" name="cudaDeconvPathToolButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+          <property name="autoRaise">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="otfFolderPathLabel">
+          <property name="text">
+           <string>OTF directory:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>otfFolderLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1" colspan="6">
+         <widget class="QLineEdit" name="otfFolderLineEdit">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>path to directory with PSFs/OTFs</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="7">
+         <widget class="QToolButton" name="otfFolderToolButton">
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1" colspan="6">
+         <widget class="QCheckBox" name="allowNoSettingsCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>allow folders without Settings.txt files (will require input)</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultValuesLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>default values:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultDxLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>dx:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2">
+         <widget class="QDoubleSpinBox" name="defaultDxSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.100000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="3" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultDzLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>dz:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="4">
+         <widget class="QDoubleSpinBox" name="defaultDzSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.500000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="5" alignment="Qt::AlignRight">
+         <widget class="QLabel" name="defaultAngleLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>angle:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="6">
+         <widget class="QDoubleSpinBox" name="defaultAngleSpin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
+          </property>
+          <property name="value">
+           <double>31.500000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1" colspan="6">
+         <widget class="QCheckBox" name="reprocessCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Reprocess folders that have already been processed</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1" colspan="5">
+         <widget class="QCheckBox" name="saveMIPsDuringReduceCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Save MIP folder during &quot;Reduce to Raw&quot;</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1" colspan="5">
+         <widget class="QCheckBox" name="confirmOnQuitCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string>Warn when quitting with unprocessed items</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1" colspan="6">
+         <widget class="QPushButton" name="genFlashParams">
+          <property name="text">
+           <string>Generate Camera Calibration File</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="4">
+         <spacer name="configTabVertSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>600</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="14" column="1" colspan="6">
+         <widget class="QCheckBox" name="disableSpimagineCheckBox">
+          <property name="text">
+           <string>Disable spimagine import (in case of WinError on Preview)</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="0">
+         <widget class="QLabel" name="previewBackendLabel">
+          <property name="text">
+           <string>Preview Type</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="buddy">
+           <cstring>otfFolderLineEdit</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="4">
+         <spacer name="configTabVertSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>600</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="17" column="0">
+         <widget class="QCheckBox" name="watchDirCheckBox">
+          <property name="text">
+           <string>Watch Directory:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="1" colspan="6">
+         <widget class="QLineEdit" name="watchDirLineEdit">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>New items in watched folder will be automatically processed.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="7">
+         <widget class="QToolButton" name="watchDirToolButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="0">
+         <widget class="QLabel" name="watchModeLabel">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Watch Mode:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="19" column="1" colspan="6">
+         <widget class="QCheckBox" name="errorOptOutCheckBox">
+          <property name="toolTip">
+           <string>The &quot;reduce to raw&quot; function deletes all
+processed data, leaving only the original
+raw data.  This option retains any MIP
+folders found, as a smaller-sized
+preview of the dataset for later review.</string>
+          </property>
+          <property name="text">
+           <string> Opt out of automatic error reporting.
+ (Leaving this disabled helps us fix bugs in the program!)</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" colspan="6">
+         <widget class="QGroupBox" name="gpusGroupBox">
+          <property name="toolTip">
+           <string>Toggle the GPUs that you want to use for processing.
+ Work will be distributed among them</string>
+          </property>
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QHBoxLayout" name="gpuGroupBoxLayout">
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item row="15" column="1" colspan="6">
+         <widget class="QGroupBox" name="previewBackendGroupBox">
+          <property name="title">
+           <string notr="true"/>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <property name="leftMargin">
+            <number>8</number>
+           </property>
+           <property name="topMargin">
+            <number>8</number>
+           </property>
+           <property name="rightMargin">
+            <number>8</number>
+           </property>
+           <property name="bottomMargin">
+            <number>8</number>
+           </property>
+           <item>
+            <widget class="QRadioButton" name="prevBackendSpimagineRadio">
+             <property name="text">
+              <string>spimagine</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="prevBackendMatplotlibRadio">
+             <property name="text">
+              <string>matplotlib</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="18" column="1" colspan="6">
+         <widget class="QGroupBox" name="watchModeGroupBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>4</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>6</number>
+           </property>
+           <item>
+            <widget class="QRadioButton" name="watchModeAcquisitionRadio">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="toolTip">
+              <string>Use this mode on the acquisition computer
+to watch a given folder for new LLS folders,
+and process new images as they arrive.</string>
+             </property>
+             <property name="text">
+              <string>Acquisition</string>
+             </property>
+             <property name="checked">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="watchModeServerRadio">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="toolTip">
+              <string>This mode assumes that LLS folders are
+&quot;finished&quot; when they are dropped into the
+watched folder.  Newly detected folders
+are added to the regular processing queue
+in the main window, and processed in turn.</string>
+             </property>
+             <property name="text">
+              <string>Server</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="3" column="1" colspan="6">
+         <widget class="QLineEdit" name="filenamePatternLineEdit">
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <property name="readOnly">
+           <bool>false</bool>
+          </property>
+          <property name="placeholderText">
+           <string>filename pattern</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_log">
+       <attribute name="title">
+        <string>Log</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QTextEdit" name="log">
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <property name="lineWidth">
+           <number>2</number>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="html">
+           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; background-color:#ffffff;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="previewProcessButtonFrame">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <layout class="QHBoxLayout" name="processButtonLayout">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="previewButton">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Preview the highlighted dataset with the current settings</string>
+         </property>
+         <property name="text">
+          <string>Preview</string>
+         </property>
+         <property name="autoDefault">
+          <bool>true</bool>
+         </property>
+         <property name="default">
+          <bool>false</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="previewCRangeLineEdit">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>70</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes. &lt;br&gt;For instance: '0,2-3'&lt;br&gt;NOTE: channels are zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="placeholderText">
+          <string>channels</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="previewTRangeLineEdit">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="echoMode">
+          <enum>QLineEdit::Normal</enum>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="placeholderText">
+          <string>time</string>
+         </property>
+         <property name="cursorMoveStyle">
+          <enum>Qt::LogicalMoveStyle</enum>
+         </property>
+         <property name="clearButtonEnabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="processButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Process</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="processCRangeLineEdit">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>70</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes. &lt;br&gt;For instance: '0,2-3'&lt;br&gt;NOTE: channels are zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="placeholderText">
+          <string>channels</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="processTRangeLineEdit">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::ClickFocus</enum>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;a string can be used to dictate a subset of timepoints to process. Separate list items with commas, and &amp;quot;start-stop-step&amp;quot; items with dashes.&lt;br&gt;For instance: '0,3,5-10,15-30-3,40'&lt;br&gt;NOTE: time is zero-indexed&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="placeholderText">
+          <string>time</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="progressLayout">
+      <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QProgressBar {
+  border: 1px solid grey;
+  border-radius: 3px;
+  height: 20px;
+  margin: 0px 0px 0px 5px;
+}
+
+QProgressBar::chunk:horizontal {
+  background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484DE7, stop: 1 #787DFF);
+}</string>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="textVisible">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLCDNumber" name="clock">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::WinPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <property name="midLineWidth">
+         <number>0</number>
+        </property>
+        <property name="smallDecimalPoint">
+         <bool>true</bool>
+        </property>
+        <property name="digitCount">
+         <number>8</number>
+        </property>
+        <property name="mode">
+         <enum>QLCDNumber::Dec</enum>
+        </property>
+        <property name="segmentStyle">
+         <enum>QLCDNumber::Flat</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>617</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpen_LLSdir"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave_Settings_as_Default"/>
+    <addaction name="actionLoad_Default_Settings"/>
+    <addaction name="separator"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionClose_All_Previews"/>
+   </widget>
+   <widget class="QMenu" name="menuProcess">
+    <property name="title">
+     <string>Process</string>
+    </property>
+    <addaction name="actionPreview"/>
+    <addaction name="actionRun"/>
+    <addaction name="actionAbort"/>
+    <addaction name="separator"/>
+    <addaction name="actionRename_Iters"/>
+    <addaction name="actionUndo_Rename_Iters"/>
+   </widget>
+   <widget class="QMenu" name="menuLLSpy">
+    <property name="title">
+     <string>LLSpy</string>
+    </property>
+    <addaction name="actionAbout_LLSpy"/>
+    <addaction name="actionHelp"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionCamera_Calibration"/>
+    <addaction name="actionMerge_MIPs_from_folder"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuProcess"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuLLSpy"/>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionReduce_to_Raw"/>
+   <addaction name="actionCompress_Folder"/>
+   <addaction name="actionDecompress_Folder"/>
+   <addaction name="actionFreeze"/>
+   <addaction name="actionConcatenate"/>
+   <addaction name="actionRename_Scripted"/>
+   <addaction name="actionReveal"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>30</height>
+    </size>
+   </property>
+   <property name="sizeGripEnabled">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionPreview">
+   <property name="text">
+    <string>Preview</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionRun">
+   <property name="text">
+    <string>Run</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionAbort">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Abort</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+X</string>
+   </property>
+  </action>
+  <action name="actionOpen_LLSdir">
+   <property name="text">
+    <string>Open LLSdir</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSave_Settings_as_Default">
+   <property name="text">
+    <string>Save Settings as Default</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionLoad_Default_Settings">
+   <property name="text">
+    <string>Load Default Settings</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionReduce_to_Raw">
+   <property name="text">
+    <string>Reduce to Raw</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove all processed data from selected folder
+and restore folder to it's original state
+(immediately after acquisition)</string>
+   </property>
+  </action>
+  <action name="actionCompress_Folder">
+   <property name="text">
+    <string>Compress Raw</string>
+   </property>
+   <property name="toolTip">
+    <string>Compress raw data in selected folder</string>
+   </property>
+  </action>
+  <action name="actionDecompress_Folder">
+   <property name="text">
+    <string>Decompress Raw</string>
+   </property>
+  </action>
+  <action name="actionConcatenate">
+   <property name="text">
+    <string>Concatenate</string>
+   </property>
+   <property name="toolTip">
+    <string>Merge selected folders into single LLSdir</string>
+   </property>
+  </action>
+  <action name="actionRename_Scripted">
+   <property name="text">
+    <string>Rename Scripted</string>
+   </property>
+   <property name="toolTip">
+    <string>Rename &quot;Iter_&quot; files in an LLSdir acquired with Script Editor</string>
+   </property>
+  </action>
+  <action name="actionClose_All_Previews">
+   <property name="text">
+    <string>Close All Previews</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+W</string>
+   </property>
+  </action>
+  <action name="actionAbout_LLSpy">
+   <property name="text">
+    <string>About LLSpy</string>
+   </property>
+  </action>
+  <action name="actionFreeze">
+   <property name="text">
+    <string>Freeze</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete all processed data, and compress raw data for storage</string>
+   </property>
+  </action>
+  <action name="actionHelp">
+   <property name="text">
+    <string>Help</string>
+   </property>
+  </action>
+  <action name="actionCamera_Calibration">
+   <property name="text">
+    <string>Camera Calibration</string>
+   </property>
+  </action>
+  <action name="actionRename_Iters">
+   <property name="text">
+    <string>Rename 'Iters_'</string>
+   </property>
+   <property name="toolTip">
+    <string>Rename files acquired with Script Editor mode, containing 'Iters_'</string>
+   </property>
+  </action>
+  <action name="actionUndo_Rename_Iters">
+   <property name="text">
+    <string>Undo Rename 'Iters_'</string>
+   </property>
+  </action>
+  <action name="actionReveal">
+   <property name="text">
+    <string>Reveal</string>
+   </property>
+   <property name="toolTip">
+    <string>Reveal Item in Explorer/Finder</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
+   </property>
+  </action>
+  <action name="actionMerge_MIPs_from_folder">
+   <property name="text">
+    <string>Merge MIPs</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>actionQuit</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>Main_GUI</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>308</x>
+     <y>406</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundRollingRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>backgroundRollingSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>460</x>
+     <y>585</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>554</x>
+     <y>586</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundFixedRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>backgroundFixedSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>267</x>
+     <y>585</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>335</x>
+     <y>586</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropManualRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cropWidthSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>317</x>
+     <y>356</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>438</x>
+     <y>358</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropManualRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cropShiftSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>317</x>
+     <y>356</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>536</x>
+     <y>358</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropManualRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cropWidthLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>317</x>
+     <y>356</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>380</x>
+     <y>358</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropManualRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cropShiftLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>317</x>
+     <y>356</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>480</x>
+     <y>358</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rotateOverrideCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>rotateOverrideSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>474</x>
+     <y>424</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>545</x>
+     <y>426</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>camcorCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>camcorTargetCombo</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>159</x>
+     <y>386</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>301</x>
+     <y>390</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchDirToolButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>68</x>
+     <y>601</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>581</x>
+     <y>602</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchDirLineEdit</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>68</x>
+     <y>601</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>298</x>
+     <y>601</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cudaDeconvPathLineEdit</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>307</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>298</x>
+     <y>165</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cudaDeconvPathLabel</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>307</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>59</x>
+     <y>166</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropAutoRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>autocropPadLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>356</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>172</x>
+     <y>361</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cropAutoRadio</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>autocropPadSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>356</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>228</x>
+     <y>357</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deconSaveMIPSLabel_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>148</x>
+     <y>460</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>255</x>
+     <y>458</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deskewedXMIPCheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>165</x>
+     <y>460</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>295</x>
+     <y>460</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deskewedYMIPCheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>165</x>
+     <y>460</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>330</x>
+     <y>460</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveDeskewedCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>deskewedZMIPCheckBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>165</x>
+     <y>460</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>365</x>
+     <y>460</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchModeLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>68</x>
+     <y>601</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>44</x>
+     <y>641</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchModeGroupBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>68</x>
+     <y>601</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>176</x>
+     <y>641</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchModeAcquisitionRadio</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>68</x>
+     <y>601</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>643</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>watchDirCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>watchModeServerRadio</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>68</x>
+     <y>601</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>532</x>
+     <y>643</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>useBundledBinariesCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cudaDeconvPathToolButton</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>307</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>581</x>
+     <y>166</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>RegAutoThreshCheckbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>RegBeadThreshSpin</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>273</x>
+     <y>138</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>168</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>RegAutoThreshCheckbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>RegMinBeadsLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>287</x>
+     <y>135</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>424</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>RegAutoThreshCheckbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>RegMinBeadsSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>259</x>
+     <y>136</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>554</x>
+     <y>142</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultValuesLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>187</x>
+     <y>216</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDxSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>217</x>
+     <y>213</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>234</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDxLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>210</x>
+     <y>210</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>183</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDzLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>324</x>
+     <y>217</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>311</x>
+     <y>240</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultDzSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>383</x>
+     <y>219</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>378</x>
+     <y>243</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultAngleLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>441</x>
+     <y>218</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>442</x>
+     <y>241</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>allowNoSettingsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>defaultAngleSpin</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>503</x>
+     <y>219</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>499</x>
+     <y>250</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

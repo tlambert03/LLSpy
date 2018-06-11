@@ -23,12 +23,15 @@ class LLSParams(MutableMapping):
 
     Attributes:
         dz: the actual z step size used (regardless of stage scanning or not)
+            will be None if not available
         dzFinal (calculated): effective final dz, (takes deskewing into account)
         dx: pixel size
+            will be None if not available
         voxel (calculated): 3tuple of (dzFinal, dx, dx)
         angle: actual angle extracted from the settings file
         samplescan: whether samplescan mode was used
         deskew (calculated): deskew angle required (angle if samplescan else 0)
+            will be 0 if not available
         decimated: False if there is a different nt for each channel
 
     Attributes likely acquired from settings:

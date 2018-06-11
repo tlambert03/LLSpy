@@ -1,3 +1,5 @@
+from llspy import schema
+from llspy.cudabinwrapper import gpulist, CUDAbinException
 from PyQt5 import QtCore
 from raven import Client, fetch_git_sha, fetch_package_version, breadcrumbs
 import traceback
@@ -37,11 +39,11 @@ elif sys.platform.startswith('win32'):
 else:
     tags['os'] = '{}'.format(platform.linux_distribution()[0])
 
-# try:
-#     tags['gpu'] = gpulist()
-# except CUDAbinException:
-#     tags['gpu'] = 'no_cudabin'
-#     logger.error("CUDAbinException: Could not get gpulist")
+try:
+    tags['gpu'] = gpulist()
+except CUDAbinException:
+    tags['gpu'] = 'no_cudabin'
+    logger.error("CUDAbinException: Could not get gpulist")
 
 tags['pyqt'] = QtCore.QT_VERSION_STR
 for p in ('numpy', 'pyopencl', 'pyopengl', 'spimagine', 'gputools', 'llspy'):
@@ -56,8 +58,7 @@ try:
 except Exception:
     pass
 
-# client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
-client = Client('',
+client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
                 release=llspy.__version__,
                 include_paths=['llspy', 'spimagine', 'gputools'],
                 environment=env,
@@ -115,12 +116,14 @@ class ExceptionHandler(QtCore.QObject):
         err_info = (etype, value, tb)
         if isinstance(value, LLSpyError):
             self.handleLLSpyError(*err_info)
+        elif etype.__module__ == 'voluptuous.error':
+            self.handleSchemaError(*err_info)
         elif "0xe06d7363" in str(value).lower():
             self.handleCUDA_CL_Error(*err_info)
         else:  # uncaught exceptions go to sentry
             if not _OPTOUT:
                 logger.debug("Sending bug report")
-                # client.captureException(err_info)
+                client.captureException(err_info)
             self.errorMessage.emit(str(value), '', '', '')
             print("!" * 50)
             traceback.print_exception(*err_info)
@@ -130,10 +133,27 @@ class ExceptionHandler(QtCore.QObject):
         title = camel2spaces(etype.__name__).strip(' Error')
         self.errorMessage.emit(value.msg, title, value.detail, tbstring)
 
+    def handleSchemaError(self, etype, value, tb):
+        # when app raises uncaught exception, print info
+        # traceback.print_exc()
+        if etype.__module__ == 'voluptuous.error':
+            msgSplit = str(value).split('for dictionary value @ data')
+            customMsg = msgSplit[0].strip()
+            if len(customMsg) and customMsg != 'not a valid value':
+                self.errorMessage.emit(customMsg, 'Validation Error', '', '')
+            else:
+                errorKey = msgSplit[1].split("'")[1]
+                gotValue = msgSplit[1].split("'")[3]
+                schemaDefaults = schema.__defaults__
+                itemDescription = schemaDefaults[errorKey][1]
+                report = "Not a valid value for: {}\n\n".format(errorKey)
+                report += "({})".format(itemDescription)
+                self.errorMessage.emit(report, "Got value: {}".format(gotValue), '', '', '')
+
     def handleCUDA_CL_Error(self, etype, value, tb):
         if not _OPTOUT:
             logger.debug("Sending bug report")
-            # client.captureException((etype, value, tb))
+            client.captureException((etype, value, tb))
         tbstring = "".join(traceback.format_exception(etype, value, tb))
         self.errorMessage.emit('Sorry, it looks like CUDA and OpenCL are not '
             'getting along on your system',
