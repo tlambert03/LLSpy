@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>288</width>
-    <height>50</height>
+    <height>38</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -38,6 +38,9 @@ color: red;
    <enum>QFrame::Raised</enum>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="spacing">
+    <number>1</number>
+   </property>
    <property name="topMargin">
     <number>0</number>
    </property>
@@ -66,7 +69,7 @@ color: red;
        <property name="minimumSize">
         <size>
          <width>24</width>
-         <height>24</height>
+         <height>16</height>
         </size>
        </property>
        <property name="maximumSize">
@@ -90,13 +93,13 @@ color: red;
       <widget class="QCheckBox" name="activeBox">
        <property name="minimumSize">
         <size>
-         <width>24</width>
-         <height>24</height>
+         <width>34</width>
+         <height>16</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>24</width>
+         <width>34</width>
          <height>16777215</height>
         </size>
        </property>
@@ -163,7 +166,7 @@ color: red;
  <connections>
   <connection>
    <sender>activeBox</sender>
-   <signal>clicked(bool)</signal>
+   <signal>toggled(bool)</signal>
    <receiver>content</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
@@ -179,7 +182,7 @@ color: red;
   </connection>
   <connection>
    <sender>activeBox</sender>
-   <signal>clicked(bool)</signal>
+   <signal>toggled(bool)</signal>
    <receiver>title</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>

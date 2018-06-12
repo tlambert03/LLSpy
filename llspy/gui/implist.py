@@ -2,17 +2,76 @@ from PyQt5 import QtCore, QtGui, QtWidgets, uic
 import sys
 import os
 import inspect
+from click import get_app_dir
+from re import finditer
 from enum import Enum
 from llspy import imgprocessors as imgp
+from llspy import __appname__
+
+framepath = os.path.join(os.path.dirname(__file__), 'frame.ui')
+Ui_ImpFrame = uic.loadUiType(framepath)[0]
+PLAN_DIR = os.path.join(get_app_dir(__appname__), 'process_plans')
 
 
-Ui_ImpFrame = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'frame.ui'))[0]
+def camel_case_split(identifier):
+    """ split CamelCaseWord into Camel Case Word """
+    matches = finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)', identifier)
+    return " ".join([m.group(0) for m in matches])
 
 
-class IgnoreWheel(QtCore.QObject):
+def val_to_widget(val, key=None):
+    """ helper function for ImpFrame, to generate a widget that works for
+    a given value type.
+
+    Returns a tuple:
+        widg: the widget object itself
+        signal: the signal to listen for when the object has changed
+        getter: the getter function to retrieve the object value
+    """
+    dtype = type(val)
+    if dtype == bool:
+        widg = QtWidgets.QCheckBox()
+        widg.setChecked(val)
+        signal = widg.stateChanged
+        getter = widg.isChecked
+    elif dtype == int:
+        widg = NoScrollSpin(val)
+        signal = widg.valueChanged
+        getter = widg.value
+    elif dtype == float:
+        widg = NoScrollDoubleSpin(val)
+        signal = widg.valueChanged
+        getter = widg.value
+    elif dtype == str:
+        # 'file' is a special value that will create a browse button
+        if val == 'file' or 'file' in key or val == '':
+            widg = FileDialogLineEdit(val if val != 'file' else '')
+        # 'path' is a special value: browse button only accepts directories
+        elif val == 'dir' or 'dir' in key:
+            widg = DirDialogLineEdit(val if val != 'dir' else '')
+        else:
+            widg = QtWidgets.QLineEdit(str(val))
+        signal = widg.textChanged
+        getter = widg.text
+    elif isinstance(val, Enum):
+        widg = QtWidgets.QComboBox()
+        [widg.addItem(option.value) for option in val.__class__]
+        widg.setCurrentText(val.value)
+        signal = widg.currentTextChanged
+        getter = widg.currentText
+    elif isinstance(val, (tuple, list)):
+        widg = TupleWidgetFrame(val)
+        signal = widg.valueChanged
+        getter = widg.value
+    else:
+        return None
+    return widg, signal, getter
+
+
+class IgnoreMouseWheel(QtCore.QObject):
     """ mixin to prevent mouse wheel from changing spinboxes """
     def __init__(self, val=None, *args, **kwargs):
-        super(IgnoreWheel, self).__init__(*args, **kwargs)
+        super(IgnoreMouseWheel, self).__init__(*args, **kwargs)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         if val is not None:
             self.setValue(val)
@@ -21,12 +80,82 @@ class IgnoreWheel(QtCore.QObject):
         event.ignore()
 
 
-class NoScrollSpin(QtWidgets.QSpinBox, IgnoreWheel):
+class NoScrollSpin(QtWidgets.QSpinBox, IgnoreMouseWheel):
     pass
 
 
-class NoScrollDoubleSpin(QtWidgets.QDoubleSpinBox, IgnoreWheel):
+class NoScrollDoubleSpin(QtWidgets.QDoubleSpinBox, IgnoreMouseWheel):
     pass
+
+
+class FileDialogLineEdit(QtWidgets.QFrame):
+    textChanged = QtCore.pyqtSignal()
+
+    def __init__(self, val='', *args, **kwargs):
+        super(FileDialogLineEdit, self).__init__(*args, **kwargs)
+        self.setFrameStyle(self.NoFrame | self.Plain)
+        self._layout = QtWidgets.QHBoxLayout()
+        self.setLayout(self._layout)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._lineEdit = QtWidgets.QLineEdit(str(val))
+        self._browseButton = QtWidgets.QPushButton('Browse')
+        self._browseButton.clicked.connect(self.setPath)
+        self._layout.addWidget(self._lineEdit)
+        self._layout.addWidget(self._browseButton)
+
+    def setPath(self):
+        path = QtWidgets.QFileDialog.getOpenFileName(
+            self, 'Choose File or Directory')[0]
+        if path is None or path == '':
+            return
+        else:
+            self._lineEdit.setText(path)
+            self.textChanged.emit()
+
+    def text(self):
+        return self._lineEdit.text()
+
+
+class DirDialogLineEdit(FileDialogLineEdit):
+
+    def setPath(self):
+        path = QtWidgets.QFileDialog.getExistingDirectory(
+            self, 'Select Directory',
+            '', QtWidgets.QFileDialog.ShowDirsOnly)
+        if path is None or path == '':
+            return
+        else:
+            self._lineEdit.setText(path)
+            self.textChanged.emit()
+
+
+class TupleWidgetFrame(QtWidgets.QFrame):
+    valueChanged = QtCore.pyqtSignal()
+
+    def __init__(self, tup, *args, **kwargs):
+        super(TupleWidgetFrame, self).__init__(*args, **kwargs)
+        self.setFrameStyle(self.Panel | self.Raised)
+        self._layout = QtWidgets.QHBoxLayout()
+        self.setLayout(self._layout)
+        self._values = list(tup)
+        self._layout.setContentsMargins(2, 2, 2, 2)
+        for i, val in enumerate(tup):
+            stuff = val_to_widget(val)
+            if not stuff:
+                continue
+            widg, signal, getter = stuff
+            signal.connect(self.set_param(i, getter, type(val)))
+            self._layout.addWidget(widg)
+
+    def set_param(self, i, getter, dtype):
+        """ update the parameter dict when the widg has changed """
+        def func():
+            self._values[i] = dtype(getter())
+            self.valueChanged.emit()
+        return func
+
+    def value(self):
+        return tuple(self._values)
 
 
 class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
@@ -36,13 +165,15 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
     """
     stateChanged = QtCore.pyqtSignal()
 
-    def __init__(self, proc, parent=None, collapsed=True,
-                 *args, **kwargs):
+    def __init__(self, proc, parent=None, collapsed=False, initial={},
+                 active=True, *args, **kwargs):
         super(ImpFrame, self).__init__(*args, **kwargs)
         self.setupUi(self)
         self.proc = proc
         self.listWidgetItem = parent
         self.is_collapsed = collapsed
+        if not active:
+            self.activeBox.setChecked(False)
         self.parameters = {}  # to store widget state
         self.content.setVisible(not self.is_collapsed)
         if hasattr(proc, 'verbose_name'):
@@ -50,7 +181,7 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
             self.title.setText(proc.verbose_name)
         else:
             # get title form name of ImgProcessor Class
-            self.title.setText(proc.__name__)
+            self.title.setText(camel_case_split(proc.__name__))
 
         # arrow to collapse frame
         self.arrow = self.Arrow(self.arrowFrame, collapsed=collapsed)
@@ -63,42 +194,30 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
         self.closeButton.setText('×')
         self.closeButton.clicked.connect(self.removeItemFromList)
         self.titleLayout.addWidget(self.closeButton)
-        self.buildFrame()
+        self.buildFrame(initial)
 
-    def buildFrame(self):
+    def buildFrame(self, initial={}):
         ''' create an input widget for each item in the class __init__ signature '''
+
         sig = inspect.signature(self.proc)
         self.parameters = {key: (None if val.default == inspect._empty
                                  else val.default)
                            for key, val in sig.parameters.items()}
+        self.parameters.update(initial)
         for i, (key, val) in enumerate(self.parameters.items()):
-            dtype = type(val)
-            if dtype == bool:
-                widg = QtWidgets.QCheckBox()
-                widg.stateChanged.connect(self.set_param(widg, key, dtype))
-            elif dtype == int:
-                widg = NoScrollSpin(val)
-                widg.valueChanged.connect(self.set_param(widg, key, dtype))
-            elif dtype == float:
-                widg = NoScrollDoubleSpin(val)
-                widg.valueChanged.connect(self.set_param(widg, key, dtype))
-            elif dtype == str:
-                widg = QtWidgets.QLineEdit(str(val))
-                widg.textChanged.connect(self.set_param(widg, key, dtype))
-            elif isinstance(val, Enum):
-                widg = QtWidgets.QComboBox()
-                [widg.addItem(option.value) for option in val.__class__]
-                widg.setCurrentText(val.value)
-                widg.currentTextChanged.connect(self.set_param(widg, key, dtype))
-            else:
+            stuff = val_to_widget(val, key)
+            if not stuff:
                 continue
+            widg, signal, getter = stuff
+            signal.connect(self.set_param(key, getter, type(val)))
 
             # look for gui_layout class attribute
             if hasattr(self.proc, 'gui_layout'):
                 if key not in self.proc.gui_layout:
-                    raise KeyError('All parameters must be represented when '
-                                   'using gui_layout.  Missing key: "{}".'
-                                   .format(key))
+                    raise self.proc.ImgProcessorInvalid(
+                        'All parameters must be represented when '
+                        'using gui_layout.  Missing key: "{}".'
+                        .format(key))
                 layout = self.proc.gui_layout[key]
                 row, col = layout
                 label_index = (row, col * 2)
@@ -110,8 +229,15 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
             self.contentLayout.addWidget(label, *label_index)
             self.contentLayout.addWidget(widg, *widget_index)
 
+        doc = inspect.getdoc(self.proc)
+        if 'guidoc' in doc:
+            docstring = doc.split('guidoc:')[1].split('\n')[0].strip()
+            doclabel = QtWidgets.QLabel(docstring)
+            doclabel.setStyleSheet('font-style: italic; color: #777;')
+            self.contentLayout.addWidget(doclabel, self.contentLayout.rowCount(), 0, 1, self.contentLayout.columnCount())
+
         self.contentLayout.setColumnStretch(self.contentLayout.columnCount() - 1, 1)
-        self.contentLayout.setColumnMinimumWidth(0, 115)
+        self.contentLayout.setColumnMinimumWidth(0, 90)
 
     def removeItemFromList(self):
         implistwidget = self.parent().parent()
@@ -123,18 +249,11 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
         self.arrow.setArrow(self.is_collapsed)
         self.listWidgetItem.setSizeHint(self.sizeHint())
 
-    def set_param(self, widg, key, dtype):
+    def set_param(self, key, getter, dtype):
+        """ update the parameter dict when the widg has changed """
         def func():
-            try:
-                value = widg.checkState() != 0  # for checkbox
-            except AttributeError:
-                try:
-                    value = widg.text()  # for line edit
-                except AttributeError:
-                    value = widg.currentText()  # for combo
-            self.parameters[key] = dtype(value)
-            print(self.parameters)
-        self.stateChanged.emit()
+            self.parameters[key] = dtype(getter())
+            self.stateChanged.emit()
         return func
 
     class Arrow(QtWidgets.QFrame):
@@ -190,22 +309,27 @@ class ImpListWidget(QtWidgets.QListWidget):
         for imp in imps:
             self.addImp(imp)
 
-    def addImp(self, imp):
+    def addImp(self, imp, **kwargs):
         assert issubclass(imp, imgp.ImgProcessor), 'Not an image processor'
         item = QtWidgets.QListWidgetItem(self)
-        widg = ImpFrame(imp, parent=item)
+        widg = ImpFrame(imp, parent=item, **kwargs)
         item.setSizeHint(widg.sizeHint())
         self.addItem(item)
         self.setItemWidget(item, widg)
         self.setMinimumWidth(self.sizeHintForColumn(0))
-        self.get_imp_params()
 
-    def get_imp_params(self):
+    def getImpList(self):
         items = []
         for index in range(self.count()):
             imp = self.itemWidget(self.item(index))
-            items.append((imp.proc, imp.parameters))
+            items.append((imp.proc, imp.parameters,
+                          imp.activeBox.isChecked(), imp.is_collapsed))
         return items
+
+    def setImpList(self, implist):
+        self.clear()
+        for imp, params, active, collapsed in implist:
+            self.addImp(imp, initial=params, active=active, collapsed=collapsed)
 
     # def startDrag(self, supportedActions):
     #     # drag_item = self.currentItem()
@@ -222,19 +346,54 @@ class ImpListContainer(QtWidgets.QWidget):
     """ Just a container for the listWidget and the buttons """
     def __init__(self, *args, **kwargs):
         super(ImpListContainer, self).__init__(*args, **kwargs)
-        lay = QtWidgets.QVBoxLayout()
+        self.setLayout(QtWidgets.QVBoxLayout())
+        self.list = ImpListWidget()
         self.addProcessorButton = QtWidgets.QPushButton('Add Processor')
         self.addProcessorButton.clicked.connect(self.selectImgProcessor)
-        self.setLayout(lay)
-        self.list = ImpListWidget()
-        lay.addWidget(self.list)
-        lay.addWidget(self.addProcessorButton)
-        lay.setContentsMargins(0, 4, 0, 0)
+        self.savePlanButton = QtWidgets.QPushButton('Save Plan')
+        self.savePlanButton.clicked.connect(self.savePlan)
+        self.loadPlanButton = QtWidgets.QPushButton('Load Plan')
+        self.loadPlanButton.clicked.connect(self.loadPlan)
+        buttonBox = QtWidgets.QFrame()
+        buttonBox.setLayout(QtWidgets.QHBoxLayout())
+        buttonBox.layout().setContentsMargins(0, 0, 0, 0)
+        buttonBox.layout().addWidget(self.addProcessorButton)
+        buttonBox.layout().addWidget(self.savePlanButton)
+        buttonBox.layout().addWidget(self.loadPlanButton)
+        self.layout().addWidget(self.list)
+        self.layout().addWidget(buttonBox)
+        self.layout().setContentsMargins(0, 4, 0, 0)
 
     def selectImgProcessor(self):
         d = ImgProcessSelector()
         d.selected.connect(self.list.addImp)
         d.exec_()
+
+    def savePlan(self):
+        import pickle
+        if not os.path.exists(PLAN_DIR):
+            os.mkdir(PLAN_DIR)
+        path = QtWidgets.QFileDialog.getSaveFileName(
+            self, 'Save Plan', PLAN_DIR, "Plan Files (*.plan)")[0]
+        if path is None or path == '':
+            return
+        with open(path, 'wb') as fout:
+            pickle.dump(self.list.getImpList(), fout, pickle.HIGHEST_PROTOCOL)
+
+    def loadPlan(self):
+        import pickle
+        path = QtWidgets.QFileDialog.getOpenFileName(
+            self, 'Choose Plan', PLAN_DIR, "Plan Files (*.plan)")[0]
+        if path is None or path == '':
+            return
+        else:
+            try:
+                with open(path, 'rb') as infile:
+                    plan = pickle.load(infile)
+            except Exception:
+                plan = None
+        if plan:
+            self.list.setImpList(plan)
 
 
 class ImgProcessSelector(QtWidgets.QDialog):
@@ -262,10 +421,14 @@ class ImgProcessSelector(QtWidgets.QDialog):
         self.lstwdg.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.D = {}
         for name, obj in inspect.getmembers(imgp):
+            if hasattr(obj, 'verbose_name'):
+                # look for class attribute first...
+                name = obj.verbose_name
             try:
-                if issubclass(obj, imgp.ImgProcessor):
-                    self.D[name] = obj
-                    itemN = QtWidgets.QListWidgetItem(name)
+                if (issubclass(obj, imgp.ImgProcessor) and not
+                        inspect.isabstract(obj)):
+                    self.D[camel_case_split(name)] = obj
+                    itemN = QtWidgets.QListWidgetItem(camel_case_split(name))
                     self.lstwdg.addItem(itemN)
             except TypeError:
                 pass
@@ -281,8 +444,9 @@ class ImgProcessSelector(QtWidgets.QDialog):
 if __name__ == '__main__':
     APP = QtWidgets.QApplication([])
     container = ImpListContainer()
-    for imp in (imgp.CUDADeconProcessor, imgp.SelectiveMedianProcessor,
-                imgp.FlashProcessor, imgp.BleachCorrectionProcessor):
+    for imp in (imgp.CUDADeconProcessor, imgp.FlashProcessor):
         container.list.addImp(imp)
     container.show()
+    a = container.list.getImpList()
+    container.list.setImpList(a)
     sys.exit(APP.exec_())

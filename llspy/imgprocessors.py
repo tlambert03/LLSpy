@@ -3,8 +3,9 @@ import logging
 import os
 import numpy as np
 from enum import Enum
-from llspy.libcudawrapper import (get_output_nx, get_output_ny, get_output_nz,
-                                  RL_interface, camcor, camcor_init, RLContext)
+from llspy.libcudawrapper import (get_output_nx, get_output_ny,
+                                  get_output_nz, RL_interface, camcor,
+                                  camcor_init)
 from llspy.camera import CameraParameters, calc_correction, selectiveMedianFilter
 from llspy.arrayfun import interleave, deinterleave
 from llspy.util import imsave
@@ -44,7 +45,11 @@ class ImgProcessor(ABC):
 
     @abstractmethod
     def process(self, data):
-        """ child classes override this method """
+        """ child classes override this method.
+
+        must always accept a numpy array and return a numpy array (even)
+        if not performing any changes to or calculations on the data.
+        """
         pass
 
     def __repr__(self):
@@ -60,11 +65,29 @@ class ImgProcessor(ABC):
 
     @classmethod
     def from_llsdir(cls, llsdir=None, **kwargs):
+        """ instantiate the class based on data from an llsdir object.
+
+        All ImgProcessors should be able to be completely instanstiated by
+        calling `ImgProcessor.from_llsdir(llsdir, **options)`,
+        where `options` are any of the additional parameters required
+        for instantiation that are not secific to the dataset.  All other
+        ImgProcessor parameters should have a default value with the same
+        dtype of the eventual value.  Validation of empty default values
+        should be performed in __init__.
+        """
         return cls(**kwargs)
 
     class ImgProcessorError(Exception):
         """ generic ImgProcessor Exception Class """
         pass
+
+    class ImgProcessorInvalid(ImgProcessorError):
+        """ Error for when the ImgProcessor has been improperly written """
+        pass
+
+
+class ImgWriter(ImgProcessor):
+    pass
 
 
 class FlashProcessor(ImgProcessor):
@@ -76,13 +99,13 @@ class FlashProcessor(ImgProcessor):
         CPU = 'CPU'
         GPU = 'GPU'
 
-    def __init__(self, data_roi, cam_params='', target=Target.CPU, data_shape=None):
-        if not isinstance(target, self.Target):
+    def __init__(self, data_roi, cam_params='file', perform_on=Target.CPU, data_shape=None):
+        if not isinstance(perform_on, self.Target):
             try:
-                target = self.Target(target.upper())
+                perform_on = self.Target(perform_on.upper())
             except ValueError:
                 raise ValueError('"{}" is not a valid FlashProcessor target'
-                                 .format(target))
+                                 .format(perform_on))
         if not isinstance(cam_params, CameraParameters):
             try:
                 cam_params = CameraParameters(cam_params)
@@ -91,13 +114,13 @@ class FlashProcessor(ImgProcessor):
                                              .format(e))
         # may raise an error... should catch here?
         self.cam_params = cam_params.get_subroi(data_roi)
-        self.target = target
+        self.target = perform_on
         if self.target == self.Target.GPU:
             if not data_shape:
                 raise self.ImgProcessorError('data_shape must be provided '
                                              'when requesting FlashProcessor '
                                              'on the gpu'
-                                             .format(target))
+                                             .format(self.target))
             a, b, offset = self.cam_params.data[:3]
             camcor_init(data_shape, a, b, offset)
         super(FlashProcessor, self).__init__()
@@ -120,7 +143,10 @@ class FlashProcessor(ImgProcessor):
 
 
 class SelectiveMedianProcessor(ImgProcessor):
-    """correct bad pixels on sCMOS camera.    """
+    """correct bad pixels on sCMOS camera.
+
+    guidoc: selective median filter as in Amat 2015
+    """
 
     verbose_name = 'Selective Median Filter'
     gui_layout = {
@@ -129,7 +155,7 @@ class SelectiveMedianProcessor(ImgProcessor):
         'with_mean': (0, 2),
     }
 
-    def __init__(self, background=0, median_range=3, with_mean=False):
+    def __init__(self, background=0, median_range=3, with_mean=True):
         super(SelectiveMedianProcessor, self).__init__()
         self.background = background
         self.median_range = median_range
@@ -150,15 +176,26 @@ class SelectiveMedianProcessor(ImgProcessor):
 class DivisionProcessor(ImgProcessor):
     """ Divides and image by another image, e.g. for flatfield correction """
 
-    def __init__(self, divisor, projector=lambda x: np.mean(x, 0)):
-        assert isinstance(divisor, np.ndarray)
+    class Projector(Enum):
+        mean = 'mean'
+        max = 'max'
+
+    verbose_name = "Flatfield Correction"
+    projectors = {
+        'mean': lambda x: np.mean(x, 0),
+        'max': lambda x: np.max(x, 0),
+    }
+
+    def __init__(self, divisor='file', projection=Projector.mean):
+        if not isinstance(divisor, np.ndarray):
+            pass
         # only accept 2D or 3D inputs (single channel, optional Z stack)
         if not 1 < divisor.ndim < 4:
             raise self.ImgProcessorError(
                 'Divisor Image must have 2 or 3 dimensions')
         # convert all images to 2D with provided projector func
         if divisor.ndim == 3:
-            divisor = projector(divisor)
+            divisor = self.projectors[projection.name](divisor)
         self.divisor = divisor
 
     def process(self, data):
@@ -173,9 +210,9 @@ class DivisionProcessor(ImgProcessor):
 class BleachCorrectionProcessor(ImgProcessor):
     """ Divides and image by another image, e.g. for flatfield correction """
 
-    data_specific = ('first_timepoint')
+    verbose_name = "Bleach Correction"
 
-    def __init__(self, first_timepoint=5):
+    def __init__(self, first_timepoint):
         # convert first_timepoint into divisor
         # get mean above background
         zyx = range(first_timepoint.ndim)[-3:]
@@ -199,10 +236,18 @@ class BleachCorrectionProcessor(ImgProcessor):
 class TrimProcessor(ImgProcessor):
     """ trim pixels off of the edge each dimension in XYZ """
 
-    def __init__(self, z=(0, 0), y=(0, 0), x=(0, 0)):
-        self.slices = (np.s_[z[0]:-z[1]] if z[1] else np.s_[z[0]:],
-                       np.s_[y[0]:-y[1]] if y[1] else np.s_[y[0]:],
-                       np.s_[x[0]:-x[1]] if x[1] else np.s_[x[0]:])
+    verbose_name = "Volume Edge Trim"
+
+    gui_layout = {
+        'trim_x': (0, 0),
+        'trim_y': (1, 0),
+        'trim_z': (2, 0)
+    }
+
+    def __init__(self, trim_z=(0, 0), trim_y=(0, 0), trim_x=(0, 0)):
+        self.slices = (np.s_[trim_z[0]:-trim_z[1]] if trim_z[1] else np.s_[trim_z[0]:],
+                       np.s_[trim_y[0]:-trim_y[1]] if trim_y[1] else np.s_[trim_y[0]:],
+                       np.s_[trim_x[0]:-trim_x[1]] if trim_x[1] else np.s_[trim_x[0]:])
 
     def process(self, data):
         if data.ndim > len(self.slices):
@@ -275,9 +320,9 @@ class CUDADeconProcessor(ImgProcessor):
 class AffineProcessor(ImgProcessor):
     """ Perform Affine Transformation, e.g. for channel registration """
 
-    channel_specific = ('tform',)
+    verbose_name = "Channel Registration"
 
-    def __init__(self, tform):
+    def __init__(self, reg_file='file'):
         pass
 
     def process(self, data):
@@ -287,7 +332,7 @@ class AffineProcessor(ImgProcessor):
 class RotateYProcessor(AffineProcessor):
     """ Subclass of affine processor, for simplified rotation of the image in Y """
 
-    channel_specific = None
+    verbose_name = "Rotate to Coverslip"
 
     def __init__(self, angle):
         pass
@@ -300,11 +345,11 @@ class RotateYProcessor(AffineProcessor):
         return cls(*args, **kwargs)
 
 
-class TiffWriter(ImgProcessor):
+class TiffWriter(ImgWriter):
     """ Subclass of affine processor, for simplified rotation of the image in Y """
 
-    def __init__(self, outdir, frmt='{t:04d}.tif'):
-        self.outdir = outdir
+    def __init__(self, output_dir='{datadir}', frmt='{t:04d}.tif'):
+        self.outdir = output_dir
         self.format = frmt
 
     def process(self, data, nt):

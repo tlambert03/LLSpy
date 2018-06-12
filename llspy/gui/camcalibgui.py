@@ -46,9 +46,9 @@ class CamCalibWorker(QtCore.QObject):
                 self.setStatus.emit('Loading dark images... [Step 1 of 4]')
                 darklist = glob.glob(os.path.join(self.folder, '*dark*.tif'))
                 numdark = len(darklist)
-                self.setProgMax.emit(numdark*2)
+                self.setProgMax.emit(numdark * 2)
                 darkavg, darkstd = camcalib.process_dark_images(
-                            self.folder, self.progress.emit, updatedarkstatus)
+                    self.folder, self.progress.emit, updatedarkstatus)
 
             filelist = glob.glob(os.path.join(self.folder, '*.tif'))
             if not filelist:
@@ -57,9 +57,11 @@ class CamCalibWorker(QtCore.QObject):
             with tf.TiffFile(filelist[0]) as t:
                 nz, ny, nx = t.series[0].shape
 
-            self.setProgMax.emit(ny*nx)
-            self.setStatus.emit('Calculating correction image... This will take a while')
-            out = camcalib.process_bright_images(self.folder, darkavg, darkstd, self.progress.emit)
+            self.setProgMax.emit(ny * nx)
+            self.setStatus.emit(
+                'Calculating correction image... This will take a while')
+            out = camcalib.process_bright_images(
+                self.folder, darkavg, darkstd, self.progress.emit)
 
             self.setStatus.emit("Done! Calibration file has been written to: {}".format(out[0]))
 
@@ -84,14 +86,14 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
 
         self.selectFolderPushButton.clicked.connect(self.setFolder)
 
-        self.DarkAVGPushButton.clicked.connect(lambda:
-            self.darkAVGLineEdit.setText(
+        self.DarkAVGPushButton.clicked.connect(
+            lambda: self.darkAVGLineEdit.setText(
                 QtW.QFileDialog.getOpenFileName(
                     self, 'Chose Dark_AVG.tif', '',
                     "Image Files (*.tif *.tiff)")[0]))
 
-        self.DarkSTDPushButton.clicked.connect(lambda:
-            self.darkSTDLineEdit.setText(
+        self.DarkSTDPushButton.clicked.connect(
+            lambda: self.darkSTDLineEdit.setText(
                 QtW.QFileDialog.getOpenFileName(
                     self, 'Chose Dark_STD.tif', '',
                     "Image Files (*.tif *.tiff)")[0]))
@@ -127,7 +129,8 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
 
         if not all([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]):
             if not pathHasPattern(folder, '*dark*.tif*'):
-                QtW.QMessageBox.warning(self, "No dark images!",
+                QtW.QMessageBox.warning(
+                    self, "No dark images!",
                     'Camera calibration requires dark images, but none were provided'
                     ' and none were detected in the specified folder.'
                     ' Read documentation on camera calibration for more info.',
@@ -136,7 +139,8 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
 
         if sum([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]) == 1:
             if not pathHasPattern(folder, '*dark*.tif*'):
-                QtW.QMessageBox.warning(self, "No dark images!",
+                QtW.QMessageBox.warning(
+                    self, "No dark images!",
                     'Camera calibration requires both a dark image average projection, '
                     ' and a standard deviation projection, but only one of the'
                     ' two was provided, and no *dark*.tif images '
@@ -145,7 +149,8 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
                     QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
                 return
             else:
-                reply = QtW.QMessageBox.question(self, "No dark images!",
+                reply = QtW.QMessageBox.question(
+                    self, "No dark images!",
                     'Camera calibration requires both a dark image average projection, '
                     ' and a standard deviation projection, but only one of the'
                     ' two was provided. *dark*.tif images '
@@ -156,8 +161,8 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
                 if reply != QtW.QMessageBox.Yes:
                     return
 
-        self.worker, self.thread = newWorkerThread(CamCalibWorker, folder,
-            darkavg, darkstd,
+        self.worker, self.thread = newWorkerThread(
+            CamCalibWorker, folder, darkavg, darkstd,
             workerConnect={
                 'progress': self.incrementProgress,
                 'setProgMax': self.resetWithMax,

@@ -114,3 +114,5 @@ ENV/
 .dropbox.attr
 
 tests/testdata/sample/MIPs/
+
+*.autosave
