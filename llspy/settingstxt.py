@@ -5,7 +5,7 @@ import io
 import logging
 import dateutil.parser as dp
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from configparser import ConfigParser
 from .util import py23_unpack, numberdict, dotdict
 from .camera import CameraROI
@@ -88,7 +88,6 @@ def parse_settings(path, pattern='*Settings.txt'):
     _D = dotdict(
         params=dotdict(),
         camera=dotdict(),
-        mask=None,
         channels=defaultdict(lambda: defaultdict(dict))
     )
 
@@ -136,11 +135,19 @@ def parse_settings(path, pattern='*Settings.txt'):
     cp.optionxform = str    # leave case in keys
     cp.read_string(sections['.ini File'])
     # not everyone will have added Annular mask to their settings ini
+    inner, outer = (None, None)
     for n in ['Mask', 'Annular Mask', 'Annulus']:
         if cp.has_section(n):
-            _D['mask'] = {}
             for k, v in cp['Annular Mask'].items():
-                _D['mask'][k] = float(v)
+                if 'inner' in k:
+                    inner = float(v)
+                if 'outer' in k:
+                    outer = float(v)
+    mask = None
+    if inner is not None and outer is not None:
+        mask = namedtuple('Mask', ['inner', 'outer'])(inner, outer)
+    _D['params']['mask'] = mask
+
     _D['params']['angle'] = cp.getfloat('Sample stage',
                                         'Angle between stage and bessel beam (deg)')
     _D['mag'] = cp.getfloat('Detection optics', 'Magnification')

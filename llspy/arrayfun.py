@@ -175,9 +175,10 @@ def sub_background(im, background=None):
     """ subtract provided background or autodetct as mode of the first plane"""
     if background is None:
         background = detect_background(im)
+    dtype = im.dtype
     out = im.astype(np.float) - background
     out[out < 0] = 0
-    return out
+    return out.astype(dtype)
 
 
 def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):

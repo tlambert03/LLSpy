@@ -1,5 +1,8 @@
 from llspy.llsdir import LLSdir
-from llspy.imgprocessors import ImgProcessor, ImgWriter
+from llspy.imgprocessors import ImgProcessor, ImgWriter, CUDADeconProcessor
+from llspy.libcudawrapper import cuda_reset
+from llspy.otf import choose_otf
+from llspy.libcudawrapper import RLContext
 
 
 class ProcessPlan(object):
@@ -15,8 +18,8 @@ class ProcessPlan(object):
                                  .format(imp))
         self.llsdir = llsdir
         self.imp_classes = imps
-        self.t_range, self.c_range = t_range, c_range
-        self.plan()
+        self.t_range = t_range or list(range(llsdir.params.nt))
+        self.c_range = c_range or list(range(llsdir.params.nc))
 
     @property
     def ready(self):
@@ -25,8 +28,16 @@ class ProcessPlan(object):
     def check_sanity(self):
         # sanity checkes go here...
         warnings = []
-        if not any([isinstance(p, ImgWriter) for p, o in self.imp_classes]):
-            warnings.append['No Image writer/output detected.']
+        writers = [issubclass(p[0], ImgWriter) for p in self.imp_classes]
+        if not any(writers):
+            warnings.append('No Image writer/output detected.')
+        try:
+            idx_of_last_writer = list(reversed(writers)).index(True)
+        except ValueError:
+            idx_of_last_writer = False
+        if idx_of_last_writer:
+            warnings.append('You have image processors after the last Writer')
+
         if warnings:
             raise self.PlanWarning("\n".join(warnings))
 
@@ -38,21 +49,49 @@ class ProcessPlan(object):
         self.imps = []  # will hold instantiated imps
         for imp_tup in self.imp_classes:
             imp, params, active = imp_tup[:3]
+            if not active:
+                continue
             try:
                 self.imps.append(imp.from_llsdir(self.llsdir, **params))
             except imp.ImgProcessorError as e:
-                errors.append(str(e))
+                errors.append('%s:  ' % imp.name() + str(e))
 
         if errors:
             # FIXME: should probably only clobber broken imps, not all imps
             self.imps = []
-            raise self.PlanError("\n".join(errors))
+            raise self.PlanError("Please fix the following errors:\n\n" +
+                                 "\n\n".join(errors))
 
     def execute(self):
+        decons = [isinstance(i, CUDADeconProcessor) for i in self.imps]
+        has_decon = any(decons)
+        meta = {
+            'c': self.c_range,
+            'w': [self.llsdir.params.wavelengths[i] for i in self.c_range],
+            'params': self.llsdir.params,
+            'has_background': True,
+        }
         for t in self.t_range:
             data = self.llsdir.data.asarray(t=t, c=self.c_range)
-            for imp in self.imps:
-                data = imp(data)
+            meta['axes'] = data.axes
+            meta['t'] = t
+            if len(self.c_range) == 1 and has_decon:
+                wave = meta['w'][0]
+                otf_dir = self.imps[decons.index(True)].otf_dir
+                width = self.imps[decons.index(True)].width
+                otf = choose_otf(wave, otf_dir, meta['params'].date,
+                                 meta['params'].mask)
+                with RLContext(data.shape, otf, meta['params'].dz,
+                               deskew=meta['params'].deskew,
+                               width=width) as ctx:
+                    meta['out_shape'] = ctx.out_shape
+                    for imp in self.imps:
+                        data, meta = imp(data, meta)
+            else:
+                for imp in self.imps:
+                    data, meta = imp(data, meta)
+
+        cuda_reset()
 
     class PlanError(Exception):
         """ hard error if the plan cannot be executed as requested """

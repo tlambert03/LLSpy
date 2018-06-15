@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets, uic
 import sys
 import os
 import inspect
+import pickle
 from click import get_app_dir
 from re import finditer
 from enum import Enum
@@ -10,12 +11,12 @@ from llspy import __appname__
 
 framepath = os.path.join(os.path.dirname(__file__), 'frame.ui')
 Ui_ImpFrame = uic.loadUiType(framepath)[0]
-PLAN_DIR = os.path.join(get_app_dir(__appname__), 'process_plans')
 
 
 def camel_case_split(identifier):
     """ split CamelCaseWord into Camel Case Word """
-    matches = finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)', identifier)
+    matches = finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)',
+                       identifier)
     return " ".join([m.group(0) for m in matches])
 
 
@@ -44,11 +45,11 @@ def val_to_widget(val, key=None):
         getter = widg.value
     elif dtype == str:
         # 'file' is a special value that will create a browse button
-        if val == 'file' or 'file' in key or val == '':
-            widg = FileDialogLineEdit(val if val != 'file' else '')
-        # 'path' is a special value: browse button only accepts directories
-        elif val == 'dir' or 'dir' in key:
+        if val == 'dir' or 'dir' in key:
             widg = DirDialogLineEdit(val if val != 'dir' else '')
+        elif val == 'file' or 'file' in key or val == '':
+            widg = FileDialogLineEdit(val if val != 'file' else '')
+            # 'path' is a special value: browse button only accepts directories
         else:
             widg = QtWidgets.QLineEdit(str(val))
         signal = widg.textChanged
@@ -98,6 +99,7 @@ class FileDialogLineEdit(QtWidgets.QFrame):
         self.setLayout(self._layout)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._lineEdit = QtWidgets.QLineEdit(str(val))
+        self._lineEdit.textChanged.connect(self.textChanged.emit)
         self._browseButton = QtWidgets.QPushButton('Browse')
         self._browseButton.clicked.connect(self.setPath)
         self._layout.addWidget(self._lineEdit)
@@ -110,7 +112,6 @@ class FileDialogLineEdit(QtWidgets.QFrame):
             return
         else:
             self._lineEdit.setText(path)
-            self.textChanged.emit()
 
     def text(self):
         return self._lineEdit.text()
@@ -176,13 +177,8 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
             self.activeBox.setChecked(False)
         self.parameters = {}  # to store widget state
         self.content.setVisible(not self.is_collapsed)
-        if hasattr(proc, 'verbose_name'):
-            # look for class attribute first...
-            self.title.setText(proc.verbose_name)
-        else:
-            # get title form name of ImgProcessor Class
-            self.title.setText(camel_case_split(proc.__name__))
-
+        self.title.setText(proc.name())
+        self.activeBox.toggled.connect(self.stateChanged.emit)
         # arrow to collapse frame
         self.arrow = self.Arrow(self.arrowFrame, collapsed=collapsed)
         self.arrow.clicked.connect(self.toggleCollapsed)
@@ -203,18 +199,27 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
         self.parameters = {key: (None if val.default == inspect._empty
                                  else val.default)
                            for key, val in sig.parameters.items()}
-        self.parameters.update(initial)
+        # do this rather than .update() in case the signature has changed
+        for key in initial:
+            if key in self.parameters:
+                self.parameters[key] = initial[key]
         for i, (key, val) in enumerate(self.parameters.items()):
             stuff = val_to_widget(val, key)
             if not stuff:
                 continue
             widg, signal, getter = stuff
+            if isinstance(val, (int, float)):
+                if hasattr(self.proc, 'valid_range'):
+                    r = self.proc.valid_range.get(key, [])
+                    if len(r) == 2:
+                        widg.setRange(*r)
             signal.connect(self.set_param(key, getter, type(val)))
 
             # look for gui_layout class attribute
             if hasattr(self.proc, 'gui_layout'):
                 if key not in self.proc.gui_layout:
                     raise self.proc.ImgProcessorInvalid(
+                        'Invalid ImgProcessor class: \n\n'
                         'All parameters must be represented when '
                         'using gui_layout.  Missing key: "{}".'
                         .format(key))
@@ -234,20 +239,25 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
             docstring = doc.split('guidoc:')[1].split('\n')[0].strip()
             doclabel = QtWidgets.QLabel(docstring)
             doclabel.setStyleSheet('font-style: italic; color: #777;')
-            self.contentLayout.addWidget(doclabel, self.contentLayout.rowCount(), 0, 1, self.contentLayout.columnCount())
+            self.contentLayout.addWidget(
+                doclabel, self.contentLayout.rowCount(), 0, 1,
+                self.contentLayout.columnCount())
 
-        self.contentLayout.setColumnStretch(self.contentLayout.columnCount() - 1, 1)
+        self.contentLayout.setColumnStretch(
+            self.contentLayout.columnCount() - 1, 1)
         self.contentLayout.setColumnMinimumWidth(0, 90)
 
     def removeItemFromList(self):
         implistwidget = self.parent().parent()
         implistwidget.takeItem(implistwidget.row(self.listWidgetItem))
+        self.stateChanged.emit()
 
     def toggleCollapsed(self):
         self.content.setVisible(self.is_collapsed)
         self.is_collapsed = not self.is_collapsed
         self.arrow.setArrow(self.is_collapsed)
         self.listWidgetItem.setSizeHint(self.sizeHint())
+        self.stateChanged.emit()
 
     def set_param(self, key, getter, dtype):
         """ update the parameter dict when the widg has changed """
@@ -295,6 +305,11 @@ class ImpListWidget(QtWidgets.QListWidget):
     ultimately, this members list will be used to determine what
     processing is done to the data
     """
+    planChanged = QtCore.pyqtSignal()
+    PLAN_DIR = os.path.join(get_app_dir(__appname__), 'process_plans')
+    LAST_PLAN = os.path.join(PLAN_DIR, '_lastused.plan')
+    DEFAULT = os.path.join(os.path.dirname(__file__), 'default.plan')
+
     def __init__(self, imps=[], *args, **kwargs):
         super(ImpListWidget, self).__init__(*args, **kwargs)
         self.setDefaultDropAction(QtCore.Qt.MoveAction)
@@ -303,20 +318,27 @@ class ImpListWidget(QtWidgets.QListWidget):
         self.setAcceptDrops(True)
         self.setSpacing(1)
         self.setMinimumHeight(1)
-
+        self.planChanged.connect(lambda: self.savePlan(self.LAST_PLAN))
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                            QtWidgets.QSizePolicy.MinimumExpanding)
-        for imp in imps:
-            self.addImp(imp)
+        if imps:
+            for imp in imps:
+                self.addImp(imp)
+        else:
+            self.loadPlan(self.LAST_PLAN)
+        if not self.count():
+            self.loadPlan(self.DEFAULT)
 
     def addImp(self, imp, **kwargs):
         assert issubclass(imp, imgp.ImgProcessor), 'Not an image processor'
         item = QtWidgets.QListWidgetItem(self)
         widg = ImpFrame(imp, parent=item, **kwargs)
+        widg.stateChanged.connect(self.planChanged.emit)
         item.setSizeHint(widg.sizeHint())
         self.addItem(item)
         self.setItemWidget(item, widg)
         self.setMinimumWidth(self.sizeHintForColumn(0))
+        self.planChanged.emit()
 
     def getImpList(self):
         items = []
@@ -330,6 +352,38 @@ class ImpListWidget(QtWidgets.QListWidget):
         self.clear()
         for imp, params, active, collapsed in implist:
             self.addImp(imp, initial=params, active=active, collapsed=collapsed)
+
+    def savePlan(self, path=None):
+        if not os.path.exists(self.PLAN_DIR):
+            os.mkdir(self.PLAN_DIR)
+        if not path:
+            path = QtWidgets.QFileDialog.getSaveFileName(
+                self, 'Save Plan', self.PLAN_DIR,
+                "Plan Files (*.plan)")[0]
+        if path is None or path == '':
+            return
+        with open(path, 'wb') as fout:
+            pickle.dump(self.getImpList(), fout, pickle.HIGHEST_PROTOCOL)
+
+    def loadPlan(self, path=None):
+        if not path:
+            path = QtWidgets.QFileDialog.getOpenFileName(
+                self, 'Choose Plan', self.PLAN_DIR,
+                "Plan Files (*.plan)")[0]
+        if path is None or path == '':
+            return
+        else:
+            try:
+                with open(path, 'rb') as infile:
+                    plan = pickle.load(infile)
+            except Exception:
+                plan = None
+        if plan:
+            self.setImpList(plan)
+
+    def dropEvent(self, *args):
+        super(ImpListWidget, self).dropEvent(*args)
+        self.savePlan(self.LAST_PLAN)
 
     # def startDrag(self, supportedActions):
     #     # drag_item = self.currentItem()
@@ -351,9 +405,9 @@ class ImpListContainer(QtWidgets.QWidget):
         self.addProcessorButton = QtWidgets.QPushButton('Add Processor')
         self.addProcessorButton.clicked.connect(self.selectImgProcessor)
         self.savePlanButton = QtWidgets.QPushButton('Save Plan')
-        self.savePlanButton.clicked.connect(self.savePlan)
+        self.savePlanButton.clicked.connect(self.list.savePlan)
         self.loadPlanButton = QtWidgets.QPushButton('Load Plan')
-        self.loadPlanButton.clicked.connect(self.loadPlan)
+        self.loadPlanButton.clicked.connect(self.list.loadPlan)
         buttonBox = QtWidgets.QFrame()
         buttonBox.setLayout(QtWidgets.QHBoxLayout())
         buttonBox.layout().setContentsMargins(0, 0, 0, 0)
@@ -368,32 +422,6 @@ class ImpListContainer(QtWidgets.QWidget):
         d = ImgProcessSelector()
         d.selected.connect(self.list.addImp)
         d.exec_()
-
-    def savePlan(self):
-        import pickle
-        if not os.path.exists(PLAN_DIR):
-            os.mkdir(PLAN_DIR)
-        path = QtWidgets.QFileDialog.getSaveFileName(
-            self, 'Save Plan', PLAN_DIR, "Plan Files (*.plan)")[0]
-        if path is None or path == '':
-            return
-        with open(path, 'wb') as fout:
-            pickle.dump(self.list.getImpList(), fout, pickle.HIGHEST_PROTOCOL)
-
-    def loadPlan(self):
-        import pickle
-        path = QtWidgets.QFileDialog.getOpenFileName(
-            self, 'Choose Plan', PLAN_DIR, "Plan Files (*.plan)")[0]
-        if path is None or path == '':
-            return
-        else:
-            try:
-                with open(path, 'rb') as infile:
-                    plan = pickle.load(infile)
-            except Exception:
-                plan = None
-        if plan:
-            self.list.setImpList(plan)
 
 
 class ImgProcessSelector(QtWidgets.QDialog):
@@ -421,12 +449,10 @@ class ImgProcessSelector(QtWidgets.QDialog):
         self.lstwdg.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.D = {}
         for name, obj in inspect.getmembers(imgp):
-            if hasattr(obj, 'verbose_name'):
-                # look for class attribute first...
-                name = obj.verbose_name
             try:
                 if (issubclass(obj, imgp.ImgProcessor) and not
                         inspect.isabstract(obj)):
+                    name = obj.name()  # look for verbose name
                     self.D[camel_case_split(name)] = obj
                     itemN = QtWidgets.QListWidgetItem(camel_case_split(name))
                     self.lstwdg.addItem(itemN)

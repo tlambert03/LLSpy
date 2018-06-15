@@ -166,6 +166,7 @@ def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
 
     result = np.empty((nz, ny, deskewedNx), dtype=np.float32)
     Deskew_interface(im, nx, ny, nz, dz, dr, angle, result, deskewedNx, shift)
+    cuda_reset()
     return result
 
 

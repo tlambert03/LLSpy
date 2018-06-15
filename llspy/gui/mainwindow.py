@@ -14,6 +14,7 @@ from llspy.gui.qtlogger import NotificationHandler
 from llspy.gui.folderqueue import LLSDragDropTable
 from llspy.gui.regtab import RegistrationTab
 from llspy import util
+from llspy.processplan import ProcessPlan
 from fiducialreg.fiducialreg import RegFile, RegistrationError
 
 from PyQt5 import QtCore, QtGui, uic
@@ -85,10 +86,14 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.inProcess = False
         self.spimwins = []
 
-        # delete and reintroduce custom LLSDragDropTable
+        # delete and reintroduce custom LLSDragDropTable and imp window
         self.listbox.setParent(None)
         self.listbox = LLSDragDropTable(self)
         self.processSplitter.insertWidget(0, self.listbox)
+        self.impListWidget.setParent(None)
+        self.impContainer = ImpListContainer()
+        self.impListWidget = self.impContainer.list
+        self.processSplitter.addWidget(self.impContainer)
 
         handler = NotificationHandler()
         handler.emitSignal.connect(self.log.append)
@@ -197,11 +202,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.prevBackendMatplotlibRadio.setChecked(True)
             self.prevBackendSpimagineRadio.setDisabled(True)
             self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
-
-        self.impListWidget.setParent(None)
-        impContainer = ImpListContainer()
-        self.impListWidget = impContainer.list
-        self.processSplitter.addWidget(impContainer)
 
         self.show()
         self.raise_()
@@ -487,17 +487,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         # store current options for this processing run.  TODO: Unecessary?
         try:
-            self.optionsOnProcessClick = self.getValidatedOptions()
-            op = self.optionsOnProcessClick
-            if not (op['nIters'] or
-                    (op['keepCorrected'] and (op['correctFlash'] or op['medianFilter'])) or
-                    op['saveDeskewedRaw'] or
-                    op['doReg']):
-                self.show_error_window(
-                    'Nothing done!', 'Nothing done!',
-                    'No deconvolution, deskewing, image correction, '
-                    'or registration performed. Check GUI options.', '')
-
+            pass
         except Exception:
             self.enableProcessButton()
             raise
@@ -527,45 +517,58 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             skip()
             return
 
-        idx = 0  # might use this later to spawn more threads
-        opts = self.optionsOnProcessClick
-
         # check if already processed
-        if util.pathHasPattern(self.currentPath, '*' + llspy.config.__OUTPUTLOG__):
-            if not opts['reprocess']:
-                msg = 'Skipping! Path already processed: {}'.format(self.currentPath)
-                logger.info(msg)
-                self.statusBar.showMessage(msg, 5000)
-                skip()
+        # if util.pathHasPattern(self.currentPath, '*' + llspy.config.__OUTPUTLOG__):
+        #     if not self.reprocessCheckBox.isChecked():
+        #         msg = 'Skipping! Path already processed: {}'.format(self.currentPath)
+        #         logger.info(msg)
+        #         self.statusBar.showMessage(msg, 5000)
+        #         skip()
+        #         return
+
+        self.plan = ProcessPlan(obj, self.impListWidget.getImpList())
+        try:
+            self.plan.plan()  # do sanity check here
+        except self.plan.PlanWarning as e:
+            msg = QtW.QMessageBox()
+            msg.setIcon(QtW.QMessageBox.Information)
+            msg.setText(str(e) + '\n\nContinue anyway?')
+            msg.setStandardButtons(QtW.QMessageBox.Ok | QtW.QMessageBox.Cancel)
+            if msg.exec_() == QtW.QMessageBox.Ok:
+                self.plan.plan(skip_warnings=True)
+            else:
                 return
+        except self.plan.PlanError:
+            raise
 
-        if not len(QtCore.QCoreApplication.instance().gpuset):
-            self.on_proc_finished()
-            raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
+        self.plan.execute()
+        # if not len(QtCore.QCoreApplication.instance().gpuset):
+        #     self.on_proc_finished()
+        #     raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
 
-        self.statusBar.showMessage('Starting processing on {} ...'.format(shortname(self.currentPath)))
-        LLSworker, thread = newWorkerThread(
-            workers.LLSitemWorker,
-            obj, idx, opts, workerConnect={
-                'finished': self.on_item_finished,
-                'status_update': self.statusBar.showMessage,
-                'progressMaxVal': self.progressBar.setMaximum,
-                'progressValue': self.progressBar.setValue,
-                'progressUp': self.incrementProgress,
-                'clockUpdate': self.clock.display,
-                'error': self.abort_workers,
-                'skipped': self.skip_item,
-                # 'error': self.errorstring  # implement error signal?
-            })
+        # self.statusBar.showMessage('Starting processing on {} ...'.format(shortname(self.currentPath)))
+        # LLSworker, thread = newWorkerThread(
+        #     workers.LLSitemWorker,
+        #     obj, idx, opts, workerConnect={
+        #         'finished': self.on_item_finished,
+        #         'status_update': self.statusBar.showMessage,
+        #         'progressMaxVal': self.progressBar.setMaximum,
+        #         'progressValue': self.progressBar.setValue,
+        #         'progressUp': self.incrementProgress,
+        #         'clockUpdate': self.clock.display,
+        #         'error': self.abort_workers,
+        #         'skipped': self.skip_item,
+        #         # 'error': self.errorstring  # implement error signal?
+        #     })
 
-        self.LLSItemThreads.append((thread, LLSworker))
+        # self.LLSItemThreads.append((thread, LLSworker))
 
-        # connect mainGUI abort LLSworker signal to the new LLSworker
-        self.sig_abort_LLSworkers.connect(LLSworker.abort)
+        # # connect mainGUI abort LLSworker signal to the new LLSworker
+        # self.sig_abort_LLSworkers.connect(LLSworker.abort)
 
         # prepare and start LLSworker:
         # thread.started.connect(LLSworker.work)
-        thread.start()  # this will emit 'started' and start thread's event loop
+        # thread.start()  # this will emit 'started' and start thread's event loop
 
         # recolor the first row to indicate processing
         self.listbox.setRowBackgroudColor(numskipped, QtGui.QColor(0, 0, 255, 30))
@@ -859,7 +862,14 @@ The cudaDeconv deconvolution program is owned and licensed by HHMI, Janelia Rese
 if __name__ == '__main__':
 
     import sys
+
     APP = QtW.QApplication([])
     main = main_GUI()
+
+    # instantiate the execption handler
+    exceptionHandler = err.ExceptionHandler()
+    sys.excepthook = exceptionHandler.handler
+    exceptionHandler.errorMessage.connect(main.show_error_window)
+
     main.show()
     sys.exit(APP.exec_())

@@ -112,7 +112,7 @@ def guisave(widget, settings):
         if isinstance(obj,
                       (QtWidgets.QCheckBox, QtWidgets.QRadioButton, QtWidgets.QGroupBox)):
             value = obj.isChecked()
-        if isinstance(obj, (QtWidgets.QSpinBox, QtWidgets.QSlider)):
+        if isinstance(obj, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox, QtWidgets.QSlider)):
             value = obj.value()
         if value is not None:
             settings.setValue(name, value)

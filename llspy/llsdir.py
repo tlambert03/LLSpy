@@ -33,8 +33,10 @@ class LLSParams(MutableMapping):
         deskew (calculated): deskew angle required (angle if samplescan else 0)
             will be 0 if not available
         decimated: False if there is a different nt for each channel
+        mask (dict): If detected in settings, dict with annular mask
+            {'outerNA: ... , innerNA: ...'}
 
-    Attributes likely acquired from settings:
+    Attributes likely acquired from settings/data:
         nt, nc, nz, ny, nx: shape of the dataset originally detected from
             settings.txt, but updated with actual data
         time (dict): contains time info:
@@ -57,6 +59,12 @@ class LLSParams(MutableMapping):
             'angle': None,
             'samplescan': None,
             'decimated': False,
+            'nc': 1,
+            'nt': 1,
+            'nz': 1,
+            'nx': None,
+            'ny': None,
+            'mask': None
         }
         self.update(dict(*args, **kwargs))
 
@@ -77,7 +85,6 @@ class LLSParams(MutableMapping):
             return self['dzFinal'], self['dx'], self['dx']
         if key == 'deskew':
             return self['angle'] if self['samplescan'] else 0
-
         return self._store[key]
 
     def __setitem__(self, key, value):
@@ -123,13 +130,28 @@ class LLSFolder(TiffFolder):
         if self._shapedict.get('t') > 1 and self._symmetrical:
             cdict = next(iter(self.channelinfo.values()))
             if 'abs' in cdict and len(cdict['abs']) > 1:
-                self.timeinfo = {
-                    'interval': mode1(np.subtract(cdict['abs'][1:],
-                                      cdict['abs'][:-1])),
-                    'rel': cdict.get('rel'),
-                    'abs': cdict.get('abs'),
-                    't': cdict.get('t'),
-                }
+                try:
+                    self.timeinfo = {
+                        'interval': mode1(np.subtract(cdict['abs'][1:],
+                                          cdict['abs'][:-1])),
+                        'rel': cdict.get('rel'),
+                        'abs': cdict.get('abs'),
+                        't': cdict.get('t'),
+                    }
+                except Exception:
+                    self.timeinfo = {}
+
+    @property
+    def coreparams(self):
+        _D = {
+            # remove defaultdict class for better __repr__
+            'channels': {k: dict(v) for k, v in self.channelinfo.items()},
+            'decimated': self._symmetrical,
+            'time': self.timeinfo,
+            'wavelengths': [v.get('w') for k, v in self.channelinfo.items()],
+        }
+        _D.update({'n' + a: v for a, v in zip(self.axes, self.shape)})
+        return _D
 
 
 class LLSdir(object):
@@ -145,19 +167,8 @@ class LLSdir(object):
             raise self.NoDataError('No data found in .../%s' % str(self.path.name))
         self.settings = parse_settings(path)
         self.params = LLSParams(self.settings.get('params', {}))
-        # remove defaultdict class for better __repr__
-        self.params['channels'] = {k: dict(v) for
-                                   k, v in self.data.channelinfo.items()}
-        self.params['decimated'] = self.data._symmetrical
-        self.params['time'] = self.data.timeinfo
-
-        self.date = self.settings.get('date') or datetime.now()
-
-        self.params.update({'n' + a: v for a, v in
-                            zip(self.data.axes, self.data.shape)})
-
-        # if no settings were found, there is probably no dz/dx/angle info
-        # check here and then look for a previously processed proclog.txt
+        self.params['date'] = self.settings.get('date') or datetime.now()
+        self.params.update(self.data.coreparams)
 
     @property
     def is_ready(self):

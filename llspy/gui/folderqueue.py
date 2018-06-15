@@ -154,10 +154,15 @@ class LLSDragDropTable(QtW.QTableWidget):
                 str(E.params.nt),
                 str(E.params.nz),
                 str(E.params.ny),
-                str(E.params.nx),
-                "{:2.1f}".format(E.params.get('deskew') or mainGUI.defaultAngleSpin.value()),
-                "{:0.3f}".format(E.params.get('dz') or mainGUI.defaultDzSpin.value()),
-                "{:0.3f}".format(E.params.get('dx') or mainGUI.defaultDxSpin.value())]
+                str(E.params.nx)]
+        for frmt, key, widg in [('{:2.1f}', 'deskew', 'defaultAngleSpin'),
+                                ('{:0.3f}', 'dz', 'defaultDzSpin'),
+                                ('{:0.3f}', 'dx', 'defaultDxSpin')]:
+            val = E.params.get(key)
+            if not val:
+                val = getattr(mainGUI, widg).value()
+                E.params[key if key != 'deskew' else 'angle'] = val
+            item.append(frmt.format(val))
         for col, elem in enumerate(item):
             entry = QtW.QTableWidgetItem(elem)
             if col < 7:
