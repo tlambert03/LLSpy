@@ -14,9 +14,6 @@ def newWorkerThread(workerClass, *args, **kwargs):
     worker.moveToThread(thread)
     # all workers started using this function must implement work() func
     thread.started.connect(worker.work)
-    # all workers started using this function must emit finished signal
-    worker.finished.connect(thread.quit)
-    worker.finished.connect(worker.deleteLater)
     thread.finished.connect(thread.deleteLater)
 
     # connect dict from calling object to worker signals

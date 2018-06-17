@@ -166,10 +166,11 @@ def parse_settings(path, pattern='*Settings.txt'):
     else:
         _D['params']['dx'] = None
     _D['params']['nc'] = len(_D['channels'])
-    if _D['channels'][0]['numstacks_requested']:
-        _D['params']['nt'] = int(_D['channels'][0]['numstacks_requested'])
-    else:
-        _D['params']['nt'] = None
+    # only update this from the data folder
+    # if _D['channels'][0]['numstacks_requested']:
+    #     _D['params']['nt'] = int(_D['channels'][0]['numstacks_requested'])
+    # else:
+    #     _D['params']['nt'] = None
     _D['params']['nx'] = None  # .camera.roi.height
     _D['params']['ny'] = None  # .camera.roi.width
     _D['params']['wavelengths'] = [_D['channels'][v]['laser'] for v in

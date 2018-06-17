@@ -100,8 +100,9 @@ def imsave(arr, outpath, dx=1, dz=1, dt=1, unit='micron'):
         arr = reorderstack(arr)  # assume that 3 dimension array is ZYX
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
+        res = 1 / (dx or 1)
         tifffile.imsave(outpath, arr, bigtiff=bigT, imagej=True,
-                        resolution=(1 / dx, 1 / dx), metadata=md)
+                        resolution=(res, res), metadata=md)
 
 
 def getfoldersize(folder, recurse=False):

@@ -20,6 +20,7 @@ class ProcessPlan(object):
         self.imp_classes = imps
         self.t_range = t_range or list(range(llsdir.params.nt))
         self.c_range = c_range or list(range(llsdir.params.nc))
+        self.aborted = False
 
     @property
     def ready(self):
@@ -59,38 +60,45 @@ class ProcessPlan(object):
         if errors:
             # FIXME: should probably only clobber broken imps, not all imps
             self.imps = []
-            raise self.PlanError("Please fix the following errors:\n\n" +
+            raise self.PlanError("Cannot process .../{} due the following errors:\n\n"
+                                 .format(self.llsdir.path.name) +
                                  "\n\n".join(errors))
 
     def execute(self):
         decons = [isinstance(i, CUDADeconProcessor) for i in self.imps]
-        has_decon = any(decons)
         meta = {
             'c': self.c_range,
+            'nt': len(self.t_range),
             'w': [self.llsdir.params.wavelengths[i] for i in self.c_range],
             'params': self.llsdir.params,
             'has_background': True,
         }
         for t in self.t_range:
+            if self.aborted:
+                break
             data = self.llsdir.data.asarray(t=t, c=self.c_range)
-            meta['axes'] = data.axes
             meta['t'] = t
-            if len(self.c_range) == 1 and has_decon:
-                wave = meta['w'][0]
-                otf_dir = self.imps[decons.index(True)].otf_dir
-                width = self.imps[decons.index(True)].width
-                otf = choose_otf(wave, otf_dir, meta['params'].date,
-                                 meta['params'].mask)
-                with RLContext(data.shape, otf, meta['params'].dz,
-                               deskew=meta['params'].deskew,
-                               width=width) as ctx:
-                    meta['out_shape'] = ctx.out_shape
-                    for imp in self.imps:
-                        data, meta = imp(data, meta)
-            else:
-                for imp in self.imps:
-                    data, meta = imp(data, meta)
+            self._execute_t(meta, data, decons)
 
+    def _execute_t(self, meta, data, decons):
+        meta['axes'] = data.axes
+        if len(self.c_range) == 1 and any(decons):
+            wave = meta['w'][0]
+            otf_dir = self.imps[decons.index(True)].otf_dir
+            width = self.imps[decons.index(True)].width
+            otf = choose_otf(wave, otf_dir, meta['params'].date,
+                             meta['params'].mask)
+            with RLContext(data.shape, otf, meta['params'].dz,
+                           deskew=meta['params'].deskew,
+                           width=width) as ctx:
+                meta['out_shape'] = ctx.out_shape
+                self._iterimps(data, meta)
+        else:
+            self._iterimps(data, meta)
+
+    def _iterimps(self, data, meta):
+        for imp in self.imps:
+            data, meta = imp(data, meta)
         cuda_reset()
 
     class PlanError(Exception):

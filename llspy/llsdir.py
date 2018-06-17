@@ -64,7 +64,8 @@ class LLSParams(MutableMapping):
             'nz': 1,
             'nx': None,
             'ny': None,
-            'mask': None
+            'mask': None,
+            'roi': None
         }
         self.update(dict(*args, **kwargs))
 

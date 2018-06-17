@@ -15,6 +15,7 @@ class TiffWriter(ImgWriter):
     """
 
     verbose_name = 'Write Tiff'
+    processing_verb = 'Writing Tiff'
 
     def __init__(self, output_dir='{datadir}',
                  frmt='ch{c:01d}_stack{t:04d}_{w}nm.tif'):

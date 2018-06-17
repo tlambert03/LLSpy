@@ -101,6 +101,11 @@ class ImgProcessor(ABC):
         """ look for attribute called verbose_name, otherwise return class name"""
         return getattr(cls, 'verbose_name', cls.__name__)
 
+    @classmethod
+    def verb(cls):
+        """ look for attribute called verbose_name, otherwise return class name"""
+        return getattr(cls, 'processing_verb', cls.name())
+
     @abstractmethod
     def process(self, data, meta):
         """ All child classes must override this method.
@@ -169,6 +174,7 @@ class FlashProcessor(ImgProcessor):
     """ Corrects flash artifact """
 
     verbose_name = 'Flash Artifact Correction'
+    processing_verb = 'Fixing Flash Artifact'
 
     class Target(Enum):
         CPU = 'CPU'
@@ -188,7 +194,11 @@ class FlashProcessor(ImgProcessor):
                 raise self.ImgProcessorError('Error creating cam_params: {}'
                                              .format(e))
         # may raise an error... should catch here?
-        self.cam_params = param_file.get_subroi(data_roi)
+        try:
+            self.cam_params = param_file.get_subroi(data_roi)
+        except Exception as e:
+            raise self.ImgProcessorError('Error creating cam_params: {}'
+                                         .format(e))
         self.target = perform_on
         if self.target == self.Target.GPU:
             if not data_shape:
@@ -214,7 +224,9 @@ class FlashProcessor(ImgProcessor):
     @classmethod
     def from_llsdir(cls, llsdir, **kwargs):
         kwargs.pop('data_roi')
-        data_roi = llsdir.params.roi
+        data_roi = llsdir.params.get('roi')
+        if data_roi is None:
+            raise cls.ImgProcessorError('Failed to extract camera ROI from settings.')
         kwargs['data_shape'] = llsdir.data.shape[-4:]
         return cls(data_roi, **kwargs)
 
@@ -226,6 +238,7 @@ class SelectiveMedianProcessor(ImgProcessor):
     """
 
     verbose_name = 'Selective Median Filter'
+    processing_verb = 'Performing Median Filter'
     gui_layout = {
         'background': (0, 1),
         'median_range': (0, 0),
@@ -310,6 +323,7 @@ class BleachCorrectionProcessor(ImgProcessor):
     """ Divides and image by another image, e.g. for flatfield correction """
 
     verbose_name = "Bleach Correction"
+    processing_verb = 'Correcting Photobleaching'
 
     def __init__(self, first_timepoint):
         # convert first_timepoint into divisor
@@ -336,8 +350,8 @@ class BleachCorrectionProcessor(ImgProcessor):
 class TrimProcessor(ImgProcessor):
     """ trim pixels off of the edge each dimension in XYZ """
 
-    verbose_name = "Trime Edges"
-
+    verbose_name = "Trim Edges"
+    processing_verb = 'Trimming Edges'
     gui_layout = {
         'trim_x': (0, 0),
         'trim_y': (1, 0),
@@ -363,6 +377,7 @@ class CUDADeconProcessor(ImgProcessor):
     """
 
     verbose_name = 'Deconvolution/Deskewing'
+    processing_verb = 'Deconvolving'
     valid_range = {
         'background': (0, 1000),
         'n_iters': (1, 20),
@@ -444,6 +459,13 @@ class CUDADeconProcessor(ImgProcessor):
         else:
             newdata = self._decon(data, meta.get('out_shape'))
         return newdata.astype(self.dtype), meta
+
+    @classmethod
+    def from_llsdir(cls, llsdir, **kwargs):
+        if not any(llsdir.params.wavelengths):
+            raise cls.ImgProcessorError('Cannot perform Decon on a dataset '
+                                        'with unknown wavelengths')
+        return cls(**kwargs)
 
 
 class AffineProcessor(ImgProcessor):

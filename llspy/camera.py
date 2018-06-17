@@ -219,6 +219,12 @@ class CameraParameters(object):
         return 'CameraParameters({})'.format(os.path.basename(self.path))
 
     def get_subroi(self, subroi):
+        if not isinstance(subroi, CameraROI):
+            if isinstance(subroi, (tuple, list)) and len(subroi) == 4:
+                subroi = CameraROI(subroi)
+            else:
+                raise ValueError(
+                    'subroi argument must be a CameraROI instance or 4-tuple')
         # make sure the Parameter ROI contains the data ROI
         if subroi not in self.roi:
             raise ValueError(

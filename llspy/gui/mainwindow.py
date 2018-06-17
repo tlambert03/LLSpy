@@ -2,29 +2,21 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
-import llspy
-import llspy.gui.exceptions as err
-from llspy.gui import workers
-from llspy.gui.camcalibgui import CamCalibDialog
-from llspy.gui.implist import ImpListContainer
-from llspy.gui.helpers import (newWorkerThread, shortname, string_to_iterable,
-                               guisave, guirestore, reveal)
-from llspy.gui.img_dialog import ImgDialog
-from llspy.gui.qtlogger import NotificationHandler
-from llspy.gui.folderqueue import LLSDragDropTable
-from llspy.gui.regtab import RegistrationTab
-from llspy import util
-from llspy.processplan import ProcessPlan
-from fiducialreg.fiducialreg import RegFile, RegistrationError
-
-from PyQt5 import QtCore, QtGui, uic
-from PyQt5 import QtWidgets as QtW
-
 import json
 import os
 import os.path as osp
 import numpy as np
 import logging
+import llspy
+from llspy.gui import (workers, camcalibgui, implist, img_dialog, dialogs,
+                       qtlogger, folderqueue, regtab, actions, exceptions)
+from llspy.gui.helpers import (newWorkerThread, shortname, string_to_iterable,
+                               guisave, guirestore)
+from llspy import util
+from fiducialreg.fiducialreg import RegFile, RegistrationError
+from PyQt5 import QtCore, QtGui, uic
+from PyQt5 import QtWidgets as QtW
+
 
 logger = logging.getLogger()  # set root logger
 logger.setLevel(logging.DEBUG)
@@ -66,40 +58,60 @@ if not sessionSettings.value('disableSpimagineCheckBox', False, type=bool):
         logger.error("could not import spimagine!  falling back to matplotlib")
 
 
-class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
+def progress_gradient(start='#484DE7', finish='#787DFF'):
+    a = """
+    QProgressBar {
+        border: 1px solid grey;
+        border-radius: 3px;
+        height: 20px;
+        margin: 0px 0px 0px 5px;
+    }
+
+    QProgressBar::chunk:horizontal {
+      background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5,
+                                  stop: 0 %s, stop: 1 %s);
+    }
+    """
+    return a % (start, finish)
+
+
+class main_GUI(QtW.QMainWindow, Ui_Main_GUI, regtab.RegistrationTab,
+               actions.LLSpyActions):
     """docstring for main_GUI"""
 
     sig_abort_LLSworkers = QtCore.pyqtSignal()
-    sig_item_finished = QtCore.pyqtSignal()
     sig_processing_done = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         super(main_GUI, self).__init__(parent)
         self.setupUi(self)  # method inherited from form_class to init UI
         self.setWindowTitle("LLSpy :: Lattice Light Sheet Processing")
-        RegistrationTab.__init__(self)
+        regtab.RegistrationTab.__init__(self)
 
         self.LLSItemThreads = []
         self.compressionThreads = []
         self.argQueue = []  # holds all argument lists that will be sent to threads
         self.aborted = False  # current abort status
-        self.inProcess = False
         self.spimwins = []
 
-        # delete and reintroduce custom LLSDragDropTable and imp window
+        # delete and reintroduce custom folderqueue.LLSDragDropTable and imp window
         self.listbox.setParent(None)
-        self.listbox = LLSDragDropTable(self)
+        self.listbox = folderqueue.LLSDragDropTable(self)
+        self.listbox.status_update.connect(self.statusBar.showMessage)
+        self.listbox.item_starting.connect(self.initProgress)
+        self.listbox.step_finished.connect(self.incrementProgress)
+        self.listbox.work_finished.connect(self.summarizeWork)
         self.processSplitter.insertWidget(0, self.listbox)
         self.impListWidget.setParent(None)
-        self.impContainer = ImpListContainer()
+        self.impContainer = implist.ImpListContainer()
         self.impListWidget = self.impContainer.list
         self.processSplitter.addWidget(self.impContainer)
 
-        handler = NotificationHandler()
+        handler = qtlogger.NotificationHandler()
         handler.emitSignal.connect(self.log.append)
         logger.addHandler(handler)
 
-        self.camcorDialog = CamCalibDialog()
+        self.camcorDialog = camcalibgui.CamCalibDialog()
         self.genFlashParams.clicked.connect(self.camcorDialog.show)
         self.actionCamera_Calibration.triggered.connect(self.camcorDialog.show)
 
@@ -108,19 +120,19 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.processButton.clicked.connect(self.onProcess)
         self.errorOptOutCheckBox.stateChanged.connect(self.toggleOptOut)
 
-        def toggleActiveGPU(val):
-            gpunum = int(self.sender().objectName().strip('useGPU_'))
-            app = QtCore.QCoreApplication.instance()
-            if not hasattr(app, 'gpuset'):
-                app.gpuset = set()
-            if val:
-                app.gpuset.add(gpunum)
-                logger.debug("GPU {} added to gpuset.".format(gpunum))
-            else:
-                if gpunum in app.gpuset:
-                    app.gpuset.remove(gpunum)
-                    logger.debug("GPU {} removed from gpuset.".format(gpunum))
-            logger.debug("GPUset now: {}".format(app.gpuset))
+        # def toggleActiveGPU(val):
+        #     gpunum = int(self.sender().objectName().strip('useGPU_'))
+        #     app = QtCore.QCoreApplication.instance()
+        #     if not hasattr(app, 'gpuset'):
+        #         app.gpuset = set()
+        #     if val:
+        #         app.gpuset.add(gpunum)
+        #         logger.debug("GPU {} added to gpuset.".format(gpunum))
+        #     else:
+        #         if gpunum in app.gpuset:
+        #             app.gpuset.remove(gpunum)
+        #             logger.debug("GPU {} removed from gpuset.".format(gpunum))
+        #     logger.debug("GPUset now: {}".format(app.gpuset))
 
         # add GPU checkboxes and add
         # try:
@@ -147,26 +159,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         #     pass
 
         # connect actions
-        self.actionReveal.triggered.connect(self.revealSelected)
-        self.actionMerge_MIPs_from_folder.triggered.connect(self.mergeMIPtool)
-        self.actionOpen_LLSdir.triggered.connect(self.openLLSdir)
-        self.actionRun.triggered.connect(self.onProcess)
-        self.actionAbort.triggered.connect(self.abort_workers)
-        self.actionClose_All_Previews.triggered.connect(self.close_all_previews)
-        self.actionPreview.triggered.connect(self.onPreview)
-        self.actionSave_Settings_as_Default.triggered.connect(
-            self.saveCurrentAsDefault)
-        self.actionLoad_Default_Settings.triggered.connect(
-            self.loadDefaultSettings)
-        self.actionReduce_to_Raw.triggered.connect(self.reduceSelected)
-        self.actionFreeze.triggered.connect(self.freezeSelected)
-        self.actionCompress_Folder.triggered.connect(self.compressSelected)
-        self.actionDecompress_Folder.triggered.connect(self.decompressSelected)
-        self.actionConcatenate.triggered.connect(self.concatenateSelected)
-        self.actionRename_Scripted.triggered.connect(self.renameSelected)
-        self.actionUndo_Rename_Iters.triggered.connect(self.undoRenameSelected)
-        self.actionAbout_LLSpy.triggered.connect(self.showAboutWindow)
-        self.actionHelp.triggered.connect(self.showHelpWindow)
 
         # set validators for cRange and tRange fields
         ctrangeRX = QtCore.QRegExp(r"(\d[\d-]*,?)*")  # could be better
@@ -184,7 +176,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 QtW.QMessageBox.Ok))
 
         # connect worker signals and slots
-        self.sig_item_finished.connect(self.on_item_finished)
+
         self.sig_processing_done.connect(self.on_proc_finished)
         self.RegCalib_channelRefModeCombo.clear()
         self.RegCalib_channelRefCombo.clear()
@@ -217,10 +209,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             RO = llspy.llsdir.get_regObj(path)
         except json.decoder.JSONDecodeError as e:
             self.RegProcessPathLineEdit.setText('')
-            raise err.RegistrationError("Failed to parse registration file", str(e))
+            raise exceptions.RegistrationError("Failed to parse registration file", str(e))
         except RegistrationError as e:
             self.RegProcessPathLineEdit.setText('')
-            raise err.RegistrationError('Failed to load registration calibration data', str(e))
+            raise exceptions.RegistrationError('Failed to load registration calibration data', str(e))
         finally:
             self.RegProcessChannelRefModeCombo.clear()
             self.RegProcessChannelRefCombo.clear()
@@ -255,39 +247,30 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 return
         self.RegProcessPathLineEdit.setText(file)
 
-    def saveCurrentAsDefault(self):
-        if len(defaultSettings.childKeys()):
-            reply = QtW.QMessageBox.question(
-                self, 'Save Settings',
-                "Overwrite existing default GUI settings?",
-                QtW.QMessageBox.Yes | QtW.QMessageBox.No,
-                QtW.QMessageBox.No)
-            if reply != QtW.QMessageBox.Yes:
-                return
-        guisave(self, defaultSettings)
-
-    def loadProgramDefaults(self):
-        guirestore(self, QtCore.QSettings(), programDefaults)
-
-    def loadDefaultSettings(self):
-        if not len(defaultSettings.childKeys()):
-            reply = QtW.QMessageBox.information(
-                self, 'Load Settings',
-                "Default settings have not yet been saved.  Use Save Settings")
-            if reply != QtW.QMessageBox.Yes:
-                return
-        guirestore(self, defaultSettings, programDefaults)
-
-    def openLLSdir(self):
-        path = QtW.QFileDialog.getExistingDirectory(
-            self, 'Choose LLSdir to add to list',
-            '', QtW.QFileDialog.ShowDirsOnly)
-        if path is not None:
-            self.listbox.addPath(path)
+    def initProgress(self, maxval):
+        self.progressBar.setStyleSheet(progress_gradient())
+        self.progressBar.setValue(0)
+        self.progressBar.setMaximum(maxval)
 
     def incrementProgress(self):
         # with no values, simply increment progressbar
         self.progressBar.setValue(self.progressBar.value() + 1)
+
+    @QtCore.pyqtSlot(int, int, int)  # return code, numdone, numsk
+    def summarizeWork(self, retcode, numfinished, numskipped):
+        self.enableProcessButton()
+        if not retcode:  # means aborted
+            self.statusBar.showMessage('Aborted')
+            self.progressBar.setStyleSheet(progress_gradient('#FF8C00', '#FFA500'))
+            return
+
+        summary = 'Successfully Processed {} Items!'.format(numfinished)
+        if numskipped:
+            summary += ' ({} items were skipped due to errors)'.format(numskipped)
+            self.progressBar.setStyleSheet(progress_gradient('#F22', '#F66'))
+        else:
+            self.progressBar.setStyleSheet(progress_gradient('#0B0', '#4B4'))
+        self.statusBar.showMessage(summary)
 
     def onPreview(self):
         self.previewButton.setDisabled(True)
@@ -369,7 +352,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         if not obj.parameters.isReady():
             self.previewButton.setEnabled(True)
             self.previewButton.setText('Preview')
-            raise err.InvalidSettingsError(
+            raise exceptions.InvalidSettingsError(
                 "Parameters are incomplete for this item. "
                 "Please add any missing/higlighted parameters.")
 
@@ -456,123 +439,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             # FIXME:  pyplot should not be imported in pyqt
             # use https://matplotlib.org/2.0.0/api/backend_qt5agg_api.html
 
-            win = ImgDialog(array, info=params, title=shortname(self.previewPath))
+            win = img_dialog.ImgDialog(array, info=params, title=shortname(self.previewPath))
             self.spimwins.append(win)
-
-    @QtCore.pyqtSlot()
-    def close_all_previews(self):
-        if hasattr(self, 'spimwins'):
-            for win in self.spimwins:
-                try:
-                    win.closeMe()
-                except Exception:
-                    try:
-                        win.close()
-                    except Exception:
-                        pass
-        self.spimwins = []
 
     def onProcess(self):
         # prevent additional button clicks which processing
         self.disableProcessButton()
-        self.listbox.skipped_items = set()
-
-        if self.listbox.rowCount() == 0:
-            QtW.QMessageBox.warning(
-                self, "Nothing Added!",
-                'Nothing to process! Drag and drop folders into the list',
-                QtW.QMessageBox.Ok, QtW.QMessageBox.NoButton)
-            self.enableProcessButton()
-            return
-
-        # store current options for this processing run.  TODO: Unecessary?
-        try:
-            pass
-        except Exception:
-            self.enableProcessButton()
-            raise
-
-        if not self.inProcess:  # for now, only one item allowed processing at a time
-            self.inProcess = True
-            self.process_next_item()
-        else:
-            logger.warning('Ignoring request to process, already processing...')
-
-    def process_next_item(self):
-        # get path from first row and create a new LLSdir object
-        numskipped = len(self.listbox.skipped_items)
-        self.currentItem = self.listbox.item(numskipped, 1).text()
-        self.currentPath = self.listbox.getPathByIndex(numskipped)
-        obj = self.listbox.getLLSObjectByPath(self.currentPath)
-
-        def skip():
-            self.listbox.removePath(self.currentPath)
-            self.look_for_next_item()
-            return
-
-        if not os.path.exists(self.currentPath):
-            msg = 'Skipping! path no longer exists: {}'.format(self.currentPath)
-            logger.info(msg)
-            self.statusBar.showMessage(msg, 5000)
-            skip()
-            return
-
-        # check if already processed
-        # if util.pathHasPattern(self.currentPath, '*' + llspy.config.__OUTPUTLOG__):
-        #     if not self.reprocessCheckBox.isChecked():
-        #         msg = 'Skipping! Path already processed: {}'.format(self.currentPath)
-        #         logger.info(msg)
-        #         self.statusBar.showMessage(msg, 5000)
-        #         skip()
-        #         return
-
-        self.plan = ProcessPlan(obj, self.impListWidget.getImpList())
-        try:
-            self.plan.plan()  # do sanity check here
-        except self.plan.PlanWarning as e:
-            msg = QtW.QMessageBox()
-            msg.setIcon(QtW.QMessageBox.Information)
-            msg.setText(str(e) + '\n\nContinue anyway?')
-            msg.setStandardButtons(QtW.QMessageBox.Ok | QtW.QMessageBox.Cancel)
-            if msg.exec_() == QtW.QMessageBox.Ok:
-                self.plan.plan(skip_warnings=True)
-            else:
-                return
-        except self.plan.PlanError:
-            raise
-
-        self.plan.execute()
-        # if not len(QtCore.QCoreApplication.instance().gpuset):
-        #     self.on_proc_finished()
-        #     raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
-
-        # self.statusBar.showMessage('Starting processing on {} ...'.format(shortname(self.currentPath)))
-        # LLSworker, thread = newWorkerThread(
-        #     workers.LLSitemWorker,
-        #     obj, idx, opts, workerConnect={
-        #         'finished': self.on_item_finished,
-        #         'status_update': self.statusBar.showMessage,
-        #         'progressMaxVal': self.progressBar.setMaximum,
-        #         'progressValue': self.progressBar.setValue,
-        #         'progressUp': self.incrementProgress,
-        #         'clockUpdate': self.clock.display,
-        #         'error': self.abort_workers,
-        #         'skipped': self.skip_item,
-        #         # 'error': self.errorstring  # implement error signal?
-        #     })
-
-        # self.LLSItemThreads.append((thread, LLSworker))
-
-        # # connect mainGUI abort LLSworker signal to the new LLSworker
-        # self.sig_abort_LLSworkers.connect(LLSworker.abort)
-
-        # prepare and start LLSworker:
-        # thread.started.connect(LLSworker.work)
-        # thread.start()  # this will emit 'started' and start thread's event loop
-
-        # recolor the first row to indicate processing
-        self.listbox.setRowBackgroudColor(numskipped, QtGui.QColor(0, 0, 255, 30))
-        self.listbox.clearSelection()
+        self.listbox.startProcessing(self.impListWidget.getImpList())
         # start a timer in the main GUI to measure item processing time
         self.timer = QtCore.QTime()
         self.timer.restart()
@@ -581,213 +454,36 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         # turn Process button into a Cancel button and udpate menu items
         self.processButton.clicked.disconnect()
         self.processButton.setText('CANCEL')
-        self.processButton.clicked.connect(self.abort_workers)
+        self.processButton.clicked.connect(self.sendAbort)
         self.processButton.setEnabled(True)
         self.actionRun.setDisabled(True)
         self.actionAbort.setEnabled(True)
+
+    def sendAbort(self):
+        self.listbox.abort_workers()
+        self.processButton.setText('ABORTING...')
+        self.processButton.setDisabled(True)
 
     def enableProcessButton(self):
         # change Process button back to "Process" and udpate menu items
         self.processButton.clicked.disconnect()
         self.processButton.clicked.connect(self.onProcess)
         self.processButton.setText('Process')
+        self.processButton.setEnabled(True)
         self.actionRun.setEnabled(True)
         self.actionAbort.setDisabled(True)
-        self.inProcess = False
 
     @QtCore.pyqtSlot()
     def on_proc_finished(self):
         # reinit statusbar and clock
         self.statusBar.showMessage('Ready')
         self.clock.display("00:00:00")
-        self.inProcess = False
         self.aborted = False
         logger.info("Processing Finished")
         self.enableProcessButton()
 
-    @QtCore.pyqtSlot()
-    def on_item_finished(self):
-        if len(self.LLSItemThreads):
-            thread, worker = self.LLSItemThreads.pop(0)
-            thread.quit()
-            thread.wait()
-        self.clock.display("00:00:00")
-        self.progressBar.setValue(0)
-        if self.aborted:
-            self.sig_processing_done.emit()
-        else:
-            try:
-                itemTime = QtCore.QTime(0, 0).addMSecs(self.timer.elapsed()).toString()
-                logger.info(">" * 4 + " Item {} finished in {} ".format(
-                    self.currentItem, itemTime) + "<" * 4)
-            except AttributeError:
-                pass
-            self.listbox.removePath(self.currentPath)
-            self.currentPath = None
-            self.currentItem = None
-            self.look_for_next_item()
-
-    @QtCore.pyqtSlot(str)
-    def skip_item(self, path):
-        if len(self.LLSItemThreads):
-            thread, worker = self.LLSItemThreads.pop(0)
-            thread.quit()
-            thread.wait()
-        self.listbox.setRowBackgroudColor(len(self.listbox.skipped_items), '#FFFFFF')
-        self.listbox.skipped_items.add(path)
-        self.look_for_next_item()
-
-    @QtCore.pyqtSlot()
-    def abort_workers(self):
-        self.statusBar.showMessage('Aborting ...')
-        logger.info('Message sent to abort ...')
-        if len(self.LLSItemThreads):
-            self.aborted = True
-            self.sig_abort_LLSworkers.emit()
-            for row in range(self.listbox.rowCount()):
-                self.listbox.setRowBackgroudColor(row, '#FFFFFF')
-            # self.processButton.setDisabled(True) # will be reenabled when workers done
-        else:
-            self.sig_processing_done.emit()
-
-    def look_for_next_item(self):
-        if self.listbox.rowCount() > len(self.listbox.skipped_items):
-            self.process_next_item()
-        else:
-            if self.listbox.rowCount() <= len(self.listbox.skipped_items):
-                self.sig_processing_done.emit()
-                for row in range(self.listbox.rowCount()):
-                    self.listbox.setRowBackgroudColor(row, '#FFFFFF')
-
-    def reduceSelected(self):
-        for item in self.listbox.selectedPaths():
-            llspy.LLSdir(item).reduce_to_raw(keepmip=self.saveMIPsDuringReduceCheckBox.isChecked())
-
-    def freezeSelected(self):
-        for item in self.listbox.selectedPaths():
-            llspy.LLSdir(item).reduce_to_raw(keepmip=self.saveMIPsDuringReduceCheckBox.isChecked())
-            self.compressItem(item)
-
-    def compressSelected(self):
-        [self.compressItem(item) for item in self.listbox.selectedPaths()]
-
-    def compressItem(self, item):
-        def has_tiff(path):
-            for f in os.listdir(path):
-                if f.endswith('.tif'):
-                    return True
-            return False
-
-        # figure out what type of folder this is
-        if not has_tiff(item):
-            self.statusBar.showMessage(
-                'No tiffs to compress in ' + shortname(item), 4000)
-            return
-
-        worker, thread = newWorkerThread(
-            workers.CompressionWorker, item, 'compress',
-            self.compressTypeCombo.currentText(),
-            workerConnect={
-                'status_update': self.statusBar.showMessage,
-                'finished': lambda: self.statusBar.showMessage('Compression finished', 4000)
-            },
-            start=True)
-        self.compressionThreads.append((worker, thread))
-
-    def decompressSelected(self):
-        for item in self.listbox.selectedPaths():
-            if not util.find_filepattern(item, '*.tar*'):
-                self.statusBar.showMessage(
-                    'No .tar file found in ' + shortname(item), 4000)
-                continue
-
-            def onfinish():
-                self.listbox.llsObjects[item]._register_tiffs()
-                self.statusBar.showMessage('Decompression finished', 4000)
-
-            worker, thread = newWorkerThread(
-                workers.CompressionWorker, item, 'decompress',
-                self.compressTypeCombo.currentText(),
-                workerConnect={
-                    'status_update': self.statusBar.showMessage,
-                    'finished': onfinish
-                },
-                start=True)
-            self.compressionThreads.append((worker, thread))
-
-    def revealSelected(self):
-        selectedPaths = self.listbox.selectedPaths()
-        if len(selectedPaths):
-            for p in selectedPaths:
-                if os.path.exists(p):
-                    reveal(p)
-
-    def concatenateSelected(self):
-        selectedPaths = self.listbox.selectedPaths()
-        if len(selectedPaths) > 1:
-            llspy.llsdir.concatenate_folders(selectedPaths)
-            [self.listbox.removePath(p) for p in selectedPaths]
-            [self.listbox.addPath(p) for p in selectedPaths]
-
-    def undoRenameSelected(self):
-
-        box = QtW.QMessageBox()
-        box.setWindowTitle('Undo Renaming')
-        box.setText("Do you want to undo all renaming that has occured in this session?, or chose a directory?")
-        box.setIcon(QtW.QMessageBox.Question)
-        box.addButton(QtW.QMessageBox.Cancel)
-        box.addButton("Undo Everything", QtW.QMessageBox.YesRole)
-        box.addButton("Choose Specific Directory", QtW.QMessageBox.ActionRole)
-        box.setDefaultButton(QtW.QMessageBox.Cancel)
-        reply = box.exec_()
-
-        if reply > 1000:  # cancel hit
-            return
-        elif reply == 1:  # action role  hit
-            path = QtW.QFileDialog.getExistingDirectory(
-                self, 'Choose Directory to Undo',
-                os.path.expanduser('~'), QtW.QFileDialog.ShowDirsOnly)
-            if path:
-                paths = [path]
-            else:
-                paths = []
-        elif reply == 0:  # yes role  hit
-            if not hasattr(self.listbox, 'renamedPaths') or not self.listbox.renamedPaths:
-                return
-            paths = self.listbox.renamedPaths
-
-        for P in paths:
-            for root, subd, file in os.walk(P):
-                self.listbox.removePath(root)
-                for d in subd:
-                    self.listbox.removePath(os.path.join(root, d))
-            llspy.llsdir.undo_rename_iters(P)
-        self.listbox.renamedPaths = []
-
-    def renameSelected(self):
-        if not hasattr(self.listbox, 'renamedPaths'):
-            self.listbox.renamedPaths = []
-        for item in self.listbox.selectedPaths():
-            llspy.llsdir.rename_iters(item)
-            self.listbox.renamedPaths.append(item)
-            self.listbox.removePath(item)
-            [self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
-
-    def mergeMIPtool(self):
-
-        if len(self.listbox.selectedPaths()):
-            for obj in self.listbox.selectedObjects():
-                obj.mergemips()
-        else:
-            path = QtW.QFileDialog.getExistingDirectory(
-                self, 'Choose Directory with MIPs to merge',
-                os.path.expanduser('~'), QtW.QFileDialog.ShowDirsOnly)
-            if path:
-                for axis in ['z', 'y', 'x']:
-                    llspy.llsdir.mergemips(path, axis, dx=0.102, delete=True)
-
     def toggleOptOut(self, value):
-        err._OPTOUT = True if value else False
+        exceptions._OPTOUT = True if value else False
 
     @QtCore.pyqtSlot(str, str, str, str)
     def show_error_window(self, errMsg, title=None, info=None, detail=None):
@@ -805,49 +501,18 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.msgBox.setDetailedText(detail)
         self.msgBox.exec_()
 
-    def showAboutWindow(self):
-        import datetime
-        now = datetime.datetime.now()
-        QtW.QMessageBox.about(self, 'LLSpy',
-            """LLSpy v.{}\n
-Copyright ©  {}, President and Fellows of Harvard College.  All rights reserved.\n\n
-Developed by Talley Lambert\n\n
-The cudaDeconv deconvolution program is owned and licensed by HHMI, Janelia Research Campus.  Please contact innovation@janlia.hhmi.org for access.""".format(llspy.__version__, now.year))
-
-    def showHelpWindow(self):
-        QtW.QMessageBox.about(self, 'LLSpy', 'Please see documentation at llspy.readthedocs.io')
-
     def closeEvent(self, event):
         ''' triggered when close button is clicked on main window '''
         if self.listbox.rowCount() and self.confirmOnQuitCheckBox.isChecked():
-            box = QtW.QMessageBox()
-            box.setWindowTitle('Unprocessed items!')
-            box.setText("You have unprocessed items.  Are you sure you want to quit?")
-            box.setIcon(QtW.QMessageBox.Warning)
-            box.addButton(QtW.QMessageBox.Yes)
-            box.addButton(QtW.QMessageBox.No)
-            box.setDefaultButton(QtW.QMessageBox.Yes)
-            pref = QtW.QCheckBox("Always quit without confirmation")
-            box.setCheckBox(pref)
-
-            pref.stateChanged.connect(
-                lambda value:
-                self.confirmOnQuitCheckBox.setChecked(False) if value else
-                self.confirmOnQuitCheckBox.setChecked(True))
-
-            reply = box.exec_()
-            # reply = box.question(self, 'Unprocessed items!',
-            #     "You have unprocessed items.  Are you sure you want to quit?",
-            #     QtW.QMessageBox.Yes | QtW.QMessageBox.No,
-            #     QtW.QMessageBox.Yes)
-            if reply != QtW.QMessageBox.Yes:
+            msgbox = dialogs.confirm_quit()
+            if msgbox.exec_() != msgbox.Yes:
                 event.ignore()
                 return
 
         # if currently processing, need to shut down threads...
-        if self.inProcess:
-            self.abort_workers()
-            self.sig_processing_done.connect(self.quitProgram)
+        if self.listbox.inProcess:
+            self.listbox.abort_workers()
+            self.work_finished.connect(self.quitProgram)
         else:
             self.quitProgram()
 
@@ -867,7 +532,7 @@ if __name__ == '__main__':
     main = main_GUI()
 
     # instantiate the execption handler
-    exceptionHandler = err.ExceptionHandler()
+    exceptionHandler = exceptions.ExceptionHandler()
     sys.excepthook = exceptionHandler.handler
     exceptionHandler.errorMessage.connect(main.show_error_window)
 
