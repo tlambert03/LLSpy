@@ -63,43 +63,44 @@ class ProcessPlan(object):
             raise self.PlanError("Cannot process .../{} due the following errors:\n\n"
                                  .format(self.llsdir.path.name) +
                                  "\n\n".join(errors))
-
-    def execute(self):
-        decons = [isinstance(i, CUDADeconProcessor) for i in self.imps]
-        meta = {
+        self.meta = {
             'c': self.c_range,
             'nt': len(self.t_range),
             'w': [self.llsdir.params.wavelengths[i] for i in self.c_range],
             'params': self.llsdir.params,
             'has_background': True,
         }
+
+    def execute(self):
+        decons = [isinstance(i, CUDADeconProcessor) for i in self.imps]
         for t in self.t_range:
             if self.aborted:
                 break
             data = self.llsdir.data.asarray(t=t, c=self.c_range)
-            meta['t'] = t
-            self._execute_t(meta, data, decons)
+            self.meta['t'] = t
+            self.meta['axes'] = data.axes
+            self._execute_t(data, decons)
 
-    def _execute_t(self, meta, data, decons):
-        meta['axes'] = data.axes
+    def _execute_t(self, data, decons):
         if len(self.c_range) == 1 and any(decons):
-            wave = meta['w'][0]
+            wave = self.meta['w'][0]
             otf_dir = self.imps[decons.index(True)].otf_dir
             width = self.imps[decons.index(True)].width
-            otf = choose_otf(wave, otf_dir, meta['params'].date,
-                             meta['params'].mask)
-            with RLContext(data.shape, otf, meta['params'].dz,
-                           deskew=meta['params'].deskew,
+            otf = choose_otf(wave, otf_dir, self.meta['params'].date,
+                             self.meta['params'].mask)
+            with RLContext(data.shape, otf, self.meta['params'].dz,
+                           deskew=self.meta['params'].deskew,
                            width=width) as ctx:
-                meta['out_shape'] = ctx.out_shape
-                self._iterimps(data, meta)
+                self.meta['out_shape'] = ctx.out_shape
+                return self._iterimps(data)
         else:
-            self._iterimps(data, meta)
+            return self._iterimps(data)
 
-    def _iterimps(self, data, meta):
+    def _iterimps(self, data):
         for imp in self.imps:
-            data, meta = imp(data, meta)
+            data, self.meta = imp(data, self.meta)
         cuda_reset()
+        return data, self.meta
 
     class PlanError(Exception):
         """ hard error if the plan cannot be executed as requested """
@@ -108,3 +109,28 @@ class ProcessPlan(object):
     class PlanWarning(Exception):
         """ light error, if a plan has ill-advised steps """
         pass
+
+
+class PreviewPlan(ProcessPlan):
+    """ Subclass of ProcessPlan that strips all ImgWriters and turns
+    execute into a generator
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(PreviewPlan, self).__init__(*args, **kwargs)
+        self.imp_classes = [i for i in self.imp_classes if not isinstance(i, ImgWriter)]
+
+    def check_sanity(self):
+        # overwriting parent method that looks for writers
+        pass
+
+    def execute(self):
+        # overwrite parent method to create generator
+        decons = [isinstance(i, CUDADeconProcessor) for i in self.imps]
+        for t in self.t_range:
+            if self.aborted:
+                break
+            data = self.llsdir.data.asarray(t=t, c=self.c_range)
+            self.meta['t'] = t
+            self.meta['axes'] = data.axes
+            yield self._execute_t(data, decons)

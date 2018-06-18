@@ -19,23 +19,23 @@ class ProcessPlan(processplan.ProcessPlan, QtCore.QObject):
         QtCore.QObject.__init__(self)
         super(ProcessPlan, self).__init__(*args)
 
-    def _preimp(self, imp, meta):
-        self.imp_starting.emit(imp, meta)
+    def _preimp(self, imp):
+        self.imp_starting.emit(imp, self.meta)
 
-    def _postimp(self, meta):
-        self.imp_finished.emit(meta)
+    def _postimp(self):
+        self.imp_finished.emit(self.meta)
 
-    def _iterimps(self, data, meta):
+    def _iterimps(self, data):
         for imp in self.imps:
             if self.aborted:
                 break
-            self.imp_starting.emit(imp, meta)
-            data, meta = imp(data, meta)
-            self.imp_finished.emit(meta)
+            self.imp_starting.emit(imp, self.meta)
+            data, self.meta = imp(data, self.meta)
+            self.imp_finished.emit(self.meta)
 
-    def _execute_t(self, meta, *args):
-        super(ProcessPlan, self)._execute_t(meta, *args)
-        self.t_finished.emit(meta['t'])
+    def _execute_t(self, *args):
+        super(ProcessPlan, self)._execute_t(*args)
+        self.t_finished.emit(self.meta['t'])
 
     def abort(self):
         self.aborted = True
@@ -69,6 +69,7 @@ class LLSDragDropTable(QtW.QTableWidget):
     step_finished = QtCore.pyqtSignal(int)
     work_finished = QtCore.pyqtSignal(int, int, int)  # return_code, numgood, numskipped,
     abort_request = QtCore.pyqtSignal()
+    eta_update = QtCore.pyqtSignal(int)  # for clock
 
     def __init__(self, parent=None):
         super(LLSDragDropTable, self).__init__(0, self.n_cols, parent)
@@ -401,16 +402,31 @@ class LLSDragDropTable(QtW.QTableWidget):
         worker.work_starting.connect(self.item_starting.emit)
         worker.finished.connect(self.on_item_finished)
         worker.item_errored.connect(self.on_item_error)
-        worker.plan.t_finished.connect(self.step_finished.emit)
+        worker.plan.t_finished.connect(self.on_step_finished)
         worker.plan.imp_starting.connect(self.emit_update)
         self.worker_threads.append((thread, worker))
         self.abort_request.connect(worker.plan.abort)
+        self.nT_done = 0
+        self.nT_total = len(plan.t_range)
         self.inProcess = True
+        self.timer = QtCore.QTime()
         thread.start()
-
+        self.timer.start()
         # recolor the first row to indicate processing
         self.setRowBackgroundColor(numskipped, QtGui.QColor(0, 0, 255, 30))
         self.clearSelection()
+
+    @QtCore.pyqtSlot(int)
+    def on_step_finished(self, t):
+        self.step_finished.emit(t)
+        # update status bar
+        self.nT_done += 1
+        # update the countdown timer with estimate of remaining time
+        avgTimePerFile = int(self.timer.elapsed() / self.nT_done)
+        filesToGo = self.nT_total - self.nT_done
+        remainingTime = filesToGo * avgTimePerFile
+        # timeAsString = QtCore.QTime(0, 0).addMSecs(remainingTime).toString()
+        self.eta_update.emit(remainingTime)
 
     @QtCore.pyqtSlot(object, dict)
     def emit_update(self, imp, meta):
@@ -419,6 +435,7 @@ class LLSDragDropTable(QtW.QTableWidget):
 
     @QtCore.pyqtSlot(object)
     def on_item_error(self, e):
+        raise(e)
         self.cleanup_last_worker()
         self.setRowBackgroundColor(len(self.skipped_items), QtGui.QColor(255, 0, 0, 60))
         self.skipped_items.add(self.currentPath)
