@@ -164,3 +164,21 @@ def reveal(path):
         proc.startDetached('xdg-open', ['--', path])
     elif sys.platform.startswith('win32'):
         proc.startDetached('explorer', [path.replace('/', '\\')])
+
+
+def progress_gradient(start='#484DE7', finish='#787DFF'):
+    a = """
+    QProgressBar {
+        border: 1px solid grey;
+        border-radius: 3px;
+        height: 20px;
+        margin: 0px 0px 0px 5px;
+    }
+
+    QProgressBar::chunk:horizontal {
+      background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5,
+                                  stop: 0 %s, stop: 1 %s);
+    }
+    """
+    return a % (start, finish)
+
