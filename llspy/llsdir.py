@@ -151,7 +151,9 @@ class LLSFolder(TiffFolder):
             'time': self.timeinfo,
             'wavelengths': [v.get('w') for k, v in self.channelinfo.items()],
         }
-        _D.update({'n' + a: v for a, v in zip(self.axes, self.shape)})
+        _axdict = dict(zip(self.axes, self.shape))
+        for a in 'tczyx':
+            _D['n' + a] = _axdict[a] if a in _axdict else 1
         return _D
 
 
