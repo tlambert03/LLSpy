@@ -332,6 +332,7 @@ class BleachCorrectionProcessor(ImgProcessor):
         self.first_mean = first_timepoint.mean(axis=tuple(zyx))
 
     def process(self, data, meta):
+        dtype = data.dtype
         if data.ndim <= 3:
             scaler = self.first_mean / data.mean()
         elif data.ndim == 4:
@@ -339,7 +340,7 @@ class BleachCorrectionProcessor(ImgProcessor):
             scaler = (self.first_mean / mean).reshape(data.shape[0], 1, 1, 1)
         else:
             raise self.ImgProcessorError('Bleach correction can only accept 3 or 4D')
-        data = np.multiply(data, scaler)
+        data = np.multiply(data, scaler).astype(dtype)
         return data, meta
 
     @classmethod
