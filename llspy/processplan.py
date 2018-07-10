@@ -65,6 +65,7 @@ class ProcessPlan(object):
                                  "\n\n".join(errors))
         self.meta = {
             'c': self.c_range,
+            'nc': len(self.c_range),
             'nt': len(self.t_range),
             'w': [self.llsdir.params.wavelengths[i] for i in self.c_range],
             'params': self.llsdir.params,
@@ -118,7 +119,8 @@ class PreviewPlan(ProcessPlan):
 
     def __init__(self, *args, **kwargs):
         super(PreviewPlan, self).__init__(*args, **kwargs)
-        self.imp_classes = [i for i in self.imp_classes if not isinstance(i, ImgWriter)]
+        self.imp_classes = [i for i in self.imp_classes
+                            if not issubclass(i[0], ImgWriter)]
 
     def check_sanity(self):
         # overwriting parent method that looks for writers

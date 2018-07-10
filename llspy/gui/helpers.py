@@ -1,10 +1,12 @@
-from PyQt5 import QtCore, QtWidgets
 import time
 import os
 import sys
 import re
 import logging
-import inspect
+from enum import Enum
+from PyQt5 import QtCore, QtWidgets
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: add timer?
@@ -26,6 +28,163 @@ def newWorkerThread(workerClass, *args, **kwargs):
     if kwargs.get('start', False) is True:
         thread.start()  # usually need to connect stuff before starting
     return worker, thread
+
+
+class IgnoreMouseWheel(QtCore.QObject):
+    """ mixin to prevent mouse wheel from changing spinboxes """
+    def __init__(self, val=None, *args, **kwargs):
+        super(IgnoreMouseWheel, self).__init__(*args, **kwargs)
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        if val is not None:
+            self.setValue(val)
+
+    def wheelEvent(self, event):
+        event.ignore()
+
+
+class NoScrollSpin(QtWidgets.QSpinBox, IgnoreMouseWheel):
+    pass
+
+
+class NoScrollDoubleSpin(QtWidgets.QDoubleSpinBox, IgnoreMouseWheel):
+    pass
+
+
+class FileDialogLineEdit(QtWidgets.QFrame):
+    textChanged = QtCore.pyqtSignal()
+
+    def __init__(self, val='', *args, **kwargs):
+        super(FileDialogLineEdit, self).__init__(*args, **kwargs)
+        self.setFrameStyle(self.NoFrame | self.Plain)
+        self._layout = QtWidgets.QHBoxLayout()
+        self.setLayout(self._layout)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._lineEdit = QtWidgets.QLineEdit(str(val))
+        self._lineEdit.textChanged.connect(self.textChanged.emit)
+        self._browseButton = QtWidgets.QPushButton('Browse')
+        self._browseButton.clicked.connect(self.setPath)
+        self._layout.addWidget(self._lineEdit)
+        self._layout.addWidget(self._browseButton)
+
+    def setPath(self):
+        path = QtWidgets.QFileDialog.getOpenFileName(
+            self, 'Choose File or Directory')[0]
+        if path is None or path == '':
+            return
+        else:
+            self._lineEdit.setText(path)
+
+    def text(self):
+        return self._lineEdit.text()
+
+    def setText(self, value):
+        self._lineEdit.setText(value)
+
+
+class DirDialogLineEdit(FileDialogLineEdit):
+
+    def setPath(self):
+        path = QtWidgets.QFileDialog.getExistingDirectory(
+            self, 'Select Directory',
+            '', QtWidgets.QFileDialog.ShowDirsOnly)
+        if path is None or path == '':
+            return
+        else:
+            self._lineEdit.setText(path)
+            self.textChanged.emit()
+
+
+class TupleWidgetFrame(QtWidgets.QFrame):
+    valueChanged = QtCore.pyqtSignal()
+
+    def __init__(self, tup, *args, **kwargs):
+        super(TupleWidgetFrame, self).__init__(*args, **kwargs)
+        self.setFrameStyle(self.Panel | self.Raised)
+        self._layout = QtWidgets.QHBoxLayout()
+        self.setLayout(self._layout)
+        self._values = list(tup)
+        self._layout.setContentsMargins(2, 2, 2, 2)
+        self._setters = []
+        for i, val in enumerate(tup):
+            stuff = val_to_widget(val)
+            if not stuff:
+                continue
+            widg, signal, getter, setter = stuff
+            signal.connect(self.set_param(i, getter, type(val)))
+            self._layout.addWidget(widg)
+            self._setters.append(setter)
+
+    def set_param(self, i, getter, dtype):
+        """ update the parameter dict when the widg has changed """
+        def func():
+            self._values[i] = dtype(getter())
+            self.valueChanged.emit()
+        return func
+
+    def value(self):
+        return tuple(self._values)
+
+    def setValue(self, value):
+        if not (isinstance(value, (list, tuple)) and
+                len(value) == self._layout.count()):
+            raise ValueError('invalid arugment length to set TupleWidgetFrame')
+        for i, v in enumerate(value):
+            self._setters[i](v)
+
+
+def val_to_widget(val, key=None):
+    """ helper function for ImpFrame, to generate a widget that works for
+    a given value type.
+
+    Returns a tuple:
+        widg: the widget object itself
+        signal: the signal to listen for when the object has changed
+        getter: the getter function to retrieve the object value
+    """
+    dtype = type(val)
+    if dtype == bool:
+        widg = QtWidgets.QCheckBox()
+        widg.setChecked(val)
+        setter = widg.setChecked
+        changed = widg.stateChanged
+        getter = widg.isChecked
+    elif dtype == int:
+        widg = NoScrollSpin(val)
+        setter = widg.setValue
+        changed = widg.valueChanged
+        getter = widg.value
+    elif dtype == float:
+        widg = NoScrollDoubleSpin(val)
+        setter = widg.setValue
+        changed = widg.valueChanged
+        getter = widg.value
+    elif dtype == str:
+        # 'file' is a special value that will create a browse button
+        if val == 'dir' or 'dir' in key:
+            widg = DirDialogLineEdit(val if val != 'dir' else '')
+        elif val == 'file' or 'file' in key or val == '':
+            widg = FileDialogLineEdit(val if val != 'file' else '')
+            # 'path' is a special value: browse button only accepts directories
+        else:
+            widg = QtWidgets.QLineEdit(str(val))
+        setter = widg.setText
+        changed = widg.textChanged
+        getter = widg.text
+    elif isinstance(val, Enum):
+        widg = QtWidgets.QComboBox()
+        [widg.addItem(option.value) for option in val.__class__]
+        widg.setCurrentText(val.value)
+        setter = widg.setCurrentText
+        changed = widg.currentTextChanged
+        getter = widg.currentText
+    elif isinstance(val, (tuple, list)):
+        widg = TupleWidgetFrame(val)
+        setter = widg.setValue
+        changed = widg.valueChanged
+        getter = widg.value
+    else:
+        return None
+    return widg, changed, getter, setter
 
 
 def wait_for_file_close(file, delay=0.05):
@@ -69,6 +228,13 @@ def shortname(path, parents=2):
     return os.path.sep.join(os.path.normpath(path).split(os.path.sep)[-parents:])
 
 
+def camel_case_split(identifier):
+    """ split CamelCaseWord into Camel Case Word """
+    matches = re.finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)',
+                          identifier)
+    return " ".join([m.group(0) for m in matches])
+
+
 def string_to_iterable(string):
     """convert a string into an iterable
     note: ranges are inclusive
@@ -92,68 +258,41 @@ def string_to_iterable(string):
     return sorted(list(set(it)))
 
 
-def guisave(widget, settings):
-    print("Saving settings: {}".format(settings.fileName()))
-    # Save geometry
-    selfName = widget.objectName()
-    settings.setValue(selfName + '_size', widget.size())
-    settings.setValue(selfName + '_pos', widget.pos())
-    for name, obj in inspect.getmembers(widget):
-        # if type(obj) is QComboBox:  # this works similar to isinstance, but missed some field... not sure why?
-        value = None
-        if isinstance(obj, QtWidgets.QComboBox):
-            index = obj.currentIndex()  # get current index from combobox
-            value = obj.itemText(index)  # get the text for current index
-        if isinstance(obj, QtWidgets.QLineEdit):
-            value = obj.text()
-        if isinstance(obj,
-                      (QtWidgets.QCheckBox, QtWidgets.QRadioButton, QtWidgets.QGroupBox)):
-            value = obj.isChecked()
-        if isinstance(obj, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox, QtWidgets.QSlider)):
-            value = obj.value()
-        if value is not None:
-            settings.setValue(name, value)
-    settings.sync()  # required in some cases to write settings before quit
-
-
-def guirestore(widget, settings, default):
-    print("Restoring settings: {}".format(settings.fileName()))
-    # Restore geometry
-    selfName = widget.objectName()
-    if 'LLSpyDefaults' not in settings.fileName():
-        widget.resize(settings.value(selfName + '_size', QtCore.QSize(500, 500)))
-        widget.move(settings.value(selfName + '_pos', QtCore.QPoint(60, 60)))
-    for name, obj in inspect.getmembers(widget):
-        try:
-            if isinstance(obj, QtWidgets.QComboBox):
-                value = settings.value(name, default.value(name), type=str)
-                if value == "":
-                    continue
-                index = obj.findText(value)  # get the corresponding index for specified string in combobox
-                if index == -1:  # add to list if not found
-                    obj.insertItems(0, [value])
-                    index = obj.findText(value)
-                    obj.setCurrentIndex(index)
-                else:
-                    obj.setCurrentIndex(index)
-            if isinstance(obj, QtWidgets.QLineEdit):
-                value = settings.value(name, default.value(name), type=str)
-                obj.setText(value)
-            if isinstance(obj,
-                          (QtWidgets.QCheckBox, QtWidgets.QRadioButton, QtWidgets.QGroupBox)):
-                value = settings.value(name, default.value(name), type=bool)
-                if value is not None:
-                    obj.setChecked(value)
-            if isinstance(obj, (QtWidgets.QSlider, QtWidgets.QSpinBox)):
-                value = settings.value(name, default.value(name), type=int)
-                if value is not None:
-                    obj.setValue(value)
-            if isinstance(obj, (QtWidgets.QDoubleSpinBox,)):
-                value = settings.value(name, default.value(name), type=float)
-                if value is not None:
-                    obj.setValue(value)
-        except Exception:
-            logging.warn('Unable to restore settings for object: {}'.format(name))
+def getter_setter_onchange(widget):
+    getter, setter, change = (None, None, None)
+    if isinstance(widget, QtWidgets.QComboBox):
+        getter = widget.currentText
+        setter = widget.setCurrentText
+        change = widget.currentTextChanged  # (str)
+    elif isinstance(widget, QtWidgets.QStatusBar):
+        getter = widget.currentMessage
+        setter = widget.showMessage
+        change = widget.messageChanged  # (str)
+    elif isinstance(widget, QtWidgets.QLineEdit):
+        getter = widget.text
+        setter = widget.setText
+        change = widget.textChanged  # (str)
+    elif isinstance(widget, (QtWidgets.QAbstractButton, QtWidgets.QGroupBox)):
+        getter = widget.isChecked
+        setter = widget.setChecked
+        change = widget.toggled  # (bool checked)
+    elif isinstance(widget, QtWidgets.QDateTimeEdit):
+        getter = widget.dateTime
+        setter = widget.setDateTime
+        change = widget.dateTimeChanged  # (&datetime)
+    elif isinstance(widget, (QtWidgets.QAbstractSpinBox, QtWidgets.QAbstractSlider)):
+        getter = widget.value
+        setter = widget.setValue
+        change = widget.valueChanged  # (number)
+    elif isinstance(widget, QtWidgets.QTabWidget):
+        getter = widget.currentIndex
+        setter = widget.setCurrentIndex
+        change = widget.currentChanged  # (number)
+    elif isinstance(widget, QtWidgets.QSplitter):
+        getter = widget.sizes
+        setter = widget.setSizes  # (list)
+        change = widget.splitterMoved  # (int, int)
+    return getter, setter, change
 
 
 def reveal(path):
@@ -165,20 +304,4 @@ def reveal(path):
     elif sys.platform.startswith('win32'):
         proc.startDetached('explorer', [path.replace('/', '\\')])
 
-
-def progress_gradient(start='#484DE7', finish='#787DFF'):
-    a = """
-    QProgressBar {
-        border: 1px solid grey;
-        border-radius: 3px;
-        height: 20px;
-        margin: 0px 0px 0px 5px;
-    }
-
-    QProgressBar::chunk:horizontal {
-      background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5,
-                                  stop: 0 %s, stop: 1 %s);
-    }
-    """
-    return a % (start, finish)
 

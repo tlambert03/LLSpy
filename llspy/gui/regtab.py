@@ -6,7 +6,7 @@ import llspy.gui.exceptions as err
 from PyQt5 import QtCore, QtWidgets
 from llspy import llsdir
 from llspy.gui.helpers import newWorkerThread
-from llspy.gui import workers
+from llspy.gui import workers, actions
 from llspy.gui.img_dialog import ImgDialog
 from fiducialreg.fiducialreg import RegistrationError
 
@@ -14,9 +14,10 @@ from fiducialreg.fiducialreg import RegistrationError
 logger = logging.getLogger(__name__)
 
 
-class RegistrationTab(object):
+class RegistrationTab(actions.LLSpyActions):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(RegistrationTab, self).__init__(*args, **kwargs)
         self.RegCalibPathLoadButton.clicked.connect(self.setRegCalibPath)
         self.GenerateRegFileButton.clicked.connect(self.generateCalibrationFile)
         self.RegCalibPreviewButton.clicked.connect(self.previewRegistration)

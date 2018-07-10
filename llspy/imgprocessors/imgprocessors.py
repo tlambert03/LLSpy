@@ -469,17 +469,6 @@ class CUDADeconProcessor(ImgProcessor):
         return cls(**kwargs)
 
 
-class AffineProcessor(ImgProcessor):
-    """ Perform Affine Transformation, e.g. for channel registration """
-
-    def __init__(self, reg_file=''):
-        if not os.path.isfile(reg_file):
-            raise self.ImgProcessorError('reg_file cannot be blank')
-
-    def process(self, data, meta):
-        return data, meta
-
-
 class DeskewProcessor(ImgProcessor):
     """ Deskewing only, no deconvolution """
     verbose_name = 'Deskew Only'
@@ -502,6 +491,17 @@ class DeskewProcessor(ImgProcessor):
         return _data.astype(dtype), meta
 
 
+class AffineProcessor(ImgProcessor):
+    """ Perform Affine Transformation, e.g. for channel registration """
+
+    def __init__(self, reg_file=''):
+        if not os.path.isfile(reg_file):
+            raise self.ImgProcessorError('reg_file cannot be blank')
+
+    def process(self, data, meta):
+        return data, meta
+
+
 class RotateYProcessor(AffineProcessor):
     """ Subclass of affine processor, for simplified rotation of the image in Y """
 
@@ -518,3 +518,53 @@ class RotateYProcessor(AffineProcessor):
     @classmethod
     def from_llsdir(cls, llsdir, *args, **kwargs):
         return cls(*args, **kwargs)
+
+
+# @QtCore.pyqtSlot(str)
+# def loadRegObject(self, path):
+#     if path in (None, ''):
+#         return
+#     if not os.path.exists(path):
+#         self.RegProcessPathLineEdit.setText('')
+#         return
+#     try:
+#         RO = llspy.llsdir.get_regObj(path)
+#     except json.decoder.JSONDecodeError as e:
+#         self.RegProcessPathLineEdit.setText('')
+#         raise exceptions.RegistrationError("Failed to parse registration file", str(e))
+#     except RegistrationError as e:
+#         self.RegProcessPathLineEdit.setText('')
+#         raise exceptions.RegistrationError('Failed to load registration calibration data', str(e))
+#     finally:
+#         self.RegProcessChannelRefModeCombo.clear()
+#         self.RegProcessChannelRefCombo.clear()
+
+#     self.RegProcessChannelRefCombo.addItems([str(r) for r in RO.waves])
+#     modeorder = ['2step', 'translation', 'rigid', 'similarity', 'affine',
+#                  'cpd_affine', 'cpd_rigid', 'cpd_similarity', 'cpd_2step']
+#     # RegDirs allow all modes, RegFiles only allow modes that were calculated
+#     # at the time of file creation
+#     if isinstance(RO, llspy.RegDir):
+#         modes = [m.title().replace('Cpd', 'CPD') for m in modeorder]
+#     elif isinstance(RO, RegFile):
+#         modes = [m.lower() for m in RO.modes]
+#         modes = [m.title().replace('Cpd', 'CPD') for m in modeorder if m in modes]
+#     self.RegProcessChannelRefModeCombo.addItems(modes)
+
+# def setFiducialData(self):
+#     path = QtWidgets.QFileDialog.getExistingDirectory(
+#         self, 'Set Registration Calibration Directory',
+#         '', QtWidgets.QFileDialog.ShowDirsOnly)
+#     if path is None or path == '':
+#         return
+#     else:
+#         self.RegProcessPathLineEdit.setText(path)
+
+# def loadProcessRegFile(self, file=None):
+#     if not file:
+#         file = QtWidgets.QFileDialog.getOpenFileName(
+#             self, 'Choose registration file ', os.path.expanduser('~'),
+#             "Text Files (*.reg *.txt *.json)")[0]
+#         if file is None or file is '':
+#             return
+#     self.RegProcessPathLineEdit.setText(file)

@@ -21,11 +21,11 @@
   </property>
   <property name="styleSheet">
    <string notr="true">* {font-family: avenir, &quot;century gothic&quot;; color: #222;}
-#title {font-size: 14px; font-weight: bold;}
+#title {font-size: 13px; font-weight: bold;}
 :disabled {color:rgba(0,0,0,80);}
 #impFrame { background: qlineargradient(spread:pad, x1:0 y1:1, x2:0 y2:0, stop:0 rgba(190, 190, 190), stop:1 rgba(220,220,220)) }
 QLabel { qproperty-alignment: AlignRight; }
-#closeButton{ font-size: 24pt; }
+#closeButton{ font-size: 20pt; }
 #closeButton:hover:!pressed { 
 color: red;
 }
@@ -45,7 +45,7 @@ color: red;
     <number>0</number>
    </property>
    <property name="bottomMargin">
-    <number>4</number>
+    <number>0</number>
    </property>
    <item>
     <layout class="QHBoxLayout" name="titleLayout">

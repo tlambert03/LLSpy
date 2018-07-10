@@ -1,162 +1,74 @@
-from PyQt5 import QtCore, QtGui, QtWidgets, uic
 import sys
 import os
+import logging
 import inspect
 import pickle
 from click import get_app_dir
-from re import finditer
-from enum import Enum
-from llspy import imgprocessors as imgp
-from llspy import __appname__
+from llspy import __appname__, ImgProcessor, ImgWriter, imgprocessors
+from llspy.gui.helpers import camel_case_split, val_to_widget
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
 
+SETTINGS  = QtCore.QSettings()
+
+logger = logging.getLogger(__name__)
 framepath = os.path.join(os.path.dirname(__file__), 'frame.ui')
 Ui_ImpFrame = uic.loadUiType(framepath)[0]
+IMP_DIR = os.path.join(get_app_dir(__appname__), 'plugins')
+if os.path.exists(IMP_DIR):
+    if IMP_DIR not in sys.path:
+        sys.path.insert(0, IMP_DIR)
+    for fname in os.listdir(IMP_DIR):
+        if fname.endswith('.py'):
+            try:
+                __import__(os.path.splitext(fname)[0])
+            except Exception as e:
+                logger.error('Could not load plugin "{}" due to {}: {}'
+                             .format(fname, type(e).__name__, str(e)))
+"""
+This is the better way to import plugins, but currently i can't pickle
+objects that are imported this way... so instead, I add plugins path to
+sys.path.  That has the downside of potential namespace conflicts if
+someone names a file the same as a builtin
+"""
+# try:
+#     import importlib.util
+
+#     def import_plugin(fullpath, namespace='plugins'):
+#         fname = os.path.splitext(os.path.basename(fullpath))[0]
+#         mod_name = namespace + '.' + fname
+#         spec = importlib.util.spec_from_file_location(mod_name, fullpath)
+#         foo = importlib.util.module_from_spec(spec)
+#         spec.loader.exec_module(foo)
+#         sys.modules[mod_name] = foo
+#         sys.path.append(mod_name)
+#         return foo
+
+# except ImportError:
+#     import imp
+
+#     def import_plugin(fullpath, namespace='plugins'):
+#         fname = os.path.splitext(os.path.basename(fullpath))[0]
+#         mod_name = namespace + '.' + fname
+#         foo = imp.load_source(mod_name, fullpath)
+#         sys.modules[mod_name] = foo
+#         return foo
 
 
-def camel_case_split(identifier):
-    """ split CamelCaseWord into Camel Case Word """
-    matches = finditer('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)',
-                       identifier)
-    return " ".join([m.group(0) for m in matches])
+# def import_plugins(folder, namespace='plugins'):
+#     if not os.path.exists(folder):
+#         return
+#     if folder not in sys.path:
+#         sys.path.append(folder)
+#     for fname in os.listdir(folder):
+#         fullpath = os.path.join(folder, fname)
+#         try:
+#             yield import_plugin(fullpath)
+#         except AttributeError:
+#             pass
 
 
-def val_to_widget(val, key=None):
-    """ helper function for ImpFrame, to generate a widget that works for
-    a given value type.
-
-    Returns a tuple:
-        widg: the widget object itself
-        signal: the signal to listen for when the object has changed
-        getter: the getter function to retrieve the object value
-    """
-    dtype = type(val)
-    if dtype == bool:
-        widg = QtWidgets.QCheckBox()
-        widg.setChecked(val)
-        signal = widg.stateChanged
-        getter = widg.isChecked
-    elif dtype == int:
-        widg = NoScrollSpin(val)
-        signal = widg.valueChanged
-        getter = widg.value
-    elif dtype == float:
-        widg = NoScrollDoubleSpin(val)
-        signal = widg.valueChanged
-        getter = widg.value
-    elif dtype == str:
-        # 'file' is a special value that will create a browse button
-        if val == 'dir' or 'dir' in key:
-            widg = DirDialogLineEdit(val if val != 'dir' else '')
-        elif val == 'file' or 'file' in key or val == '':
-            widg = FileDialogLineEdit(val if val != 'file' else '')
-            # 'path' is a special value: browse button only accepts directories
-        else:
-            widg = QtWidgets.QLineEdit(str(val))
-        signal = widg.textChanged
-        getter = widg.text
-    elif isinstance(val, Enum):
-        widg = QtWidgets.QComboBox()
-        [widg.addItem(option.value) for option in val.__class__]
-        widg.setCurrentText(val.value)
-        signal = widg.currentTextChanged
-        getter = widg.currentText
-    elif isinstance(val, (tuple, list)):
-        widg = TupleWidgetFrame(val)
-        signal = widg.valueChanged
-        getter = widg.value
-    else:
-        return None
-    return widg, signal, getter
-
-
-class IgnoreMouseWheel(QtCore.QObject):
-    """ mixin to prevent mouse wheel from changing spinboxes """
-    def __init__(self, val=None, *args, **kwargs):
-        super(IgnoreMouseWheel, self).__init__(*args, **kwargs)
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        if val is not None:
-            self.setValue(val)
-
-    def wheelEvent(self, event):
-        event.ignore()
-
-
-class NoScrollSpin(QtWidgets.QSpinBox, IgnoreMouseWheel):
-    pass
-
-
-class NoScrollDoubleSpin(QtWidgets.QDoubleSpinBox, IgnoreMouseWheel):
-    pass
-
-
-class FileDialogLineEdit(QtWidgets.QFrame):
-    textChanged = QtCore.pyqtSignal()
-
-    def __init__(self, val='', *args, **kwargs):
-        super(FileDialogLineEdit, self).__init__(*args, **kwargs)
-        self.setFrameStyle(self.NoFrame | self.Plain)
-        self._layout = QtWidgets.QHBoxLayout()
-        self.setLayout(self._layout)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._lineEdit = QtWidgets.QLineEdit(str(val))
-        self._lineEdit.textChanged.connect(self.textChanged.emit)
-        self._browseButton = QtWidgets.QPushButton('Browse')
-        self._browseButton.clicked.connect(self.setPath)
-        self._layout.addWidget(self._lineEdit)
-        self._layout.addWidget(self._browseButton)
-
-    def setPath(self):
-        path = QtWidgets.QFileDialog.getOpenFileName(
-            self, 'Choose File or Directory')[0]
-        if path is None or path == '':
-            return
-        else:
-            self._lineEdit.setText(path)
-
-    def text(self):
-        return self._lineEdit.text()
-
-
-class DirDialogLineEdit(FileDialogLineEdit):
-
-    def setPath(self):
-        path = QtWidgets.QFileDialog.getExistingDirectory(
-            self, 'Select Directory',
-            '', QtWidgets.QFileDialog.ShowDirsOnly)
-        if path is None or path == '':
-            return
-        else:
-            self._lineEdit.setText(path)
-            self.textChanged.emit()
-
-
-class TupleWidgetFrame(QtWidgets.QFrame):
-    valueChanged = QtCore.pyqtSignal()
-
-    def __init__(self, tup, *args, **kwargs):
-        super(TupleWidgetFrame, self).__init__(*args, **kwargs)
-        self.setFrameStyle(self.Panel | self.Raised)
-        self._layout = QtWidgets.QHBoxLayout()
-        self.setLayout(self._layout)
-        self._values = list(tup)
-        self._layout.setContentsMargins(2, 2, 2, 2)
-        for i, val in enumerate(tup):
-            stuff = val_to_widget(val)
-            if not stuff:
-                continue
-            widg, signal, getter = stuff
-            signal.connect(self.set_param(i, getter, type(val)))
-            self._layout.addWidget(widg)
-
-    def set_param(self, i, getter, dtype):
-        """ update the parameter dict when the widg has changed """
-        def func():
-            self._values[i] = dtype(getter())
-            self.valueChanged.emit()
-        return func
-
-    def value(self):
-        return tuple(self._values)
+def imp_settings_key(imp, key):
+    return 'imps/{}/{}'.format(imp.__name__, key)
 
 
 class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
@@ -166,18 +78,19 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
     """
     stateChanged = QtCore.pyqtSignal()
 
-    def __init__(self, proc, parent=None, collapsed=False, initial={},
+    def __init__(self, imp, parent=None, collapsed=False, initial=None,
                  active=True, *args, **kwargs):
         super(ImpFrame, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        self.proc = proc
+        self.imp = imp
         self.listWidgetItem = parent
         self.is_collapsed = collapsed
         if not active:
             self.activeBox.setChecked(False)
         self.parameters = {}  # to store widget state
         self.content.setVisible(not self.is_collapsed)
-        self.title.setText(proc.name())
+        self.title.setText(imp.name())
+        self.mouseDoubleClickEvent = self.toggleCollapsed
         self.activeBox.toggled.connect(self.stateChanged.emit)
         # arrow to collapse frame
         self.arrow = self.Arrow(self.arrowFrame, collapsed=collapsed)
@@ -190,40 +103,44 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
         self.closeButton.setText('×')
         self.closeButton.clicked.connect(self.removeItemFromList)
         self.titleLayout.addWidget(self.closeButton)
-        self.buildFrame(initial)
+        self.buildFrame(initial or {})
 
-    def buildFrame(self, initial={}):
+    def buildFrame(self, initial):
         ''' create an input widget for each item in the class __init__ signature '''
 
-        sig = inspect.signature(self.proc)
+        sig = inspect.signature(self.imp)
         self.parameters = {key: (None if val.default == inspect._empty
                                  else val.default)
                            for key, val in sig.parameters.items()}
-        # do this rather than .update() in case the signature has changed
-        for key in initial:
-            if key in self.parameters:
+        for key in self.parameters:
+            # values provided in initial take priority
+            if key in initial:
                 self.parameters[key] = initial[key]
+            # otherwise use any previously used value
+            elif SETTINGS.contains(imp_settings_key(self.imp, key)):
+                self.parameters[key] = SETTINGS.value(imp_settings_key(self.imp, key))
         for i, (key, val) in enumerate(self.parameters.items()):
             stuff = val_to_widget(val, key)
             if not stuff:
                 continue
-            widg, signal, getter = stuff
+            widg, signal, getter, setter = stuff
+
             if isinstance(val, (int, float)):
-                if hasattr(self.proc, 'valid_range'):
-                    r = self.proc.valid_range.get(key, [])
+                if hasattr(self.imp, 'valid_range'):
+                    r = self.imp.valid_range.get(key, [])
                     if len(r) == 2:
                         widg.setRange(*r)
             signal.connect(self.set_param(key, getter, type(val)))
 
             # look for gui_layout class attribute
-            if hasattr(self.proc, 'gui_layout'):
-                if key not in self.proc.gui_layout:
-                    raise self.proc.ImgProcessorInvalid(
+            if hasattr(self.imp, 'gui_layout'):
+                if key not in self.imp.gui_layout:
+                    raise self.imp.ImgProcessorInvalid(
                         'Invalid ImgProcessor class: \n\n'
                         'All parameters must be represented when '
                         'using gui_layout.  Missing key: "{}".'
                         .format(key))
-                layout = self.proc.gui_layout[key]
+                layout = self.imp.gui_layout[key]
                 row, col = layout
                 label_index = (row, col * 2)
                 widget_index = (row, col * 2 + 1)
@@ -234,7 +151,7 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
             self.contentLayout.addWidget(label, *label_index)
             self.contentLayout.addWidget(widg, *widget_index)
 
-        doc = inspect.getdoc(self.proc)
+        doc = inspect.getdoc(self.imp)
         if 'guidoc' in doc:
             docstring = doc.split('guidoc:')[1].split('\n')[0].strip()
             doclabel = QtWidgets.QLabel(docstring)
@@ -252,7 +169,7 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
         implistwidget.takeItem(implistwidget.row(self.listWidgetItem))
         self.stateChanged.emit()
 
-    def toggleCollapsed(self):
+    def toggleCollapsed(self, *args):
         self.content.setVisible(self.is_collapsed)
         self.is_collapsed = not self.is_collapsed
         self.arrow.setArrow(self.is_collapsed)
@@ -264,6 +181,8 @@ class ImpFrame(QtWidgets.QFrame, Ui_ImpFrame):
         def func():
             self.parameters[key] = dtype(getter())
             self.stateChanged.emit()
+            _key = imp_settings_key(self.imp, key)
+            SETTINGS.setValue(_key, dtype(getter()))
         return func
 
     class Arrow(QtWidgets.QFrame):
@@ -330,7 +249,7 @@ class ImpListWidget(QtWidgets.QListWidget):
             self.loadPlan(self.DEFAULT)
 
     def addImp(self, imp, **kwargs):
-        assert issubclass(imp, imgp.ImgProcessor), 'Not an image processor'
+        assert issubclass(imp, ImgProcessor), 'Not an image processor'
         item = QtWidgets.QListWidgetItem(self)
         widg = ImpFrame(imp, parent=item, **kwargs)
         widg.stateChanged.connect(self.planChanged.emit)
@@ -343,9 +262,9 @@ class ImpListWidget(QtWidgets.QListWidget):
     def getImpList(self):
         items = []
         for index in range(self.count()):
-            imp = self.itemWidget(self.item(index))
-            items.append((imp.proc, imp.parameters,
-                          imp.activeBox.isChecked(), imp.is_collapsed))
+            frame = self.itemWidget(self.item(index))
+            items.append((frame.imp, frame.parameters,
+                          frame.activeBox.isChecked(), frame.is_collapsed))
         return items
 
     def setImpList(self, implist):
@@ -419,9 +338,9 @@ class ImpListContainer(QtWidgets.QWidget):
         self.layout().setContentsMargins(0, 4, 0, 0)
 
     def selectImgProcessor(self):
-        d = ImgProcessSelector()
-        d.selected.connect(self.list.addImp)
-        d.exec_()
+        self.d = ImgProcessSelector()
+        self.d.selected.connect(self.list.addImp)
+        self.d.exec_()
 
 
 class ImgProcessSelector(QtWidgets.QDialog):
@@ -430,6 +349,7 @@ class ImgProcessSelector(QtWidgets.QDialog):
     will search llspy.imgprocessors by default, will add plugins later
     """
     selected = QtCore.pyqtSignal(object)
+    import_error = QtCore.pyqtSignal(str, str, str, str)
 
     def __init__(self, *args, **kwargs):
         super(ImgProcessSelector, self).__init__(*args, **kwargs)
@@ -448,30 +368,62 @@ class ImgProcessSelector(QtWidgets.QDialog):
         self.lstwdg.itemDoubleClicked.connect(self.accept)
         self.lstwdg.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.D = {}
-        for name, obj in inspect.getmembers(imgp):
-            try:
-                if (issubclass(obj, imgp.ImgProcessor) and not
-                        inspect.isabstract(obj)):
-                    name = obj.name()  # look for verbose name
-                    self.D[camel_case_split(name)] = obj
-                    itemN = QtWidgets.QListWidgetItem(camel_case_split(name))
-                    self.lstwdg.addItem(itemN)
-            except TypeError:
-                pass
+        # add built-in imageprocessors
+        self._search_module(imgprocessors)
+
+        # check plugins dir
+        # for module in import_plugins(self.IMP_DIR):
+        if os.path.exists(IMP_DIR):
+            if IMP_DIR not in sys.path:
+                sys.path.insert(0, IMP_DIR)
+            for fname in os.listdir(IMP_DIR):
+                if fname.endswith('.py'):
+                    module = __import__(os.path.splitext(fname)[0])
+                    self._search_module(module)
+
         lay.addWidget(self.lstwdg)
         lay.addWidget(self.buttonBox)
+
+    def _search_module(self, module, _raise=False):
+        for name, obj in inspect.getmembers(module):
+            try:
+                self._try_import_imgp(obj)
+            except self.PluginImportError as e:
+                if _raise:
+                    if obj not in (ImgProcessor, ImgWriter):
+                        print(e)
+                        logger.warning(e)
+                        self.import_error.emit(str(e), '', '', '')
+
+    def _try_import_imgp(self, obj):
+        try:
+            if issubclass(obj, ImgProcessor):
+                if inspect.isabstract(obj):
+                    raise self.PluginImportError(
+                        'Detected an ImgProcessor plugin named "{}", '
+                        .format(obj.__name__) +
+                        'but could not import. Did you implement the "process" '
+                        'method?')
+                name = obj.name()  # look for verbose name
+                self.D[camel_case_split(name)] = obj
+                itemN = QtWidgets.QListWidgetItem(camel_case_split(name))
+                self.lstwdg.addItem(itemN)
+
+        except TypeError:
+            pass
 
     def accept(self, *args):
         for item in self.lstwdg.selectedItems():
             self.selected.emit(self.D[item.text()])
         return super(ImgProcessSelector, self).accept()
 
+    class PluginImportError(Exception):
+        pass
+
 
 if __name__ == '__main__':
     APP = QtWidgets.QApplication([])
     container = ImpListContainer()
-    for imp in (imgp.CUDADeconProcessor, imgp.FlashProcessor):
-        container.list.addImp(imp)
     container.show()
     a = container.list.getImpList()
     container.list.setImpList(a)

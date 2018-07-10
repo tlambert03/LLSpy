@@ -363,18 +363,20 @@ class MplCanvas(FigureCanvas):
 
 
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
+    close_requested = QtCore.pyqtSignal()
+
     def __init__(self, data, title='Image Preview', cmap=None, info=None, parent=None):
         super(ImgDialog, self).__init__(parent)
         self.setupUi(self)  # defined in class Ui_Dialog
         self.title = title
         self.setWindowTitle(title)
-
+        self.data = None
         self.cmap = cmap
 
         self.infoText.hide()
         self.chanSelectWidget.hide()
 
-        self.data = DataModel(data)
+        self.update_data(data)
 
         if self.data.isComplex:
             self.complexAttrib.setEnabled(True)
@@ -514,13 +516,38 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             self.infoText.hide()
             self.resize(w, h - 210)
 
+    def update_data(self, data):
+        if not self.data:
+            self.data = DataModel(data)
+        else:
+            old_nd = self.data.ndim
+            new_nd = data.ndim
+            self.data.setData(data)
+            self.update_sliders()
+
+    def update_axis_slider(self, axis, n):
+        widg = getattr(self, axis.upper() + 'widget')
+        slid = getattr(self, axis.upper() + 'slider')
+        if n > 1:
+            if not ((axis == 'z' and getattr(self.data, 'projection'))
+                    or (axis == 'c' and getattr(self.data, '_overlay'))
+                    ):
+                widg.show()
+                slid.setMaximum(n - 1)
+        else:
+            widg.hide()
+
+    def update_sliders(self):
+        for axis, n in zip('tcz', self.data.shape[:3]):
+            self.update_axis_slider(axis, n)
+
     def initialize(self):
 
         datamax = self.data.max()
         datamin = self.data.min()
         # dataRange = datamax - datamin
-        vmin_init = datamin# - dataRange * 0.03
-        vmax_init = datamax# * 0.55
+        vmin_init = datamin  # - dataRange * 0.03
+        vmax_init = datamax  # * 0.55
 
         displayOptions = {
             # 'vmin': int(vmin_init),
@@ -539,32 +566,17 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.maxSlider.setValue(1000)
 
         nT, nC, nZ, nY, nX = self.data.shape
-        self.data.setIdx(2, int(nZ/2))
+        self.data.setIdx(2, int(nZ // 2))
         self.setDimIdx(0, 0)
         self.setDimIdx(1, 0)
-        self.setDimIdx(2, int(nZ/2))
-
-        if nT > 1:
-            self.Twidget.show()
-            self.Tslider.setMaximum(nT-1)
-        else:
-            self.Twidget.hide()
-        if nC > 1:
-            self.Cwidget.show()
-            self.Cslider.setMaximum(nC-1)
-        else:
-            self.Cwidget.hide()
-        if nZ > 1:
-            self.Zwidget.show()
-            self.Zslider.setMaximum(nZ-1)
-        else:
-            self.Zwidget.hide()
+        self.setDimIdx(2, int(nZ // 2))
+        self.update_sliders()
 
         try:
             figheight = 600
-            yxAspect = self.data.shape[-2]/self.data.shape[-1]
+            yxAspect = self.data.shape[-2] / self.data.shape[-1]
             if yxAspect > 0:
-                self.resize(figheight/yxAspect, figheight+75)
+                self.resize(figheight / yxAspect, figheight + 75)
         except Exception:
             pass
 
@@ -573,7 +585,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
                 wave = self.waves[chan]
             except Exception:
                 wave = None
-            selector = channelSelector('ch'+str(chan), wave=wave)
+            selector = channelSelector('ch' + str(chan), wave=wave)
             selector.LUTcombo.setCurrentText(preferredLUTs[chan])
             selector.checkBox.clicked['bool'].connect(self.data.toggleChannel)
             selector.LUTcombo.currentTextChanged.connect(self.data.changeLUT)
@@ -597,7 +609,17 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.setDimIdx(dim, newIdx)
 
     def decDimIndex(self, dim):
-        self.setDimIdx(dim, self.data.getIdx(dim)-1)
+        self.setDimIdx(dim, self.data.getIdx(dim) - 1)
+
+    def setComplexAttrib(self, attrib):
+        self.data.setCplxAttrib(attrib)
+        self.data.recalcMinMax()
+        self.canvas.setContrast(self.minSlider.value(), self.maxSlider.value())
+        self.gamSlider.setValue(100)  # reset to default gamma; necessary?
+        if (attrib == 'Phase'):
+            self.gamSlider.setEnabled(False)
+        else:
+            self.gamSlider.setEnabled(True)
 
     def setComplexAttrib(self, attrib):
         self.data.setCplxAttrib(attrib)
@@ -615,10 +637,11 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.playButton.setText('stop')
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.incDimIndex)
-        self.timer.start(1000/self.fpsSpin.value())
+        self.timer.start(1000 / self.fpsSpin.value())
 
     def stopMovie(self):
-        self.timer.stop()
+        if hasattr(self, 'timer'):
+            self.timer.stop()
         self.playButton.clicked.disconnect()
         self.playButton.clicked.connect(self.playMovie)
         self.playButton.setText('play')
@@ -626,7 +649,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
     def changeFPS(self, val):
         if hasattr(self, 'timer') and self.timer.isActive():
             self.timer.stop()
-            self.timer.start(1000/self.fpsSpin.value())
+            self.timer.start(1000 / self.fpsSpin.value())
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
@@ -662,39 +685,40 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             self.canvas.cycleCMAP()
 
     def closeEvent(self, evnt):
+        self.stopMovie()
         del self.data.data
         del self.data
+        self.close_requested.emit()
         self.deleteLater()
         super(ImgDialog, self).closeEvent(evnt)
 
     def minSliderMoved(self, pos):
         # Also moves max slider up if min slider is overtaking max slider
         if pos >= self.maxSlider.sliderPosition():
-            self.maxSlider.setSliderPosition(pos+1)
+            self.maxSlider.setSliderPosition(pos + 1)
         self.canvas.setContrast(valmin=pos)
 
     def maxSliderMoved(self, pos):
         # Also moves min slider down if max slider drops below min slider
         if pos <= self.minSlider.sliderPosition():
-            self.minSlider.setSliderPosition(pos-1)
+            self.minSlider.setSliderPosition(pos - 1)
         self.canvas.setContrast(valmax=pos)
 
     def gamSliderMoved(self, pos):
         # Also updates gamma value label beside the handle
         self.canvas.setGamma(pos)
-        self.gammaText.setNum(pos/100.)
+        self.gammaText.setNum(pos / 100.)
         self.gammaLabelUpdate()
 
     def gammaLabelUpdate(self):
         sliderHeight = self.gamSlider.size().height()
         sliderXorigin = self.gamSlider.pos().x()
         sliderYorigin = self.gamSlider.pos().y()
-        handleVPos = (1. - float(self.gamSlider.value() - self.gamSlider.minimum()) / \
-                      (self.gamSlider.maximum() - self.gamSlider.minimum())) \
-                      * sliderHeight
+        handleVPos = ((1. - float(self.gamSlider.value() - self.gamSlider.minimum())
+                      / (self.gamSlider.maximum() - self.gamSlider.minimum()))
+                      * sliderHeight)
         self.gammaText.move(QtCore.QPoint(sliderXorigin + 13,
-                                          int(handleVPos)+sliderYorigin-30))
-
+                            int(handleVPos) + sliderYorigin - 30))
 
     @QtCore.pyqtSlot()
     def popupFFT(self):

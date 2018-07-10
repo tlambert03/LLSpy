@@ -4,10 +4,10 @@ import os
 from PyQt5 import QtCore, QtGui
 from PyQt5 import QtWidgets as QtW
 from llspy import util, llsdir, processplan
+from llspy.gui import settings, SETTINGS, dialogs
 from llspy.gui.helpers import shortname, newWorkerThread
 
 logger = logging.getLogger(__name__)
-sessionSettings = QtCore.QSettings("llspy", "llspyGUI")
 
 
 class ProcessPlan(processplan.ProcessPlan, QtCore.QObject):
@@ -17,13 +17,7 @@ class ProcessPlan(processplan.ProcessPlan, QtCore.QObject):
 
     def __init__(self, *args, **kwargs):
         QtCore.QObject.__init__(self)
-        super(ProcessPlan, self).__init__(*args)
-
-    def _preimp(self, imp):
-        self.imp_starting.emit(imp, self.meta)
-
-    def _postimp(self):
-        self.imp_finished.emit(self.meta)
+        super(ProcessPlan, self).__init__(*args, **kwargs)
 
     def _iterimps(self, data):
         for imp in self.imps:
@@ -148,7 +142,7 @@ class LLSDragDropTable(QtW.QTableWidget):
         mainGUI = self.parent().parent().parent().parent().parent().parent()
         # If this folder is not on the list yet, add it to the list:
         if not util.pathHasPattern(path, '*Settings.txt'):
-            if not mainGUI.allowNoSettingsCheckBox.isChecked():
+            if not SETTINGS.value(settings.ALLOW_NO_SETTXT.key):
                 logger.warning('No Settings.txt! Ignoring: {}'.format(path))
                 return
 
@@ -158,32 +152,12 @@ class LLSDragDropTable(QtW.QTableWidget):
 
         # if it's a folder containing files with "_Iter_"  warn the user...
         if util.pathHasPattern(path, '*Iter_*'):
-            if sessionSettings.value('warnIterFolder', True, type=bool):
-                box = QtW.QMessageBox()
-                box.setWindowTitle('Note')
-                box.setText(
-                    'You have added a folder that appears to have been acquired'
-                    ' in Script Editor: it has "Iter_" in the filenames.\n\n'
-                    'LLSpy generally assumes that each folder contains a '
-                    'single position timelapse dataset (see docs for '
-                    'assumptions about data format).  Hit PROCESS ANYWAY to '
-                    'process this folder as is, but it may yield unexpected '
-                    'results. You may also RENAME ITERS, this will RENAME all '
-                    'files as if they were single experiments acquired at '
-                    'different positions and place them into their own folders '
-                    '(cannot be undone). Hit CANCEL to prevent adding this '
-                    'item to the queue.')
-                box.setIcon(QtW.QMessageBox.Warning)
-                box.addButton(QtW.QMessageBox.Cancel)
-                box.addButton("Process Anyway", QtW.QMessageBox.YesRole)
-                box.addButton("Rename Iters", QtW.QMessageBox.ActionRole)
-                box.setDefaultButton(QtW.QMessageBox.Cancel)
-                # pref = QtW.QCheckBox("Remember my answer")
-                # box.setCheckBox(pref)
+            if SETTINGS.value(settings.WARN_ITERS.key):
 
-                reply = box.exec_()
+                d = dialogs.RenameItersMsgBox()
+                reply = d.exec_()
 
-                if reply > 1000:  # cancel hit
+                if reply == d.Cancel:  # cancel hit
                     return
                 elif reply == 1:  # rename iters hit
                     if not hasattr(self, 'renamedPaths'):
@@ -308,7 +282,8 @@ class LLSDragDropTable(QtW.QTableWidget):
 
     def keyPressEvent(self, event):
         super(LLSDragDropTable, self).keyPressEvent(event)
-        if (event.key() == QtCore.Qt.Key_Delete or event.key() == QtCore.Qt.Key_Backspace):
+        if (event.key() == QtCore.Qt.Key_Delete or
+                event.key() == QtCore.Qt.Key_Backspace):
             indices = self.selectionModel().selectedRows()
             i = 0
             for index in sorted(indices):
@@ -318,7 +293,7 @@ class LLSDragDropTable(QtW.QTableWidget):
                 self.removePath(path)
                 i += 1
 
-    @QtCore.pyqtSlot()
+    @QtCore.pyqtSlot(list)
     def startProcessing(self, implist):
         self.currentImps = implist
         self.skipped_items = set()
@@ -430,12 +405,15 @@ class LLSDragDropTable(QtW.QTableWidget):
 
     @QtCore.pyqtSlot(object, dict)
     def emit_update(self, imp, meta):
-        updatestring = 'Timepoint {} of {}: {}...'.format(meta.get('t'), meta.get('nt'), imp.verb())
+        updatestring = 'Timepoint {} of {}: {}...'.format(
+            meta.get('t'), meta.get('nt'), imp.verb())
         self.status_update.emit(updatestring)
 
     @QtCore.pyqtSlot(object)
     def on_item_error(self, e):
-        raise(e)
+        # raise(e)
+        print("ITEM ERROR")
+        print(e)
         self.cleanup_last_worker()
         self.setRowBackgroundColor(len(self.skipped_items), QtGui.QColor(255, 0, 0, 60))
         self.skipped_items.add(self.currentPath)

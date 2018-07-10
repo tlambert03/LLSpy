@@ -8,14 +8,13 @@ import re
 import os
 import uuid
 import logging
+from llspy.gui import settings, SETTINGS
 logger = logging.getLogger(__name__)
 
 try:
     from urllib.request import urlopen
 except ImportError:
     from urllib import urlopen
-
-_OPTOUT = False
 
 tags = {}
 env = 'development'
@@ -25,8 +24,8 @@ elif 'CONDA_PREFIX' in os.environ:
     env = 'conda'
 
 try:
-    tags['revision'] = fetch_git_sha(os.path.dirname(
-                    os.path.dirname(sys.modules['llspy'].__file__)))[:12]
+    tags['revision'] = fetch_git_sha(
+        os.path.dirname(os.path.dirname(sys.modules['llspy'].__file__)))[:12]
 except Exception:
     pass
 
@@ -56,8 +55,7 @@ try:
 except Exception:
     pass
 
-# client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
-client = Client('',
+client = Client('https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111',
                 release=llspy.__version__,
                 include_paths=['llspy', 'spimagine', 'gputools'],
                 environment=env,
@@ -118,9 +116,9 @@ class ExceptionHandler(QtCore.QObject):
         elif "0xe06d7363" in str(value).lower():
             self.handleCUDA_CL_Error(*err_info)
         else:  # uncaught exceptions go to sentry
-            if not _OPTOUT:
-                logger.debug("Sending bug report")
-                # client.captureException(err_info)
+            if SETTINGS.value(settings.ALLOW_BUGREPORT.key, True):
+                logger.info("Sending bug report")
+                client.captureException(err_info)
             self.errorMessage.emit(str(value), '', '', '')
             print("!" * 50)
             traceback.print_exception(*err_info)
@@ -131,11 +129,12 @@ class ExceptionHandler(QtCore.QObject):
         self.errorMessage.emit(value.msg, title, value.detail, tbstring)
 
     def handleCUDA_CL_Error(self, etype, value, tb):
-        if not _OPTOUT:
-            logger.debug("Sending bug report")
-            # client.captureException((etype, value, tb))
+        if SETTINGS.value(settings.ALLOW_BUGREPORT.key, True):
+            logger.info("Sending bug report")
+            client.captureException((etype, value, tb))
         tbstring = "".join(traceback.format_exception(etype, value, tb))
-        self.errorMessage.emit('Sorry, it looks like CUDA and OpenCL are not '
+        self.errorMessage.emit(
+            'Sorry, it looks like CUDA and OpenCL are not '
             'getting along on your system',
             'CUDA/OpenCL clash', 'If you continue to get this error, please '
             'click the "disable Spimagine" checkbox in the config tab '

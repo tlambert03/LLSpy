@@ -5,6 +5,11 @@ import os
 import traceback
 from PyQt5.QtCore import QObject, pyqtSignal
 
+appdir = get_app_dir('LLSpy')
+if not os.path.isdir(appdir):
+    os.mkdir(appdir)
+LOGPATH = os.path.join(appdir, 'llspygui.log')
+
 
 class NoExceptionTracebackFormatter(logging.Formatter):
     """Custom formatter for formatting exceptions without traceback."""
@@ -44,12 +49,7 @@ class NotificationHandler(QObject, logging.Handler):
 class LogFileHandler(RotatingFileHandler):
 
     def __init__(self, **kwargs):
-        appdir = get_app_dir('LLSpy')
-        if not os.path.isdir(appdir):
-            os.mkdir(appdir)
-        _LOGPATH = os.path.join(appdir, 'llspygui.log')
-        super(LogFileHandler, self).__init__(_LOGPATH, **kwargs)
-
+        super(LogFileHandler, self).__init__(LOGPATH, **kwargs)
         self.setLevel(logging.DEBUG)
         self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.setFormatter(self.formatter)
