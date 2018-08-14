@@ -24,6 +24,7 @@ dependencies:
   - llspy-slm
   - llspylibs >=0.1.3
   - llscd
+  - tifffolder
   - parse
   - pigz
 #  - lbzip2   # mac linux only
