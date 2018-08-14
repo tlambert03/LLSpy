@@ -31,3 +31,4 @@ dependencies:
 #  - tar ==1.29  # mac/linux only
   - pytest
   - pytest-qt
+  - anaconda-client
