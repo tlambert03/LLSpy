@@ -102,32 +102,68 @@ def determineThreshold(array, maxSamples=50000):
     return threshold
 
 
-class CameraROI(np.ndarray):
+# class CameraROI(np.ndarray):
 
-    def __new__(cls, input_array):
-        obj = np.asarray(input_array).view(cls)
-        return obj
+#     def __new__(cls, input_array):
+#         obj = np.asarray(input_array).view(cls)
+#         return obj
 
-    def __array_finalize__(self, obj):
-        if obj is None:
-            return
-        self.left = self[0]
-        self.top = self[1]
-        self.right = self[2]
-        self.bottom = self[3]
+#     def __array_finalize__(self, obj):
+#         if obj is None:
+#             return
+#         self.left = self[0]
+#         self.top = self[1]
+#         self.right = self[2]
+#         self.bottom = self[3]
+#         print(obj)
+#         self.width = abs(self.right - self.left) + 1
+#         self.height = abs(self.bottom - self.top) + 1
+
+#     def __array_wrap__(self, out_arr, context=None):
+#         # then just call the parent
+#         return np.ndarray.__array_wrap__(self, out_arr, context)
+
+#     def contains(self, subroi):
+#         # make sure the Parameter ROI contains the data ROI
+#         if np.any((subroi - self) * np.array([-1, -1, 1, 1]) > 0):
+#             return False
+#         else:
+#             return True
+
+
+class CameraROI(object):
+
+    def __init__(self, input_array):
+        self._data = np.array(input_array)
+        # assert len(self._data) == 4, 'CameraROI array must be 4 numbers'
+        self.left, self.top, self.right, self.bottom = self._data
         self.width = abs(self.right - self.left) + 1
         self.height = abs(self.bottom - self.top) + 1
 
-    def __array_wrap__(self, out_arr, context=None):
-        # then just call the parent
-        return np.ndarray.__array_wrap__(self, out_arr, context)
+    def __add__(self, other):
+        return self._data + other
+
+    def __sub__(self, other):
+        return self._data - other
+
+    def __rsub__(self, other):
+        return other - self._data
+
+    def __radd__(self, other):
+        return self._data + other
+
+    def __len__(self):
+        return len(self._data)
 
     def contains(self, subroi):
         # make sure the Parameter ROI contains the data ROI
-        if np.any((subroi - self) * np.array([-1, -1, 1, 1]) > 0):
+        if np.any((subroi - self._data) * np.array([-1, -1, 1, 1]) > 0):
             return False
         else:
             return True
+
+    def __repr__(self):
+        return '<CameraROI: {}>'.format(self._data)
 
 
 def seemsValidCamParams(path):
@@ -203,7 +239,7 @@ class CameraParameters(object):
             raise ValueError(
                 'ROI for correction file does not encompass data ROI')
 
-        diffroi = subroi - self.roi
+        diffroi = subroi._data - self.roi._data
         # either Labview or the camera is doing
         # something weird with the ROI... or I am calculating the required ROI
         # alignment wrong... this is the hack I empirically came up with
@@ -212,7 +248,7 @@ class CameraParameters(object):
         hshift = 0
         subP = self.data[:, diffroi[0] + vshift:diffroi[2] + vshift,
                         diffroi[1] + hshift:diffroi[3] + hshift]
-        return CameraParameters(data=subP, roi=subroi)
+        return CameraParameters(data=subP, roi=subroi._data)
 
     def init_CUDAcamcor(self, shape):
         libcu.camcor_init(shape, self.data[:3])

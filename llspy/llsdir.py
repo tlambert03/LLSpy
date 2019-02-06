@@ -1171,7 +1171,7 @@ class LLSdir(object):
             try:
                 camparams = camparams.get_subroi(self.settings.camera.roi)
             except Exception:
-                raise ValueError('ROI in parameters doesn not match data ROI')
+                raise ValueError('ROI in parameters does not match data ROI')
 
         outpath = self.path.joinpath('Corrected')
         if not outpath.is_dir():
