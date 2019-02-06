@@ -28,7 +28,8 @@ else:
                         ctypes.c_float,
                         np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                         ctypes.c_int,
-                        ctypes.c_int]
+                        ctypes.c_int,
+                        ctypes.c_float]
 
         # Affine transformation
         Affine_interface = cudaLib.Affine_interface
@@ -95,17 +96,20 @@ else:
         RL_interface = cudaLib.RL_interface
         RL_interface.restype = ctypes.c_int
         RL_interface.argtypes = [np.ctypeslib.ndpointer(ctypes.c_ushort, flags="C_CONTIGUOUS"),  # im
-                        ctypes.c_int,                                                   # nx
-                        ctypes.c_int,                                                   # ny
-                        ctypes.c_int,                                                   # nz
-                        np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
-                        np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),   # result
-                        ctypes.c_float,                                                 # background
-                        ctypes.c_bool,                                                  # doRescale
-                        ctypes.c_bool,                                                  # saveDeskewed
-                        ctypes.c_int,                                                   # nIters
-                        ctypes.c_int]                                                   # shift
-
+                                 ctypes.c_int,                                                   # nx
+                                 ctypes.c_int,                                                   # ny
+                                 ctypes.c_int,                                                   # nz
+                                 np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                                 np.ctypeslib.ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),   # result
+                                 ctypes.c_float,                                                 # background
+                                 ctypes.c_bool,                                                  # doRescale
+                                 ctypes.c_bool,                                                  # saveDeskewed
+                                 ctypes.c_int,                                                   # nIters
+                                 ctypes.c_int,                                                   # shift
+                                 ctypes.c_int,   # napodize
+                                 ctypes.c_int,   # nZblend
+                                 ctypes.c_float, # padVal
+                                 ctypes.c_bool]  # bDupRevStack
         # call after
         RL_cleanup = cudaLib.RL_cleanup
 
@@ -152,7 +156,7 @@ def camcor(imstack):
     return result
 
 
-def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
+def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0, padVal=0.0):
     """Deskew data acquired in stage-scanning mode on GPU"""
     requireCUDAlib()
     nz, ny, nx = im.shape
@@ -165,7 +169,7 @@ def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0):
         deskewedNx = width
 
     result = np.empty((nz, ny, deskewedNx), dtype=np.float32)
-    Deskew_interface(im, nx, ny, nz, dz, dr, angle, result, deskewedNx, shift)
+    Deskew_interface(im, nx, ny, nz, dz, dr, angle, result, deskewedNx, shift, padVal)
     return result
 
 
@@ -280,7 +284,7 @@ def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
     requireCUDAlib()
     nz, ny, nx = im.shape
     decon_result = np.empty((get_output_nz(), get_output_ny(),
-            get_output_nx()), dtype=np.float32)
+                            get_output_nx()), dtype=np.float32)
 
     if savedeskew:
         deskew_result = np.empty_like(decon_result)
@@ -289,8 +293,14 @@ def RL_decon(im, background=80, nIters=10, shift=0, savedeskew=False,
 
     if not np.issubdtype(im.dtype, np.uint16):
         im = im.astype(np.uint16)
+
+    napodize = 15
+    nZblend = 0
+    padVal = 0.0
+    bDupRevStack = False
     RL_interface(im, nx, ny, nz, decon_result, deskew_result,
-                background, rescale, savedeskew, nIters, shift)
+                 background, rescale, savedeskew, nIters, shift,
+                 napodize, nZblend, padVal, bDupRevStack)
 
     if savedeskew:
         return decon_result, deskew_result
