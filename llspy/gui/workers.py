@@ -99,7 +99,7 @@ class SubprocessWorker(QtCore.QObject):
         self._logger.error("Error in subprocess: {}".format(self.name))
         line = byteArrayToString(self.process.readAllStandardError())
         if line is not '':
-            self._logger.info(line.rstrip())
+            self._logger.error(line.rstrip())
 
     @QtCore.pyqtSlot(int, QtCore.QProcess.ExitStatus)
     def onFinished(self, exitCode, exitStatus):
