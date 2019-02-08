@@ -148,7 +148,7 @@ Press process button below when ready.</string>
            </font>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
@@ -627,9 +627,9 @@ the Z stack for each channel for background subtraction.</string>
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
-             <width>467</width>
-             <height>227</height>
+             <y>-36</y>
+             <width>532</width>
+             <height>312</height>
             </rect>
            </property>
            <attribute name="label">
@@ -989,22 +989,6 @@ images along the specified axis</string>
                  </property>
                 </spacer>
                </item>
-               <item row="0" column="3">
-                <spacer name="savingspacer1_2">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
                <item row="0" column="2">
                 <widget class="QFrame" name="deskewedMIPFrame">
                  <property name="toolTip">
@@ -1103,29 +1087,158 @@ images along the specified axis</string>
                  </item>
                 </widget>
                </item>
+               <item row="0" column="3">
+                <spacer name="savingspacer1_2">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
               </layout>
              </widget>
             </item>
             <item>
-             <widget class="QCheckBox" name="deconJoinMIPCheckBox">
-              <property name="enabled">
-               <bool>true</bool>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <property name="topMargin">
+               <number>0</number>
               </property>
-              <property name="toolTip">
-               <string>Join maximum intensity projection images
+              <item>
+               <widget class="QCheckBox" name="deconJoinMIPCheckBox">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Join maximum intensity projection images
 into a single multi-dimensional (XYZCT)
 file that can be viewed easily in Fiji/ImageJ</string>
+                </property>
+                <property name="layoutDirection">
+                 <enum>Qt::LeftToRight</enum>
+                </property>
+                <property name="text">
+                 <string>Join MIP files into single hyperstack</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="useLZWCheckBox">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Enabling this will reduce file sizes, but increase the time it takes to open images</string>
+                </property>
+                <property name="layoutDirection">
+                 <enum>Qt::LeftToRight</enum>
+                </property>
+                <property name="text">
+                 <string>Use LZW compression</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <property name="topMargin">
+               <number>0</number>
               </property>
-              <property name="layoutDirection">
-               <enum>Qt::LeftToRight</enum>
-              </property>
-              <property name="text">
-               <string>Join MIP files into single hyperstack</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
+              <item>
+               <widget class="QCheckBox" name="dupRevStackCheckBox">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Duplicate reversed stack prior to decon to reduce Z ringing</string>
+                </property>
+                <property name="layoutDirection">
+                 <enum>Qt::LeftToRight</enum>
+                </property>
+                <property name="text">
+                 <string>Duplicate reversed stack (reduce axial ringing)</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="savingspacer1_6">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="padValLabel">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Value to pad image with when deskewing</string>
+                </property>
+                <property name="text">
+                 <string>Pad Value</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="padValSpinBox">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Value to pad image with when deskewing</string>
+                </property>
+                <property name="minimum">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <number>9999</number>
+                </property>
+                <property name="value">
+                 <number>0</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <spacer name="deconSpacer">

@@ -1482,7 +1482,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             'doReg': self.doRegistrationGroupBox.isChecked(),
             'deleteUnregistered': self.discardUnregisteredCheckBox.isChecked(),
             'regMode': (self.RegProcessChannelRefModeCombo.currentText()
-                if self.RegProcessChannelRefModeCombo.currentText() else 'none'),
+                        if self.RegProcessChannelRefModeCombo.currentText() else 'none'),
             'otfDir': self.otfFolderLineEdit.text() if self.otfFolderLineEdit.text() is not '' else None,
             'compressRaw': self.compressRawCheckBox.isChecked(),
             'compressionType': self.compressTypeCombo.currentText(),
@@ -1491,8 +1491,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             'shift': self.cropShiftSpinBox.value(),
             'cropPad': self.autocropPadSpinBox.value(),
             'background': (-1 if self.backgroundAutoRadio.isChecked()
-                           else self.backgroundFixedSpinBox.value())
-
+                           else self.backgroundFixedSpinBox.value()),
+            'padval': self.padValSpinBox.value(),
+            # 'FlatStart': self.flatStartCheckBox.isChecked(),
+            'dupRevStack': self.dupRevStackCheckBox.isChecked(),
+            'lzw': self.useLZWCheckBox.isChecked(),
             # 'bRollingBall': self.backgroundRollingRadio.isChecked(),
             # 'rollingBall': self.backgroundRollingSpinBox.value()
         }

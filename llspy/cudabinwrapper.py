@@ -130,6 +130,11 @@ cudaDeconSchema = Schema({
     'uint16': Coerce(bool),
     'bleachCorrection': Coerce(bool),
     'DoNotAdjustResForFFT': Coerce(bool),
+    'lzw': Coerce(bool),
+    'FlatStart': Coerce(bool),
+    'padval': All(Coerce(float), Range(0, 9999)),
+    'dupRevStack': Coerce(bool),
+    'no_overwrite': Coerce(bool),
 }, extra=REMOVE_EXTRA)
 
 
@@ -309,9 +314,7 @@ class CUDAbin(object):
             logger.warning('The flag "{}" is not listed in the help string.'.format(flag))
 
     def assemble_args(self, **options):
-
         options = validate_with_humanized_errors(options, cudaDeconSchema)
-
         arglist = []
         for o in options:
             # convert LLSpy variable naming conventions to cudaDeconv names
