@@ -8,7 +8,15 @@ from .cudabinwrapper import CUDAbin
 from .camera import CameraParameters, selectiveMedianFilter
 from .exceptions import LLSpyError, OTFError
 from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
-from fiducialreg.fiducialreg import CloudSet, RegFile, RegistrationError
+
+try:
+    from fiducialreg.fiducialreg import CloudSet, RegFile, RegistrationError
+except ImportError:
+    import os
+    import sys
+    thisDirectory = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisDirectory, os.pardir))
+    from fiducialreg.fiducialreg import CloudSet, RegFile, RegistrationError
 
 try:
     import pathlib as plib
