@@ -1,7 +1,7 @@
 name: llspydev
 channels:
   - talley
-  - talley/label/dev
+#  - talley/label/dev
   - anaconda
   - conda-forge
   - defaults
@@ -9,7 +9,7 @@ dependencies:
   - python=3.6
   - numpy
   - scipy >=1.0.0
-  - matplotlib >=2.2
+  - matplotlib >=3
   - tifffile >=0.14.0
   - numba >=0.38.0
   - ipython
@@ -19,11 +19,10 @@ dependencies:
   - pip
   - pyqt >=5.9.2
   - pyopencl
-  - spimagine >=0.2.5
+  - spimagine >=0.2.6
   - raven
   - llspy-slm
   - llspylibs >=0.1.3
-  - llscd
   - parse
   - pigz
 #  - lbzip2   # mac linux only
