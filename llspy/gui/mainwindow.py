@@ -1720,6 +1720,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         else:
             self.setBinaryPath(self.cudaDeconvPathLineEdit.text())
 
+        version = llspy.cudabinwrapper.get_version() or ''
+        if "error" in version.lower():
+            version = "NOT FOUND!  is this an LLSpy cudaDeconv?\n"
+        logger.info("cudaDeconv version: {}".format(version))
+
     def setBinaryPath(self, path):
         workers._CUDABIN = path
         logger.info("Using cudaDeconv binary: {}".format(workers._CUDABIN))

@@ -47,6 +47,10 @@ def gpulist():
     return re.findall('(?<=Device \d: ").*(?=")', CUDAbin().list_gpus())
 
 
+def get_version():
+    return CUDAbin().get_version()
+
+
 def is_cudaDeconv(path):
     try:
         h = subprocess.check_output([path, '--help'])
@@ -223,6 +227,9 @@ class CUDAbin(object):
 
     def list_gpus(self):
         return(self.run('-Q'))
+
+    def get_version(self):
+        return(self.run('-v'))
 
     # FIXME: combine this with _run_command
     def run(self, cmd):
