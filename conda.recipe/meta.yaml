@@ -38,7 +38,7 @@ requirements:
     - voluptuous ==0.11.1
     - watchdog >=0.8.3
     - pyqt ==5.9.2 # [py3k]
-    - pyqt ==5.6.0 # [py2k]
+    - pyqt >=5.6.0 # [py2k]
     - click >=6.7
     - parse ==1.8.2
     - matplotlib >=2.1.1
