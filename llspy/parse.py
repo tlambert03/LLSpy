@@ -38,7 +38,7 @@ filename_pattern = re.compile(r"""
     _ch(?P<channel>\d)          # channel is a single digit following _ch
     _stack(?P<stack>\d{4})      # timepoint is 4 digits following _stack
     _\D*(?P<wave>\d+).*         # wave = contiguous digits in this section
-    _(?P<reltime>\d{7})msec     # 7 digits after _ and before msec
+    _(?P<reltime>\d{7,10})msec     # 7 digits after _ and before msec
     _(?P<abstime>\d{10})msecAbs # 10 digits after _ and before msecAbs
     """, re.VERBOSE)
 
