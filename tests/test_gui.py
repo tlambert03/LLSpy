@@ -7,6 +7,7 @@ from llspy.llsdir import LLSdir
 
 def test_basic_processing(qtbot):
     testdata = os.path.join(os.path.dirname(__file__), 'testdata', 'sample')
+    LLSdir(testdata).reduce_to_raw(keepmip=False)
     n_testfiles = len(os.listdir(testdata))
     otfdir = os.path.join(os.path.dirname(__file__), 'testdata', 'otfs')
     APP = QtWidgets.QApplication([])
