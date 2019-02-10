@@ -10,9 +10,9 @@ package:
   {% endif %}
 
 source:
-  path: ..
-  # git_url: https://github.com/tlambert03/LLSpy
-  # git_rev: "{{ environ.get('BRANCH') }}"
+  # path: ..
+  git_url: https://github.com/tlambert03/LLSpy
+  git_rev: "{{ environ.get('BRANCH') }}"
 
 build:
   number: 0
