@@ -1464,6 +1464,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             # if bRotate == True and rotateAngle is not none: rotate based on sheet angle
             # this will be done in the LLSdir function
             'bRotate': self.rotateGroupBox.isChecked(),
+            'rotateRev': self.rotateReverseCheckBox.isChecked(),
             'rotate': (self.rotateOverrideSpinBox.value() if
                        self.rotateOverrideCheckBox.isChecked() else None),
             'saveDeskewedRaw': self.saveDeskewedCheckBox.isChecked(),

@@ -148,7 +148,7 @@ Press process button below when ready.</string>
            </font>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="tool_preprocess">
            <property name="geometry">
@@ -156,7 +156,7 @@ Press process button below when ready.</string>
              <x>0</x>
              <y>0</y>
              <width>547</width>
-             <height>304</height>
+             <height>292</height>
             </rect>
            </property>
            <attribute name="label">
@@ -627,9 +627,9 @@ the Z stack for each channel for background subtraction.</string>
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-36</y>
-             <width>532</width>
-             <height>312</height>
+             <y>0</y>
+             <width>547</width>
+             <height>304</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1260,7 +1260,7 @@ file that can be viewed easily in Fiji/ImageJ</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>534</width>
+             <width>547</width>
              <height>337</height>
             </rect>
            </property>
@@ -1496,7 +1496,7 @@ This entails interpolation.</string>
               <property name="checked">
                <bool>true</bool>
               </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0,0,0,0,0">
+              <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="0,0,0,0">
                <property name="leftMargin">
                 <number>8</number>
                </property>
@@ -1526,29 +1526,6 @@ from conventional.</string>
                </item>
                <item>
                 <spacer name="rotatespacer1">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="rotateCropCheckBox">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="text">
-                  <string>Crop</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="rotatespacer1_3">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>

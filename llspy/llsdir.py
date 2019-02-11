@@ -1007,6 +1007,8 @@ class LLSdir(object):
 
         if _schema.bRotate:
             _schema.rotate = _schema.rotate if _schema.rotate is not None else self.parameters.angle
+            if _schema.rotateRev:
+                _schema.rotate *= -1
         else:
             _schema.rotate = 0
 
