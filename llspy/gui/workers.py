@@ -127,7 +127,7 @@ class CudaDeconvWorker(SubprocessWorker):
         while self.process.canReadLine():
             line = self.process.readLine()
             line = byteArrayToString(line)
-            if "*** Finished!" in line or "Output:" in line:
+            if ">>>file_finished" in line:
                 self.file_finished.emit()
             elif  "Iteration" in line:
                 self._logger.info("CUDAworker {}: ".format(self.id) + line.rstrip())
