@@ -136,7 +136,9 @@ def install(dirpath, dryrun=False):
             src = os.path.join(libpath, file)
             D = os.path.join(destlib, file)
             print("{:>22} --> {}".format(os.path.basename(src), D))
-            if not os.path.exists(D) and not dryrun:
+            if not dryrun:
+                if os.path.exists(D):
+                    os.remove(D)
                 copyfile(src, D)
 
     if binpath:
@@ -149,8 +151,13 @@ def install(dirpath, dryrun=False):
             D = os.path.join(destbin, file)
             print("{:>22} --> {}".format(os.path.basename(src), D))
             if not dryrun:
-                if not os.path.exists(D):
-                    copyfile(src, D)
+                if os.path.exists(D):
+                    try:
+                        os.remove(D)
+                    except PermissionError:
+                        print("Permission Error: you must manually remove or replace this file: {}".format(D))
+                        continue
+                copyfile(src, D)
                 st = os.stat(D)
                 os.chmod(D, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
