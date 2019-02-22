@@ -722,8 +722,12 @@ class LLSdir(object):
         header for each file?
         '''
         self.tiff.raw = []
+        if (self.parameters.nx and self.parameters.ny):
+            thresh = (self.parameters.nx * self.parameters.ny) * 2
+        else:
+            thresh = 10000
         for idx, f in enumerate(self.tiff.all):
-            if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < 1000:
+            if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < thresh:
                 self.tiff.raw.append(str(f))
             else:
                 logger.warn('discarding small file:  {}'.format(f))
