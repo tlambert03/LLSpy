@@ -742,11 +742,11 @@ class LLSdir(object):
         self.parameters.tset = list({int(t.group(1)) for t in
             [stacknum.search(s) for s in self.tiff.raw] if t})
 
-        self.tiff.count = [0] * 20
-        self.parameters.interval = [0] * 20
+        self.tiff.count = [0] * 20  # stupid
         temp = [0] * 20
-        for f in self.tiff.raw:
-            N = parse.parse_filename(str(f), pattern=self.fname_pattern)
+        Ns = [parse.parse_filename(str(f), pattern=self.fname_pattern)
+              for f in self.tiff.raw]
+        for N in Ns:
             if 'channel' not in N:
                 raise LLSpyError('filepattern must specify a channel')
             self.tiff.count[N['channel']] += 1
@@ -755,16 +755,14 @@ class LLSdir(object):
             self.parameters.channels[N['channel']] = N['wave']
 
             if 'abstime' in N:
-                if self.parameters.interval[N['channel']] == 0:
-                    if self.tiff.count[N['channel']] == 1:
-                        temp[N['channel']] = N['abstime']
-                    if self.tiff.count[N['channel']] == 2:
-                        temp[N['channel']] = N['abstime'] - temp[N['channel']]
+                if self.tiff.count[N['channel']] == 1:
+                    temp[N['channel']] = N['abstime']
+                if self.tiff.count[N['channel']] == 2:
+                    temp[N['channel']] = N['abstime'] - temp[N['channel']]
 
         self.tiff.count = [n for n in self.tiff.count if n != 0]
-        self.parameters.interval = [n for n in self.parameters.interval if n != 0]
-
         self.parameters.nc = len(self.tiff.count)
+        self.parameters.interval = [n / 1000 for n in temp if n != 0]
 
         if len(set(self.tiff.count)) > 1:
             # different count for each channel ... decimated stacks?
