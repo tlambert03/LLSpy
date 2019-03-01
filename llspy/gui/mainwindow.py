@@ -1796,7 +1796,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             """LLSpy v.{}\n
 Copyright ©  {}, President and Fellows of Harvard College.  All rights reserved.\n\n
 Developed by Talley Lambert\n\n
-The cudaDeconv deconvolution program is owned and licensed by HHMI, Janelia Research Campus.  Please contact innovation@janlia.hhmi.org for access.""".format(llspy.__version__, now.year))
+cudaDeconv deconvolution program was modified by Talley, and written by Lin Shao and modified by Dan Milkie at, Janelia Research Campus.  """.format(llspy.__version__, now.year))
 
     def showHelpWindow(self):
         QtW.QMessageBox.about(self, 'LLSpy', 'Please see documentation at llspy.readthedocs.io')

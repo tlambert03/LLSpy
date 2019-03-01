@@ -137,10 +137,8 @@ def main():
             QtWidgets.QMessageBox.warning(mainGUI, "No binary detected!",
                 'Unable to detect bundled cudaDeconv binary. We will not be able'
                 ' to do much without it.\n\n'
-                'The cudaDeconv.exe program is owned by HHMI Janelia Research Campus, '
-                'and access to that program can be arranged via a license agreement with them. '
-                'Please contact innovation@janelia.hhmi.org.\n\n'
-                'More info in the documentation at llspy.readthedocs.io',
+                'As of version 0.4.2, cudaDeconv should now be included in LLSpy.  '
+                'Try installing via "conda update -c talley llspylibs"',
                 QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
         projectURL = "https://api.github.com/repos/tlambert03/LLSpy/releases/latest"

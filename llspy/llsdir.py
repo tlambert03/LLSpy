@@ -508,8 +508,9 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
 
         return stack
 
-    except ValueError:
-        logger.error("ERROR: failed to merge MIPs from {}".format(str(folder)))
+    except ValueError as e:
+        logger.error("ERROR: failed to merge MIPs from {}: ".format(str(folder)))
+        logger.error("{}".format(e))
 
 
 class CoreParams(dict):

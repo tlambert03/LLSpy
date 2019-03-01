@@ -184,45 +184,41 @@ Requirements
 Installation
 ============
 
-**Note**: *The cudaDeconv binary and associated code is owned by HHMI.  It is not included in this package and must be installed seperately.  See instructions below*
+**Note**: *As of version 0.4.2 cudaDecon is now included in the LLSpy conda package and requires no additional steps for installation.  Horray for open source!*
 
 
-#. Install `Anaconda <https://www.anaconda.com/download/>`_ (python 3.6 is preferred, but 2.7 also works)
+#. Install `Anaconda <https://www.anaconda.com/download/>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
 #. Launch a ``terminal`` window (OS X, Linux), or ``Anaconda Prompt`` (Windows)
-#. Install LLSpy
+#. Add the "conda-forge" and "talley" channels to your conda config
 
     .. code:: bash
 
-        > conda create -n llsenv
-        > activate llsenv
+        $ conda config --add channels conda-forge
+        $ conda config --add channels talley
 
-        # or on OS X/Linux
-        $ source activate llsenv
+#. Install LLSpy into a new conda environment
 
-        > conda install -c talley -c conda-forge llspy
+    .. code:: bash
+
+        $ conda create -n llsenv python=3.6 llspy
+        $ conda activate llsenv
 
     The ``create -n llsenv`` line creates a virtual environment.  This is optional, but recommended as it easier to uninstall cleanly and prevents conflicts with any other python environments.  If installing into a virtual environment, you must source the environment before proceeding, and each time before using llspy.
 
-#. Install Janelia binaries and libraries.  The binaries are included in the LLS Dropbox share (see requirements section).  Use the ``lls install`` command to install the libraries and binaries to the virtual environment.
-
-    .. code:: bash
-
-        > lls install /path/to/lls_dropbox/llspy_extra
-
-#. Each time you use the program, you will need to activate the virtual environment (if you created one during installation).  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``.  You can create a bash script or batch file to autoload the environment and launch the program if desired.
+Each time you use the program, you will need to activate the virtual environment.  The main command line interface is ``lls``, and the gui can be launched with ``lls gui``.  You can create a bash script or batch file to autoload the environment and launch the program if desired.
 
     .. code:: bash
 
         # Launch Anaconda Prompt and type...
-        > activate llsenv  # Windows
-        > source activate llsenv  # OS X or Linux
+        $ conda activate llsenv
 
         # show the command line interface help menu
-        > lls -h
+        $ lls -h
         # process a dataset
-        > lls decon /path/to/dataset
+        $ lls decon /path/to/dataset
         # or launch the gui
-        > lls gui
+        $ lls gui
+        
 
 Setup
 =====
