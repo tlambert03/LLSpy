@@ -1082,10 +1082,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         guirestore(self, defaultSettings, programDefaults)
 
     def openLLSdir(self):
-        path = QtW.QFileDialog.getExistingDirectory(self,
-            'Choose LLSdir to add to list', '', QtW.QFileDialog.ShowDirsOnly)
-        if path is not None:
-            self.listbox.addPath(path)
+        qUrl = QtW.QFileDialog.getExistingDirectoryUrl(
+            self,'Choose LLSdir to add to list', options=QtW.QFileDialog.ShowDirsOnly)
+        if qUrl.path() is not None:
+            self.listbox.addPath(qUrl.path())
 
     def incrementProgress(self):
         # with no values, simply increment progressbar
