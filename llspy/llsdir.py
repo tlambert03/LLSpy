@@ -1091,8 +1091,12 @@ class LLSdir(object):
 
         otf = otfmodule.choose_otf(wave, otfpath, self.date, mask)
         if not otf or not os.path.isfile(otf):
-            raise OTFError('Could not find OTF for '
-                'wave {} in path: {}'.format(wave, otfpath))
+            if mask:
+                raise OTFError('Could not find OTF for '
+                    'wave {}, mask {}-{} in path: {}'.format(wave, outerNA, innerNA, otfpath))
+            else:
+                raise OTFError('Could not find OTF for '
+                    'wave {} in path: {}'.format(wave, otfpath))
         return otf
 
     def get_feature_width(self, t=0, **kwargs):
