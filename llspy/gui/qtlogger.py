@@ -22,7 +22,7 @@ class NoExceptionTracebackFormatter(logging.Formatter):
     def formatException(self, exc_info):
         etype, evalue, tb = exc_info
         lines = traceback.format_exception_only(etype, evalue)
-        return u''.join(lines)
+        return u"".join(lines)
 
 
 class NotificationHandler(QObject, logging.Handler):
@@ -32,7 +32,7 @@ class NotificationHandler(QObject, logging.Handler):
     def __init__(self):
         super(NotificationHandler, self).__init__()
         self.setLevel(logging.DEBUG)
-        self.setFormatter(NoExceptionTracebackFormatter('%(message)s'))
+        self.setFormatter(NoExceptionTracebackFormatter("%(message)s"))
 
     def emit(self, record):
         level = record.levelno
@@ -42,23 +42,21 @@ class NotificationHandler(QObject, logging.Handler):
 
 
 class LogFileHandler(RotatingFileHandler):
-
     def __init__(self, **kwargs):
-        appdir = get_app_dir('LLSpy')
+        appdir = get_app_dir("LLSpy")
         if not os.path.isdir(appdir):
             os.mkdir(appdir)
-        _LOGPATH = os.path.join(appdir, 'llspygui.log')
+        _LOGPATH = os.path.join(appdir, "llspygui.log")
         super(LogFileHandler, self).__init__(_LOGPATH, **kwargs)
 
         self.setLevel(logging.DEBUG)
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        self.formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
         self.setFormatter(self.formatter)
 
     def filter(self, record):
-        permitted = ['root', 'llspy', 'spimagine', 'fiducialreg', 'gputools']
+        permitted = ["root", "llspy", "spimagine", "fiducialreg", "gputools"]
         if any(record.name.startswith(l) for l in permitted):
             return True
         return False
-
-
-

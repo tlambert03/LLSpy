@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
@@ -94,7 +95,9 @@ class Ui_Dialog(object):
         self.chanSelectLayout = QtWidgets.QHBoxLayout(self.chanSelectWidget)
         self.chanSelectLayout.setContentsMargins(15, 2, 15, 2)
         self.chanSelectLayout.setObjectName("chanSelectLayout")
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.chanSelectLayout.addItem(spacerItem)
         self.mainLayout.addWidget(self.chanSelectWidget)
         self.imgLayout = QtWidgets.QHBoxLayout()
@@ -138,7 +141,9 @@ class Ui_Dialog(object):
         self.gamLabel.setObjectName("gamLabel")
         self.verticalLayout_4.addWidget(self.gamLabel)
         self.imgLayout.addLayout(self.verticalLayout_4)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.imgLayout.addItem(spacerItem1)
         self.mainLayout.addLayout(self.imgLayout)
         self.SliderLayout = QtWidgets.QVBoxLayout()
@@ -157,7 +162,9 @@ class Ui_Dialog(object):
         font.setWeight(75)
         self.Zlabel.setFont(font)
         self.Zlabel.setScaledContents(False)
-        self.Zlabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.Zlabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.Zlabel.setObjectName("Zlabel")
         self.horizontalLayout_5.addWidget(self.Zlabel)
         self.Zslider = QtWidgets.QSlider(self.Zwidget)
@@ -183,7 +190,9 @@ class Ui_Dialog(object):
         font.setWeight(75)
         self.Clabel.setFont(font)
         self.Clabel.setScaledContents(False)
-        self.Clabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.Clabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.Clabel.setObjectName("Clabel")
         self.horizontalLayout_6.addWidget(self.Clabel)
         self.Cslider = QtWidgets.QSlider(self.Cwidget)
@@ -223,7 +232,9 @@ class Ui_Dialog(object):
         font.setWeight(75)
         self.Tlabel.setFont(font)
         self.Tlabel.setScaledContents(False)
-        self.Tlabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.Tlabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.Tlabel.setObjectName("Tlabel")
         self.horizontalLayout_7.addWidget(self.Tlabel)
         self.Tslider = QtWidgets.QSlider(self.Twidget)
@@ -253,7 +264,7 @@ class Ui_Dialog(object):
         self.actionmax_proj.setObjectName("actionmax_proj")
 
         self.retranslateUi(Dialog)
-        self.overlayButton.clicked['bool'].connect(self.chanSelectWidget.setVisible)
+        self.overlayButton.clicked["bool"].connect(self.chanSelectWidget.setVisible)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
@@ -264,7 +275,12 @@ class Ui_Dialog(object):
         self.stdProjButton.setText(_translate("Dialog", "StdDev Proj"))
         self.infoButton.setText(_translate("Dialog", "Show Info"))
         self.overlayButton.setText(_translate("Dialog", "Overlay"))
-        self.fftButton.setToolTip(_translate("Dialog", "<html><head/><body><p>Fourier transform current image</p></body></html>"))
+        self.fftButton.setToolTip(
+            _translate(
+                "Dialog",
+                "<html><head/><body><p>Fourier transform current image</p></body></html>",
+            )
+        )
         self.fftButton.setText(_translate("Dialog", "FFT..."))
         self.complexAttrib.setItemText(0, _translate("Dialog", "Amp"))
         self.complexAttrib.setItemText(1, _translate("Dialog", "Phase"))
@@ -280,4 +296,3 @@ class Ui_Dialog(object):
         self.Tlabel.setText(_translate("Dialog", "T"))
         self.actionmax_proj.setText(_translate("Dialog", "max proj"))
         self.actionmax_proj.setShortcut(_translate("Dialog", "M"))
-

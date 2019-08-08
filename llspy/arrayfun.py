@@ -36,9 +36,11 @@ def threshold_li(image):
     """
     # Make sure image has more than one value
     if np.all(image == image.flat[0]):
-        raise ValueError("threshold_li is expected to work with images "
-                         "having more than one value. The input image seems "
-                         "to have just one value {0}.".format(image.flat[0]))
+        raise ValueError(
+            "threshold_li is expected to work with images "
+            "having more than one value. The input image seems "
+            "to have just one value {0}.".format(image.flat[0])
+        )
 
     # Copy to ensure input image is not modified
     image = image.copy()
@@ -59,7 +61,7 @@ def threshold_li(image):
     # new and old threshold values is less than the tolerance
     while abs(new_thresh - old_thresh) > tolerance:
         old_thresh = new_thresh
-        threshold = old_thresh + tolerance   # range
+        threshold = old_thresh + tolerance  # range
         # Calculate the means of background and object pixels
         mean_back = image[image <= threshold].mean()
         mean_obj = image[image > threshold].mean()
@@ -77,9 +79,10 @@ def threshold_li(image):
 def trimedges(im, trim, ninterleaved=1):
     nz, ny, nx = im.shape
     im = im[
-        trim[0][0] * ninterleaved: nz - trim[0][1] * ninterleaved,
-        trim[1][0]: ny - trim[1][1],
-        trim[2][0]: nx - trim[2][1]]
+        trim[0][0] * ninterleaved : nz - trim[0][1] * ninterleaved,
+        trim[1][0] : ny - trim[1][1],
+        trim[2][0] : nx - trim[2][1],
+    ]
     return im
 
 
@@ -87,9 +90,9 @@ def cropX(im, width=0, shift=0):
     nz, ny, nx = im.shape
     if width == 0:
         width = nx - np.abs(shift)
-    middle = np.ceil(nx/2 + shift)
-    left = int(np.maximum(np.ceil(middle - width/2), 0))
-    right = int(np.minimum(np.ceil(middle + width/2), nx))
+    middle = np.ceil(nx / 2 + shift)
+    left = int(np.maximum(np.ceil(middle - width / 2), 0))
+    right = int(np.minimum(np.ceil(middle + width / 2), nx))
     im = im[:, :, left:right]
     return im
 
@@ -141,7 +144,7 @@ def feature_width(E, background=None, pad=50, t=0):
     middle = np.floor((rightbound + leftbound) / 2)
     offset = int(np.floor(middle - (deskewedWidth / 2)))
 
-    return {'width': width, 'offset': offset, 'deskewed_nx': deskewedWidth}
+    return {"width": width, "offset": offset, "deskewed_nx": deskewedWidth}
 
 
 def detect_background(im):
@@ -170,19 +173,14 @@ def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
         print("could not import gputools")
 
     deskewFactor = np.cos(angle * np.pi / 180) * dz / dx
-    T = np.array([[1, 0, deskewFactor, 0],
-                [0, 1, 0, 0],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1]])
+    T = np.array([[1, 0, deskewFactor, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
     (nz, ny, nx) = rawdata.shape
     # Francois' method:
     # nxOut = math.ceil((nz - 1) * deskewFactor) + nx
-    nxOut = np.int(np.floor((nz - 1) * dz *
-            abs(np.cos(angle * np.pi / 180)) / dx) + nx)
+    nxOut = np.int(np.floor((nz - 1) * dz * abs(np.cos(angle * np.pi / 180)) / dx) + nx)
     # +1 to pad left side with 1 column of filler pixels
     # otherwise, edge pixel values are smeared across the image
     paddedData = np.ones((nz, ny, nxOut), rawdata.dtype) * filler
     paddedData[..., :nx] = rawdata
-    out = gputools.transforms.affine(
-        paddedData, T, interpolation="linear", mode="wrap")
+    out = gputools.transforms.affine(paddedData, T, interpolation="linear", mode="wrap")
     return out  # return is np.float32

@@ -6,30 +6,40 @@ import sys
 import re
 import subprocess
 import logging
+
 logger = logging.getLogger(__name__)
 
-from voluptuous import (All, Any, Coerce, Length, Range, Exclusive, Schema,
-    Required, REMOVE_EXTRA)
+from voluptuous import (
+    All,
+    Any,
+    Coerce,
+    Length,
+    Range,
+    Exclusive,
+    Schema,
+    Required,
+    REMOVE_EXTRA,
+)
 from voluptuous.humanize import validate_with_humanized_errors
 
 PLAT = sys.platform
-if PLAT == 'linux2':
-    PLAT = 'linux'
-elif PLAT == 'cygwin':
-    PLAT = 'win32'
+if PLAT == "linux2":
+    PLAT = "linux"
+elif PLAT == "cygwin":
+    PLAT = "win32"
 
 intbool = Schema(lambda x: int(bool(x)))
 
 
 def dirpath(v):
     if not os.path.isdir(str(v)):
-        raise ValueError('Not a valid directory')
+        raise ValueError("Not a valid directory")
     return v
 
 
 def filepath(v):
     if not os.path.isfile(str(v)):
-        raise ValueError('Not a valid directory')
+        raise ValueError("Not a valid directory")
     return v
 
 
@@ -37,8 +47,8 @@ def nGPU(binary=None):
     if binary is None:
         binary = get_bundled_binary()
     try:
-        output = subprocess.check_output([binary, '-Q'])
-        return int(re.match(b'Detected\s(?P<numGPU>\d+)\sCUDA', output).groups()[0])
+        output = subprocess.check_output([binary, "-Q"])
+        return int(re.match(b"Detected\s(?P<numGPU>\d+)\sCUDA", output).groups()[0])
     except Exception:
         return 0
 
@@ -53,93 +63,131 @@ def get_version():
 
 def is_cudaDeconv(path):
     try:
-        h = subprocess.check_output([path, '--help'])
-        return all(a in str(h) for a in ('dzdata', 'deskew', 'input-dir', 'otf-file'))
+        h = subprocess.check_output([path, "--help"])
+        return all(a in str(h) for a in ("dzdata", "deskew", "input-dir", "otf-file"))
     except Exception:
         return False
 
 
-def get_bundled_binary(name='cudaDeconv'):
+def get_bundled_binary(name="cudaDeconv"):
     """returns path to bundled, platform-specific cudaDeconv.
     This function is aware of whether program is running in frozen (pyinstaller)
     state,
     """
 
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         binPath = sys._MEIPASS
     else:
-        if os.environ.get('CONDA_PREFIX', False):
-            base = os.environ['CONDA_PREFIX']
-            if PLAT == 'win32':
-                binPath = os.path.join(base, 'Library', 'bin')
+        if os.environ.get("CONDA_PREFIX", False):
+            base = os.environ["CONDA_PREFIX"]
+            if PLAT == "win32":
+                binPath = os.path.join(base, "Library", "bin")
             else:
-                binPath = os.path.join(base, 'bin')
+                binPath = os.path.join(base, "bin")
         else:
-            binPath = ''
+            binPath = ""
         if not os.path.isdir(binPath):
             thisDirectory = os.path.dirname(__file__)
-            binPath = os.path.join(thisDirectory, os.pardir, os.pardir, 'llspylibs', PLAT, 'bin')
+            binPath = os.path.join(
+                thisDirectory, os.pardir, os.pardir, "llspylibs", PLAT, "bin"
+            )
             binPath = os.path.abspath(binPath)
 
     # get specific binary by platform
     binary = os.path.join(binPath, name)
-    binary += '.exe' if sys.platform.startswith('win32') else ''
+    binary += ".exe" if sys.platform.startswith("win32") else ""
 
     if not util.which(binary):
-        raise CUDAbinException('{} could not be located or is not executable: {}'.format(name, binary))
+        raise CUDAbinException(
+            "{} could not be located or is not executable: {}".format(name, binary)
+        )
 
     logger.debug("Found {} Binary: {}".format(name, os.path.abspath(binary)))
     return binary
 
 
-cudaDeconSchema = Schema({
-    Required('input-dir'): dirpath,
-    Required('otf-file'): filepath,
-    Required('filename-pattern'): str,
-    'drdata': All(Coerce(float), Range(0.01, 0.5),
-        msg='Data pixel size (drdata) must be float between 0.01 - 0.5'),
-    'dzdata': All(Coerce(float), Range(0, 50),
-        msg='Data Z step size (dzdata) must be float between 0 - 50'),
-    'drpsf': All(Coerce(float), Range(0.01, 0.5),
-        msg='PSF pixel size (drpsf) must be float between 0.01 - 0.5'),
-    'dzpsf': All(Coerce(float), Range(0, 50),
-        msg='PSF Z step size (dzpsf) must be float between 0 - 50'),
-    'wavelength': All(Coerce(float), Range(.3, 1),
-        msg='wavelength must be float between .3 - 1'),
-    'wiener': Any(-1, All(Coerce(float), Range(0, 50))),
-    'background': All(Coerce(int), Range(0, 65535),
-        msg='background must be int between 0 - 65,535'),
-    'napodize': All(Coerce(int), Range(0, 400),
-        msg='napodize must be int between 0 - 400'),
-    'nzblend': All(Coerce(int), Range(0, 100),
-        msg='nzblend must be int between 0 - 100'),
-    'NA': All(Coerce(float), Range(0.2, 1.33),
-        msg='NA must be float between 0.2 - 1.33'),
-    Exclusive('RL', 'iterations'): All(Coerce(int), Range(0, 30),
-        msg='RL (nIters) must be int between 0 - 30'),
-    Exclusive('nIters', 'iterations'): All(Coerce(int), Range(0, 30),
-        msg='RL (nIters) must be int between 0 - 30'),
-    'deskew': All(Coerce(float), Range(-180, 180),
-        msg='deskew angle must be float between -180 and 180'),
-    'width': All(Coerce(int), Range(0, 2000),
-        msg='width must be int between 0 - 2000'),
-    'shift': All(Coerce(int), Range(-1000, 1000),
-        msg='shift must be int between -1000 - 1000'),
-    'rotate': All(Coerce(float), Range(-180, 180),
-        msg='rotate angle must be float between -180 and 180'),
-    'saveDeskewedRaw': Coerce(bool),
-    'crop': All((All(Coerce(int), Range(0, 2000)),), Length(min=6, max=6)),
-    'MIP': All((intbool,), Length(min=3, max=3)),
-    'rMIP': All((intbool,), Length(min=3, max=3)),
-    'uint16': Coerce(bool),
-    'bleachCorrection': Coerce(bool),
-    'DoNotAdjustResForFFT': Coerce(bool),
-    'lzw': Coerce(bool),
-    'FlatStart': Coerce(bool),
-    'padval': All(Coerce(float), Range(0, 9999)),
-    'dupRevStack': Coerce(bool),
-    'no_overwrite': Coerce(bool),
-}, extra=REMOVE_EXTRA)
+cudaDeconSchema = Schema(
+    {
+        Required("input-dir"): dirpath,
+        Required("otf-file"): filepath,
+        Required("filename-pattern"): str,
+        "drdata": All(
+            Coerce(float),
+            Range(0.01, 0.5),
+            msg="Data pixel size (drdata) must be float between 0.01 - 0.5",
+        ),
+        "dzdata": All(
+            Coerce(float),
+            Range(0, 50),
+            msg="Data Z step size (dzdata) must be float between 0 - 50",
+        ),
+        "drpsf": All(
+            Coerce(float),
+            Range(0.01, 0.5),
+            msg="PSF pixel size (drpsf) must be float between 0.01 - 0.5",
+        ),
+        "dzpsf": All(
+            Coerce(float),
+            Range(0, 50),
+            msg="PSF Z step size (dzpsf) must be float between 0 - 50",
+        ),
+        "wavelength": All(
+            Coerce(float), Range(0.3, 1), msg="wavelength must be float between .3 - 1"
+        ),
+        "wiener": Any(-1, All(Coerce(float), Range(0, 50))),
+        "background": All(
+            Coerce(int),
+            Range(0, 65535),
+            msg="background must be int between 0 - 65,535",
+        ),
+        "napodize": All(
+            Coerce(int), Range(0, 400), msg="napodize must be int between 0 - 400"
+        ),
+        "nzblend": All(
+            Coerce(int), Range(0, 100), msg="nzblend must be int between 0 - 100"
+        ),
+        "NA": All(
+            Coerce(float), Range(0.2, 1.33), msg="NA must be float between 0.2 - 1.33"
+        ),
+        Exclusive("RL", "iterations"): All(
+            Coerce(int), Range(0, 30), msg="RL (nIters) must be int between 0 - 30"
+        ),
+        Exclusive("nIters", "iterations"): All(
+            Coerce(int), Range(0, 30), msg="RL (nIters) must be int between 0 - 30"
+        ),
+        "deskew": All(
+            Coerce(float),
+            Range(-180, 180),
+            msg="deskew angle must be float between -180 and 180",
+        ),
+        "width": All(
+            Coerce(int), Range(0, 2000), msg="width must be int between 0 - 2000"
+        ),
+        "shift": All(
+            Coerce(int),
+            Range(-1000, 1000),
+            msg="shift must be int between -1000 - 1000",
+        ),
+        "rotate": All(
+            Coerce(float),
+            Range(-180, 180),
+            msg="rotate angle must be float between -180 and 180",
+        ),
+        "saveDeskewedRaw": Coerce(bool),
+        "crop": All((All(Coerce(int), Range(0, 2000)),), Length(min=6, max=6)),
+        "MIP": All((intbool,), Length(min=3, max=3)),
+        "rMIP": All((intbool,), Length(min=3, max=3)),
+        "uint16": Coerce(bool),
+        "bleachCorrection": Coerce(bool),
+        "DoNotAdjustResForFFT": Coerce(bool),
+        "lzw": Coerce(bool),
+        "FlatStart": Coerce(bool),
+        "padval": All(Coerce(float), Range(0, 9999)),
+        "dupRevStack": Coerce(bool),
+        "no_overwrite": Coerce(bool),
+    },
+    extra=REMOVE_EXTRA,
+)
 
 
 class CUDAbin(object):
@@ -182,13 +230,17 @@ class CUDAbin(object):
 
     @property
     def opts_longform(self):
-        return [next(x.strip('--') for x in key if x.startswith('--'))
-                for key in self.options.keys()]
+        return [
+            next(x.strip("--") for x in key if x.startswith("--"))
+            for key in self.options.keys()
+        ]
 
     @property
     def opts_shortform(self):
-        return [next(x.strip('-') for x in key if x.startswith('-'))
-                for key in self.options.keys()]
+        return [
+            next(x.strip("-") for x in key if x.startswith("-"))
+            for key in self.options.keys()
+        ]
 
     def set_path(self, path):
         """
@@ -210,47 +262,52 @@ class CUDAbin(object):
         If the 'cudaDeconv -h' command failed
         """
         if os.path.isfile(binPath) and os.access(binPath, os.X_OK):
-            self._run_command([binPath, '-h'])
+            self._run_command([binPath, "-h"])
             return True
         else:
             raise CUDAbinException(
-                'cudaDeconv could not be located or is not executable.')
+                "cudaDeconv could not be located or is not executable."
+            )
 
     def process(self, indir, filepattern, otf, **options):
         cmd = [self.path]
-        options['input-dir'] = indir
-        options['otf-file'] = otf
-        options['filename-pattern'] = filepattern
+        options["input-dir"] = indir
+        options["otf-file"] = otf
+        options["filename-pattern"] = filepattern
         cmd.extend(self.assemble_args(**options))
-        logger.info("CUDAbin Process:\n"+" ".join(cmd))
-        return self._run_command(cmd, mode='call')
+        logger.info("CUDAbin Process:\n" + " ".join(cmd))
+        return self._run_command(cmd, mode="call")
 
     def list_gpus(self):
-        return(self.run('-Q'))
+        return self.run("-Q")
 
     def get_version(self):
-        return(self.run('-v'))
+        return self.run("-v")
 
     # FIXME: combine this with _run_command
     def run(self, cmd):
         """mostly duplicated in _run_command..."""
         if isinstance(cmd, list):
-            if cmd[0] in (self.path, 'cudaDeconv'):
+            if cmd[0] in (self.path, "cudaDeconv"):
                 cmd.pop(0)
             cmdlist = [self.path]
             cmdlist.extend(cmd)
         elif isinstance(cmd, str):
-            if ' ' in cmd:
+            if " " in cmd:
                 cmdlist = [self.path]
                 cmdlist.extend(cmd.split())
             else:
                 cmdlist = [self.path, cmd]
         else:
-            raise ValueError('cmd argument must be either list or string.  got {}'.format(type(cmd)))
-        o = str(subprocess.check_output(cmdlist, stderr=subprocess.STDOUT).decode('utf-8'))
+            raise ValueError(
+                "cmd argument must be either list or string.  got {}".format(type(cmd))
+            )
+        o = str(
+            subprocess.check_output(cmdlist, stderr=subprocess.STDOUT).decode("utf-8")
+        )
         return o
 
-    def _run_command(self, cmd, mode='check'):
+    def _run_command(self, cmd, mode="check"):
         """
         Execute an cudaDeconv command via the subprocess module.
         If the process exits with a exit status of zero, the output is
@@ -258,35 +315,34 @@ class CUDAbin(object):
         Otherwise, an CUDAProcessError is thrown.
         """
         try:
-            if mode == 'call':
+            if mode == "call":
                 subprocess.call(cmd, stderr=subprocess.STDOUT)
             else:
                 output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
                 return CUDAbinResult(0, output)
         except subprocess.CalledProcessError as e:
-                raise CUDAProcessError(e.cmd, e.returncode, e.output)
+            raise CUDAProcessError(e.cmd, e.returncode, e.output)
 
     def _get_options(self):
         """
         query the binary help output and output a list of possible flags
         and descriptions
         """
-        h = self._run_command([self.path, '-h'])
-        self.helpstring = h.output.decode('utf-8')
+        h = self._run_command([self.path, "-h"])
+        self.helpstring = h.output.decode("utf-8")
         H = self.helpstring.splitlines()
-        options = [re.findall('[^A-Za-z1-9]-[1-9a-zA-Z-]+', i) for i in H]
+        options = [re.findall("[^A-Za-z1-9]-[1-9a-zA-Z-]+", i) for i in H]
         hasarg = [1 if z else 0 for z in options]
-        options = [tuple(z.strip(' ') for z in i) for i in options if i]
-        d = [i.split('   ')[-1].strip()
-            if len(i.split('   ')) > 1 else '' for i in H]
+        options = [tuple(z.strip(" ") for z in i) for i in options if i]
+        d = [i.split("   ")[-1].strip() if len(i.split("   ")) > 1 else "" for i in H]
 
         descr = []
-        buf = ''
+        buf = ""
         for n in list(zip(hasarg, d)):
             if n[0]:
                 descr.append(buf.strip())
-                buf = ''
-            buf += ' ' + n[1]
+                buf = ""
+            buf += " " + n[1]
         descr.append(buf.strip())
         descr = descr[1:]
         return {options[i]: descr[i] for i in range(len(descr))}
@@ -306,7 +362,7 @@ class CUDAbin(object):
             return True
         else:
             badflags = [i for i, x in enumerate(q) if not x]
-            msg = ''
+            msg = ""
             for f in badflags:
                 msg += "Unrecognized option: '{}'\n".format(flaglist[f])
             raise CUDAbinException(msg)
@@ -318,7 +374,9 @@ class CUDAbin(object):
         if self.has_option(flag):
             return self.options[[key for key in self.options.keys() if flag in key][0]]
         else:
-            logger.warning('The flag "{}" is not listed in the help string.'.format(flag))
+            logger.warning(
+                'The flag "{}" is not listed in the help string.'.format(flag)
+            )
 
     def assemble_args(self, **options):
         options = validate_with_humanized_errors(options, cudaDeconSchema)
@@ -327,27 +385,25 @@ class CUDAbin(object):
             # convert LLSpy variable naming conventions to cudaDeconv names
             # TODO: consider uniying everything to cudaDeconv?
             optname = o
-            convert_name = {
-                'nIters': 'RL',
-            }
+            convert_name = {"nIters": "RL"}
             if optname in convert_name:
                 optname = convert_name[optname]
 
             # assemble the argument list
             if self.has_option_longname(optname):
                 # expand listed items like --MIP 0 0 0
-                if optname in ('MIP', 'rMIP', 'crop'):
-                        arglist.append('--' + optname)
-                        [arglist.append(str(i)) for i in options[o]]
+                if optname in ("MIP", "rMIP", "crop"):
+                    arglist.append("--" + optname)
+                    [arglist.append(str(i)) for i in options[o]]
                 # booleans only get a single flag
                 elif isinstance(options[o], bool):
                     if options[o]:
-                        arglist.extend(['--' + optname])
+                        arglist.extend(["--" + optname])
                 # otherwise just add the argument
                 else:
-                    arglist.extend(['--' + optname, str(options[o])])
+                    arglist.extend(["--" + optname, str(options[o])])
             else:
-                logger.warn('Warning: option not recognized, ignoring: {}'.format(o))
+                logger.warn("Warning: option not recognized, ignoring: {}".format(o))
 
         return arglist
 
@@ -356,7 +412,7 @@ class CUDAbin(object):
         print(self.helpstring)
 
 
-class CUDAbinResult():
+class CUDAbinResult:
     """
     Holds the result of running an cudaDeconv command.
     """
