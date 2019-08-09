@@ -996,6 +996,15 @@ class CloudSet(object):
                 moving = matching[movIdx]
                 fixed = matching[fixIdx]
                 tform = funcDict[mode](moving, fixed)
+
+                if inworld:
+                    # FIXME: Why the hell is this necessary??
+                    # pointed out by Rainer... but after looking through the code for a while,
+                    # and carefully checking all the intrinsic-world conversions,
+                    # I still can't figure out why the tforms are all off by half of a pixel
+                    tform[0][3] -= self.dx / 2
+                    tform[1][3] -= self.dx / 2
+                    tform[2][3] -= self.dz / 2
             logger.info(
                 "Measured {} Tform Matrix {}inWorld:\n".format(
                     mode, "" if inworld else "not "
