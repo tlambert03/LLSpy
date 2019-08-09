@@ -265,20 +265,3 @@ Please include the following in any bug reports:
 - Python version (type ``python --version`` at command line prompt, with ``llsenv`` conda environment active if applicable)
 
 The most system-dependent component (and the most likely to fail) is the OpenCL dependency for Spimagine.  LLSpy will fall back gracefully to the built-in Qt-based viewer, but the Spimagine option will be will be unavailble and grayed out on the config tab in the GUI.  Submit an `issue on github <https://github.com/tlambert03/LLSpy/issues>`_ for help.
-
-
-To Do
-=====
-
-* implement camera correction for two cameras
-* write tests
-* give better progress feedback when hitting preview button
-* allow cancel after hitting preview button
-* implement real-time data viewer during acquisition
-* implement real-time data processing with folder-monitoring
-* allow cancel of camera calibration
-* MIPsSummary folder
-* comboMIP should use registered files when registration requested
-* registered files are always floating point when rest of data is not
-* allow option of loading partial tiffs in GUI
-* remove ditch_partial and prevent mipmerge errors another way
