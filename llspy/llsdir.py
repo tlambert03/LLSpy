@@ -1,103 +1,113 @@
-from . import config
-from . import parse, compress, schema
+import datetime
+import glob
+import json
+import logging
+import os
+import pprint
+import re
+import shutil
+import sys
+import time
+import warnings
+from multiprocessing import Pool, cpu_count
+
+import numpy as np
+import tifffile as tf
+
+from llspy.libcudawrapper import affineGPU, deskewGPU, quickDecon
+
+from . import arrayfun, compress, config
 from . import otf as otfmodule
-from . import arrayfun
-from . import util
-from .settingstxt import LLSsettings
-from .cudabinwrapper import CUDAbin
+from . import parse, schema, util
 from .camera import CameraParameters, selectiveMedianFilter
+from .cudabinwrapper import CUDAbin
 from .exceptions import LLSpyError, OTFError
-from llspy.libcudawrapper import deskewGPU, affineGPU, quickDecon
+from .settingstxt import LLSsettings
 
 try:
     from fiducialreg.fiducialreg import CloudSet, RegFile, RegistrationError
 except ImportError:
-    import os
-    import sys
     thisDirectory = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(os.path.join(thisDirectory, os.pardir))
     from fiducialreg.fiducialreg import CloudSet, RegFile, RegistrationError
 
 try:
     import pathlib as plib
+
     plib.Path()
 except (ImportError, AttributeError):
     import pathlib2 as plib
 except (ImportError, AttributeError):
-    raise ImportError('no pathlib detected. For python2: pip install pathlib2')
+    raise ImportError("no pathlib detected. For python2: pip install pathlib2")
 
 
-import os
-import sys
-import shutil
-import warnings
-import numpy as np
-import pprint
-import json
-import re
-import glob
-import time
-import tifffile as tf
-import logging
-import datetime
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-np.seterr(divide='ignore', invalid='ignore')
+np.seterr(divide="ignore", invalid="ignore")
 
 # this is for multiprocessing with pyinstaller on windows
 # https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
 try:
     # Python 3.4+
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith("win"):
         import multiprocessing.popen_spawn_win32 as forking
     else:
         import multiprocessing.popen_fork as forking
 except ImportError:
     import multiprocessing.forking as forking
 
-if sys.platform.startswith('win'):
+if sys.platform.startswith("win"):
     # First define a modified version of Popen.
     class _Popen(forking.Popen):
         def __init__(self, *args, **kw):
-            if hasattr(sys, 'frozen'):
+            if hasattr(sys, "frozen"):
                 # We have to set original _MEIPASS2 value from sys._MEIPASS
                 # to get --onefile mode working.
-                os.putenv('_MEIPASS2', sys._MEIPASS)
+                os.putenv("_MEIPASS2", sys._MEIPASS)
             try:
                 super(_Popen, self).__init__(*args, **kw)
             finally:
-                if hasattr(sys, 'frozen'):
+                if hasattr(sys, "frozen"):
                     # On some platforms (e.g. AIX) 'os.unsetenv()' is not
                     # available. In those cases we cannot delete the variable
                     # but only set it to the empty string. The bootloader
                     # can handle this case.
-                    if hasattr(os, 'unsetenv'):
-                        os.unsetenv('_MEIPASS2')
+                    if hasattr(os, "unsetenv"):
+                        os.unsetenv("_MEIPASS2")
                     else:
-                        os.putenv('_MEIPASS2', '')
+                        os.putenv("_MEIPASS2", "")
 
     # Second override 'Popen' class with our modified version.
     forking.Popen = _Popen
 
-from multiprocessing import Process, cpu_count, Pool
+
+__FPATTERN__ = "{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}"
 
 
-__FPATTERN__ = '{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}'
-
-
-def correctTimepoint(fnames, camparams, outpath, medianFilter,
-                    trimZ, trimY, trimX, flashCorrectTarget='cpu'):
-    '''accepts a list of filenames (fnames) that represent Z stacks that have
+def correctTimepoint(
+    fnames,
+    camparams,
+    outpath,
+    medianFilter,
+    trimZ,
+    trimY,
+    trimX,
+    flashCorrectTarget="cpu",
+):
+    """accepts a list of filenames (fnames) that represent Z stacks that have
     been acquired in an interleaved manner (i.e. ch1z1,ch2z1,ch1z2,ch2z2...)
-    '''
+    """
     stacks = [util.imread(f) for f in fnames]
-    outstacks = camparams.correct_stacks(stacks, medianFilter,
-                                         (trimZ, trimY, trimX), flashCorrectTarget)
-    outnames = [str(outpath.joinpath(os.path.basename(
-        str(f).replace('.tif', '_COR.tif')))) for f in fnames]
+    outstacks = camparams.correct_stacks(
+        stacks, medianFilter, (trimZ, trimY, trimX), flashCorrectTarget
+    )
+    outnames = [
+        str(outpath.joinpath(os.path.basename(str(f).replace(".tif", "_COR.tif"))))
+        for f in fnames
+    ]
     for n in range(len(outstacks)):
-        util.imsave(util.reorderstack(np.squeeze(outstacks[n]), 'zyx'), outnames[n])
+        util.imsave(util.reorderstack(np.squeeze(outstacks[n]), "zyx"), outnames[n])
 
 
 def unwrapper(tup):
@@ -110,7 +120,7 @@ def filter_stack(filename, outname, dx, background, trim, medianFilter):
         stack, _ = selectiveMedianFilter(stack, background)
     if any([any(i) for i in trim]):
         stack = arrayfun.trimedges(stack, trim)
-    util.imsave(util.reorderstack(np.squeeze(stack), 'zyx'), outname, dx=dx, dz=1)
+    util.imsave(util.reorderstack(np.squeeze(stack), "zyx"), outname, dx=dx, dz=1)
 
 
 def unbundle(group):
@@ -119,7 +129,7 @@ def unbundle(group):
 
 def move_corrected(path):
     parent = os.path.dirname(path)
-    for d in ['GPUdecon', 'Deskewed', 'CPPdecon']:
+    for d in ["GPUdecon", "Deskewed", "CPPdecon"]:
         subd = os.path.join(path, d)
         if os.path.exists(subd):
             target = os.path.join(parent, d)
@@ -139,13 +149,15 @@ def get_regObj(regCalibPath):
     """Detect whether provided path is a directory of tiffs with fiducials or
     a pre-calibrated registration file"""
     refObj = None
-    if (os.path.isfile(regCalibPath) and
-            regCalibPath.endswith(('.reg', '.txt', '.json'))):
+    if os.path.isfile(regCalibPath) and regCalibPath.endswith(
+        (".reg", ".txt", ".json")
+    ):
         refObj = RegFile(regCalibPath)
         if not refObj.n_tforms > 0:
             raise RegistrationError(
-                'No transforms found in file: {}'.format(regCalibPath))
-        logger.debug('RegCalib Path detected as registration file')
+                "No transforms found in file: {}".format(regCalibPath)
+            )
+        logger.debug("RegCalib Path detected as registration file")
     elif os.path.isdir(regCalibPath):  # path must be raw fidicial dataset
         refObj = RegDir(regCalibPath)
         if not refObj.isValid:
@@ -155,12 +167,13 @@ def get_regObj(regCalibPath):
                   tiff files, as well as a settings.txt file
                   """
             raise RegistrationError(mes.format(path=regCalibPath))
-        logger.debug('RegCalib Path detected as fiducial dataset')
+        logger.debug("RegCalib Path detected as fiducial dataset")
     return refObj
 
 
-def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
-        discard=False):
+def register_folder(
+    folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1], discard=False
+):
     """Register all (non-reference) wavelengths in a folder to the specified
     reference wavelength, using the provided regObj.
 
@@ -174,52 +187,62 @@ def register_folder(folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1],
 
     # get all tiffs in folders
     files = parse.filter_w(os.listdir(folder), regRefWave, exclusive=True)
-    files = [f for f in files if (f.endswith('.tif') and '_REG' not in f)]
+    files = [f for f in files if (f.endswith(".tif") and "_REG" not in f)]
     for F in files:
         fname = os.path.join(folder, F)
-        outname = fname.replace('.tif', '_REG{}.tif'.format(regRefWave))
+        outname = fname.replace(".tif", "_REG{}.tif".format(regRefWave))
         imarray = util.imread(fname)
-        imwave = parse.parse_filename(fname, 'wave', pattern=__FPATTERN__)
-        im_out = register_image_to_wave(imarray, regObj, imwave, regRefWave,
-            mode=regMode, voxsize=voxsize).astype(imarray.dtype)
-        util.imsave(util.reorderstack(np.squeeze(im_out), 'zyx'),
-            outname, dx=voxsize[2], dz=voxsize[0])
+        imwave = parse.parse_filename(fname, "wave", pattern=__FPATTERN__)
+        im_out = register_image_to_wave(
+            imarray, regObj, imwave, regRefWave, mode=regMode, voxsize=voxsize
+        ).astype(imarray.dtype)
+        util.imsave(
+            util.reorderstack(np.squeeze(im_out), "zyx"),
+            outname,
+            dx=voxsize[2],
+            dz=voxsize[0],
+        )
         if discard:
             os.remove(os.path.join(folder, F))
 
     # rename refwave files too
     for F in parse.filter_w(os.listdir(folder), regRefWave, exclusive=False):
         fname = os.path.join(folder, F)
-        outname = fname.replace('.tif', '_REG{}.tif'.format(regRefWave))
+        outname = fname.replace(".tif", "_REG{}.tif".format(regRefWave))
         os.rename(fname, outname)
 
 
-def register_image_to_wave(img, regCalibObj, imwave=None, refwave=488,
-                           voxsize=None, mode='2step'):
+def register_image_to_wave(
+    img, regCalibObj, imwave=None, refwave=488, voxsize=None, mode="2step"
+):
     # voxsize must be an array of pixel sizes [dz, dy, dx]
 
     global __FPATTERN__
 
     if not isinstance(regCalibObj, (RegDir, RegFile)):
-        raise RegistrationError('Calibration object for register_image_to_wave '
-            'must be either RegDir or RegFile.  Received: %s' % str(type(regCalibObj)))
+        raise RegistrationError(
+            "Calibration object for register_image_to_wave "
+            "must be either RegDir or RegFile.  Received: %s" % str(type(regCalibObj))
+        )
 
     if isinstance(img, np.ndarray):
         if imwave is None:
-            raise ValueError('Must provide wavelength when providing array '
-                'for registration.')
+            raise ValueError(
+                "Must provide wavelength when providing array " "for registration."
+            )
     elif isinstance(img, str) and os.path.isfile(img):
         if imwave is None:
             try:
-                imwave = parse.parse_filename(img, 'wave', pattern=__FPATTERN__)
+                imwave = parse.parse_filename(img, "wave", pattern=__FPATTERN__)
             except Exception:
                 pass
             if not imwave:
-                raise ValueError('Could not detect image wavelength.')
+                raise ValueError("Could not detect image wavelength.")
         img = util.imread(img)
     else:
-        raise ValueError('Input to Registration must either be a np.array '
-            'or a path to a tif file')
+        raise ValueError(
+            "Input to Registration must either be a np.array " "or a path to a tif file"
+        )
 
     tform = regCalibObj.get_tform(imwave, refwave, mode)
     inv_tform = np.linalg.inv(tform)
@@ -257,19 +280,19 @@ def preview(exp, tR=0, cR=None, **kwargs):
 
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
-            logger.warn('No TIFF files to process in {}'.format(exp.path))
+            logger.warn("No TIFF files to process in {}".format(exp.path))
             return
         # if not exp.has_settings:
         #     logger.warn('Could not find Settings.txt file in {}'.format(exp.path))
         #     return
 
-    kwargs['tRange'] = tR
-    kwargs['cRange'] = cR
+    kwargs["tRange"] = tR
+    kwargs["cRange"] = cR
     P = exp.localParams(**kwargs)
 
-    if P.correctFlash and not hasattr(exp, 'settings'):
+    if P.correctFlash and not hasattr(exp, "settings"):
         P.correctFlash = False
-        logger.warning('Cannot perform Flash Correction without settings.txt file')
+        logger.warning("Cannot perform Flash Correction without settings.txt file")
 
     out = []
     for timepoint in P.tRange:
@@ -280,27 +303,33 @@ def preview(exp, tR=0, cR=None, **kwargs):
         if P.correctFlash:
             camparams = CameraParameters(P.camparamsPath)
             camparams = camparams.get_subroi(exp.settings.camera.roi)
-            stacks = camparams.correct_stacks(stacks, trim=(P.trimZ, P.trimY, P.trimX), medianFilter=P.medianFilter)
+            stacks = camparams.correct_stacks(
+                stacks, trim=(P.trimZ, P.trimY, P.trimX), medianFilter=P.medianFilter
+            )
         else:
             # camera correction trims edges, so if we aren't doing the camera correction
             # we need to call the edge trim on our own
             if any([any(i) for i in (P.trimZ, P.trimY, P.trimX)]):
-                stacks = [arrayfun.trimedges(s, (P.trimZ, P.trimY, P.trimX)) for s in stacks]
+                stacks = [
+                    arrayfun.trimedges(s, (P.trimZ, P.trimY, P.trimX)) for s in stacks
+                ]
             # camera correction also does background subtraction
             # so otherwise trigger it manually here
-            stacks = [arrayfun.sub_background(s, b) for s, b in zip(stacks, P.background)]
+            stacks = [
+                arrayfun.sub_background(s, b) for s, b in zip(stacks, P.background)
+            ]
 
         # FIXME: background is the only thing keeping this from just **P to deconvolve
         if P.nIters > 0:
             opts = {
-                'nIters': P.nIters,
-                'drdata': P.drdata,
-                'dzdata': P.dzdata,
-                'deskew': P.deskew,
-                'rotate': P.rotate,
-                'width': P.width,
-                'shift': P.shift,
-                'background': 0,  # zero here because it's already been subtracted above
+                "nIters": P.nIters,
+                "drdata": P.drdata,
+                "dzdata": P.dzdata,
+                "deskew": P.deskew,
+                "rotate": P.rotate,
+                "width": P.width,
+                "shift": P.shift,
+                "background": 0,  # zero here because it's already been subtracted above
             }
             for i, d in enumerate(zip(stacks, P.otfs)):
                 stk, otf = d
@@ -316,19 +345,32 @@ def preview(exp, tR=0, cR=None, **kwargs):
         if P.doReg:
             if P.regCalibPath is None:
                 logger.error(
-                    'Skipping Registration: no Calibration Object path provided')
+                    "Skipping Registration: no Calibration Object path provided"
+                )
             else:
                 refObj = get_regObj(P.regCalibPath)
                 if isinstance(refObj, (RegDir, RegFile)) and refObj.isValid:
-                    voxsize = [exp.parameters.dzFinal, exp.parameters.dx, exp.parameters.dx]
+                    voxsize = [
+                        exp.parameters.dzFinal,
+                        exp.parameters.dx,
+                        exp.parameters.dx,
+                    ]
                     for i, d in enumerate(zip(stacks, P.wavelength)):
                         stk, wave = d
                         if not wave == P.regRefWave:  # don't reg the reference channel
-                            stacks[i] = register_image_to_wave(stk, refObj, imwave=wave,
-                                refwave=P.regRefWave, mode=P.regMode, voxsize=voxsize)
+                            stacks[i] = register_image_to_wave(
+                                stk,
+                                refObj,
+                                imwave=wave,
+                                refwave=P.regRefWave,
+                                mode=P.regMode,
+                                voxsize=voxsize,
+                            )
                 else:
-                    logger.error('Registration Calibration dir not valid'
-                        '{}'.format(P.regCalibPath))
+                    logger.error(
+                        "Registration Calibration dir not valid"
+                        "{}".format(P.regCalibPath)
+                    )
 
         out.append(np.stack(stacks, 0))
 
@@ -366,9 +408,9 @@ def process(exp, binary=None, **kwargs):
 
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
-            logger.warn('No TIFF files to process in {}'.format(exp.path))
+            logger.warn("No TIFF files to process in {}".format(exp.path))
         if not exp.parameters.isReady():
-            logger.warn('Parameters are not valid: {}'.format(exp.path))
+            logger.warn("Parameters are not valid: {}".format(exp.path))
         return
 
     P = exp.localParams(**kwargs)
@@ -378,35 +420,39 @@ def process(exp, binary=None, **kwargs):
 
     if P.correctFlash:
         exp.path = exp.correct_flash(**P)
-    elif (P.medianFilter or any([any(i) for i in (P.trimX, P.trimY, P.trimZ)])):
+    elif P.medianFilter or any([any(i) for i in (P.trimX, P.trimY, P.trimZ)]):
         exp.path = exp.median_and_trim(**P)
 
     if P.nIters > 0 or P.saveDeskewedRaw or P.rotate:
         for chan in P.cRange:
             opts = {
-                'background': P.background[chan] if not P.correctFlash else 0,
-                'drdata': P.drdata,
-                'dzdata': P.dzdata,
-                'wavelength': float(P.wavelength[chan])/1000,
-                'deskew': P.deskew,
-                'saveDeskewedRaw': P.saveDeskewedRaw,
-                'MIP': P.MIP,
-                'rMIP': P.rMIP,
-                'uint16': P.uint16,
-                'bleachCorrection': P.bleachCorrection,
-                'RL': P.nIters,
-                'rotate': P.rotate,
-                'width': P.width,
-                'shift': P.shift,
+                "background": P.background[chan] if not P.correctFlash else 0,
+                "drdata": P.drdata,
+                "dzdata": P.dzdata,
+                "wavelength": float(P.wavelength[chan]) / 1000,
+                "deskew": P.deskew,
+                "saveDeskewedRaw": P.saveDeskewedRaw,
+                "MIP": P.MIP,
+                "rMIP": P.rMIP,
+                "uint16": P.uint16,
+                "bleachCorrection": P.bleachCorrection,
+                "RL": P.nIters,
+                "rotate": P.rotate,
+                "width": P.width,
+                "shift": P.shift,
                 # 'quiet': bool(quiet),
                 # 'verbose': bool(verbose),
             }
 
             # filter by channel and trange
-            if len(list(P.tRange)) == exp.parameters.nt:  # processing all the timepoints
-                filepattern = 'ch{}_'.format(chan)
+            if (
+                len(list(P.tRange)) == exp.parameters.nt
+            ):  # processing all the timepoints
+                filepattern = "ch{}_".format(chan)
             else:
-                filepattern = 'ch{}_stack{}'.format(chan, util.pyrange_to_perlregex(P.tRange))
+                filepattern = "ch{}_stack{}".format(
+                    chan, util.pyrange_to_perlregex(P.tRange)
+                )
 
             binary.process(str(exp.path), filepattern, P.otfs[chan], **opts)
 
@@ -426,20 +472,21 @@ def process(exp, binary=None, **kwargs):
 
     # if we did camera correction, move the resulting processed folders to
     # the parent folder, and optionally delete the corrected folder
-    if P.moveCorrected and exp.path.name == 'Corrected':
+    if P.moveCorrected and exp.path.name == "Corrected":
         move_corrected(str(exp.path))
         exp.path = exp.path.parent
 
     if not P.keepCorrected:
-        shutil.rmtree(str(exp.path.joinpath('Corrected')), ignore_errors=True)
+        shutil.rmtree(str(exp.path.joinpath("Corrected")), ignore_errors=True)
 
     if P.compressRaw:
         exp.compress()
 
     if P.writeLog:
-        outname = str(exp.path.joinpath('{}_{}'.format(exp.basename,
-                            config.__OUTPUTLOG__)))
-        with open(outname, 'w') as outfile:
+        outname = str(
+            exp.path.joinpath("{}_{}".format(exp.basename, config.__OUTPUTLOG__))
+        )
+        with open(outname, "w") as outfile:
             json.dump(P, outfile, cls=util.paramEncoder)
 
     logger.debug("Process func finished.")
@@ -455,7 +502,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         fpattern = __FPATTERN__
     folder = plib.Path(folder)
     if not folder.is_dir():
-        raise IOError('MIP folder does not exist: {}'.format(str(folder)))
+        raise IOError("MIP folder does not exist: {}".format(str(folder)))
 
     try:
         filelist = []
@@ -463,7 +510,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         channelCounts = []
         c = 0
         while True:
-            channelFiles = sorted(folder.glob('*ch{}_stack*MIP_{}.tif'.format(c, axis)))
+            channelFiles = sorted(folder.glob("*ch{}_stack*MIP_{}.tif".format(c, axis)))
             if not len(channelFiles):
                 break  # no MIPs in this channel
                 # this assumes that there are no gaps in the channels (i.e. ch1, ch3 but not 2)
@@ -477,34 +524,37 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         if c > 0:
             nt = np.max(channelCounts)
 
-            if (len(set(channelCounts)) > 1):
-                raise ValueError('Cannot merge MIPS with different number of '
-                    'timepoints per channel')
+            if len(set(channelCounts)) > 1:
+                raise ValueError(
+                    "Cannot merge MIPS with different number of "
+                    "timepoints per channel"
+                )
             if len(tiffs) != c * nt:
-                raise ValueError('Number of images does not equal nC * nT')
+                raise ValueError("Number of images does not equal nC * nT")
 
             stack = np.stack(tiffs)
-            stack = stack.reshape((c, 1, nt,
-                        stack.shape[-2], stack.shape[-1]))  # TZCYX
+            stack = stack.reshape((c, 1, nt, stack.shape[-2], stack.shape[-1]))  # TZCYX
             stack = np.transpose(stack, (2, 1, 0, 3, 4))
 
         if write:
             # FIXME: this is getting ugly
-            basename = parse.parse_filename(str(filelist[0]), 'basename', pattern=fpattern)
-            cor = '_COR' if '_COR' in str(filelist[0]) else ''
-            axis = str(filelist[0]).split('MIP_')[1][0]
+            basename = parse.parse_filename(
+                str(filelist[0]), "basename", pattern=fpattern
+            )
+            cor = "_COR" if "_COR" in str(filelist[0]) else ""
+            axis = str(filelist[0]).split("MIP_")[1][0]
             _, ext = os.path.splitext(filelist[0])
-            if 'decon' in str(folder).lower():
-                miptype = '_decon_'
-            elif 'deskewed' in str(folder).lower():
-                miptype = '_deskewed_'
+            if "decon" in str(folder).lower():
+                miptype = "_decon_"
+            elif "deskewed" in str(folder).lower():
+                miptype = "_deskewed_"
             else:
-                miptype = '_'
-            outname = basename + cor + miptype + 'comboMIP_' + axis + ext
+                miptype = "_"
+            outname = basename + cor + miptype + "comboMIP_" + axis + ext
             util.imsave(stack, str(folder.joinpath(outname)), dx=dx, dt=dt)
 
         if delete:
-            [file.unlink() for file in filelist if 'comboMIP' not in str(file)]
+            [file.unlink() for file in filelist if "comboMIP" not in str(file)]
 
         return stack
 
@@ -516,11 +566,11 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
 class CoreParams(dict):
     """dot.notation access to dictionary attributes"""
 
-    def __init__(self,  *args, **kwargs):
-        self['samplescan'] = False
-        self['dzFinal'] = 0
-        self['dz'] = 0
-        self['angle'] = None
+    def __init__(self, *args, **kwargs):
+        self["samplescan"] = False
+        self["dzFinal"] = 0
+        self["dz"] = 0
+        self["angle"] = None
 
         super(CoreParams, self).__init__(*args, **kwargs)
 
@@ -532,37 +582,37 @@ class CoreParams(dict):
 
     def __setitem__(self, name, value):
         super(CoreParams, self).__setitem__(name, value)
-        if name == 'angle' and value is not None:
+        if name == "angle" and value is not None:
             if value > 0:
-                super(CoreParams, self).__setitem__('samplescan', True)
+                super(CoreParams, self).__setitem__("samplescan", True)
             else:
-                super(CoreParams, self).__setitem__('samplescan', False)
-        if name == 'samplescan':
+                super(CoreParams, self).__setitem__("samplescan", False)
+        if name == "samplescan":
             if not value:
-                super(CoreParams, self).__setitem__('angle', 0)
-        if name in ('dz', 'angle'):
+                super(CoreParams, self).__setitem__("angle", 0)
+        if name in ("dz", "angle"):
             self._updatedZfinal()
 
     def _updatedZfinal(self):
-        if self['samplescan'] and self['angle']:
-            self['dzFinal'] = self['dz'] * np.sin(self['angle'] * np.pi / 180)
+        if self["samplescan"] and self["angle"]:
+            self["dzFinal"] = self["dz"] * np.sin(self["angle"] * np.pi / 180)
         else:
-            self['dzFinal'] = self['dz']
+            self["dzFinal"] = self["dz"]
 
     def isReady(self):
-        if (self['dz'] > 0 and hasattr(self, 'dx')):
+        if self["dz"] > 0 and hasattr(self, "dx"):
             return True
         return False
 
     def update(self, dic):
         for key, value in dic.items():
-            if key == 'samplescan':
+            if key == "samplescan":
                 pass
             else:
                 self[key] = value
         # set samplescan last
-        if 'samplescan' in dic:
-            self['samplescan'] = dic['samplescan']
+        if "samplescan" in dic:
+            self["samplescan"] = dic["samplescan"]
             self._updatedZfinal()
 
     def __dir__(self):
@@ -570,7 +620,7 @@ class CoreParams(dict):
 
 
 class LLSdir(object):
-    '''Main class to encapsulate an LLS experiment.
+    """Main class to encapsulate an LLS experiment.
 
     Detects parameters of an LLS experiment from a folder of files.  Parses
     Settings.txt file for acquisition parameters, and uses list of tiffs to
@@ -613,7 +663,7 @@ class LLSdir(object):
         >>> E.compress(compression='lbzip2')  # compress the raw data
         >>> E.decompress()  # decompress files for re-processing
         >>> E.freeze()  # delete processed data and compress raw data
-    '''
+    """
 
     def __init__(self, path, fname_pattern=None, ditch_partial=True):
         global __FPATTERN__
@@ -621,7 +671,7 @@ class LLSdir(object):
             self.fname_pattern = fname_pattern
         else:
             self.fname_pattern = __FPATTERN__
-        self.fname_pattern += '{}'
+        self.fname_pattern += "{}"
 
         self.path = plib.Path(path)
         self.ditch_partial = ditch_partial
@@ -635,27 +685,27 @@ class LLSdir(object):
         self.tiff = util.dotdict()
         if self.has_settings:
             if len(self.settings_files) > 1:
-                logger.warn('Multiple Settings.txt files detected...')
+                logger.warn("Multiple Settings.txt files detected...")
             self.settings = LLSsettings(self.settings_files[0])
             self.date = self.settings.date
             self.parameters.update(self.settings.parameters)
         # if no settings were found, there is probably no dz/dx/angle info
         # check here and then look for a previously processed proclog.txt
         if self.parameters.dz == 0:
-            proclog = util.find_filepattern(str(self.path), '*'+config.__OUTPUTLOG__)
+            proclog = util.find_filepattern(str(self.path), "*" + config.__OUTPUTLOG__)
             try:
                 if proclog and os.path.isfile(proclog):
-                    with open(proclog, 'r') as f:
+                    with open(proclog, "r") as f:
                         procdict = json.load(f)
                     if procdict:
-                        if 'dzdata' in procdict:
-                            self.parameters.dz = procdict['dzdata']
-                        if 'drdata' in procdict:
-                            self.parameters.dx = procdict['drdata']
-                        if 'deskew' in procdict:
-                            self.parameters.angle = procdict['deskew']
+                        if "dzdata" in procdict:
+                            self.parameters.dz = procdict["dzdata"]
+                        if "drdata" in procdict:
+                            self.parameters.dx = procdict["drdata"]
+                        if "deskew" in procdict:
+                            self.parameters.angle = procdict["deskew"]
             except Exception as e:
-                logger.warning('Exception reading {}: {}'.format(proclog, e))
+                logger.warning("Exception reading {}: {}".format(proclog, e))
 
         if self.has_lls_tiffs:
             self._register_tiffs()
@@ -686,12 +736,12 @@ class LLSdir(object):
     @property
     def age(self):
         """Returns true if the path is a directory and has a settings.txt file."""
-        if hasattr(self, 'date'):
+        if hasattr(self, "date"):
             delta = datetime.datetime.now() - self.date
             return delta.days
 
     def get_settings_files(self):
-        return [str(s) for s in self.path.glob('*Settings.txt')]
+        return [str(s) for s in self.path.glob("*Settings.txt")]
 
     def _register_tiffs(self):
         if self._get_all_tiffs():
@@ -703,10 +753,10 @@ class LLSdir(object):
             self.read_tiff_header()
 
     def _get_all_tiffs(self):
-        '''a list of every tiff file in the top level folder (all raw tiffs)'''
-        all_tiffs = sorted(self.path.glob('*.tif'))
+        """a list of every tiff file in the top level folder (all raw tiffs)"""
+        all_tiffs = sorted(self.path.glob("*.tif"))
         if not all_tiffs:
-            logger.warn('No raw/uncompressed Tiff files detected in folder')
+            logger.warn("No raw/uncompressed Tiff files detected in folder")
             return 0
         self.tiff.numtiffs = len(all_tiffs)
         # self.tiff.bytes can be used to get size of raw data: np.sum(self.tiff.bytes)
@@ -716,13 +766,13 @@ class LLSdir(object):
         return self.tiff.numtiffs
 
     def ditch_partial_tiffs(self):
-        '''yields self.tiff.raw: a list of tiffs that match in file size.
+        """yields self.tiff.raw: a list of tiffs that match in file size.
         this excludes partially acquired files that can screw up various steps
         perhaps a better (but slower?) approach would be to look at the tiff
         header for each file?
-        '''
+        """
         self.tiff.raw = []
-        if (self.parameters.nx and self.parameters.ny):
+        if self.parameters.nx and self.parameters.ny:
             thresh = (self.parameters.nx * self.parameters.ny) * 2
         else:
             thresh = 10000
@@ -730,39 +780,43 @@ class LLSdir(object):
             if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < thresh:
                 self.tiff.raw.append(str(f))
             else:
-                logger.warn('discarding small file:  {}'.format(f))
-        self.tiff.rejected = list(
-            set(self.tiff.raw).difference(set(self.tiff.all)))
+                logger.warn("discarding small file:  {}".format(f))
+        self.tiff.rejected = list(set(self.tiff.raw).difference(set(self.tiff.all)))
         if len(self.tiff.all) and not len(self.tiff.raw):
-            raise LLSpyError('LLSpy attempts to exclude partially acquired files '
-                'from processing.  In this case, there are no files left! '
-                'Please check data structure assumptions in the docs. ')
+            raise LLSpyError(
+                "LLSpy attempts to exclude partially acquired files "
+                "from processing.  In this case, there are no files left! "
+                "Please check data structure assumptions in the docs. "
+            )
 
     def detect_parameters(self):
         self.tiff.count = []  # per channel list of number of tiffs
         self.parameters.interval = []
         self.parameters.channels = {}
-        stacknum = re.compile('stack(\d{4})')
-        self.parameters.tset = list({int(t.group(1)) for t in
-            [stacknum.search(s) for s in self.tiff.raw] if t})
+        stacknum = re.compile("stack(\d{4})")
+        self.parameters.tset = list(
+            {int(t.group(1)) for t in [stacknum.search(s) for s in self.tiff.raw] if t}
+        )
 
         self.tiff.count = [0] * 20  # stupid
         temp = [0] * 20
-        Ns = [parse.parse_filename(str(f), pattern=self.fname_pattern)
-              for f in self.tiff.raw]
+        Ns = [
+            parse.parse_filename(str(f), pattern=self.fname_pattern)
+            for f in self.tiff.raw
+        ]
         for N in Ns:
-            if 'channel' not in N:
-                raise LLSpyError('filepattern must specify a channel')
-            self.tiff.count[N['channel']] += 1
-            if 'wave' not in N:
-                raise LLSpyError('filepattern must specify a wave')
-            self.parameters.channels[N['channel']] = N['wave']
+            if "channel" not in N:
+                raise LLSpyError("filepattern must specify a channel")
+            self.tiff.count[N["channel"]] += 1
+            if "wave" not in N:
+                raise LLSpyError("filepattern must specify a wave")
+            self.parameters.channels[N["channel"]] = N["wave"]
 
-            if 'abstime' in N:
-                if self.tiff.count[N['channel']] == 1:
-                    temp[N['channel']] = N['abstime']
-                if self.tiff.count[N['channel']] == 2:
-                    temp[N['channel']] = N['abstime'] - temp[N['channel']]
+            if "abstime" in N:
+                if self.tiff.count[N["channel"]] == 1:
+                    temp[N["channel"]] = N["abstime"]
+                if self.tiff.count[N["channel"]] == 2:
+                    temp[N["channel"]] = N["abstime"] - temp[N["channel"]]
 
         self.tiff.count = [n for n in self.tiff.count if n != 0]
         self.parameters.nc = len(self.tiff.count)
@@ -776,8 +830,8 @@ class LLSdir(object):
 
         try:
             self.parameters.duration = max(
-                [(a - 1) * b for a, b in zip(
-                    self.tiff.count, self.parameters.interval)])
+                [(a - 1) * b for a, b in zip(self.tiff.count, self.parameters.interval)]
+            )
         except Exception:
             self.parameters.duration = []
 
@@ -786,14 +840,16 @@ class LLSdir(object):
             warnings.simplefilter("ignore")
             with tf.TiffFile(self.tiff.raw[0]) as firstTiff:
                 self.parameters.shape = firstTiff.series[0].shape
-                bitstring = 'bits_per_sample'
+                bitstring = "bits_per_sample"
                 try:
-                    if int(tf.__version__.split('.')[1]) >= 13:
-                        bitstring = 'bitspersample'
+                    if int(tf.__version__.split(".")[1]) >= 13:
+                        bitstring = "bitspersample"
                 except Exception:
                     pass
                 self.tiff.bit_depth = getattr(firstTiff.pages[0], bitstring)
-        self.parameters.nz, self.parameters.ny, self.parameters.nx = self.parameters.shape
+        self.parameters.nz, self.parameters.ny, self.parameters.nx = (
+            self.parameters.shape
+        )
 
     def is_compressed(self, subdir=None):
         if not subdir:
@@ -801,37 +857,39 @@ class LLSdir(object):
         elif self.path.joinpath(subdir).is_dir():
             path = str(self.path.joinpath(subdir))
         else:
-            raise ValueError('Subdirectory does not exists: {}'.format(subdir))
+            raise ValueError("Subdirectory does not exists: {}".format(subdir))
 
         exts = tuple(compress.EXTENTIONS.keys())
         zips = [f for f in os.listdir(path) if f.endswith(exts)]
         return bool(len(zips))
 
     def has_been_processed(self):
-        return util.pathHasPattern(str(self.path), '*' + config.__OUTPUTLOG__)
+        return util.pathHasPattern(str(self.path), "*" + config.__OUTPUTLOG__)
 
     def is_corrected(self):
-        corpath = self.path.joinpath('Corrected')
+        corpath = self.path.joinpath("Corrected")
         if corpath.exists():
-            if len(list(corpath.glob('*COR*'))) < len(self.tiff.raw):
+            if len(list(corpath.glob("*COR*"))) < len(self.tiff.raw):
                 # partial correction
-                logger.warn('Corrected path exists but files incomplete')
+                logger.warn("Corrected path exists but files incomplete")
                 return False
             else:
                 return True
         else:
             return False
 
-    def compress(self, subfolder='.', compression=None):
-        logger.info('compressing %s...' % str(self.path.joinpath(subfolder)))
-        return compress.compress(str(self.path.joinpath(subfolder)), compression=compression)
+    def compress(self, subfolder=".", compression=None):
+        logger.info("compressing %s..." % str(self.path.joinpath(subfolder)))
+        return compress.compress(
+            str(self.path.joinpath(subfolder)), compression=compression
+        )
 
-    def decompress(self, subfolder='.', **kwargs):
+    def decompress(self, subfolder=".", **kwargs):
         o = compress.decompress(str(self.path.joinpath(subfolder)))
         self._register_tiffs()
         return o
 
-    def decompress_partial(self, subfolder='.', tRange=None):
+    def decompress_partial(self, subfolder=".", tRange=None):
         """attempt to extract a subset of the tarball,  tRange=None will yield t=0
         """
         compress.decompress_partial(str(self.path.joinpath(subfolder)), tRange)
@@ -842,33 +900,36 @@ class LLSdir(object):
         need to consider the case of sepmips
         """
         if verbose:
-            logger.info('reducing %s...' % str(self.path.name))
+            logger.info("reducing %s..." % str(self.path.name))
 
-        subfolders = ['GPUdecon', 'CPPdecon', 'Deskewed', 'Corrected']
+        subfolders = ["GPUdecon", "CPPdecon", "Deskewed", "Corrected"]
 
         if keepmip:
-            miplist = list(self.path.glob('**/*_MIP_*.tif'))
+            miplist = list(self.path.glob("**/*_MIP_*.tif"))
             if len(miplist):
-                if not self.path.joinpath('MIPs').exists():
-                    not self.path.joinpath('MIPs').mkdir()
+                if not self.path.joinpath("MIPs").exists():
+                    not self.path.joinpath("MIPs").mkdir()
                 for mipfile in miplist:
-                    mipfile.rename(self.path.joinpath('MIPs', mipfile.name))
+                    mipfile.rename(self.path.joinpath("MIPs", mipfile.name))
         else:
-            subfolders.append('MIPs')
+            subfolders.append("MIPs")
 
         for folder in subfolders:
             if self.path.joinpath(folder).exists():
                 try:
                     if verbose:
-                        logger.info('\tdeleting %s...' % folder)
+                        logger.info("\tdeleting %s..." % folder)
                     shutil.rmtree(str(self.path.joinpath(folder)))
                 except Exception as e:
-                    logger.error("unable to remove directory: {}".format(
-                        self.path.joinpath(folder)))
+                    logger.error(
+                        "unable to remove directory: {}".format(
+                            self.path.joinpath(folder)
+                        )
+                    )
                     logger.error(e)
                     return 0
         try:
-            i = self.path.glob('*' + config.__OUTPUTLOG__)
+            i = self.path.glob("*" + config.__OUTPUTLOG__)
             for n in i:
                 n.unlink()
         except Exception:
@@ -913,13 +974,19 @@ class LLSdir(object):
         'width': 0, 'writeLog': True}
         """
         # allow for 'lazy' storage of previously calculated value
-        if '_localParams' in dir(self) and not recalc:
+        if "_localParams" in dir(self) and not recalc:
             if all([self._localParams[k] == v for k, v in kwargs.items()]):
                 return self._localParams
         _schema = schema.procParams(kwargs)
-        assert sum(_schema.trimY) < self.parameters.ny, "TrimY sum must be less than number of Y pixels"
-        assert sum(_schema.trimX) < self.parameters.nx, "TrimX sum must be less than number of X pixels"
-        assert sum(_schema.trimZ) < self.parameters.nz, "TrimZ sum must be less than number of Z pixels"
+        assert (
+            sum(_schema.trimY) < self.parameters.ny
+        ), "TrimY sum must be less than number of Y pixels"
+        assert (
+            sum(_schema.trimX) < self.parameters.nx
+        ), "TrimX sum must be less than number of X pixels"
+        assert (
+            sum(_schema.trimZ) < self.parameters.nz
+        ), "TrimZ sum must be less than number of Z pixels"
 
         if _schema.cRange is None:
             # _schema.cRange = range(self.parameters.nc)
@@ -931,11 +998,14 @@ class LLSdir(object):
                     outrange.append(chan)
                 else:
                     logger.warn(
-                        'Channel {} not present in datset! Excluding.'.format(chan))
+                        "Channel {} not present in datset! Excluding.".format(chan)
+                    )
             if np.max(list(_schema.cRange)) > (self.parameters.nc - 1):
                 logger.warn(
-                    'cRange was larger than number of Channels! Excluding C > {}'.format(
-                        self.parameters.nc - 1))
+                    "cRange was larger than number of Channels! Excluding C > {}".format(
+                        self.parameters.nc - 1
+                    )
+                )
             _schema.cRange = outrange
 
         if _schema.tRange is None:
@@ -951,13 +1021,19 @@ class LLSdir(object):
                 _schema.tRange = [minT]
             if max(list(_schema.tRange)) > maxT:
                 logger.warn(
-                    'max tRange was greater than the last timepoint. Excluding T > {}'.format(maxT))
+                    "max tRange was greater than the last timepoint. Excluding T > {}".format(
+                        maxT
+                    )
+                )
             if min(list(_schema.tRange)) < minT:
                 logger.warn(
-                    'min tRange was less than the first timepoint. Excluding < {}'.format(minT))
+                    "min tRange was less than the first timepoint. Excluding < {}".format(
+                        minT
+                    )
+                )
 
-        assert len(_schema.tRange), 'No valid timepoints!'
-        assert len(_schema.cRange), 'No valid channels requested'
+        assert len(_schema.tRange), "No valid timepoints!"
+        assert len(_schema.cRange), "No valid channels requested"
         # note: background should be forced to 0 if it is getting corrected
         # in the camera correction step
         if _schema.background < 0 and self.has_lls_tiffs:
@@ -965,11 +1041,13 @@ class LLSdir(object):
         else:
             _schema.background = [_schema.background] * len(list(_schema.cRange))
 
-        if _schema.cropMode == 'auto':
-            wd = self.get_feature_width(pad=_schema.cropPad, t=np.min(list(_schema.tRange)))
-            _schema.width = wd['width']
-            _schema.shift = wd['offset']
-        elif _schema.cropMode == 'none':
+        if _schema.cropMode == "auto":
+            wd = self.get_feature_width(
+                pad=_schema.cropPad, t=np.min(list(_schema.tRange))
+            )
+            _schema.width = wd["width"]
+            _schema.shift = wd["offset"]
+        elif _schema.cropMode == "none":
             _schema.width = 0
             _schema.shift = 0
         else:  # manual mode
@@ -977,7 +1055,7 @@ class LLSdir(object):
             _schema.width = _schema.width
             _schema.shift = _schema.shift
         # TODO: add constrainst to make sure that width/2 +/- shift is within bounds
-        assert 0 <= _schema.width/2
+        assert 0 <= _schema.width / 2
 
         # add check for RegDIR
         # RD = RegDir(P.regCalibPath)
@@ -1003,13 +1081,15 @@ class LLSdir(object):
                 _schema.otfs.append(self.get_otf(wave, otfpath=_schema.otfDir))
             if not len(_schema.otfs):
                 raise OTFError(
-                    'Deconvolution requested but no OTF available.  Check OTF path')
+                    "Deconvolution requested but no OTF available.  Check OTF path"
+                )
             if not len(_schema.otfs) == len(list(_schema.cRange)):
-                raise OTFError(
-                    "Could not find OTF for every channel in OTFdir.")
+                raise OTFError("Could not find OTF for every channel in OTFdir.")
 
         if _schema.bRotate:
-            _schema.rotate = _schema.rotate if _schema.rotate is not None else self.parameters.angle
+            _schema.rotate = (
+                _schema.rotate if _schema.rotate is not None else self.parameters.angle
+            )
             if _schema.rotateRev:
                 _schema.rotate *= -1
         else:
@@ -1035,20 +1115,26 @@ class LLSdir(object):
             if self.path.joinpath(subdir).is_dir():
                 subdir = self.path.joinpath(subdir)
             else:
-                logger.error('Could not find subdir: '.format('subdir'))
+                logger.error("Could not find subdir: ".format("subdir"))
                 return
         else:
             subdir = self.path
 
         # the "**" pattern means this directory and all subdirectories, recursively
-        for MIPdir in subdir.glob('**/MIPs/'):
+        for MIPdir in subdir.glob("**/MIPs/"):
             # get dict with keys= axes(x,y,z) and values = numpy array
             try:
                 interval = self.parameters.interval[0]
             except IndexError:
                 interval = 0
-            for axis in ['z', 'y', 'x']:
-                mergemips(MIPdir, axis, dx=self.parameters.dx, dt=interval, fpattern=self.fname_pattern)
+            for axis in ["z", "y", "x"]:
+                mergemips(
+                    MIPdir,
+                    axis,
+                    dx=self.parameters.dx,
+                    dt=interval,
+                    fpattern=self.fname_pattern,
+                )
 
     def process(self, filepattern, otf, indir=None, binary=None, **opts):
         if binary is None:
@@ -1084,15 +1170,25 @@ class LLSdir(object):
             raise OTFError("OTF directory has no OTFs! -> {}".format(otfpath))
 
         mask = None
-        if hasattr(self, 'settings') and hasattr(self.settings, 'mask'):
+        if hasattr(self, "settings") and hasattr(self.settings, "mask"):
             innerNA = self.settings.mask.innerNA
             outerNA = self.settings.mask.outerNA
             mask = (innerNA, outerNA)
 
         otf = otfmodule.choose_otf(wave, otfpath, self.date, mask)
         if not otf or not os.path.isfile(otf):
-            raise OTFError('Could not find OTF for '
-                'wave {} in path: {}'.format(wave, otfpath))
+            if mask:
+                raise OTFError(
+                    "Could not find OTF for "
+                    "wave {}, mask {}-{} in path: {}".format(
+                        wave, outerNA, innerNA, otfpath
+                    )
+                )
+            else:
+                raise OTFError(
+                    "Could not find OTF for "
+                    "wave {} in path: {}".format(wave, otfpath)
+                )
         return otf
 
     def get_feature_width(self, t=0, **kwargs):
@@ -1109,7 +1205,7 @@ class LLSdir(object):
         if cRange is None:
             cRange = list(self.parameters.channels.keys())
         if not self.has_lls_tiffs:
-            logger.error('Cannot calculate background on folder with no Tiffs')
+            logger.error("Cannot calculate background on folder with no Tiffs")
             return
         # defaults background and=100, pad=100, sigma=2
         bgrd = []
@@ -1119,13 +1215,21 @@ class LLSdir(object):
         # self.parameters.background = bgrd
         return bgrd
 
-    def median_and_trim(self, tRange=None, cRange=None, medianFilter=True,
-                        background=None, trimZ=(0, 0), trimY=(0, 0), trimX=(0, 0),
-                        **kwargs):
+    def median_and_trim(
+        self,
+        tRange=None,
+        cRange=None,
+        medianFilter=True,
+        background=None,
+        trimZ=(0, 0),
+        trimY=(0, 0),
+        trimX=(0, 0),
+        **kwargs
+    ):
 
         trim = (trimZ, trimY, trimX)
 
-        outpath = self.path.joinpath('Corrected')
+        outpath = self.path.joinpath("Corrected")
         if not outpath.is_dir():
             outpath.mkdir()
 
@@ -1138,7 +1242,7 @@ class LLSdir(object):
         if background is None:
             B = self.get_background()
             background = [B[i] for i in cRange]
-        assert(len(background) == len(list(cRange)))
+        assert len(background) == len(list(cRange))
 
         g = []
         for c, flist in enumerate(filenames):
@@ -1146,7 +1250,7 @@ class LLSdir(object):
                 bgrd = background[c]
                 outname = str(outpath.joinpath(os.path.basename(f)))
                 if medianFilter:
-                    outname = outname.replace('.tif', '_COR.tif')
+                    outname = outname.replace(".tif", "_COR.tif")
                 g.append((f, outname, self.parameters.dx, bgrd, trim, medianFilter))
 
         if sys.version_info >= (3, 4):
@@ -1160,14 +1264,22 @@ class LLSdir(object):
 
         return outpath
 
-    def correct_flash(self, tRange=None, camparamsPath=None, flashCorrectTarget='parallel',
-                      medianFilter=False, trimZ=(0, 0), trimY=(0, 0),
-                      trimX=(0, 0), **kwargs):
+    def correct_flash(
+        self,
+        tRange=None,
+        camparamsPath=None,
+        flashCorrectTarget="parallel",
+        medianFilter=False,
+        trimZ=(0, 0),
+        trimY=(0, 0),
+        trimX=(0, 0),
+        **kwargs
+    ):
         """Correct flash artifact, writing files to Corrected dir.
 
         """
         if not self.has_settings:
-            raise LLSpyError('Cannot correct Flash pixels without settings.txt file')
+            raise LLSpyError("Cannot correct Flash pixels without settings.txt file")
         if not isinstance(camparamsPath, CameraParameters):
             if isinstance(camparamsPath, str):
                 camparams = CameraParameters(camparamsPath)
@@ -1178,15 +1290,17 @@ class LLSdir(object):
                         camparams = CameraParameters(camparamsPath)
                 except Exception:
                     camparams = CameraParameters()
-        logger.debug("Correcting Flash artifact with camparam {}".format(camparams.basename))
+        logger.debug(
+            "Correcting Flash artifact with camparam {}".format(camparams.basename)
+        )
 
         if not np.all(camparams.roi == self.settings.camera.roi):
             try:
                 camparams = camparams.get_subroi(self.settings.camera.roi)
             except Exception:
-                raise ValueError('ROI in parameters does not match data ROI')
+                raise ValueError("ROI in parameters does not match data ROI")
 
-        outpath = self.path.joinpath('Corrected')
+        outpath = self.path.joinpath("Corrected")
         if not outpath.is_dir():
             outpath.mkdir()
 
@@ -1199,7 +1313,7 @@ class LLSdir(object):
         # detect the number of timepoints
         timegroups = [t for t in timegroups if len(t)]
 
-        if flashCorrectTarget == 'parallel':
+        if flashCorrectTarget == "parallel":
             # numthreads = cpu_count()
             # procs = []
             # for t in timegroups:
@@ -1211,7 +1325,10 @@ class LLSdir(object):
             #   [p.start() for p in proccessGroup]
             #   [p.join() for p in proccessGroup]
 
-            g = [(t, camparams, outpath, medianFilter, trimZ, trimY, trimX) for t in timegroups]
+            g = [
+                (t, camparams, outpath, medianFilter, trimZ, trimY, trimX)
+                for t in timegroups
+            ]
             if sys.version_info >= (3, 4):
                 with Pool(processes=cpu_count()) as pool:
                     pool.map(unwrapper, g)
@@ -1221,46 +1338,63 @@ class LLSdir(object):
                 pool.close()
                 pool.join()
 
-        elif flashCorrectTarget == 'cpu':
+        elif flashCorrectTarget == "cpu":
             for t in timegroups:
-                correctTimepoint(t, camparams, outpath, medianFilter, trimZ, trimY, trimX)
-        elif flashCorrectTarget == 'cuda' or flashCorrectTarget == 'gpu':
-            camparams.init_CUDAcamcor((self.parameters.nz*self.parameters.nc,
-                self.parameters.ny, self.parameters.nx))
+                correctTimepoint(
+                    t, camparams, outpath, medianFilter, trimZ, trimY, trimX
+                )
+        elif flashCorrectTarget == "cuda" or flashCorrectTarget == "gpu":
+            camparams.init_CUDAcamcor(
+                (
+                    self.parameters.nz * self.parameters.nc,
+                    self.parameters.ny,
+                    self.parameters.nx,
+                )
+            )
             for t in timegroups:
-                correctTimepoint(t, camparams, outpath, medianFilter, trimZ, trimY, trimX, 'cuda')
+                correctTimepoint(
+                    t, camparams, outpath, medianFilter, trimZ, trimY, trimX, "cuda"
+                )
         else:
             for t in timegroups:
-                correctTimepoint(t, camparams, outpath, medianFilter, trimZ, trimY, trimX)
+                correctTimepoint(
+                    t, camparams, outpath, medianFilter, trimZ, trimY, trimX
+                )
         return outpath
 
     def register(self, regRefWave, regMode, regCalibPath, discard=False):
         if self.parameters.nc < 2:
-            logger.error('Cannot register single channel dataset')
+            logger.error("Cannot register single channel dataset")
             return
 
         regObj = get_regObj(regCalibPath)
         if isinstance(regObj, (RegDir, RegFile)) and regObj.isValid:
             voxsize = [self.parameters.dzFinal, self.parameters.dx, self.parameters.dx]
-            subdirs = [x for x in self.path.iterdir() if x.is_dir() and
-                       x.name in ('GPUdecon', 'Deskewed')]
+            subdirs = [
+                x
+                for x in self.path.iterdir()
+                if x.is_dir() and x.name in ("GPUdecon", "Deskewed")
+            ]
             for D in subdirs:
-                register_folder(D, regRefWave, regMode, regObj, voxsize, discard=discard)
+                register_folder(
+                    D, regRefWave, regMode, regObj, voxsize, discard=discard
+                )
         else:
-            logger.error('Registration Calibration path not valid'
-                         '{}'.format(regCalibPath))
+            logger.error(
+                "Registration Calibration path not valid" "{}".format(regCalibPath)
+            )
 
     def toJSON(self):
         import json
-        return json.dumps(self, default=lambda o: o.__dict__,
-            sort_keys=True, indent=4)
+
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
     def __str__(self):
         out = {}
-        if hasattr(self, 'bytes'):
-            out.update({'raw data size': util.format_size(np.mean(self.tiff.bytes))})
+        if hasattr(self, "bytes"):
+            out.update({"raw data size": util.format_size(np.mean(self.tiff.bytes))})
         for k, v in self.__dict__.items():
-            if k not in {'all_tiffs', 'date', 'settings_files'}:
+            if k not in {"all_tiffs", "date", "settings_files"}:
                 out.update({k: v})
         return pprint.pformat(out)
 
@@ -1275,11 +1409,13 @@ class RegDir(LLSdir):
     mincount default is set in fiducialreg.get_thresh()
     """
 
-    def __init__(self, path, t=None, mincount=None, threshold=None, usejson=True, **kwargs):
+    def __init__(
+        self, path, t=None, mincount=None, threshold=None, usejson=True, **kwargs
+    ):
         super(RegDir, self).__init__(path, **kwargs)
         if self.path is not None:
-            if self.path.joinpath('cloud.json').is_file() and usejson:
-                with open(str(self.path.joinpath('cloud.json'))) as json_data:
+            if self.path.joinpath("cloud.json").is_file() and usejson:
+                with open(str(self.path.joinpath("cloud.json"))) as json_data:
                     self = self.fromJSON(json.load(json_data))
         self.t = t
         self.mincount = mincount
@@ -1288,10 +1424,14 @@ class RegDir(LLSdir):
             self.t = min(self.parameters.tset)
         if self.isValid:
             self.data = self.getdata()
-            self.waves = [parse.parse_filename(f, 'wave', pattern=self.fname_pattern)
-                for f in self.get_t(self.t)]
-            self.channels = [parse.parse_filename(f, 'channel', pattern=self.fname_pattern)
-                for f in self.get_t(self.t)]
+            self.waves = [
+                parse.parse_filename(f, "wave", pattern=self.fname_pattern)
+                for f in self.get_t(self.t)
+            ]
+            self.channels = [
+                parse.parse_filename(f, "channel", pattern=self.fname_pattern)
+                for f in self.get_t(self.t)
+            ]
             self.deskew = self.parameters.samplescan
 
     @property
@@ -1308,48 +1448,52 @@ class RegDir(LLSdir):
 
     def toJSON(self):
         D = self.__dict__.copy()
-        D['_cloudset'] = D['_cloudset'].toJSON()
-        D['path'] = str(D['path'])
+        D["_cloudset"] = D["_cloudset"].toJSON()
+        D["path"] = str(D["path"])
         # FIXME: make LLSsettings object serializeable
-        D.pop('settings', None)
+        D.pop("settings", None)
         # D['settings']['camera']['roi'] = self.settings.camera.roi.tolist()
         # D['settings']['date'] = self.settings.date.isoformat()
-        D['date'] = D['date'].isoformat()
-        D.pop('data', None)
-        D.pop('deskewed', None)
+        D["date"] = D["date"].isoformat()
+        D.pop("data", None)
+        D.pop("deskewed", None)
         return json.dumps(D)
 
     def fromJSON(self, Jstring):
         D = json.loads(Jstring)
         for k, v in D.items():
             setattr(self, k, v)
-        super(RegDir, self).__init__(D['path'])
-        self._cloudset = CloudSet().fromJSON(D['_cloudset'])
+        super(RegDir, self).__init__(D["path"])
+        self._cloudset = CloudSet().fromJSON(D["_cloudset"])
         return self
 
     def _deskewed(self, dz=None, dx=None, angle=None):
-        if 'deskewed' in dir(self):
+        if "deskewed" in dir(self):
             return self.deskewed
         else:
             dx = dx if dx else self.parameters.dx
             dz = dz if dz else self.parameters.dz
             angle = angle if angle else self.parameters.angle
             if (not dx) or (not dz) or (not angle):
-                raise ValueError('Cannot deskew without dx, dz & angle')
+                raise ValueError("Cannot deskew without dx, dz & angle")
 
             self.deskewed = [deskewGPU(i, dz, dx, angle) for i in self.data]
             return self.deskewed
 
     def cloudset(self, redo=False, tojson=False):
         """ actually generates the fiducial cloud """
-        if '_cloudset' in dir(self) and not redo:
+        if "_cloudset" in dir(self) and not redo:
             return self._cloudset
-        self._cloudset = CloudSet(self._deskewed() if self.deskew else self.data,
-                                  labels=self.waves, dx=self.parameters.dx,
-                                  dz=self.parameters.dzFinal, mincount=self.mincount,
-                                  threshold=self.threshold)
+        self._cloudset = CloudSet(
+            self._deskewed() if self.deskew else self.data,
+            labels=self.waves,
+            dx=self.parameters.dx,
+            dz=self.parameters.dzFinal,
+            mincount=self.mincount,
+            threshold=self.threshold,
+        )
         if tojson:
-            with open(str(self.path.joinpath('cloud.json')), 'w') as outfile:
+            with open(str(self.path.joinpath("cloud.json")), "w") as outfile:
                 json.dump(self.toJSON(), outfile)
         return self._cloudset
 
@@ -1363,13 +1507,12 @@ class RegDir(LLSdir):
         """write all of the tforms for this cloudset to file"""
 
         if not os.path.isdir(outdir):
-            raise FileNotFoundError('Directory does not exist: {}'.format(outdir))
+            raise FileNotFoundError("Directory does not exist: {}".format(outdir))
 
         class npEncoder(json.JSONEncoder):
-
             def fixedString(self, obj):
                 numel = len(obj)
-                form = '[' + ','.join(['{:14.10f}'] * numel) + ']'
+                form = "[" + ",".join(["{:14.10f}"] * numel) + "]"
                 return form.format(*obj)
 
             def default(self, obj):
@@ -1384,32 +1527,33 @@ class RegDir(LLSdir):
 
         tforms = self.cloudset().get_all_tforms(refs=refs, **kwargs)
         outdict = {
-            'path': str(self.path),
-            'dx': self.parameters.dx,
-            'dz': self.parameters.dzFinal,
-            'z_motion': self.parameters.z_motion,
+            "path": str(self.path),
+            "dx": self.parameters.dx,
+            "dz": self.parameters.dzFinal,
+            "z_motion": self.parameters.z_motion,
             # 'refs': refs,
             # 'moving': list(set([t['moving'] for t in tforms])),
             # 'modes': list(set([t['mode'] for t in tforms])),
-            'tforms': tforms,
+            "tforms": tforms,
         }
         try:
-            outdict['date'] = self.date.strftime('%Y/%m/%d-%H:%M'),
+            outdict["date"] = (self.date.strftime("%Y/%m/%d-%H:%M"),)
         except AttributeError:
             pass
         outstring = json.dumps(outdict, cls=npEncoder, indent=2)
-        outstring = outstring.replace('"[', ' [').replace(']"', ']')
+        outstring = outstring.replace('"[', " [").replace(']"', "]")
 
         if filename is None or not isinstance(filename, str):
-            filename = 'LLSreg_{}_{}.reg'.format(self.date.strftime('%y%m%d'),
-                "".join(['r'+str(w) for w in refs]))
+            filename = "LLSreg_{}_{}.reg".format(
+                self.date.strftime("%y%m%d"), "".join(["r" + str(w) for w in refs])
+            )
         outfile = os.path.join(outdir, filename)
-        with open(outfile, 'w') as file:
+        with open(outfile, "w") as file:
             file.write(outstring)
 
         return (outfile, outstring)
 
-    def get_tform(self, movingWave, refWave=488, mode='2step'):
+    def get_tform(self, movingWave, refWave=488, mode="2step"):
         return self.cloudset().tform(movingWave, refWave, mode)
 
 
@@ -1432,68 +1576,83 @@ def rename_iters(folder, splitpositions=True):
         files from different positions will be placed into subdirectories
     """
 
-    filelist = glob.glob(os.path.join(folder, '*Iter*stack*'))
+    filelist = glob.glob(os.path.join(folder, "*Iter*stack*"))
     if not filelist:
-        raise LLSpyError('No *Iter*stack* files found in {}'.format(folder))
+        raise LLSpyError("No *Iter*stack* files found in {}".format(folder))
     try:
-        iterset = set([int(f.split('Iter_')[1].split('_')[0]) for f in filelist])
-        chanset = set([int(f.split('_ch')[1].split('_')[0]) for f in filelist])
+        iterset = set([int(f.split("Iter_")[1].split("_")[0]) for f in filelist])
+        chanset = set([int(f.split("_ch")[1].split("_")[0]) for f in filelist])
     except ValueError:
-        raise LLSpyError('Failed to parse filenames to detect number of Iter_ files.'
-            'If this folder only has a single Iteration (not Iter_0, etc...), '
-            'it may be best not to try rename_iters...')
+        raise LLSpyError(
+            "Failed to parse filenames to detect number of Iter_ files."
+            "If this folder only has a single Iteration (not Iter_0, etc...), "
+            "it may be best not to try rename_iters..."
+        )
     except Exception:
-        raise LLSpyError('Failed to parse filenames to detect number of Iter_ files')
+        raise LLSpyError("Failed to parse filenames to detect number of Iter_ files")
 
     returndirs = []
     iterdict = {}
     nFilesPerChannel = []
     for it in iterset:
         iterdict[it] = {}
-        iterdict[it]['setfile'] = util.find_filepattern(folder, '*Iter_%s_*Settings.txt' % it)
+        iterdict[it]["setfile"] = util.find_filepattern(
+            folder, "*Iter_%s_*Settings.txt" % it
+        )
         # all the files from this Iter group
-        g = [f for f in filelist if 'Iter_%s_' % it in f]
+        g = [f for f in filelist if "Iter_%s_" % it in f]
         # tuple of nFiles in each channel in this group
-        nFilesPerChannel.append(tuple([len([f for f in g if 'ch%d' % d in f]) for d in chanset]))
-    nFPCset = set(nFilesPerChannel)  # e.g. {(4,4)}, if all positions had 4 timepoints and 2 channels
+        nFilesPerChannel.append(
+            tuple([len([f for f in g if "ch%d" % d in f]) for d in chanset])
+        )
+    nFPCset = set(
+        nFilesPerChannel
+    )  # e.g. {(4,4)}, if all positions had 4 timepoints and 2 channels
     if len(nFPCset) > 1:
-        raise LLSpyError('rename_iters function requires that each iteration has '
-            'the same number of tiffs')
+        raise LLSpyError(
+            "rename_iters function requires that each iteration has "
+            "the same number of tiffs"
+        )
     nPosSet = set(nFPCset.pop())  # e.g. {4}
     if len(nPosSet) > 1:
-        raise LLSpyError('rename_iters function requires that all channels '
-            'have the same number of tiffs')
+        raise LLSpyError(
+            "rename_iters function requires that all channels "
+            "have the same number of tiffs"
+        )
     nPositions = nPosSet.pop()  # e.g. 4
 
     changelist = []
     for it in iterset:
-        settingsFile = iterdict[it]['setfile']
+        settingsFile = iterdict[it]["setfile"]
         if not settingsFile:
             continue
         if nPositions > 1:
-            newname = re.sub(r"Iter_\d+", 'pos%02d' % it,
-                            os.path.basename(settingsFile))
+            newname = re.sub(
+                r"Iter_\d+", "pos%02d" % it, os.path.basename(settingsFile)
+            )
         else:
-            newname = re.sub(r"Iter_\d+", 'stack%04d' % it,
-                            os.path.basename(settingsFile))
+            newname = re.sub(
+                r"Iter_\d+", "stack%04d" % it, os.path.basename(settingsFile)
+            )
         os.rename(settingsFile, os.path.join(folder, newname))
         changelist.append((settingsFile, os.path.join(folder, newname)))
     for chan in chanset:
         t0 = [0] * nPositions
         for i in iterset:
-            flist = sorted([f for f in filelist
-                        if 'ch%s' % chan in f and 'Iter_%s_' % i in f])
+            flist = sorted(
+                [f for f in filelist if "ch%s" % chan in f and "Iter_%s_" % i in f]
+            )
             for pos in range(nPositions):
                 base = os.path.basename(flist[pos])
                 if i == 0:
-                    t0[pos] = int(base.split('msecAbs')[0].split('_')[-1])
-                newname = base.replace('stack0000', 'stack%04d' % i)
-                deltaT = int(base.split('msecAbs')[0].split('_')[-1]) - t0[pos]
-                newname = newname.replace('0000000msec_', '%07dmsec_' % deltaT)
+                    t0[pos] = int(base.split("msecAbs")[0].split("_")[-1])
+                newname = base.replace("stack0000", "stack%04d" % i)
+                deltaT = int(base.split("msecAbs")[0].split("_")[-1]) - t0[pos]
+                newname = newname.replace("0000000msec_", "%07dmsec_" % deltaT)
                 if nPositions > 1:
-                    newname = re.sub(r"Iter_\d+", 'pos%02d' % pos, newname)
+                    newname = re.sub(r"Iter_\d+", "pos%02d" % pos, newname)
                 else:
-                    newname = re.sub(r"_Iter_\d+", '', newname)
+                    newname = re.sub(r"_Iter_\d+", "", newname)
                 logger.info("renaming {} --> {}".format(base, newname))
                 os.rename(flist[pos], os.path.join(folder, newname))
                 changelist.append((flist[pos], os.path.join(folder, newname)))
@@ -1501,15 +1660,15 @@ def rename_iters(folder, splitpositions=True):
         # files from different positions will be placed into subdirectories
         pos = 0
         while True:
-            movelist = glob.glob(os.path.join(folder, '*pos%02d*' % pos))
+            movelist = glob.glob(os.path.join(folder, "*pos%02d*" % pos))
             if not len(movelist):
-                    break
-            basename = os.path.basename(movelist[0]).split('_pos')[0]
-            posfolder = os.path.join(folder, basename + '_pos%02d' % pos)
+                break
+            basename = os.path.basename(movelist[0]).split("_pos")[0]
+            posfolder = os.path.join(folder, basename + "_pos%02d" % pos)
             if not os.path.exists(posfolder):
-                    os.mkdir(posfolder)
-                    returndirs.append(posfolder)
-                    changelist.append((None, posfolder))
+                os.mkdir(posfolder)
+                returndirs.append(posfolder)
+                changelist.append((None, posfolder))
             for f in movelist:
                 os.rename(f, os.path.join(posfolder, os.path.basename(f)))
                 changelist.append((f, os.path.join(posfolder, os.path.basename(f))))
@@ -1517,7 +1676,7 @@ def rename_iters(folder, splitpositions=True):
     else:
         returndirs.append(folder)
     if len(changelist):
-        with open(os.path.join(folder, 'renaming_log.txt'), 'w') as f:
+        with open(os.path.join(folder, "renaming_log.txt"), "w") as f:
             json.dump(changelist, f)
 
     return returndirs
@@ -1526,7 +1685,7 @@ def rename_iters(folder, splitpositions=True):
 def undo_rename_iters(path, deletelog=True):
     logfile = path
     if os.path.isdir(path):
-        logfile = util.find_filepattern(path, 'renaming_log.txt')
+        logfile = util.find_filepattern(path, "renaming_log.txt")
     if not logfile or not os.path.isfile(logfile):
         logger.error("Could not find renaming_log to undo_rename_iters")
         return
@@ -1569,14 +1728,15 @@ def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
     stackzeros = []
     for folder in folderlist:
         try:
-            firstfile = glob.glob(os.path.join(folder, '*ch0*stack0000*'))[0]
-            basename = os.path.basename(firstfile).split('_ch0')[0]
+            firstfile = glob.glob(os.path.join(folder, "*ch0*stack0000*"))[0]
+            basename = os.path.basename(firstfile).split("_ch0")[0]
             stackzeros.append([folder, firstfile, basename])
         except Exception:
             pass
     # sort by absolute timestamp
-    tzeros = sorted([[int(t[1].split('msecAbs')[0].split('_')[-1]), t[0], t[2]]
-                    for t in stackzeros])
+    tzeros = sorted(
+        [[int(t[1].split("msecAbs")[0].split("_")[-1]), t[0], t[2]] for t in stackzeros]
+    )
 
     # get relative time offset
     for t in tzeros:
@@ -1591,8 +1751,8 @@ def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
 
     channelcounts = [0] * 6
     for fi in sorted(os.listdir(t0path)):
-        if fi.endswith('.tif'):
-            chan = int(fi.split('_ch')[1].split('_')[0])
+        if fi.endswith(".tif"):
+            chan = int(fi.split("_ch")[1].split("_")[0])
             channelcounts[chan] += 1
     tzeros[0].append(list(channelcounts))
 
@@ -1602,16 +1762,16 @@ def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
         deltaT = t[3]
         thisfoldercounts = [0] * 6
         for fi in filelist:
-            if fi.endswith('.tif'):
-                chan = int(fi.split('_ch')[1].split('_')[0])
-                reltime = int(fi.split('msec_')[0].split('_')[-1])
+            if fi.endswith(".tif"):
+                chan = int(fi.split("_ch")[1].split("_")[0])
+                reltime = int(fi.split("msec_")[0].split("_")[-1])
                 # change relative timestamp
-                newname = re.sub(
-                    r"\d+msec_", '%07dmsec_' % int(reltime + deltaT), fi)
+                newname = re.sub(r"\d+msec_", "%07dmsec_" % int(reltime + deltaT), fi)
                 newname = newname.replace(tbase, basename)
                 # change stack number
                 newname = re.sub(
-                    r"_stack\d+", '_stack%04d' % channelcounts[chan], newname)
+                    r"_stack\d+", "_stack%04d" % channelcounts[chan], newname
+                )
                 os.rename(os.path.join(t[1], fi), os.path.join(t0path, newname))
                 channelcounts[chan] += 1
                 thisfoldercounts[chan] += 1
@@ -1620,7 +1780,5 @@ def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
         t.append(thisfoldercounts)
         os.rmdir(t[1])
 
-    with open(os.path.join(t0path, 'concatenationRecord.txt'), 'w') as outfile:
+    with open(os.path.join(t0path, "concatenationRecord.txt"), "w") as outfile:
         json.dump(tzeros, outfile)
-
-

@@ -4,6 +4,7 @@ class LLSpyError(Exception):
     of LLSpy. A string containing an error message should be supplied
     when raising this exception.
     """
+
     pass
 
 
@@ -13,6 +14,7 @@ class ParametersError(LLSpyError):
     or processing. A string containing an error message should be supplied
     when raising this exception.
     """
+
     pass
 
 
@@ -21,6 +23,7 @@ class CompressionError(LLSpyError):
     Exception indicating something went wrong with compression or decompression
     of an LLSdir.
     """
+
     pass
 
 
@@ -30,6 +33,7 @@ class CUDAbinException(LLSpyError):
     of cudaDeconDeskew. A string containing an error message should be supplied
     when raising this exception.
     """
+
     pass
 
 
@@ -54,6 +58,7 @@ class LibCUDAException(LLSpyError):
     """
     Error indicating something wrong with libcudaDeconv.
     """
+
     pass
 
 

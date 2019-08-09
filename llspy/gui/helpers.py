@@ -20,13 +20,13 @@ def newWorkerThread(workerClass, *args, **kwargs):
     thread.finished.connect(thread.deleteLater)
 
     # connect dict from calling object to worker signals
-    worker_connections = kwargs.get('workerConnect', None)
+    worker_connections = kwargs.get("workerConnect", None)
     if worker_connections:
         [getattr(worker, key).connect(val) for key, val in worker_connections.items()]
     # optionally, can supply onfinish callable when thread finishes
-    if kwargs.get('onfinish', None):
-        thread.finished.connect(kwargs.get('onfinish'))
-    if kwargs.get('start', False) is True:
+    if kwargs.get("onfinish", None):
+        thread.finished.connect(kwargs.get("onfinish"))
+    if kwargs.get("start", False) is True:
         thread.start()  # usually need to connect stuff before starting
     return worker, thread
 
@@ -54,7 +54,9 @@ def wait_for_folder_finished(path, delay=0.1):
         # check to see if the file is the same size as it was 30 ms ago
         # if so... we assume it is done being written
         size_last = size_now
-        size_now = sum(os.path.getsize(f) for f in os.listdir(path) if os.path.isfile(f))
+        size_now = sum(
+            os.path.getsize(f) for f in os.listdir(path) if os.path.isfile(f)
+        )
         if size_now == size_last and size_now > 0:
             break
         time.sleep(delay)
@@ -65,7 +67,7 @@ def byteArrayToString(bytearr):
     if sys.version_info.major < 3:
         return str(bytearr)
     else:
-        return str(bytearr, encoding='utf-8')
+        return str(bytearr, encoding="utf-8")
 
 
 def shortname(path, parents=2):
@@ -79,10 +81,10 @@ def string_to_iterable(string):
     >>> string_to_iterable('0,3,5-10,15-30-3,40')
     [0,3,5,6,7,8,9,10,15,18,21,24,27,30,40]
     """
-    if re.search('[^\d^,^-]', string) is not None:
-        raise ValueError('Iterable string must contain only digits, commas, and dashes')
+    if re.search("[^\d^,^-]", string) is not None:
+        raise ValueError("Iterable string must contain only digits, commas, and dashes")
     it = []
-    splits = [tuple(s.split('-')) for s in string.split(',')]
+    splits = [tuple(s.split("-")) for s in string.split(",")]
     for item in splits:
         if len(item) == 1:
             it.append(int(item[0]))
@@ -99,8 +101,8 @@ def guisave(widget, settings):
     print("Saving settings: {}".format(settings.fileName()))
     # Save geometry
     selfName = widget.objectName()
-    settings.setValue(selfName + '_size', widget.size())
-    settings.setValue(selfName + '_pos', widget.pos())
+    settings.setValue(selfName + "_size", widget.size())
+    settings.setValue(selfName + "_pos", widget.pos())
     for name, obj in inspect.getmembers(widget):
         # if type(obj) is QComboBox:  # this works similar to isinstance, but missed some field... not sure why?
         value = None
@@ -109,8 +111,9 @@ def guisave(widget, settings):
             value = obj.itemText(index)  # get the text for current index
         if isinstance(obj, QtWidgets.QLineEdit):
             value = obj.text()
-        if isinstance(obj,
-                      (QtWidgets.QCheckBox, QtWidgets.QRadioButton, QtWidgets.QGroupBox)):
+        if isinstance(
+            obj, (QtWidgets.QCheckBox, QtWidgets.QRadioButton, QtWidgets.QGroupBox)
+        ):
             value = obj.isChecked()
         if isinstance(obj, (QtWidgets.QSpinBox, QtWidgets.QSlider)):
             value = obj.value()
@@ -123,16 +126,18 @@ def guirestore(widget, settings, default):
     print("Restoring settings: {}".format(settings.fileName()))
     # Restore geometry
     selfName = widget.objectName()
-    if 'LLSpyDefaults' not in settings.fileName():
-        widget.resize(settings.value(selfName + '_size', QtCore.QSize(500, 500)))
-        widget.move(settings.value(selfName + '_pos', QtCore.QPoint(60, 60)))
+    if "LLSpyDefaults" not in settings.fileName():
+        widget.resize(settings.value(selfName + "_size", QtCore.QSize(500, 500)))
+        widget.move(settings.value(selfName + "_pos", QtCore.QPoint(60, 60)))
     for name, obj in inspect.getmembers(widget):
         try:
             if isinstance(obj, QtWidgets.QComboBox):
                 value = settings.value(name, default.value(name), type=str)
                 if value == "":
                     continue
-                index = obj.findText(value)  # get the corresponding index for specified string in combobox
+                index = obj.findText(
+                    value
+                )  # get the corresponding index for specified string in combobox
                 if index == -1:  # add to list if not found
                     obj.insertItems(0, [value])
                     index = obj.findText(value)
@@ -142,8 +147,9 @@ def guirestore(widget, settings, default):
             if isinstance(obj, QtWidgets.QLineEdit):
                 value = settings.value(name, default.value(name), type=str)
                 obj.setText(value)
-            if isinstance(obj,
-                          (QtWidgets.QCheckBox, QtWidgets.QRadioButton, QtWidgets.QGroupBox)):
+            if isinstance(
+                obj, (QtWidgets.QCheckBox, QtWidgets.QRadioButton, QtWidgets.QGroupBox)
+            ):
                 value = settings.value(name, default.value(name), type=bool)
                 if value is not None:
                     obj.setChecked(value)
@@ -156,14 +162,14 @@ def guirestore(widget, settings, default):
                 if value is not None:
                     obj.setValue(value)
         except Exception:
-            logging.warn('Unable to restore settings for object: {}'.format(name))
+            logging.warn("Unable to restore settings for object: {}".format(name))
 
 
 def reveal(path):
     proc = QtCore.QProcess()
-    if sys.platform.startswith('darwin'):
-        proc.startDetached('open', ['--', path])
-    elif sys.platform.startswith('linux'):
-        proc.startDetached('xdg-open', ['--', path])
-    elif sys.platform.startswith('win32'):
-        proc.startDetached('explorer', [path.replace('/', '\\')])
+    if sys.platform.startswith("darwin"):
+        proc.startDetached("open", ["--", path])
+    elif sys.platform.startswith("linux"):
+        proc.startDetached("xdg-open", ["--", path])
+    elif sys.platform.startswith("win32"):
+        proc.startDetached("explorer", [path.replace("/", "\\")])

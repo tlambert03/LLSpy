@@ -9,6 +9,7 @@ from scipy.optimize import least_squares
 from numba import jit
 import warnings
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,14 +20,18 @@ def get_channel_list(folder):
     stack PRE (see below) came immediately before the corresponding plane in
     stack POST.
     """
-    ch0list = sorted(glob.glob(os.path.join(folder, '*_ch0_*tif')))
-    ch0list = [f for f in ch0list if 'dark' not in f]  # remove dark images
-    ch1list = sorted(glob.glob(os.path.join(folder, '*_ch1_*tif')))
-    ch1list = [f for f in ch1list if 'dark' not in f]  # remove dark images
-    assert len(ch0list) == len(ch1list), 'The number of stacks in ch0 and ch1 must be the same'
+    ch0list = sorted(glob.glob(os.path.join(folder, "*_ch0_*tif")))
+    ch0list = [f for f in ch0list if "dark" not in f]  # remove dark images
+    ch1list = sorted(glob.glob(os.path.join(folder, "*_ch1_*tif")))
+    ch1list = [f for f in ch1list if "dark" not in f]  # remove dark images
+    assert len(ch0list) == len(
+        ch1list
+    ), "The number of stacks in ch0 and ch1 must be the same"
 
     shapes = [tf.TiffFile(f).series[0].shape for f in (ch0list + ch1list)]
-    assert len(set(shapes)) == 1, 'All stacks must have the same number of pixels and planes'
+    assert (
+        len(set(shapes)) == 1
+    ), "All stacks must have the same number of pixels and planes"
 
     return ch0list, ch1list
 
@@ -42,19 +47,19 @@ def combine_stacks(ch0, ch1, darkavg):
     pre = np.zeros(shp, dtype=np.float)
     post = np.zeros(shp, dtype=np.float)
     for n in range(len(ch0)):
-        pre[n*nZ:n*nZ+nZ, :, :] = tf.imread(ch0[n]).astype(np.float) - darkavg
-        post[n*nZ:n*nZ+nZ, :, :] = tf.imread(ch1[n]).astype(np.float) - darkavg
+        pre[n * nZ : n * nZ + nZ, :, :] = tf.imread(ch0[n]).astype(np.float) - darkavg
+        post[n * nZ : n * nZ + nZ, :, :] = tf.imread(ch1[n]).astype(np.float) - darkavg
     return pre, post
 
 
 @jit(nopython=True, nogil=True)
 def fun(p, x, y):
-    ''' single phase exponential association curve '''
+    """ single phase exponential association curve """
     return p[0] * (1 - np.exp(-p[1] * x)) - y
 
 
 def fitstickypixel(xdata, ydata, i, j):
-    ''' fit data to curve, return optimal parameters from function '''
+    """ fit data to curve, return optimal parameters from function """
     p0 = np.array([100, 0.0019])  # starting guess
     bounds = ([0, 0], [800, 0.01])  # min and max bounds
     res = least_squares(fun, p0, args=(xdata, ydata), bounds=bounds)
@@ -67,17 +72,19 @@ def splat_fit(args):
 
 
 def parallel_fit(xdata, ydata, callback=None):
-    ''' parallelize fitting and return 3D numpy array where...
+    """ parallelize fitting and return 3D numpy array where...
 
     first plane = paramater a = plateau of exponential association
     second plane = parameter b = rate of exponential association
-    '''
+    """
     pool = multiprocessing.Pool()
     M = xdata.shape[1]
     N = xdata.shape[2]
-    imap_iter = pool.imap(splat_fit,
-        ((xdata[:, i, j], ydata[:, i, j], i, j)
-            for i in range(M) for j in range(N)), chunksize=8)
+    imap_iter = pool.imap(
+        splat_fit,
+        ((xdata[:, i, j], ydata[:, i, j], i, j) for i in range(M) for j in range(N)),
+        chunksize=8,
+    )
 
     out = np.zeros((2, M, N), dtype=np.float32)
     for i in imap_iter:
@@ -89,7 +96,7 @@ def parallel_fit(xdata, ydata, callback=None):
 
 
 def process_dark_images(folder, callback=None, callback2=None):
-    darklist = sorted(glob.glob(os.path.join(folder, '*dark*.tif')))
+    darklist = sorted(glob.glob(os.path.join(folder, "*dark*.tif")))
 
     # TODO: are these two loops necessary? seems like it should
     # be possible in a single loop
@@ -107,8 +114,9 @@ def process_dark_images(folder, callback=None, callback2=None):
     if len(set(shapes[:, 1])) + len(set(shapes[:, 2])) > 2:
         raise ValueError("All images must have same XY shape")
 
-    darkstack = np.zeros((int(shapes[:, 0].sum()), int(shapes[0, 1]),
-                          int(shapes[0, 2])), dtype=np.uint16)
+    darkstack = np.zeros(
+        (int(shapes[:, 0].sum()), int(shapes[0, 1]), int(shapes[0, 2])), dtype=np.uint16
+    )
 
     # then load the data
     plane = 0
@@ -117,7 +125,7 @@ def process_dark_images(folder, callback=None, callback2=None):
         for d in darklist:
             t = tf.imread(d)
             nz = t.shape[0]
-            darkstack[plane:plane+nz, :, :] = t
+            darkstack[plane : plane + nz, :, :] = t
             plane += nz
             if callback is not None:
                 callback(1)
@@ -155,7 +163,7 @@ def process_bright_images(folder, darkavg, darkstd, callback=None, save=True):
 
     results = parallel_fit(pre, post, callback)
     results = np.vstack((results, darkavg[None, :, :], darkstd[None, :, :]))
-    results = util.reorderstack(results, 'zyx').astype(np.float32)
+    results = util.reorderstack(results, "zyx").astype(np.float32)
 
     if save:
         try:
@@ -163,24 +171,27 @@ def process_bright_images(folder, darkavg, darkstd, callback=None, save=True):
             outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
                 E.settings.camera.serial,
                 "-".join([str(i) for i in E.settings.camera.roi]),
-                E.date.strftime('%Y%m%d'))
+                E.date.strftime("%Y%m%d"),
+            )
         except Exception:
             from datetime import datetime
-            outname = "FlashParam_roi{}_date{}.tif".format(
-                "-".join([0]*4),
-                datetime.now().strftime('%Y%m%d'))
 
-        tf.imsave(os.path.join(folder, outname), results, imagej=True,
+            outname = "FlashParam_roi{}_date{}.tif".format(
+                "-".join([0] * 4), datetime.now().strftime("%Y%m%d")
+            )
+
+        tf.imsave(
+            os.path.join(folder, outname),
+            results,
+            imagej=True,
             resolution=(1 / E.parameters.dx, 1 / E.parameters.dx),
-            metadata={
-                'unit': 'micron',
-                'hyperstack': 'true',
-                'mode': 'composite'})
+            metadata={"unit": "micron", "hyperstack": "true", "mode": "composite"},
+        )
 
     return (os.path.join(folder, outname), results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # this script assumes you have aquired a series of 2-channel zstacks
     # (not actually a stack,  turn off Z galvo,  and Z and Sample Piezos
@@ -198,6 +209,7 @@ if __name__ == '__main__':
     # this is the folder with all of the stacks
 
     import sys
+
     if len(sys.argv) > 1:
         folder = sys.argv[1]
     else:

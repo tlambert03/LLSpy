@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
@@ -118,36 +119,50 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.textEdit.setHtml(_translate("Dialog", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:12pt; font-weight:400; font-style:normal;\" bgcolor=\"#ececec\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:14pt; font-weight:600;\">Flash4.0 Artifact Explanation</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;\"><br /></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:14pt;\">For a full explanation of the need for this correction, please read the docs:</span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:13pt;\">http://llspy.readthedocs.io/en/latest/camera.html</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;\"><br /></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:13pt; font-style:italic;\">Use this script to generate the calibration file that holds the parameters of the regression describing the predicted residual intensity in a given pixel as a function of the intensity of the previous image.  This can be used to yield a corrected image, as shown in the image on the right.</span></p></body></html>"))
-        self.textEdit_2.setHtml(_translate("Dialog", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;\" bgcolor=\"#ececec\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:14pt; font-weight:600;\">Image Acquisition Procedure</span></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">This script assumes you have aquired a series of 2-channel Zstacks (not actually a 3D stack: set Z galvo range and Z and Sample Piezo range to zero). The first channel should be &quot;bright&quot; (many photons hitting the chip) and even like a flatfield image (such as 488 laser sheet exciting FITC) and the second channel is a &quot;dark&quot; image (I use another wavelength channel with the laser off.  Collect two ~100-plane Z stacks for many different intensities (laser power) in the &quot;bright channel&quot;: start at very low power (0.1% laser) and gradually acquire stacks at higher power.  Due to the exponential relationship of the residual electron effect, it\'s particularly important to get a lot of low-powered stacks: 1%, 2%, 3% etc... then after 10% you can begin to take bigger steps. (Of course, the exact laser powers will depend on the power and efficiency of your system.).  More here: http://llspy.readthedocs.io/en/latest/camera.html</p></body></html>"))
+        self.textEdit.setHtml(
+            _translate(
+                "Dialog",
+                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
+                "p, li { white-space: pre-wrap; }\n"
+                '</style></head><body style=" font-family:\'.SF NS Text\'; font-size:12pt; font-weight:400; font-style:normal;" bgcolor="#ececec">\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:14pt; font-weight:600;">Flash4.0 Artifact Explanation</span></p>\n'
+                '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;"><br /></p>\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:14pt;">For a full explanation of the need for this correction, please read the docs:</span></p>\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:13pt;">http://llspy.readthedocs.io/en/latest/camera.html</span></p>\n'
+                '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;"><br /></p>\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:13pt; font-style:italic;">Use this script to generate the calibration file that holds the parameters of the regression describing the predicted residual intensity in a given pixel as a function of the intensity of the previous image.  This can be used to yield a corrected image, as shown in the image on the right.</span></p></body></html>',
+            )
+        )
+        self.textEdit_2.setHtml(
+            _translate(
+                "Dialog",
+                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
+                "p, li { white-space: pre-wrap; }\n"
+                '</style></head><body style=" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;" bgcolor="#ececec">\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:14pt; font-weight:600;">Image Acquisition Procedure</span></p>\n'
+                '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><br /></p>\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">This script assumes you have aquired a series of 2-channel Zstacks (not actually a 3D stack: set Z galvo range and Z and Sample Piezo range to zero). The first channel should be &quot;bright&quot; (many photons hitting the chip) and even like a flatfield image (such as 488 laser sheet exciting FITC) and the second channel is a &quot;dark&quot; image (I use another wavelength channel with the laser off.  Collect two ~100-plane Z stacks for many different intensities (laser power) in the &quot;bright channel&quot;: start at very low power (0.1% laser) and gradually acquire stacks at higher power.  Due to the exponential relationship of the residual electron effect, it\'s particularly important to get a lot of low-powered stacks: 1%, 2%, 3% etc... then after 10% you can begin to take bigger steps. (Of course, the exact laser powers will depend on the power and efficiency of your system.).  More here: http://llspy.readthedocs.io/en/latest/camera.html</p></body></html>',
+            )
+        )
         self.label.setText(_translate("Dialog", "Image Folder:"))
         self.selectFolderPushButton.setText(_translate("Dialog", "Select Folder"))
         self.DarkAVGPushButton.setText(_translate("Dialog", "Chose Dark Avg"))
         self.label_3.setText(_translate("Dialog", "Dark AVG (optional):"))
         self.label_4.setText(_translate("Dialog", "Dark STD (optional):"))
         self.DarkSTDPushButton.setText(_translate("Dialog", "Chose Dark STD"))
-        self.textEdit_4.setHtml(_translate("Dialog", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;\" bgcolor=\"#ececec\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">Dark AVG is an average projection of many (&gt;20,000) images with no light delivered to the camera.  Dark STD is a standard deviation projection of the same images.  By default, the program will generate an offset map (Avg projection) and noise map (StdDev Projection) from all images in the folder with the word &quot;dark&quot; . Optionally, these two images can be calculated elsewhere and provided to the program in the lines above. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-style:italic;\">See docs for more info: http://llspy.readthedocs.io/en/latest/camera.html</span></p></body></html>"))
+        self.textEdit_4.setHtml(
+            _translate(
+                "Dialog",
+                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
+                "p, li { white-space: pre-wrap; }\n"
+                '</style></head><body style=" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;" bgcolor="#ececec">\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-style:italic;">Dark AVG is an average projection of many (&gt;20,000) images with no light delivered to the camera.  Dark STD is a standard deviation projection of the same images.  By default, the program will generate an offset map (Avg projection) and noise map (StdDev Projection) from all images in the folder with the word &quot;dark&quot; . Optionally, these two images can be calculated elsewhere and provided to the program in the lines above. </span></p>\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-style:italic;">See docs for more info: http://llspy.readthedocs.io/en/latest/camera.html</span></p></body></html>',
+            )
+        )
         self.runButton.setText(_translate("Dialog", "Run"))
         self.abortButton.setText(_translate("Dialog", "Abort"))
         self.statusLabel.setText(_translate("Dialog", "TextLabel"))
-
