@@ -129,12 +129,13 @@ except Exception:
 sentry_sdk.init(
     "https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111",
     release=llspy.__version__,
-    include_paths=["llspy", "spimagine", "gputools"],
+    in_app_include=["llspy", "spimagine", "gputools"],
     environment=env,
-    tags=tags,
 )
 with sentry_sdk.configure_scope() as scope:
     scope.user = {"id": uuid.getnode(), "ip_address": ip}
+    for key, value in tags.items():
+        scope.set_tag(key, value)
 
 ignore_logger("OpenGL.GL.shaders")
 ignore_logger("PIL.PngImagePlugin")
