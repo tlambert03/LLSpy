@@ -20,7 +20,7 @@ dependencies:
   - pyqt >=5.9.2
   - pyopencl
   - spimagine >=0.2.6
-  - raven
+  - sentry-sdk
   - llspy-slm
   - llspylibs >=0.1.3
   - parse

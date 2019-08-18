@@ -30,7 +30,7 @@ class Mock(MagicMock):
 
 MOCK_MODULES = ['gputools', 'spimagine', 'pyopencl', 'pyopengl', 'numpy',
                 'matplotlib', 'scipy', 'scipy.ndimage.filters', 'scipy.ndimage',
-                'scipy.stats', 'tifffile', 'PyQt5', 'raven', 'watchdog',
+                'scipy.stats', 'tifffile', 'PyQt5', 'sentry-sdk', 'watchdog',
                 'numba', 'click', 'voluptuous', 'voluptuous.humanize',
                 'scipy.ndimage.interpolation', 'matplotlib.pyplot']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)

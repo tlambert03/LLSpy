@@ -17,5 +17,5 @@ dependencies:
   - pyqt
   - pyopencl
   - spimagine
-  - raven
+  - sentry-sdk
   - click

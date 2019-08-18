@@ -49,7 +49,7 @@ requirements:
     - configparser # [py2k]
     - pigz
     - lbzip2 # [not win]
-    - raven >=6.8.0
+    - sentry-sdk
     - llspy-slm
 
 test:

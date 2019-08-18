@@ -1,7 +1,8 @@
 from llspy import schema
 from llspy.cudabinwrapper import gpulist, CUDAbinException
 from PyQt5 import QtCore
-from raven import Client, fetch_git_sha, fetch_package_version, breadcrumbs
+import sentry_sdk
+from sentry_sdk.integrations.logging import ignore_logger
 import traceback
 import llspy
 import sys
@@ -26,6 +27,69 @@ if hasattr(sys, "_MEIPASS"):
     env = "pyinstaller"
 elif "CONDA_PREFIX" in os.environ:
     env = "conda"
+
+
+def fetch_package_version(dist_name):
+    """
+    >>> fetch_package_version('sentry')
+    """
+    try:
+        # Importing pkg_resources can be slow, so only import it
+        # if we need it.
+        import pkg_resources
+    except ImportError:
+        # pkg_resource is not available on Google App Engine
+        raise NotImplementedError(
+            "pkg_resources is not available " "on this Python install"
+        )
+    dist = pkg_resources.get_distribution(dist_name)
+    return dist.version
+
+
+def fetch_git_sha(path, head=None):
+    """
+    >>> fetch_git_sha(os.path.dirname(__file__))
+    """
+    if not head:
+        head_path = os.path.join(path, ".git", "HEAD")
+        if not os.path.exists(head_path):
+            raise Exception("Cannot identify HEAD for git repository at %s" % (path,))
+
+        with open(head_path, "r") as fp:
+            head = str(fp.read()).strip()
+
+        if head.startswith("ref: "):
+            head = head[5:]
+            revision_file = os.path.join(path, ".git", *head.split("/"))
+        else:
+            return head
+    else:
+        revision_file = os.path.join(path, ".git", "refs", "heads", head)
+
+    if not os.path.exists(revision_file):
+        if not os.path.exists(os.path.join(path, ".git")):
+            raise Exception(
+                "%s does not seem to be the root of a git repository" % (path,)
+            )
+
+        packed_file = os.path.join(path, ".git", "packed-refs")
+        if os.path.exists(packed_file):
+            with open(packed_file) as fh:
+                for line in fh:
+                    line = line.rstrip()
+                    if line and line[:1] not in ("#", "^"):
+                        try:
+                            revision, ref = line.split(" ", 1)
+                        except ValueError:
+                            continue
+                        if ref == head:
+                            return str(revision)
+
+        raise Exception('Unable to find ref to head "%s" in repository' % (head,))
+
+    with open(revision_file) as fh:
+        return str(fh.read()).strip()
+
 
 try:
     tags["revision"] = fetch_git_sha(
@@ -62,25 +126,18 @@ try:
 except Exception:
     pass
 
-client = Client(
+sentry_sdk.init(
     "https://95509a56f3a745cea2cd1d782d547916:e0dfd1659afc4eec83169b7c9bf66e33@sentry.io/221111",
     release=llspy.__version__,
     include_paths=["llspy", "spimagine", "gputools"],
     environment=env,
     tags=tags,
 )
-client.context.merge(
-    {
-        "user": {
-            "id": uuid.getnode(),
-            # 'email': 'example@example.com',
-            # 'username': 'uname',
-            "ip_address": ip,
-        }
-    }
-)
-breadcrumbs.ignore_logger("OpenGL.GL.shaders")
-breadcrumbs.ignore_logger("PIL.PngImagePlugin")
+with sentry_sdk.configure_scope() as scope:
+    scope.user = {"id": uuid.getnode(), "ip_address": ip}
+
+ignore_logger("OpenGL.GL.shaders")
+ignore_logger("PIL.PngImagePlugin")
 
 
 def camel2spaces(string):

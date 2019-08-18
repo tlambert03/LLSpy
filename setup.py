@@ -96,7 +96,7 @@ setup(
         'matplotlib',
         'spimagine',
         'gputools',
-        'raven',
+        'sentry-sdk',
     ],
     entry_points={
             'console_scripts': [
