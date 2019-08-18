@@ -99,9 +99,9 @@ setup(
         'sentry-sdk',
     ],
     entry_points={
-            'console_scripts': [
-                'lls = llspy.bin.llspy_cli:cli',
-                'lls-gui = llspy.bin.llspy_gui:main'
-            ],
+        'console_scripts': [
+            'lls = llspy.bin.llspy_cli:cli',
+            'lls-gui = llspy.bin.llspy_gui:main'
+        ],
     },
 )

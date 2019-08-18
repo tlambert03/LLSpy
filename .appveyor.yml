@@ -9,13 +9,9 @@ environment:
     - TARGET_ARCH: "x64"
       CONDA_PY: "36"
       CONDA_INSTALL_LOCN: "C:\\Miniconda36-x64"
-    # - TARGET_ARCH: "x64"
-    #   CONDA_PY: "35"
-    #   CONDA_INSTALL_LOCN: "C:\\Miniconda35-x64"
-    # - TARGET_ARCH: "x64"
-    #   CONDA_PY: "27"
-    #   CONDA_INSTALL_LOCN: "C:\\Miniconda-x64"
-
+    - TARGET_ARCH: "x64"
+      CONDA_PY: "37"
+      CONDA_INSTALL_LOCN: "C:\\Miniconda37-x64"
 artifacts:
     # Store built conda packages as artifacts
     - path: 'conda_packages\*.bz2'
@@ -67,7 +63,7 @@ build: off
 test_script:
     - cmd: conda build conda.recipe --py %CONDA_PY% --output >outname.txt
     #- cmd: set /p OUTNAME=<outname.txt
-    - cmd: conda build conda.recipe --py %CONDA_PY%
+    - cmd: conda build -c conda-forge -c talley conda.recipe --py %CONDA_PY%
     # copy any newly created conda packages into the conda_packages dir
     - cmd: mkdir conda_packages
     # make any conda packages created available as build artifacts in AppVeyor
