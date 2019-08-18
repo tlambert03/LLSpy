@@ -42,7 +42,7 @@ requirements:
     - click >=6.7
     - parse ==1.8.2
     - matplotlib >=2.1.1
-    - spimagine >=0.2.6
+    - spimagine >=0.2.6 # [not win]
     - tar ==1.29 # [not win]
     - llspylibs >=0.2.0
     - pathlib2 # [py2k]
