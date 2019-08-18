@@ -47,7 +47,7 @@ requirements:
     - llspylibs >=0.2.0
     - pathlib2 # [py2k]
     - configparser # [py2k]
-    - pigz # [py<=36]
+    - pigz # [not win]
     - lbzip2 # [not win]
     - sentry-sdk
     - llspy-slm
