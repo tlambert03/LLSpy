@@ -49,12 +49,13 @@ install:
 
     # Use the pre-installed Miniconda for the desired arch
     - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
+    - cmd: conda config --set always_yes yes --set changeps1 no
+    - cmd: appveyor-retry conda install conda-build anaconda-client
+    - cmd: conda update -q conda
+    - cmd: conda config --add channels anaconda
     - cmd: conda config --add channels conda-forge
     - cmd: conda config --add channels talley
     - cmd: conda config --set show_channel_urls true
-    - cmd: appveyor-retry conda install --yes --quiet conda=4.4
-    - cmd: appveyor-retry conda install --yes --quiet -c defaults anaconda-client
-    - cmd: appveyor-retry conda install --yes --quiet -c defaults conda-build=3.0.25
     - cmd: conda build --version
 
 # Skip .NET project specific build phase.
