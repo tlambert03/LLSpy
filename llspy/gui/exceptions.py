@@ -106,7 +106,7 @@ else:
     tags["os"] = "{}".format(platform.linux_distribution()[0])
 
 try:
-    tags["gpu"] = gpulist()
+    tags["gpu"] = ", ".join(gpulist())
 except CUDAbinException:
     tags["gpu"] = "no_cudabin"
     logger.error("CUDAbinException: Could not get gpulist")
