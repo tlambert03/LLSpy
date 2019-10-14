@@ -510,7 +510,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         channelCounts = []
         c = 0
         while True:
-            channelFiles = sorted(folder.glob("*ch{}_stack*MIP_{}.tif".format(c, axis)))
+            channelFiles = sorted(folder.glob("*ch{}_*MIP_{}.tif".format(c, axis)))
             if not len(channelFiles):
                 break  # no MIPs in this channel
                 # this assumes that there are no gaps in the channels (i.e. ch1, ch3 but not 2)
