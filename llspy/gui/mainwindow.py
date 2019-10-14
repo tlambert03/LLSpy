@@ -1673,7 +1673,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 else "none"
             ),
             "otfDir": self.otfFolderLineEdit.text()
-            if self.otfFolderLineEdit.text() is not ""
+            if self.otfFolderLineEdit.text() != ""
             else None,
             "compressRaw": self.compressRawCheckBox.isChecked(),
             "compressionType": self.compressTypeCombo.currentText(),

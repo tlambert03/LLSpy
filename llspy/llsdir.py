@@ -583,10 +583,10 @@ class CoreParams(dict):
     def __setitem__(self, name, value):
         super(CoreParams, self).__setitem__(name, value)
         if name == "angle" and value is not None:
-            if value > 0:
-                super(CoreParams, self).__setitem__("samplescan", True)
-            else:
+            if value == 0:
                 super(CoreParams, self).__setitem__("samplescan", False)
+            else:
+                super(CoreParams, self).__setitem__("samplescan", True)
         if name == "samplescan":
             if not value:
                 super(CoreParams, self).__setitem__("angle", 0)
@@ -595,7 +595,7 @@ class CoreParams(dict):
 
     def _updatedZfinal(self):
         if self["samplescan"] and self["angle"]:
-            self["dzFinal"] = self["dz"] * np.sin(self["angle"] * np.pi / 180)
+            self["dzFinal"] = np.abs(self["dz"] * np.sin(self["angle"] * np.pi / 180))
         else:
             self["dzFinal"] = self["dz"]
 

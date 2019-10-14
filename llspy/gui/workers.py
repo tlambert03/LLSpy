@@ -422,7 +422,7 @@ class LLSitemWorker(QtCore.QObject):
         )
 
         # only call cudaDeconv if we need to deskew or deconvolve
-        if self.P.nIters > 0 or (self.P.deskew > 0 and self.P.saveDeskewedRaw):
+        if self.P.nIters > 0 or (self.P.deskew != 0 and self.P.saveDeskewedRaw):
 
             try:
                 # check the binary path and create object

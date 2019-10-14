@@ -36,11 +36,13 @@ waveform_pattern = re.compile(
 excitation_pattern = re.compile(
     r"""
     Excitation\sFilter,\s+Laser,    # Waveform type, newline followed by description
-    .*\((?P<channel>\d+)\)\s    # get channel number inside of parentheses
-    :\s+(?P<exfilter>[^\s]*)        # excitation filter: anything but whitespace
-    \s+(?P<laser>\d+)           # integer laser line
-    \s+(?P<power>\d*\.?\d*)     # float laser power value next
-    \s+(?P<exposure>\d*\.?\d*)  # float exposure time last
+    .*\(ms\)\s\((?P<channel>\d+)\)    # get channel number inside of parentheses
+    .*:\t(?P<exfilter>[^\s]*)        # excitation filter: anything but whitespace
+    \t(?P<laser>\d+)           # integer laser line
+    \t(?P<power>\d*\.?\d*)     # float laser power value next
+    \t(?P<exposure>\d*\.?\d*)  # float exposure time last
+    \t?(?P<laser2>\d*\.?\d*)?  # patch for newer version of Dan's software
+    \t?(?P<power2>\d*\.?\d*)?  # patch for newer version of Dan's software
     """,
     re.MULTILINE | re.VERBOSE,
 )
@@ -224,15 +226,13 @@ class LLSsettings(object):
             "Sample stage", "Angle between stage and bessel beam (deg)"
         )
         self.mag = self.SPIMproject.getfloat("Detection optics", "Magnification")
-        self.camera.name = self.SPIMproject.get("General", "Camera type")
+        self.camera.name = self.SPIMproject.get("General", "Camera type", fallback="")
         self.camera.trigger_mode = self.SPIMproject.get("General", "Cam Trigger mode")
-        self.camera.twincam = self.SPIMproject.get("General", "Twin cam mode?") in [
-            "TRUE",
-            "True",
-            1,
-            "YES",
-            "Yes",
-        ]
+        if self.SPIMproject.has_option("General", "CAM 1 Twin cam mode?"):
+            _tcm = self.SPIMproject.get("General", "CAM 1 Twin cam mode?")
+        else:
+            _tcm = self.SPIMproject.get("General", "Twin cam mode?", fallback="False")
+        self.camera.twincam = _tcm in ["TRUE", "True", 1, "YES", "Yes"]
         try:
             self.camera.cam2name = self.SPIMproject.get("General", "2nd Camera type")
         except Exception:
@@ -253,7 +253,7 @@ class LLSsettings(object):
             {
                 "dx": self.pixel_size,
                 "z_motion": self.z_motion,
-                "samplescan": bool(self.z_motion == "Sample piezo"),
+                "samplescan": self.is_sample_scan(),
                 "angle": self.sheet_angle,
                 "nc": len(self.channel),
                 "nt": int(self.channel[0]["numstacks_requested"]),
@@ -262,12 +262,26 @@ class LLSsettings(object):
                 "wavelength": [int(v["laser"]) for k, v in self.channel.items()],
             }
         )
-        if self.z_motion == "Sample piezo":
-            self.parameters.dz = abs(float(self.channel[0]["S PZT"]["interval"]))
-            self.parameters.nz = int(self.channel[0]["S PZT"]["numpix"])
+        if self.is_sample_scan():
+            xstage = None
+            if "S PZT" in self.channel[0]:
+                xstage = "S PZT"
+            elif "X Stage" in self.channel[0]:
+                xstage = "X Stage"
+            else:
+                logger.error("Could not find either 'S PZT' or 'X stage' in waveforms")
+            if xstage:
+                self.parameters.dz = abs(float(self.channel[0][xstage]["interval"]))
+                self.parameters.nz = int(self.channel[0][xstage]["numpix"])
+
         else:
             self.parameters.dz = abs(float(self.channel[0]["Z PZT"]["interval"]))
             self.parameters.nz = int(self.channel[0]["Z PZT"]["numpix"])
+
+    def is_sample_scan(self):
+        if hasattr(self, "z_motion"):
+            return bool(self.z_motion.lower() in ("sample piezo", "x stage"))
+        return None
 
     def write(self, outpath):
         """Write the raw text back to settings.txt file"""
