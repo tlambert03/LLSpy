@@ -310,7 +310,7 @@ def divide_arg_queue(E, n_gpus, binary):
                 if len(tRange) == E.parameters.nt:
                     cudaOpts["filename-pattern"] = "_ch{}_".format(chan)
                 else:
-                    cudaOpts["filename-pattern"] = "_ch{}_stack{}".format(
+                    cudaOpts["filename-pattern"] = "_ch{}.*_stack{}".format(
                         chan, llspy.util.pyrange_to_perlregex(tRange)
                     )
 
