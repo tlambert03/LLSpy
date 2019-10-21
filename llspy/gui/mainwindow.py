@@ -63,6 +63,14 @@ defaultSettings = QtCore.QSettings("llspy", "llspyDefaults")
 defaultINI = llspy.util.getAbsoluteResourcePath("gui/guiDefaults.ini")
 programDefaults = QtCore.QSettings(defaultINI, QtCore.QSettings.IniFormat)
 
+_napari = None
+
+try:
+    import napari as _napari
+except ImportError:
+    logger.warning("napari unavailable.")
+
+
 if not sessionSettings.value("disableSpimagineCheckBox", False, type=bool):
     try:
         # raise ImportError("skipping")
@@ -1039,10 +1047,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
 
         if not _SPIMAGINE_IMPORTED:
-            self.prevBackendMatplotlibRadio.setChecked(True)
+            # self.prevBackendMatplotlibRadio.setChecked(True)
             self.prevBackendSpimagineRadio.setDisabled(True)
             self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
-
+        if not _napari:
+            # self.prevBackendMatplotlibRadio.setChecked(True)
+            self.prevBackendNapariRadio.setDisabled(True)
+            self.prevBackendNapariRadio.setText("napari [unavailable]")
         self.show()
         self.raise_()
 
@@ -1340,7 +1351,29 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
     @QtCore.pyqtSlot(np.ndarray, float, float, dict)
     def displayPreview(self, array, dx, dz, params=None):
-        if self.prevBackendSpimagineRadio.isChecked() and _SPIMAGINE_IMPORTED:
+        if self.prevBackendNapariRadio.isChecked() and _napari:
+            cmaps = ("green", "magenta", "cyan", 'red', 'gray')
+            viewer = _napari.Viewer()
+            _scale = (dz / dx, 1, 1)
+            if len(params.get("cRange", 1)) > 1:
+                viewer.add_multichannel(
+                    array,
+                    axis=-4,
+                    colormap=cmaps,
+                    name=[str(n) for n in params.get("wavelength")],
+                    scale=_scale,
+                )
+            else:
+                viewer.add_image(
+                    array,
+                    scale=_scale,
+                    blending="additive",
+                    colormap="gray",
+                )
+            viewer.dims.set_point(0, viewer.dims.range[0][1] // 2)
+            viewer.dims.ndisplay = 3
+            self.spimwins.append(viewer)
+        elif self.prevBackendSpimagineRadio.isChecked() and _SPIMAGINE_IMPORTED:
 
             if np.squeeze(array).ndim > 4:
                 arrays = [array[:, i] for i in range(array.shape[1])]

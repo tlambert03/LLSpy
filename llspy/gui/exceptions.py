@@ -112,7 +112,7 @@ except CUDAbinException:
     logger.error("CUDAbinException: Could not get gpulist")
 
 tags["pyqt"] = QtCore.QT_VERSION_STR
-for p in ("numpy", "pyopencl", "pyopengl", "spimagine", "gputools", "llspy"):
+for p in ("numpy", "pyopencl", "pyopengl", "spimagine", "napari", "gputools", "llspy"):
     try:
         tags[p] = fetch_package_version(p)
     except Exception:

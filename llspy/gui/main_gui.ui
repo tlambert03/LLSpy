@@ -628,8 +628,8 @@ the Z stack for each channel for background subtraction.</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>547</width>
-             <height>304</height>
+             <width>477</width>
+             <height>282</height>
             </rect>
            </property>
            <attribute name="label">
@@ -2651,6 +2651,13 @@ preview of the dataset for later review.</string>
              </property>
              <property name="checked">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="prevBackendNapariRadio">
+             <property name="text">
+              <string>napari</string>
              </property>
             </widget>
            </item>
