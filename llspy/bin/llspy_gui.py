@@ -148,7 +148,7 @@ def main():
             "Unable to detect bundled cudaDeconv binary. We will not be able"
             " to do much without it.\n\n"
             "As of version 0.4.2, cudaDeconv should now be included in LLSpy.  "
-            'Try installing via "conda update -c talley llspylibs"',
+            'Try installing via "conda install -c talley cudadeconv"',
             QtWidgets.QMessageBox.Ok,
             QtWidgets.QMessageBox.NoButton,
         )
