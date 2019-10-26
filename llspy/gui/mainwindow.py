@@ -1009,21 +1009,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             )
         )
 
-        self.availableCompression = []
-        # get compression options
-        for ctype in ["lbzip2", "bzip2", "pbzip2", "pigz", "gzip"]:
-            if llspy.util.which(ctype) is not None:
-                self.availableCompression.append(ctype)
-        self.compressTypeCombo.addItems(self.availableCompression)
-
-        i = 0
-        for comptype in ("lbzip2", "pigz", "bzip2"):
-            try:
-                i = self.availableCompression.index(comptype)
-            except ValueError:
-                continue
-        self.compressTypeCombo.setCurrentIndex(i)
-
         # connect worker signals and slots
         self.sig_item_finished.connect(self.on_item_finished)
         self.sig_processing_done.connect(self.on_proc_finished)
@@ -1032,6 +1017,19 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         # Restore settings from previous session and show ready status
         guirestore(self, sessionSettings, programDefaults)
+
+        self.availableCompression = []
+        # get compression options
+        # for ctype in ["lbzip2", "bzip2", "pbzip2", "pigz", "gzip"]:
+        #     if llspy.util.which(ctype) is not None:
+        #         self.availableCompression.append(ctype)
+        self.compressTypeCombo.addItems(self.availableCompression)
+        if not self.availableCompression:
+            self.compressTypeCombo.clear()
+            self.compressTypeCombo.setDisabled(True)
+            self.compressRawCheckBox.setChecked(False)
+            self.compressRawCheckBox.setDisabled(True)
+            self.compressRawCheckBox.setText('no compression binaries found')
 
         self.RegCalibPathLineEdit.setText("")
         self.RegFilePath.setText("")
@@ -1047,11 +1045,17 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
 
         if not _SPIMAGINE_IMPORTED:
-            # self.prevBackendMatplotlibRadio.setChecked(True)
+            if _napari:
+                self.prevBackendNapariRadio.setChecked(True)
+            else:
+                self.prevBackendMatplotlibRadio.setChecked(True)
             self.prevBackendSpimagineRadio.setDisabled(True)
             self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
         if not _napari:
-            # self.prevBackendMatplotlibRadio.setChecked(True)
+            if _SPIMAGINE_IMPORTED:
+                self.prevBackendSpimagineRadio.setChecked(True)
+            else:
+                self.prevBackendMatplotlibRadio.setChecked(True)
             self.prevBackendNapariRadio.setDisabled(True)
             self.prevBackendNapariRadio.setText("napari [unavailable]")
         self.show()

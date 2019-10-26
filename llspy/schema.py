@@ -243,6 +243,7 @@ __validator__ = {
     "background": Any(intRange(-1, 20000), [intRange(0, 20000)]),
     "compressRaw": smartbool,
     "compressionType": Any(
+        "",
         "lbzip2",
         "bzip2",
         "pbzip2",
