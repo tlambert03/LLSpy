@@ -105,7 +105,7 @@ psffile_pattern = re.compile(
     r"""
     ^(?P<date>\d{6}|\d{8})      # 6 or 8 digit date
     _(?P<wave>\d+)              # wavelength ... only digits following _ are used
-    _(?P<slmpattern>[a-zA-Z]+)  # slm pattern
+    _(?P<slmpattern>[a-zA-Z_]+)  # slm pattern
     _(?P<outerNA>[0-9p.]+)      # outer NA, digits with . or p for decimal
     [-_](?P<innerNA>[0-9p.]+)   # inter NA, digits with . or p for decimal
     (?P<isotf>_otf)?.tif$""",  # optional _otf to specify that it is already an otf
@@ -116,7 +116,8 @@ psffile_pattern = re.compile(
 default_otf_pattern = re.compile(
     r"""
     ^(?P<wave>\d{3})
-    (_otf.tif|.otf)$""",
+    (?P<isotf>_otf)?
+    (?P<ispsf>_psf)?.tif$""",
     re.VERBOSE,
 )
 
@@ -176,6 +177,13 @@ def get_otf_dict(otfdir):
                 wave = int(M["wave"])
                 if wave not in otf_dict:
                     otf_dict[wave] = {}
+                if not M["isotf"]:
+                    newname = str(t).replace(".tif", "_otf.tif")
+                    if M["ispsf"]:
+                        newname.replace('_psf', '')
+                    if not os.path.exists(newname):
+                        otf = makeotf(str(t), newname, lambdanm=int(wave), bDoCleanup=False)
+                        t = str(otf)
                 otf_dict[wave]["default"] = str(t)
     for wave in otf_dict.keys():
         logger.debug("OTFdict wave: {}, masks: {}".format(wave, otf_dict[wave].keys()))
