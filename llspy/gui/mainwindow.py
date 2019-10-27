@@ -1020,9 +1020,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         self.availableCompression = []
         # get compression options
-        # for ctype in ["lbzip2", "bzip2", "pbzip2", "pigz", "gzip"]:
-        #     if llspy.util.which(ctype) is not None:
-        #         self.availableCompression.append(ctype)
+        for ctype in ["lbzip2", "bzip2", "pbzip2", "pigz", "gzip"]:
+            if llspy.util.which(ctype) is not None:
+                self.availableCompression.append(ctype)
         self.compressTypeCombo.addItems(self.availableCompression)
         if not self.availableCompression:
             self.compressTypeCombo.clear()
