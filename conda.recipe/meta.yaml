@@ -44,8 +44,8 @@ requirements:
     - matplotlib >=2.1.1
     - spimagine >=0.2.6 # [not win]
     - tar ==1.29 # [not win]
-    # - llspylibs >=0.2.0
-    - cudadeconv >=1.0.3
+    - llspylibs >=0.2.0 # [not osx]
+    - cudadeconv >=1.0.3 # [osx]
     - pathlib2 # [py2k]
     - configparser # [py2k]
     - pigz # [not win]
