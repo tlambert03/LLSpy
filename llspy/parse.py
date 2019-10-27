@@ -59,7 +59,6 @@ def contains_LLSfiles(path):
             return True
     return False
 
-
 def contains_filepattern(path, pattern):
     for item in os.listdir(path):
         if parse.parse(pattern, item):

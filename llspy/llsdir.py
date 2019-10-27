@@ -9,6 +9,7 @@ import shutil
 import sys
 import time
 import warnings
+from parse import parse as _parse
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
@@ -754,7 +755,9 @@ class LLSdir(object):
 
     def _get_all_tiffs(self):
         """a list of every tiff file in the top level folder (all raw tiffs)"""
-        all_tiffs = sorted(self.path.glob("*.tif"))
+        all_tiffs = sorted(
+            [x for x in self.path.glob("*.tif") if _parse(self.fname_pattern, str(x))]
+        )
         if not all_tiffs:
             logger.warn("No raw/uncompressed Tiff files detected in folder")
             return 0
