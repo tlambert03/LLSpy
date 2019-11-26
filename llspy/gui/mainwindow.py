@@ -44,7 +44,6 @@ ch.setLevel(logging.ERROR)  # with desired logging level
 logger.addHandler(ch)  # add it to the root logger
 logger.removeHandler(lhStdout)  # and delete the original streamhandler
 
-_SPIMAGINE_IMPORTED = False
 
 # import sys
 # sys.path.append(osp.join(osp.abspath(__file__), os.pardir, os.pardir))
@@ -67,9 +66,13 @@ _napari = None
 
 try:
     import napari as _napari
+    if hasattr(_napari.view_layers, 'view_multichannel'):
+        logger.warning("napari imported, but needs to be updated")
+        _napari = None
 except ImportError:
     logger.warning("napari unavailable.")
 
+_SPIMAGINE_IMPORTED = False
 
 if not sessionSettings.value("disableSpimagineCheckBox", False, type=bool):
     try:
@@ -81,7 +84,7 @@ if not sessionSettings.value("disableSpimagineCheckBox", False, type=bool):
             _SPIMAGINE_IMPORTED = True
     except ImportError as e:
         print(e)
-        logger.error("could not import spimagine!  falling back to matplotlib")
+        logger.error("could not import spimagine.")
 
 
 class LLSDragDropTable(QtW.QTableWidget):
@@ -1323,9 +1326,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.statusBar.showMessage(
                 "Skipping! path no longer exists: {}".format(self.previewPath), 5000
             )
-            self.statusBar.showMessage(
-                "Skipping! path no longer exists: {}".format(self.previewPath), 5000
-            )
             self.listbox.removePath(self.previewPath)
             self.previewButton.setEnabled(True)
             self.previewButton.setText("Preview")
@@ -1360,12 +1360,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             viewer = _napari.Viewer()
             _scale = (dz / dx, 1, 1)
             if len(params.get("cRange", 1)) > 1:
-                viewer.add_multichannel(
+                viewer.add_image(
                     array,
-                    axis=-4,
+                    channel_axis=-4,
                     colormap=cmaps,
                     name=[str(n) for n in params.get("wavelength")],
                     scale=_scale,
+                    is_pyramid=False
                 )
             else:
                 viewer.add_image(
@@ -1373,6 +1374,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     scale=_scale,
                     blending="additive",
                     colormap="gray",
+                    is_pyramid=False,
                 )
             viewer.dims.set_point(0, viewer.dims.range[0][1] // 2)
             viewer.dims.ndisplay = 3
