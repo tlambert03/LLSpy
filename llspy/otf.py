@@ -171,7 +171,8 @@ def get_otf_dict(otfdir):
                 }
             )
         else:
-            M = default_otf_pattern.search(str(t.name))
+            pathname = str(t.name)
+            M = default_otf_pattern.search(pathname)
             if M:
                 M = M.groupdict()
                 wave = int(M["wave"])
@@ -180,11 +181,11 @@ def get_otf_dict(otfdir):
                 if not M["isotf"]:
                     newname = str(t).replace(".tif", "_otf.tif")
                     if M["ispsf"]:
-                        newname.replace('_psf', '')
+                        newname = newname.replace("_psf", "")
+                    pathname = newname
                     if not os.path.exists(newname):
-                        otf = makeotf(str(t), newname, lambdanm=int(wave), bDoCleanup=False)
-                        t = str(otf)
-                otf_dict[wave]["default"] = str(t)
+                        makeotf(str(t), newname, lambdanm=int(wave), bDoCleanup=False)
+                otf_dict[wave]["default"] = str(otfdir.joinpath(pathname))
     for wave in otf_dict.keys():
         logger.debug("OTFdict wave: {}, masks: {}".format(wave, otf_dict[wave].keys()))
     return otf_dict
