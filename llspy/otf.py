@@ -69,7 +69,7 @@ def makeotf(
     psf,
     otf=None,
     lambdanm=520,
-    dz=0.102,
+    dz=0.1,
     fixorigin=10,
     bUserBackground=False,
     background=90,

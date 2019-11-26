@@ -30,7 +30,8 @@ GUI documentation :ref:`here <gui>`.
 2. Command Line Interface
 -------------------------
 
-The command line interface can be used to process LLS data in a server environment (linux compatible).
+The command line interface can be used to process LLS data in a server
+environment (linux compatible).
 
 .. code:: bash
 
@@ -228,9 +229,23 @@ Setup
 OTF Directory
 -------------
 
-LLSpy assumes that you have a directory somewhere with all of your PSF and OTF files.  You must enter this directory on the config tab of the LLSpy gui or by using ``lls config --set otfDir PATH`` in the command line interface.
+.. important::
+   LLSpy is currently limited to PSF/OTF files that were
+   acquired in galvo/objective scanning mode, using a 0.1µm Z step size.
+   This assumption is made both during generation of OTFs from PSF files in the
+   OTF directory, *and* during deconvolution made with pre-generated OTF files.
+   So even if you have made OTF files manually (using, for example, `radialft`),
+   the voxel size must still be 0.1µm.  This is a limitation that will
+   eventually be fixed, but feel free to raise a github issue if you require
+   this flexibility.
 
-The simplest setup is to create a directory and include an OTF for each wavelength you wish to process, for instance:
+
+LLSpy assumes that you have a directory somewhere with all of your PSF and OTF
+files.  You must enter this directory on the config tab of the LLSpy gui or by
+using ``lls config --set otfDir PATH`` in the command line interface.
+
+The simplest setup is to create a directory and include an OTF for each
+wavelength you wish to process, for instance:
 
 .. code::
 
@@ -240,19 +255,26 @@ The simplest setup is to create a directory and include an OTF for each waveleng
   ├── 560_otf.tif
   ├── 642_otf.tif
 
-*Note: you may also just name them 488.otf, 560.otf, etc...*
-
-The number in the filenames comes from the wavelength of the laser used for that channel.  This is parsed directly from the filenames, which in turn are generated based on the name of the laser lines specified in the ``SPIMProject AOTF.mcf`` file in the  ``SPIM Support Files`` directory of the Lattice Scope software.  For instance, if an AOTF channel is named "488nm-SB", then an example file generated with that wavelength might be called:
+The number in the filenames comes from the wavelength of the laser used for
+that channel.  This is parsed directly from the filenames, which in turn are
+generated based on the name of the laser lines specified in the ``SPIMProject
+AOTF.mcf`` file in the  ``SPIM Support Files`` directory of the Lattice Scope
+software.  For instance, if an AOTF channel is named "488nm-SB", then an
+example file generated with that wavelength might be called:
 
 ``cell5_ch0_stack0000_488nm-SB_0000000msec_0020931273msecAbs.tif``
 
-The parsed wavelength will be the *digits only* from the segment between the stack number and the relative timestamp.  In this case: "488nm-SB" --> "488".  For more detail on filename parsing see filename `parsing`_ below.
+The parsed wavelength will be the *digits only* from the segment between the
+stack number and the relative timestamp.  In this case: "488nm-SB" --> "488".
+For more detail on filename parsing see filename `parsing`_ below.
 
-For greater convenience and sophistication, you can also place raw PSF files in this directory with the following naming convention:
+As a convenience, you can also place raw PSF files in this directory with the
+following naming convention:
 
 ``[date]_[wave]_[slm_pattern]_[outerNA]-[innerNA].tif``
 
-... where ``outerNA`` and ``innerNA`` use 'p' instead of decimal points, for instance:
+... where ``outerNA`` and ``innerNA`` use 'p' instead of decimal points, for
+instance:
 
 ``20160825_488_square_0p5-0p42.tif``
 
@@ -260,17 +282,22 @@ For greater convenience and sophistication, you can also place raw PSF files in 
 
 .. code:: python
 
-  psffile_pattern = re.compile(r"""
-    ^(?P<date>\d{6}|\d{8})      # 6 or 8 digit date
-    _(?P<wave>\d+)              # wavelength ... only digits following _ are used
-    _(?P<slmpattern>[a-zA-Z]+)  # slm pattern
-    _(?P<outerNA>[0-9p.]+)      # outer NA, digits with . or p for decimal
-    [-_](?P<innerNA>[0-9p.]+)   # inter NA, digits with . or p for decimal
-    (?P<isotf>_otf)?.tif$""",   # optional _otf to specify that it is already an otf
-    re.VERBOSE)
+  psffile_pattern = re.compile(
+      r"""
+      ^(?P<date>\d{6}|\d{8})      # 6 or 8 digit date
+      _(?P<wave>\d+)              # wavelength ... only digits following _ are used
+      _(?P<slmpattern>[a-zA-Z_]+)  # slm pattern
+      _(?P<outerNA>[0-9p.]+)      # outer NA, digits with . or p for decimal
+      [-_](?P<innerNA>[0-9p.]+)   # inter NA, digits with . or p for decimal
+      (?P<isotf>_otf)?.tif$""",  # optional _otf to specify that it is already an otf
+      re.VERBOSE,
+  )
 
-
-If the SPIMProject.ini file also contains information about the ``[Annular Mask]`` pattern being used (as demonstrated below), then LLSpy will find the PSF in the OTF directory that most closely matches the date of acquisition of the data, and the annular mask pattern used, and generate an OTF from that file that will be used for deconvolution.
+If the SPIMProject.ini file also contains information about the
+``[Annular Mask]`` pattern being used (as demonstrated below), then LLSpy will
+try to find the PSF in the OTF directory that most closely matches the date of
+acquisition of the data, and the annular mask pattern used, and generate an OTF
+from that file that will be used for deconvolution.
 
 .. code:: ini
 
@@ -278,13 +305,37 @@ If the SPIMProject.ini file also contains information about the ``[Annular Mask]
   outerNA = 0.5
   innerNA = 0.42
 
-see more in the `OTF directory`_ section below.
+
+How does LLSpy pick the OTF to use?
+-----------------------------------
+
+When deconvolving a given file, LLSpy follows this sequence when deciding which
+OTF file to use:
+
+
+1. Checks to make sure there is at least one PSF/OTF in the otfDir with a
+   wavelength within a few nanometers of the current wavelength.
+2. Then, if the ``[Annular Mask]`` setting is present in settings.txt, LLSpy
+   will look for a PSF/OTF matching the mask and wavelength of the current
+   file, using the PSF from the date closest to the experiment, as a tie
+   breaker.
+3. If mask parameters have not been provided, or if there is no OTF/PSF
+   matching the particular mask/wavelength of the current file, then it falls
+   back to looking for a "default OTF", which is named something like
+   ``488_otf.tif`` or ```488_psf.tif``.
+4. Finally, if the file is a PSF file, and not an OTF file, then an OTF will be
+   generated and used.
 
 
 Flash4.0 Calibration
 --------------------
 
-In order to take advantage of the Flash synchronous trigger mode correction included in LLSpy, you must first characterize your camera by collecting a calibration dataset as described in :ref:`camera`, then direct LLSpy to that file on the Config Tab of the GUI, or using ``lls config --set camparamsPath PATH`` in the command line interface.  Support for more than one camera is in development.
+In order to take advantage of the Flash synchronous trigger mode correction
+included in LLSpy, you must first characterize your camera by collecting a
+calibration dataset as described in :ref:`camera`, then direct LLSpy to that
+file on the Config Tab of the GUI, or using ``lls config --set camparamsPath
+PATH`` in the command line interface.  Support for more than one camera is in
+development.
 
 
 Channel Registration
