@@ -1361,7 +1361,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             _scale = (dz / dx, 1, 1)
             if len(params.get("cRange", 1)) > 1:
                 viewer.add_image(
-                    array,
+                    array.copy(),
                     channel_axis=-4,
                     colormap=cmaps,
                     name=[str(n) for n in params.get("wavelength")],
@@ -1370,11 +1370,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 )
             else:
                 viewer.add_image(
-                    array,
+                    array.copy(),
                     scale=_scale,
                     blending="additive",
                     colormap="gray",
-                    is_pyramid=False,
                 )
             viewer.dims.set_point(0, viewer.dims.range[0][1] // 2)
             viewer.dims.ndisplay = 3
