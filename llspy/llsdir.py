@@ -843,16 +843,20 @@ class LLSdir(object):
             warnings.simplefilter("ignore")
             with tf.TiffFile(self.tiff.raw[0]) as firstTiff:
                 self.parameters.shape = firstTiff.series[0].shape
-                bitstring = "bits_per_sample"
                 try:
-                    if int(tf.__version__.split(".")[1]) >= 13:
-                        bitstring = "bitspersample"
-                except Exception:
-                    pass
-                self.tiff.bit_depth = getattr(firstTiff.pages[0], bitstring)
-        self.parameters.nz, self.parameters.ny, self.parameters.nx = (
-            self.parameters.shape
-        )
+                    self.tiff.bit_depth = getattr(firstTiff.pages[0], "bitspersample")
+                except AttributeError:
+                    try:
+                        self.tiff.bit_depth = getattr(
+                            firstTiff.pages[0], "bits_per_sample"
+                        )
+                    except AttributeError:
+                        self.tiff.bit_depth = 16
+        (
+            self.parameters.nz,
+            self.parameters.ny,
+            self.parameters.nx,
+        ) = self.parameters.shape
 
     def is_compressed(self, subdir=None):
         if not subdir:
