@@ -6,7 +6,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.6
+  - python=3.7
   - numpy
   - scipy >=1.0.0
   - matplotlib >=3
@@ -14,12 +14,12 @@ dependencies:
   - numba >=0.38.0
   - ipython 
   - voluptuous ==0.11.1
-  - watchdog >=0.8.3
+  # - watchdog >=0.8.3
   - click >=6.7
   - pip
   - pyqt >=5.9.2
   - pyopencl
-  - spimagine >=0.2.6
+  # - spimagine >=0.2.6
   - sentry-sdk
   - llspy-slm >= 0.2.0
   # - llspylibs >=0.1.3
