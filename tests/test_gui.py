@@ -33,25 +33,25 @@ def test_basic_processing(qtbot):
     mainGUI.quitProgram(save=False)
 
 
-def test_spimagine_preview(qtbot):
-    testdata = os.path.join(os.path.dirname(__file__), 'testdata', 'sample')
-    otfdir = os.path.join(os.path.dirname(__file__), 'testdata', 'otfs')
-    APP = QtWidgets.QApplication([])
-    mainGUI = main_GUI()
-    mainGUI.loadProgramDefaults()
-    mainGUI.setOTFdirPath(otfdir)
-    assert mainGUI.listbox.rowCount() == 0
-    mainGUI.listbox.addPath(testdata)
-    assert mainGUI.listbox.rowCount() == 1
+# def test_spimagine_preview(qtbot):
+#     testdata = os.path.join(os.path.dirname(__file__), 'testdata', 'sample')
+#     otfdir = os.path.join(os.path.dirname(__file__), 'testdata', 'otfs')
+#     APP = QtWidgets.QApplication([])
+#     mainGUI = main_GUI()
+#     mainGUI.loadProgramDefaults()
+#     mainGUI.setOTFdirPath(otfdir)
+#     assert mainGUI.listbox.rowCount() == 0
+#     mainGUI.listbox.addPath(testdata)
+#     assert mainGUI.listbox.rowCount() == 1
 
-    def preview_exists():
-        assert len(mainGUI.spimwins)
-    mainGUI.prevBackendSpimagineRadio.setChecked(True)
-    qtbot.mouseClick(mainGUI.previewButton, QtCore.Qt.LeftButton)
-    qtbot.waitUntil(preview_exists, timeout=10000)
-    mainGUI.close_all_previews()
-    assert len(mainGUI.spimwins) == 0
-    mainGUI.quitProgram(save=False)
+#     def preview_exists():
+#         assert len(mainGUI.spimwins)
+#     mainGUI.prevBackendSpimagineRadio.setChecked(True)
+#     qtbot.mouseClick(mainGUI.previewButton, QtCore.Qt.LeftButton)
+#     qtbot.waitUntil(preview_exists, timeout=10000)
+#     mainGUI.close_all_previews()
+#     assert len(mainGUI.spimwins) == 0
+#     mainGUI.quitProgram(save=False)
 
 
 def test_matplotlib_preview(qtbot):
