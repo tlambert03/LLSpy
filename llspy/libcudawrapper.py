@@ -10,10 +10,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-cudaLib = load_lib("libcudaDeconv")
+cudaLib = load_lib("libcudaDecon")
 
 if not cudaLib:
-    logger.error("Could not load libcudaDeconv!  Read docs for more info")
+    logger.error("Could not load libcudaDecon!  Read docs for more info")
 else:
     try:
         # Deskew is used when no decon is desired

@@ -116,3 +116,6 @@ ENV/
 tests/testdata/sample/MIPs/
 
 .vscode
+tests/testdata/sample/sample_ProcessingLog.txt
+tests/testdata/sample/GPUdecon/
+

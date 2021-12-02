@@ -61,10 +61,6 @@ _napari = None
 
 try:
     import napari as _napari
-
-    if hasattr(_napari.view_layers, "view_multichannel"):
-        logger.warning("napari imported, but needs to be updated")
-        _napari = None
 except ImportError:
     logger.warning("napari unavailable.")
 
@@ -415,7 +411,7 @@ class RegistrationTab(object):
             "",
             QtW.QFileDialog.ShowDirsOnly,
         )
-        if path is None or path is "":
+        if path is None or path == "":
             return
         RD = llspy.RegDir(path)
         if not RD.isValid:
@@ -464,7 +460,7 @@ class RegistrationTab(object):
             "",
             QtW.QFileDialog.ShowDirsOnly,
         )
-        if outdir is None or outdir is "":
+        if outdir is None or outdir == "":
             return
 
         class RegThread(QtCore.QThread):
@@ -545,7 +541,7 @@ class RegistrationTab(object):
                 "Text Files (*.reg *.txt *.json)",
             )[0]
 
-            if file is None or file is "":
+            if file is None or file == "":
                 return
         try:
             with open(file) as json_data:
@@ -821,20 +817,18 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.watcherStatus = QtW.QLabel()
         self.statusBar.insertPermanentWidget(0, self.watcherStatus)
 
-        if not _SPIMAGINE_IMPORTED:
-            if _napari:
-                self.prevBackendNapariRadio.setChecked(True)
-            else:
-                self.prevBackendMatplotlibRadio.setChecked(True)
-            self.prevBackendSpimagineRadio.setDisabled(True)
-            self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
-        if not _napari:
+        if _napari:
+            self.prevBackendNapariRadio.setChecked(True)
+        else:
+            self.prevBackendNapariRadio.setDisabled(True)
+            self.prevBackendNapariRadio.setText("napari [unavailable]")
             if _SPIMAGINE_IMPORTED:
                 self.prevBackendSpimagineRadio.setChecked(True)
             else:
+                self.prevBackendSpimagineRadio.setDisabled(True)
+                self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")         
                 self.prevBackendMatplotlibRadio.setChecked(True)
-            self.prevBackendNapariRadio.setDisabled(True)
-            self.prevBackendNapariRadio.setText("napari [unavailable]")
+
         self.show()
         self.raise_()
 
@@ -961,7 +955,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 os.path.expanduser("~"),
                 "Text Files (*.reg *.txt *.json)",
             )[0]
-            if file is None or file is "":
+            if file is None or file == "":
                 return
         self.RegProcessPathLineEdit.setText(file)
 
@@ -1130,17 +1124,17 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     @QtCore.pyqtSlot(np.ndarray, float, float, dict)
     def displayPreview(self, array, dx, dz, params=None):
         if self.prevBackendNapariRadio.isChecked() and _napari:
-            cmaps = ("green", "magenta", "cyan", "red", "gray")
             viewer = _napari.Viewer()
             _scale = (dz / dx, 1, 1)
             if len(params.get("cRange", 1)) > 1:
+                cmaps = ["green", "magenta", "cyan", "red", "gray"]
                 viewer.add_image(
                     array.copy(),
                     channel_axis=-4,
                     colormap=cmaps,
                     name=[str(n) for n in params.get("wavelength")],
                     scale=_scale,
-                    is_pyramid=False,
+                    multiscale=False,
                 )
             else:
                 viewer.add_image(
@@ -1526,7 +1520,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             options["camparamsPath"] = None
 
         rCalibText = self.RegProcessPathLineEdit.text()
-        if rCalibText and rCalibText is not "":
+        if rCalibText and rCalibText != "":
             options["regCalibPath"] = rCalibText
         else:
             options["regCalibPath"] = None
@@ -1829,16 +1823,16 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     @QtCore.pyqtSlot(str, str, str, str)
     def show_error_window(self, errMsg, title=None, info=None, detail=None):
         self.msgBox = QtW.QMessageBox()
-        if title is None or title is "":
+        if title is None or title == "":
             title = "LLSpy Error"
         self.msgBox.setWindowTitle(title)
 
         # self.msgBox.setTextFormat(QtCore.Qt.RichText)
         self.msgBox.setIcon(QtW.QMessageBox.Warning)
         self.msgBox.setText(errMsg)
-        if info is not None and info is not "":
+        if info is not None and info != "":
             self.msgBox.setInformativeText(info + "\n")
-        if detail is not None and detail is not "":
+        if detail is not None and detail != "":
             self.msgBox.setDetailedText(detail)
         self.msgBox.exec_()
 

@@ -96,14 +96,14 @@ class SubprocessWorker(QtCore.QObject):
     @QtCore.pyqtSlot()
     def procReadyRead(self):
         line = byteArrayToString(self.process.readAllStandardOutput())
-        if line is not "":
+        if line != "":
             self._logger.update(line.rstrip())
 
     @QtCore.pyqtSlot()
     def procErrorRead(self):
         self._logger.error("Error in subprocess: {}".format(self.name))
         line = byteArrayToString(self.process.readAllStandardError())
-        if line is not "":
+        if line != "":
             self._logger.error(line.rstrip())
 
     @QtCore.pyqtSlot(int, QtCore.QProcess.ExitStatus)
@@ -246,7 +246,7 @@ class CompressionWorker(SubprocessWorker):
     def procErrorRead(self):
         # for some reason, lbzip2 puts its verbose output in stderr
         line = byteArrayToString(self.process.readAllStandardError())
-        if line is not "":
+        if line != "":
             if "%" in line:
                 self.result_string = line
             self._logger.info(line.rstrip())

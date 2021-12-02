@@ -69,7 +69,7 @@ def is_cudaDeconv(path):
         return False
 
 
-def get_bundled_binary(name="cudaDeconv"):
+def get_bundled_binary(name="cudadecon"):
     """returns path to bundled, platform-specific cudaDeconv.
     This function is aware of whether program is running in frozen (pyinstaller)
     state,
