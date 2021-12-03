@@ -1253,14 +1253,8 @@ class LLSdir:
                     outname = outname.replace(".tif", "_COR.tif")
                 g.append((f, outname, self.parameters.dx, bgrd, trim, medianFilter))
 
-        if sys.version_info >= (3, 4):
-            with Pool(processes=cpu_count()) as pool:
-                pool.map(unbundle, g)
-        else:
-            pool = Pool(processes=cpu_count())
+        with Pool(processes=cpu_count()) as pool:
             pool.map(unbundle, g)
-            pool.close()
-            pool.join()
 
         return outpath
 
@@ -1325,14 +1319,8 @@ class LLSdir:
                 (t, camparams, outpath, medianFilter, trimZ, trimY, trimX)
                 for t in timegroups
             ]
-            if sys.version_info >= (3, 4):
-                with Pool(processes=cpu_count()) as pool:
-                    pool.map(unwrapper, g)
-            else:
-                pool = Pool(processes=cpu_count())
+            with Pool(processes=cpu_count()) as pool:
                 pool.map(unwrapper, g)
-                pool.close()
-                pool.join()
 
         elif flashCorrectTarget == "cpu":
             for t in timegroups:
