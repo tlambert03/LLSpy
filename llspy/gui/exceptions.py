@@ -103,7 +103,7 @@ if sys.platform.startswith("darwin"):
 elif sys.platform.startswith("win32"):
     tags["os"] = f"Windows_{platform.win32_ver()[1]}"
 else:
-    tags["os"] = f"{platform.linux_distribution()[0]}"
+    tags["os"] = f"{platform.system()} {platform.machine()}"
 
 try:
     tags["gpu"] = ", ".join(gpulist())
