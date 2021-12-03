@@ -1,14 +1,9 @@
-include *.rst
-include *.yaml
-include *.yml
-recursive-include docs *.png
-recursive-include docs *.py
-recursive-include docs *.rst
-recursive-include docs *.txt
-recursive-include docs Makefile
-recursive-include img *.gif
-recursive-include img *.jpeg
-recursive-include img *.png
-recursive-include tests *.py
-recursive-include tests *.tif
-recursive-include tests *.txt
+include README.rst
+recursive-include llspy *.py
+recursive-include llspy *.ui
+recursive-include llspy *.ini
+recursive-include llspy *.png
+recursive-include img *
+
+recursive-exclude tests *
+recursive-exclude docs *
