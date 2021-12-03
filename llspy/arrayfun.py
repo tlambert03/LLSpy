@@ -67,11 +67,7 @@ def threshold_li(image):
 
         temp = (mean_back - mean_obj) / (np.log(mean_back) - np.log(mean_obj))
 
-        if temp < 0:
-            new_thresh = temp - tolerance
-        else:
-            new_thresh = temp + tolerance
-
+        new_thresh = temp - tolerance if temp < 0 else temp + tolerance
     return threshold + immin
 
 
@@ -166,10 +162,11 @@ def sub_background(im, background=None):
 
 def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
     try:
-        import gputools
+        from gputools.transforms import affine
     except ImportError:
         # sys.stdout = sys.__stdout__
         print("could not import gputools")
+        return
 
     deskewFactor = np.cos(angle * np.pi / 180) * dz / dx
     T = np.array([[1, 0, deskewFactor, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
@@ -181,5 +178,4 @@ def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
     # otherwise, edge pixel values are smeared across the image
     paddedData = np.ones((nz, ny, nxOut), rawdata.dtype) * filler
     paddedData[..., :nx] = rawdata
-    out = gputools.transforms.affine(paddedData, T, interpolation="linear", mode="wrap")
-    return out  # return is np.float32
+    return affine(paddedData, T, interpolation="linear", mode="wrap")
