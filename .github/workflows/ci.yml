@@ -34,28 +34,16 @@ jobs:
           channels: conda-forge,defaults
           channel-priority: true
 
-      - name: Conda deps
-        run: |
-          mamba install pyopencl numba
-
-      - name: linux deps
-        if: runner.os == 'Linux'
-        run: |
-          mamba install pocl
-          sudo apt-get install -y xvfb
-
       - name: Install dependencies
         run: |
+          mamba install pyopencl pocl
+          sudo apt-get install -y xvfb
           pip install -U pip wheel
           pip install -e .[tests]
 
       - name: Test with xvfb
         if: runner.os == 'Linux'
         run: xvfb-run --auto-servernum pytest --cov llspy
-
-      - name: Test without xvfb
-        if: runner.os != 'Linux'
-        run: pytest --cov llspy
 
       - name: Coverage
         uses: codecov/codecov-action@v2
