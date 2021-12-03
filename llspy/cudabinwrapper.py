@@ -403,7 +403,7 @@ class CUDAbin(object):
                 else:
                     arglist.extend(["--" + optname, str(options[o])])
             else:
-                logger.warn("Warning: option not recognized, ignoring: {}".format(o))
+                logger.warning("Warning: option not recognized, ignoring: {}".format(o))
 
         return arglist
 

@@ -883,7 +883,7 @@ def compress(
                     if not dryrun:
                         E.compress()
         except exceptions.CompressionError as e:
-            logger.warn(e)
+            logger.warning(e)
 
 
 @cli.command()

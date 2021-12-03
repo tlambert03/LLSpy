@@ -281,10 +281,10 @@ def preview(exp, tR=0, cR=None, **kwargs):
 
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
-            logger.warn("No TIFF files to process in {}".format(exp.path))
+            logger.warning("No TIFF files to process in {}".format(exp.path))
             return
         # if not exp.has_settings:
-        #     logger.warn('Could not find Settings.txt file in {}'.format(exp.path))
+        #     logger.warning('Could not find Settings.txt file in {}'.format(exp.path))
         #     return
 
     kwargs["tRange"] = tR
@@ -409,9 +409,9 @@ def process(exp, binary=None, **kwargs):
 
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
-            logger.warn("No TIFF files to process in {}".format(exp.path))
+            logger.warning("No TIFF files to process in {}".format(exp.path))
         if not exp.parameters.isReady():
-            logger.warn("Parameters are not valid: {}".format(exp.path))
+            logger.warning("Parameters are not valid: {}".format(exp.path))
         return
 
     P = exp.localParams(**kwargs)
@@ -686,7 +686,7 @@ class LLSdir(object):
         self.tiff = util.dotdict()
         if self.has_settings:
             if len(self.settings_files) > 1:
-                logger.warn("Multiple Settings.txt files detected...")
+                logger.warning("Multiple Settings.txt files detected...")
             self.settings = LLSsettings(self.settings_files[0])
             self.date = self.settings.date
             self.parameters.update(self.settings.parameters)
@@ -759,7 +759,7 @@ class LLSdir(object):
             [x for x in self.path.glob("*.tif") if _parse(self.fname_pattern, str(x))]
         )
         if not all_tiffs:
-            logger.warn("No raw/uncompressed Tiff files detected in folder")
+            logger.warning("No raw/uncompressed Tiff files detected in folder")
             return 0
         self.tiff.numtiffs = len(all_tiffs)
         # self.tiff.bytes can be used to get size of raw data: np.sum(self.tiff.bytes)
@@ -783,7 +783,7 @@ class LLSdir(object):
             if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < thresh:
                 self.tiff.raw.append(str(f))
             else:
-                logger.warn("discarding small file:  {}".format(f))
+                logger.warning("discarding small file:  {}".format(f))
         self.tiff.rejected = list(set(self.tiff.raw).difference(set(self.tiff.all)))
         if len(self.tiff.all) and not len(self.tiff.raw):
             raise LLSpyError(
@@ -878,7 +878,7 @@ class LLSdir(object):
         if corpath.exists():
             if len(list(corpath.glob("*COR*"))) < len(self.tiff.raw):
                 # partial correction
-                logger.warn("Corrected path exists but files incomplete")
+                logger.warning("Corrected path exists but files incomplete")
                 return False
             else:
                 return True
@@ -1004,11 +1004,11 @@ class LLSdir(object):
                 if chan in self.parameters.channels.keys():
                     outrange.append(chan)
                 else:
-                    logger.warn(
+                    logger.warning(
                         "Channel {} not present in datset! Excluding.".format(chan)
                     )
             if np.max(list(_schema.cRange)) > (self.parameters.nc - 1):
-                logger.warn(
+                logger.warning(
                     "cRange was larger than number of Channels! Excluding C > {}".format(
                         self.parameters.nc - 1
                     )
@@ -1027,13 +1027,13 @@ class LLSdir(object):
             if not _schema.tRange or len(_schema.tRange) == 0:
                 _schema.tRange = [minT]
             if max(list(_schema.tRange)) > maxT:
-                logger.warn(
+                logger.warning(
                     "max tRange was greater than the last timepoint. Excluding T > {}".format(
                         maxT
                     )
                 )
             if min(list(_schema.tRange)) < minT:
-                logger.warn(
+                logger.warning(
                     "min tRange was less than the first timepoint. Excluding < {}".format(
                         minT
                     )

@@ -44,7 +44,7 @@ else:
             ctypes.c_bool,
         ]
     except AttributeError as e:
-        logger.warn("Failed to properly import libradialft")
+        logger.warning("Failed to properly import libradialft")
         logger.error(e)
 
 

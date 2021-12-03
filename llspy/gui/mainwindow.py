@@ -719,7 +719,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 self.gpuGroupBoxLayout.addWidget(label)
 
         except llspy.cudabinwrapper.CUDAbinException as e:
-            logger.warn(e)
+            logger.warning(e)
             pass
 
         self.watchDirToolButton.clicked.connect(self.changeWatchDir)
@@ -826,7 +826,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 self.prevBackendSpimagineRadio.setChecked(True)
             else:
                 self.prevBackendSpimagineRadio.setDisabled(True)
-                self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")         
+                self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
                 self.prevBackendMatplotlibRadio.setChecked(True)
 
         self.show()
@@ -1138,7 +1138,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 )
             else:
                 viewer.add_image(
-                    array.copy(), scale=_scale, blending="additive", colormap="gray",
+                    array.copy(),
+                    scale=_scale,
+                    blending="additive",
+                    colormap="gray",
                 )
             viewer.dims.set_point(0, viewer.dims.range[0][1] // 2)
             viewer.dims.ndisplay = 3
@@ -1743,11 +1746,13 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     def checkBundled(self, value):
         if value:
             try:
-                self.setBinaryPath(llspy.cudabinwrapper.get_bundled_binary())
+                bin = llspy.cudabinwrapper.get_bundled_binary()
             except llspy.cudabinwrapper.CUDAbinException:
-                raise err.MissingBinaryError(
+                logger.warning(
                     "Could not load bundled cudaDeconv.  Check that it is installed.  read docs"
                 )
+                return
+            self.setBinaryPath(bin)
         else:
             self.setBinaryPath(self.cudaDeconvPathLineEdit.text())
 
@@ -1857,7 +1862,7 @@ The cudaDeconv deconvolution program was written by Lin Shao and by Dan Milkie a
         )
 
     def closeEvent(self, event):
-        """ triggered when close button is clicked on main window """
+        """triggered when close button is clicked on main window"""
         if self.listbox.rowCount() and self.confirmOnQuitCheckBox.isChecked():
             box = QtW.QMessageBox()
             box.setWindowTitle("Unprocessed items!")
