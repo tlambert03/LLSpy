@@ -1,10 +1,11 @@
-from qtpy import QtCore, QtWidgets
-import time
-import os
-import sys
-import re
-import logging
 import inspect
+import logging
+import os
+import re
+import sys
+import time
+
+from qtpy import QtCore, QtWidgets
 
 
 # TODO: add timer?
@@ -81,7 +82,7 @@ def string_to_iterable(string):
     >>> string_to_iterable('0,3,5-10,15-30-3,40')
     [0,3,5,6,7,8,9,10,15,18,21,24,27,30,40]
     """
-    if re.search("[^\d^,^-]", string) is not None:
+    if re.search(r"[^\d^,^-]", string) is not None:
         raise ValueError("Iterable string must contain only digits, commas, and dashes")
     it = []
     splits = [tuple(s.split("-")) for s in string.split(",")]
@@ -98,7 +99,7 @@ def string_to_iterable(string):
 
 
 def guisave(widget, settings):
-    print("Saving settings: {}".format(settings.fileName()))
+    print(f"Saving settings: {settings.fileName()}")
     # Save geometry
     selfName = widget.objectName()
     settings.setValue(selfName + "_size", widget.size())
@@ -123,7 +124,7 @@ def guisave(widget, settings):
 
 
 def guirestore(widget, settings, default):
-    print("Restoring settings: {}".format(settings.fileName()))
+    print(f"Restoring settings: {settings.fileName()}")
     # Restore geometry
     selfName = widget.objectName()
     if "LLSpyDefaults" not in settings.fileName():
@@ -162,7 +163,7 @@ def guirestore(widget, settings, default):
                 if value is not None:
                     obj.setValue(value)
         except Exception:
-            logging.warn("Unable to restore settings for object: {}".format(name))
+            logging.warn(f"Unable to restore settings for object: {name}")
 
 
 def reveal(path):

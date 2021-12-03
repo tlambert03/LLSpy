@@ -44,4 +44,3 @@ compressRaw         False	     			do compression of raw data after processing
 compressionType     lbzip2	  				compression binary {lbzip2, bzip2, pbzip2, pigz, gzip}
 writeLog            True	      			write settings to processinglog.txt
 ==================  ======================  =================================================================
-

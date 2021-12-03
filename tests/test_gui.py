@@ -1,12 +1,14 @@
-from llspy.gui.mainwindow import main_GUI
-from llspy.gui.exceptions import MissingBinaryError
-from llspy.exceptions import CUDAbinException, LibCUDAException
 import contextlib
-import pytest
 from pathlib import Path
 
+import pytest
+
+from llspy.exceptions import CUDAbinException
+from llspy.gui.exceptions import MissingBinaryError
+from llspy.gui.mainwindow import main_GUI
+
 TEST_DATA = Path(__file__).parent / "testdata"
-SAMPLE = TEST_DATA / 'sample'
+SAMPLE = TEST_DATA / "sample"
 
 
 @pytest.fixture
@@ -25,4 +27,3 @@ def test_main_window(main_window):
 def test_add_path(main_window: main_GUI):
     main_window.listbox.addPath(str(SAMPLE))
     assert main_window.listbox.rowCount() == 1
-

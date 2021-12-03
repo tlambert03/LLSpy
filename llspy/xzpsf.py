@@ -1,12 +1,12 @@
 #! /usr/bin/env python
-from __future__ import print_function
+
+import fnmatch
+import os
+import re
+import warnings
 
 import numpy as np
 import tifffile as tf
-import os
-import re
-import fnmatch
-import warnings
 from scipy.ndimage.filters import gaussian_filter
 
 
@@ -15,14 +15,14 @@ def main(infile, nx, nz, sig=1, pad=12):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             indat = tf.imread(infile)
-    except IOError:
+    except OSError:
         print("File %s does not exist or is no readable.\n Quit" % infile)
         return
 
     mip = indat.max(0)
     mipblur = gaussian_filter(mip, sig)
     maxy, maxx = np.argwhere(mipblur == mipblur.max())[0]
-    print("bead detected at ({},{})".format(maxx, maxy))
+    print(f"bead detected at ({maxx},{maxy})")
 
     beadslice = indat[:, maxy - pad : maxy + pad, maxx - pad : maxx + pad].astype(
         np.float
@@ -39,21 +39,21 @@ def main(infile, nx, nz, sig=1, pad=12):
 # this functionality is duplicated from settingstxt.py to allow this file
 # to function independently of the rest of the package
 def get_nXnZ(settings):
-    with open(settings, "r", encoding="utf-8") as f:
+    with open(settings, encoding="utf-8") as f:
         raw_text = f.read()
 
     waveform_pattern = re.compile(
         r"""
-		^(?P<waveform>.*)\sOffset,	# Waveform type, newline followed by description
-		.*\((?P<channel>\d+)\)\s	# get channel number inside of parentheses
-		:\s*(?P<offset>[-\d]*\.?\d*)	# float offset value after colon
-		\s*(?P<interval>[-\d]*\.?\d*)	# float interval value next
-		\s*(?P<numpix>\d+)			# integer number of pixels last
-		""",
+        ^(?P<waveform>.*)\sOffset,	# Waveform type, newline followed by description
+        .*\((?P<channel>\d+)\)\s	# get channel number inside of parentheses
+        :\s*(?P<offset>[-\d]*\.?\d*)	# float offset value after colon
+        \s*(?P<interval>[-\d]*\.?\d*)	# float interval value next
+        \s*(?P<numpix>\d+)			# integer number of pixels last
+        """,
         re.MULTILINE | re.VERBOSE,
     )
 
-    acq_mode = re.search("Acq Mode\s*:\s*(.*)\n", raw_text).group(1)
+    acq_mode = re.search("Acq Mode\\s*:\\s*(.*)\n", raw_text).group(1)
     if not acq_mode == "XZ PSF":
         warnings.warn("Settings.txt acquisition mode was NOT XZ PSF")
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
         if settext is not None:
             nx, nz = get_nXnZ(settext)
-            print("nX: {}, nZ: {}, detected from settings.txt".format(nx, nz))
+            print(f"nX: {nx}, nZ: {nz}, detected from settings.txt")
         else:
             print("Could not find settings file, must input values")
             nx = int(input("number of X pixels = "))
@@ -146,20 +146,20 @@ if __name__ == "__main__":
         nx = int(args.nx)
         nz = int(args.nz)
 
-    if not (nx > 0 and nz > 0):
+    if nx <= 0 or nz <= 0:
         raise ValueError("Must provide nX and nZ > 0")
 
         # if a directory is provided, do it to each file
     if os.path.isdir(path):
         for file in os.listdir(path):
             if fnmatch.fnmatch(file, "*.tif") and "xzPSF" not in file:
-                print("processing {}: ".format(file), end="")
+                print(f"processing {file}: ", end="")
                 try:
                     main(os.path.join(path, file), nx, nz, sig=sig, pad=pad)
                 except Exception as e:
-                    print("ERROR: {} ... skipping".format(e))
+                    print(f"ERROR: {e} ... skipping")
 
     elif os.path.isfile(path):
         main(path, nx, nz, sig=sig, pad=pad)
     else:
-        raise IOError("Path must be an existing file or directory")
+        raise OSError("Path must be an existing file or directory")

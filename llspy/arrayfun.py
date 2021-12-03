@@ -1,10 +1,9 @@
-from __future__ import print_function, division
-from .libcudawrapper import deskewGPU as deskew
-from .util import imread
-
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 from scipy.stats import mode
+
+from .libcudawrapper import deskewGPU as deskew
+from .util import imread
 
 
 def threshold_li(image):
@@ -39,7 +38,7 @@ def threshold_li(image):
         raise ValueError(
             "threshold_li is expected to work with images "
             "having more than one value. The input image seems "
-            "to have just one value {0}.".format(image.flat[0])
+            "to have just one value {}.".format(image.flat[0])
         )
 
     # Copy to ensure input image is not modified
@@ -68,11 +67,7 @@ def threshold_li(image):
 
         temp = (mean_back - mean_obj) / (np.log(mean_back) - np.log(mean_obj))
 
-        if temp < 0:
-            new_thresh = temp - tolerance
-        else:
-            new_thresh = temp + tolerance
-
+        new_thresh = temp - tolerance if temp < 0 else temp + tolerance
     return threshold + immin
 
 
@@ -148,7 +143,7 @@ def feature_width(E, background=None, pad=50, t=0):
 
 
 def detect_background(im):
-    """ get mode of the first plane """
+    """get mode of the first plane"""
     if im.ndim == 4:
         im = im[0][2]
     if im.ndim == 3:
@@ -157,7 +152,7 @@ def detect_background(im):
 
 
 def sub_background(im, background=None):
-    """ subtract provided background or autodetct as mode of the first plane"""
+    """subtract provided background or autodetct as mode of the first plane"""
     if background is None:
         background = detect_background(im)
     out = im.astype(np.float) - background
@@ -167,10 +162,11 @@ def sub_background(im, background=None):
 
 def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
     try:
-        import gputools
+        from gputools.transforms import affine
     except ImportError:
         # sys.stdout = sys.__stdout__
         print("could not import gputools")
+        return
 
     deskewFactor = np.cos(angle * np.pi / 180) * dz / dx
     T = np.array([[1, 0, deskewFactor, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
@@ -182,5 +178,4 @@ def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
     # otherwise, edge pixel values are smeared across the image
     paddedData = np.ones((nz, ny, nxOut), rawdata.dtype) * filler
     paddedData[..., :nx] = rawdata
-    out = gputools.transforms.affine(paddedData, T, interpolation="linear", mode="wrap")
-    return out  # return is np.float32
+    return affine(paddedData, T, interpolation="linear", mode="wrap")

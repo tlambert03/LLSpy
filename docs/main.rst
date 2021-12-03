@@ -219,7 +219,7 @@ Each time you use the program, you will need to activate the virtual environment
         $ lls decon /path/to/dataset
         # or launch the gui
         $ lls gui
-        
+
 
 Setup
 =====

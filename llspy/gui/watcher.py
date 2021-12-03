@@ -48,7 +48,7 @@ if _watchdog:
         status_update = QtCore.Signal(str, int)
 
         def __init__(self, path, timeout=30):
-            super(ActiveWatcher, self).__init__()
+            super().__init__()
             self.path = path
             self.timeout = timeout  # seconds to wait for new file before giving up
             self.inProcess = False
@@ -76,7 +76,7 @@ if _watchdog:
             self.timer.start(self.timeout * 1000)
 
             # Too strict?
-            fpattern = "^.+_ch\d_stack\d{4}_\D*\d+.*_\d{7}msec_\d{10}msecAbs.*.tif"
+            fpattern = r"^.+_ch\d_stack\d{4}_\D*\d+.*_\d{7}msec_\d{10}msecAbs.*.tif"
             # fpattern = '.*.tif'
             handler = ActiveHandler(
                 str(self.E.path),
@@ -205,7 +205,7 @@ if _watchdog:
         lostListItem = QtCore.Signal(str)
 
         def __init__(self):
-            super(MainHandler, self).__init__()
+            super().__init__()
 
         def on_created(self, event):
             # Called when a file or directory is created.
@@ -234,7 +234,7 @@ if _watchdog:
         newfile = QtCore.Signal(str)
 
         def __init__(self, path, nC, nT, **kwargs):
-            super(ActiveHandler, self).__init__(**kwargs)
+            super().__init__(**kwargs)
             self.path = path
             self.nC = nC
             self.nT = nT

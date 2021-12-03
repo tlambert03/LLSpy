@@ -1,12 +1,12 @@
+import ctypes
+import fnmatch
+import json
 import os
 import sys
-import fnmatch
 import warnings
-import tifffile
-import numpy as np
-import json
-import ctypes
 
+import numpy as np
+import tifffile
 
 PLAT = sys.platform
 if PLAT == "linux2":
@@ -100,7 +100,7 @@ def format_size(size):
     """Return file size as string from byte size."""
     for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
         if size < 1024:
-            return "%.f %s" % (size, unit)
+            return f"{size:.f} {unit}"
         size /= 1024.0
 
 
@@ -204,7 +204,7 @@ def reorderstack(arr, inorder="zyx", outorder="tzcyx"):
 
 
 def getAbsoluteResourcePath(relativePath):
-    """ Load relative path, in an environment agnostic way"""
+    """Load relative path, in an environment agnostic way"""
 
     try:
         # PyInstaller stores data files in a tmp folder refered to as _MEIPASS
@@ -230,8 +230,7 @@ def getAbsoluteResourcePath(relativePath):
 
 
 def load_lib(libname):
-    """load shared library, searching a number of likely paths
-    """
+    """load shared library, searching a number of likely paths"""
     # first just try to find it on the search path
 
     searchlist = [

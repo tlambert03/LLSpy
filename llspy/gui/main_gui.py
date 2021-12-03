@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Form implementation generated from reading ui file '/Users/talley/Dropbox (HMS)/Python/LLSpy/llspy/gui/main_gui.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
@@ -8,7 +6,8 @@
 
 from qtpy import QtCore, QtGui, QtWidgets
 
-class Ui_Main_GUI(object):
+
+class Ui_Main_GUI:
     def setupUi(self, Main_GUI):
         Main_GUI.setObjectName("Main_GUI")
         Main_GUI.resize(617, 861)
@@ -78,7 +77,9 @@ class Ui_Main_GUI(object):
         self.verticalLayout_16.setSpacing(6)
         self.verticalLayout_16.setObjectName("verticalLayout_16")
         self.camcorGroupBox = QtWidgets.QGroupBox(self.tool_preprocess)
-        self.camcorGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.camcorGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.camcorGroupBox.setObjectName("camcorGroupBox")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.camcorGroupBox)
         self.gridLayout_2.setContentsMargins(11, 11, 11, 11)
@@ -107,20 +108,28 @@ class Ui_Main_GUI(object):
         self.camParamTiffToolButton.setObjectName("camParamTiffToolButton")
         self.gridLayout_2.addWidget(self.camParamTiffToolButton, 1, 6, 1, 1)
         self.camParamTiffLabel = QtWidgets.QLabel(self.camcorGroupBox)
-        self.camParamTiffLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.camParamTiffLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.camParamTiffLabel.setObjectName("camParamTiffLabel")
         self.gridLayout_2.addWidget(self.camParamTiffLabel, 1, 0, 1, 1)
         self.camParamTiffLineEdit = QtWidgets.QLineEdit(self.camcorGroupBox)
         self.camParamTiffLineEdit.setText("")
-        self.camParamTiffLineEdit.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.camParamTiffLineEdit.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.camParamTiffLineEdit.setReadOnly(True)
         self.camParamTiffLineEdit.setObjectName("camParamTiffLineEdit")
         self.gridLayout_2.addWidget(self.camParamTiffLineEdit, 1, 1, 1, 5)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_2.addItem(spacerItem, 0, 3, 1, 1)
         self.verticalLayout_16.addWidget(self.camcorGroupBox)
         self.trimEdgesGroupBox = QtWidgets.QGroupBox(self.tool_preprocess)
-        self.trimEdgesGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.trimEdgesGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.trimEdgesGroupBox.setObjectName("trimEdgesGroupBox")
         self.gridLayout_23 = QtWidgets.QGridLayout(self.trimEdgesGroupBox)
         self.gridLayout_23.setContentsMargins(8, 8, 11, 8)
@@ -168,7 +177,9 @@ class Ui_Main_GUI(object):
         self.trimY1Label = QtWidgets.QLabel(self.trimEdgesGroupBox)
         self.trimY1Label.setObjectName("trimY1Label")
         self.gridLayout_23.addWidget(self.trimY1Label, 1, 3, 1, 1, QtCore.Qt.AlignRight)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_23.addItem(spacerItem1, 1, 2, 1, 1)
         self.trimY0SpinBox = QtWidgets.QSpinBox(self.trimEdgesGroupBox)
         self.trimY0SpinBox.setMaximum(999)
@@ -177,11 +188,17 @@ class Ui_Main_GUI(object):
         self.trimX1Label = QtWidgets.QLabel(self.trimEdgesGroupBox)
         self.trimX1Label.setObjectName("trimX1Label")
         self.gridLayout_23.addWidget(self.trimX1Label, 1, 0, 1, 1, QtCore.Qt.AlignRight)
-        spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_23.addItem(spacerItem2, 0, 2, 1, 1)
-        spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem3 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_23.addItem(spacerItem3, 1, 5, 1, 1)
-        spacerItem4 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem4 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_23.addItem(spacerItem4, 0, 5, 1, 1)
         self.trimX0Label.raise_()
         self.trimX0SpinBox.raise_()
@@ -197,7 +214,9 @@ class Ui_Main_GUI(object):
         self.trimZ1Label.raise_()
         self.verticalLayout_16.addWidget(self.trimEdgesGroupBox)
         self.backgroundGroupBox = QtWidgets.QGroupBox(self.tool_preprocess)
-        self.backgroundGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.backgroundGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.backgroundGroupBox.setObjectName("backgroundGroupBox")
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout(self.backgroundGroupBox)
         self.horizontalLayout_6.setContentsMargins(8, 8, 11, 8)
@@ -207,7 +226,9 @@ class Ui_Main_GUI(object):
         self.backgroundAutoRadio.setChecked(True)
         self.backgroundAutoRadio.setObjectName("backgroundAutoRadio")
         self.horizontalLayout_6.addWidget(self.backgroundAutoRadio)
-        spacerItem5 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem5 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_6.addItem(spacerItem5)
         self.backgroundFixedRadio = QtWidgets.QRadioButton(self.backgroundGroupBox)
         self.backgroundFixedRadio.setObjectName("backgroundFixedRadio")
@@ -219,7 +240,9 @@ class Ui_Main_GUI(object):
         self.backgroundFixedSpinBox.setProperty("value", 90)
         self.backgroundFixedSpinBox.setObjectName("backgroundFixedSpinBox")
         self.horizontalLayout_6.addWidget(self.backgroundFixedSpinBox)
-        spacerItem6 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem6 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_6.addItem(spacerItem6)
         self.backgroundRollingRadio = QtWidgets.QRadioButton(self.backgroundGroupBox)
         self.backgroundRollingRadio.setEnabled(False)
@@ -231,7 +254,9 @@ class Ui_Main_GUI(object):
         self.backgroundRollingSpinBox.setObjectName("backgroundRollingSpinBox")
         self.horizontalLayout_6.addWidget(self.backgroundRollingSpinBox)
         self.verticalLayout_16.addWidget(self.backgroundGroupBox)
-        spacerItem7 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem7 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_16.addItem(spacerItem7)
         self.processingToolBox.addItem(self.tool_preprocess, "")
         self.tool_deconvolution = QtWidgets.QWidget()
@@ -243,7 +268,9 @@ class Ui_Main_GUI(object):
         self.verticalLayout_14.setObjectName("verticalLayout_14")
         self.doDeconGroupBox = QtWidgets.QGroupBox(self.tool_deconvolution)
         self.doDeconGroupBox.setToolTip("")
-        self.doDeconGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.doDeconGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.doDeconGroupBox.setFlat(False)
         self.doDeconGroupBox.setCheckable(True)
         self.doDeconGroupBox.setChecked(True)
@@ -266,7 +293,9 @@ class Ui_Main_GUI(object):
         self.iterationsSpinBox.setProperty("value", 10)
         self.iterationsSpinBox.setObjectName("iterationsSpinBox")
         self.deconParamsLayout.addWidget(self.iterationsSpinBox)
-        spacerItem8 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem8 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.deconParamsLayout.addItem(spacerItem8)
         self.apodizeLabel = QtWidgets.QLabel(self.doDeconGroupBox)
         self.apodizeLabel.setEnabled(True)
@@ -278,7 +307,9 @@ class Ui_Main_GUI(object):
         self.apodizeSpinBox.setProperty("value", 15)
         self.apodizeSpinBox.setObjectName("apodizeSpinBox")
         self.deconParamsLayout.addWidget(self.apodizeSpinBox)
-        spacerItem9 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem9 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.deconParamsLayout.addItem(spacerItem9)
         self.zblendLabel = QtWidgets.QLabel(self.doDeconGroupBox)
         self.zblendLabel.setEnabled(True)
@@ -299,7 +330,9 @@ class Ui_Main_GUI(object):
         self.saveDeconvolvedCheckBox.setChecked(True)
         self.saveDeconvolvedCheckBox.setObjectName("saveDeconvolvedCheckBox")
         self.deconvSaveLayout.addWidget(self.saveDeconvolvedCheckBox)
-        spacerItem10 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem10 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.deconvSaveLayout.addItem(spacerItem10)
         self.deconvolvedMIPFrame = QtWidgets.QFrame(self.doDeconGroupBox)
         self.deconvolvedMIPFrame.setEnabled(True)
@@ -328,7 +361,9 @@ class Ui_Main_GUI(object):
         self.deconZMIPCheckBox.setObjectName("deconZMIPCheckBox")
         self.horizontalLayout_25.addWidget(self.deconZMIPCheckBox)
         self.deconvSaveLayout.addWidget(self.deconvolvedMIPFrame)
-        spacerItem11 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem11 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.deconvSaveLayout.addItem(spacerItem11)
         self.deconvolvedBitDepthCombo = QtWidgets.QComboBox(self.doDeconGroupBox)
         self.deconvolvedBitDepthCombo.setEnabled(True)
@@ -340,13 +375,17 @@ class Ui_Main_GUI(object):
         self.verticalLayout.addLayout(self.deconvSaveLayout)
         self.verticalLayout_14.addWidget(self.doDeconGroupBox)
         self.deskewedGroupBox = QtWidgets.QGroupBox(self.tool_deconvolution)
-        self.deskewedGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.deskewedGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.deskewedGroupBox.setObjectName("deskewedGroupBox")
         self.gridLayout_7 = QtWidgets.QGridLayout(self.deskewedGroupBox)
         self.gridLayout_7.setContentsMargins(4, 4, 8, 8)
         self.gridLayout_7.setSpacing(6)
         self.gridLayout_7.setObjectName("gridLayout_7")
-        spacerItem12 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem12 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_7.addItem(spacerItem12, 0, 1, 1, 1)
         self.deskewedMIPFrame = QtWidgets.QFrame(self.deskewedGroupBox)
         self.deskewedMIPFrame.setFrameShape(QtWidgets.QFrame.Panel)
@@ -381,7 +420,9 @@ class Ui_Main_GUI(object):
         self.deskewedBitDepthCombo.addItem("")
         self.deskewedBitDepthCombo.addItem("")
         self.gridLayout_7.addWidget(self.deskewedBitDepthCombo, 0, 4, 1, 1)
-        spacerItem13 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem13 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout_7.addItem(spacerItem13, 0, 3, 1, 1)
         self.verticalLayout_14.addWidget(self.deskewedGroupBox)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -394,7 +435,9 @@ class Ui_Main_GUI(object):
         self.deconJoinMIPCheckBox.setChecked(True)
         self.deconJoinMIPCheckBox.setObjectName("deconJoinMIPCheckBox")
         self.horizontalLayout_2.addWidget(self.deconJoinMIPCheckBox)
-        spacerItem14 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem14 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_2.addItem(spacerItem14)
         self.useLZWCheckBox = QtWidgets.QCheckBox(self.tool_deconvolution)
         self.useLZWCheckBox.setEnabled(True)
@@ -413,7 +456,9 @@ class Ui_Main_GUI(object):
         self.dupRevStackCheckBox.setChecked(True)
         self.dupRevStackCheckBox.setObjectName("dupRevStackCheckBox")
         self.horizontalLayout_3.addWidget(self.dupRevStackCheckBox)
-        spacerItem15 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem15 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_3.addItem(spacerItem15)
         self.padValLabel = QtWidgets.QLabel(self.tool_deconvolution)
         self.padValLabel.setEnabled(True)
@@ -427,7 +472,9 @@ class Ui_Main_GUI(object):
         self.padValSpinBox.setObjectName("padValSpinBox")
         self.horizontalLayout_3.addWidget(self.padValSpinBox)
         self.verticalLayout_14.addLayout(self.horizontalLayout_3)
-        spacerItem16 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem16 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_14.addItem(spacerItem16)
         self.processingToolBox.addItem(self.tool_deconvolution, "")
         self.tool_postprocess = QtWidgets.QWidget()
@@ -438,7 +485,9 @@ class Ui_Main_GUI(object):
         self.verticalLayout_12.setSpacing(6)
         self.verticalLayout_12.setObjectName("verticalLayout_12")
         self.croppingGroupBox = QtWidgets.QGroupBox(self.tool_postprocess)
-        self.croppingGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.croppingGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.croppingGroupBox.setCheckable(True)
         self.croppingGroupBox.setChecked(True)
         self.croppingGroupBox.setObjectName("croppingGroupBox")
@@ -463,7 +512,9 @@ class Ui_Main_GUI(object):
         self.autocropPadSpinBox.setProperty("value", 50)
         self.autocropPadSpinBox.setObjectName("autocropPadSpinBox")
         self.horizontalLayout_7.addWidget(self.autocropPadSpinBox)
-        spacerItem17 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem17 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_7.addItem(spacerItem17)
         self.cropManualRadio = QtWidgets.QRadioButton(self.croppingGroupBox)
         self.cropManualRadio.setObjectName("cropManualRadio")
@@ -503,7 +554,9 @@ class Ui_Main_GUI(object):
         self.verticalLayout_12.addWidget(self.croppingGroupBox)
         self.rotateGroupBox = QtWidgets.QGroupBox(self.tool_postprocess)
         self.rotateGroupBox.setEnabled(True)
-        self.rotateGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.rotateGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.rotateGroupBox.setCheckable(True)
         self.rotateGroupBox.setChecked(True)
         self.rotateGroupBox.setObjectName("rotateGroupBox")
@@ -515,12 +568,16 @@ class Ui_Main_GUI(object):
         self.rotateReverseCheckBox.setEnabled(True)
         self.rotateReverseCheckBox.setObjectName("rotateReverseCheckBox")
         self.horizontalLayout_8.addWidget(self.rotateReverseCheckBox)
-        spacerItem18 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem18 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_8.addItem(spacerItem18)
         self.rotateOverrideCheckBox = QtWidgets.QCheckBox(self.rotateGroupBox)
         self.rotateOverrideCheckBox.setEnabled(True)
         self.rotateOverrideCheckBox.setObjectName("rotateOverrideCheckBox")
-        self.horizontalLayout_8.addWidget(self.rotateOverrideCheckBox, 0, QtCore.Qt.AlignRight)
+        self.horizontalLayout_8.addWidget(
+            self.rotateOverrideCheckBox, 0, QtCore.Qt.AlignRight
+        )
         self.rotateOverrideSpinBox = QtWidgets.QDoubleSpinBox(self.rotateGroupBox)
         self.rotateOverrideSpinBox.setEnabled(False)
         self.rotateOverrideSpinBox.setMaximumSize(QtCore.QSize(70, 16777215))
@@ -532,7 +589,9 @@ class Ui_Main_GUI(object):
         self.horizontalLayout_8.addWidget(self.rotateOverrideSpinBox)
         self.verticalLayout_12.addWidget(self.rotateGroupBox)
         self.doRegistrationGroupBox = QtWidgets.QGroupBox(self.tool_postprocess)
-        self.doRegistrationGroupBox.setStyleSheet("QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}")
+        self.doRegistrationGroupBox.setStyleSheet(
+            "QGroupBox{font-size: 14px} QGroupBox::title{subcontrol-position: top left}"
+        )
         self.doRegistrationGroupBox.setCheckable(True)
         self.doRegistrationGroupBox.setChecked(True)
         self.doRegistrationGroupBox.setObjectName("doRegistrationGroupBox")
@@ -544,7 +603,9 @@ class Ui_Main_GUI(object):
         self.channelRefLabel.setEnabled(True)
         self.channelRefLabel.setObjectName("channelRefLabel")
         self.gridLayout.addWidget(self.channelRefLabel, 0, 0, 1, 1)
-        self.RegProcessChannelRefCombo = QtWidgets.QComboBox(self.doRegistrationGroupBox)
+        self.RegProcessChannelRefCombo = QtWidgets.QComboBox(
+            self.doRegistrationGroupBox
+        )
         self.RegProcessChannelRefCombo.setEnabled(True)
         self.RegProcessChannelRefCombo.setMaximumSize(QtCore.QSize(65, 16777215))
         self.RegProcessChannelRefCombo.setCurrentText("")
@@ -553,14 +614,20 @@ class Ui_Main_GUI(object):
         self.channelRefModeLabel = QtWidgets.QLabel(self.doRegistrationGroupBox)
         self.channelRefModeLabel.setObjectName("channelRefModeLabel")
         self.gridLayout.addWidget(self.channelRefModeLabel, 0, 2, 1, 1)
-        self.RegProcessChannelRefModeCombo = QtWidgets.QComboBox(self.doRegistrationGroupBox)
+        self.RegProcessChannelRefModeCombo = QtWidgets.QComboBox(
+            self.doRegistrationGroupBox
+        )
         self.RegProcessChannelRefModeCombo.setEnabled(True)
         self.RegProcessChannelRefModeCombo.setMinimumSize(QtCore.QSize(130, 0))
         self.RegProcessChannelRefModeCombo.setMaximumSize(QtCore.QSize(50, 16777215))
         self.RegProcessChannelRefModeCombo.setCurrentText("")
-        self.RegProcessChannelRefModeCombo.setObjectName("RegProcessChannelRefModeCombo")
+        self.RegProcessChannelRefModeCombo.setObjectName(
+            "RegProcessChannelRefModeCombo"
+        )
         self.gridLayout.addWidget(self.RegProcessChannelRefModeCombo, 0, 3, 1, 1)
-        spacerItem19 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem19 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.gridLayout.addItem(spacerItem19, 0, 4, 1, 1)
         self.RegProcessLoadRegFile = QtWidgets.QPushButton(self.doRegistrationGroupBox)
         self.RegProcessLoadRegFile.setObjectName("RegProcessLoadRegFile")
@@ -573,10 +640,14 @@ class Ui_Main_GUI(object):
         self.RegProcessPathLineEdit.setReadOnly(True)
         self.RegProcessPathLineEdit.setObjectName("RegProcessPathLineEdit")
         self.gridLayout.addWidget(self.RegProcessPathLineEdit, 1, 1, 1, 4)
-        self.RegProcessPathPushButton = QtWidgets.QPushButton(self.doRegistrationGroupBox)
+        self.RegProcessPathPushButton = QtWidgets.QPushButton(
+            self.doRegistrationGroupBox
+        )
         self.RegProcessPathPushButton.setObjectName("RegProcessPathPushButton")
         self.gridLayout.addWidget(self.RegProcessPathPushButton, 1, 5, 1, 1)
-        self.discardUnregisteredCheckBox = QtWidgets.QCheckBox(self.doRegistrationGroupBox)
+        self.discardUnregisteredCheckBox = QtWidgets.QCheckBox(
+            self.doRegistrationGroupBox
+        )
         self.discardUnregisteredCheckBox.setEnabled(True)
         self.discardUnregisteredCheckBox.setObjectName("discardUnregisteredCheckBox")
         self.gridLayout.addWidget(self.discardUnregisteredCheckBox, 2, 0, 1, 5)
@@ -588,15 +659,21 @@ class Ui_Main_GUI(object):
         self.bleachCorrectionCheckBox = QtWidgets.QCheckBox(self.tool_postprocess)
         self.bleachCorrectionCheckBox.setObjectName("bleachCorrectionCheckBox")
         self.horizontalLayout_4.addWidget(self.bleachCorrectionCheckBox)
-        spacerItem20 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem20 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_4.addItem(spacerItem20)
         self.compressRawCheckBox = QtWidgets.QCheckBox(self.tool_postprocess)
         self.compressRawCheckBox.setObjectName("compressRawCheckBox")
         self.horizontalLayout_4.addWidget(self.compressRawCheckBox)
-        spacerItem21 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        spacerItem21 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.horizontalLayout_4.addItem(spacerItem21)
         self.label = QtWidgets.QLabel(self.tool_postprocess)
-        self.label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.label.setObjectName("label")
         self.horizontalLayout_4.addWidget(self.label)
         self.compressTypeCombo = QtWidgets.QComboBox(self.tool_postprocess)
@@ -607,7 +684,9 @@ class Ui_Main_GUI(object):
         self.compressTypeCombo.setObjectName("compressTypeCombo")
         self.horizontalLayout_4.addWidget(self.compressTypeCombo)
         self.verticalLayout_12.addLayout(self.horizontalLayout_4)
-        spacerItem22 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem22 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_12.addItem(spacerItem22)
         self.processingToolBox.addItem(self.tool_postprocess, "")
         self.process_tab_layout.addWidget(self.processingToolBox)
@@ -621,7 +700,9 @@ class Ui_Main_GUI(object):
         self.RegCalib_channelRefModeCombo = QtWidgets.QComboBox(self.tab_registration)
         self.RegCalib_channelRefModeCombo.setEnabled(True)
         self.RegCalib_channelRefModeCombo.setMinimumSize(QtCore.QSize(0, 0))
-        self.RegCalib_channelRefModeCombo.setMaximumSize(QtCore.QSize(1606000, 16777215))
+        self.RegCalib_channelRefModeCombo.setMaximumSize(
+            QtCore.QSize(1606000, 16777215)
+        )
         self.RegCalib_channelRefModeCombo.setCurrentText("")
         self.RegCalib_channelRefModeCombo.setObjectName("RegCalib_channelRefModeCombo")
         self.gridLayout_3.addWidget(self.RegCalib_channelRefModeCombo, 8, 6, 1, 3)
@@ -637,7 +718,9 @@ class Ui_Main_GUI(object):
         self.gridLayout_3.addWidget(self.RegCalib_channelRefCombo, 8, 4, 1, 1)
         self.RegCalibRefChannelsLabel = QtWidgets.QLabel(self.tab_registration)
         self.RegCalibRefChannelsLabel.setEnabled(True)
-        self.RegCalibRefChannelsLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.RegCalibRefChannelsLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.RegCalibRefChannelsLabel.setObjectName("RegCalibRefChannelsLabel")
         self.gridLayout_3.addWidget(self.RegCalibRefChannelsLabel, 3, 2, 1, 2)
         self.GenerateRegFileButton = QtWidgets.QPushButton(self.tab_registration)
@@ -647,7 +730,9 @@ class Ui_Main_GUI(object):
         self.RegCalibPathLabel = QtWidgets.QLabel(self.tab_registration)
         self.RegCalibPathLabel.setMinimumSize(QtCore.QSize(95, 0))
         self.RegCalibPathLabel.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.RegCalibPathLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.RegCalibPathLabel.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.RegCalibPathLabel.setObjectName("RegCalibPathLabel")
         self.gridLayout_3.addWidget(self.RegCalibPathLabel, 0, 0, 1, 1)
         self.RegCalib_channelRefModeLabel = QtWidgets.QLabel(self.tab_registration)
@@ -659,7 +744,9 @@ class Ui_Main_GUI(object):
         self.horizline_1.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.horizline_1.setObjectName("horizline_1")
         self.gridLayout_3.addWidget(self.horizline_1, 4, 0, 1, 9)
-        spacerItem23 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem23 = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout_3.addItem(spacerItem23, 9, 4, 1, 1)
         self.RegCalibPathLoadButton = QtWidgets.QPushButton(self.tab_registration)
         self.RegCalibPathLoadButton.setObjectName("RegCalibPathLoadButton")
@@ -686,13 +773,17 @@ class Ui_Main_GUI(object):
         self.BeadThresholdLabel = QtWidgets.QLabel(self.tab_registration)
         self.BeadThresholdLabel.setMinimumSize(QtCore.QSize(95, 0))
         self.BeadThresholdLabel.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.BeadThresholdLabel.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.BeadThresholdLabel.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.BeadThresholdLabel.setObjectName("BeadThresholdLabel")
         self.gridLayout_3.addWidget(self.BeadThresholdLabel, 1, 0, 1, 1)
         self.RegCalibRefChannelsGroup = QtWidgets.QGroupBox(self.tab_registration)
         self.RegCalibRefChannelsGroup.setTitle("")
         self.RegCalibRefChannelsGroup.setObjectName("RegCalibRefChannelsGroup")
-        self.RegCalibRefGroupLayout = QtWidgets.QHBoxLayout(self.RegCalibRefChannelsGroup)
+        self.RegCalibRefGroupLayout = QtWidgets.QHBoxLayout(
+            self.RegCalibRefChannelsGroup
+        )
         self.RegCalibRefGroupLayout.setContentsMargins(11, 0, 11, 0)
         self.RegCalibRefGroupLayout.setSpacing(6)
         self.RegCalibRefGroupLayout.setObjectName("RegCalibRefGroupLayout")
@@ -704,7 +795,9 @@ class Ui_Main_GUI(object):
         self.RegBeadThreshSpin.setObjectName("RegBeadThreshSpin")
         self.gridLayout_3.addWidget(self.RegBeadThreshSpin, 1, 1, 1, 1)
         self.RegMinBeadsLabel = QtWidgets.QLabel(self.tab_registration)
-        self.RegMinBeadsLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.RegMinBeadsLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.RegMinBeadsLabel.setObjectName("RegMinBeadsLabel")
         self.gridLayout_3.addWidget(self.RegMinBeadsLabel, 1, 4, 1, 4)
         self.RegMinBeadsSpin = QtWidgets.QSpinBox(self.tab_registration)
@@ -725,11 +818,15 @@ class Ui_Main_GUI(object):
         self.gridLayout_4.setSpacing(6)
         self.gridLayout_4.setObjectName("gridLayout_4")
         self.filenamePatternLabel = QtWidgets.QLabel(self.tab_config)
-        self.filenamePatternLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.filenamePatternLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.filenamePatternLabel.setObjectName("filenamePatternLabel")
         self.gridLayout_4.addWidget(self.filenamePatternLabel, 3, 0, 1, 1)
         self.cudaDeconvPathLabel_2 = QtWidgets.QLabel(self.tab_config)
-        self.cudaDeconvPathLabel_2.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.cudaDeconvPathLabel_2.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.cudaDeconvPathLabel_2.setObjectName("cudaDeconvPathLabel_2")
         self.gridLayout_4.addWidget(self.cudaDeconvPathLabel_2, 0, 0, 1, 1)
         self.useBundledBinariesCheckBox = QtWidgets.QCheckBox(self.tab_config)
@@ -737,7 +834,9 @@ class Ui_Main_GUI(object):
         self.useBundledBinariesCheckBox.setObjectName("useBundledBinariesCheckBox")
         self.gridLayout_4.addWidget(self.useBundledBinariesCheckBox, 1, 1, 1, 6)
         self.cudaDeconvPathLabel = QtWidgets.QLabel(self.tab_config)
-        self.cudaDeconvPathLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.cudaDeconvPathLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.cudaDeconvPathLabel.setObjectName("cudaDeconvPathLabel")
         self.gridLayout_4.addWidget(self.cudaDeconvPathLabel, 5, 0, 1, 1)
         self.cudaDeconvPathLineEdit = QtWidgets.QLineEdit(self.tab_config)
@@ -749,12 +848,16 @@ class Ui_Main_GUI(object):
         self.cudaDeconvPathToolButton.setObjectName("cudaDeconvPathToolButton")
         self.gridLayout_4.addWidget(self.cudaDeconvPathToolButton, 5, 7, 1, 1)
         self.otfFolderPathLabel = QtWidgets.QLabel(self.tab_config)
-        self.otfFolderPathLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.otfFolderPathLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.otfFolderPathLabel.setObjectName("otfFolderPathLabel")
         self.gridLayout_4.addWidget(self.otfFolderPathLabel, 6, 0, 1, 1)
         self.otfFolderLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.otfFolderLineEdit.setText("")
-        self.otfFolderLineEdit.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.otfFolderLineEdit.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.otfFolderLineEdit.setReadOnly(True)
         self.otfFolderLineEdit.setObjectName("otfFolderLineEdit")
         self.gridLayout_4.addWidget(self.otfFolderLineEdit, 6, 1, 1, 6)
@@ -768,11 +871,15 @@ class Ui_Main_GUI(object):
         self.defaultValuesLabel = QtWidgets.QLabel(self.tab_config)
         self.defaultValuesLabel.setEnabled(False)
         self.defaultValuesLabel.setObjectName("defaultValuesLabel")
-        self.gridLayout_4.addWidget(self.defaultValuesLabel, 8, 0, 1, 1, QtCore.Qt.AlignRight)
+        self.gridLayout_4.addWidget(
+            self.defaultValuesLabel, 8, 0, 1, 1, QtCore.Qt.AlignRight
+        )
         self.defaultDxLabel = QtWidgets.QLabel(self.tab_config)
         self.defaultDxLabel.setEnabled(False)
         self.defaultDxLabel.setObjectName("defaultDxLabel")
-        self.gridLayout_4.addWidget(self.defaultDxLabel, 8, 1, 1, 1, QtCore.Qt.AlignRight)
+        self.gridLayout_4.addWidget(
+            self.defaultDxLabel, 8, 1, 1, 1, QtCore.Qt.AlignRight
+        )
         self.defaultDxSpin = QtWidgets.QDoubleSpinBox(self.tab_config)
         self.defaultDxSpin.setEnabled(False)
         self.defaultDxSpin.setDecimals(3)
@@ -783,7 +890,9 @@ class Ui_Main_GUI(object):
         self.defaultDzLabel = QtWidgets.QLabel(self.tab_config)
         self.defaultDzLabel.setEnabled(False)
         self.defaultDzLabel.setObjectName("defaultDzLabel")
-        self.gridLayout_4.addWidget(self.defaultDzLabel, 8, 3, 1, 1, QtCore.Qt.AlignRight)
+        self.gridLayout_4.addWidget(
+            self.defaultDzLabel, 8, 3, 1, 1, QtCore.Qt.AlignRight
+        )
         self.defaultDzSpin = QtWidgets.QDoubleSpinBox(self.tab_config)
         self.defaultDzSpin.setEnabled(False)
         self.defaultDzSpin.setDecimals(3)
@@ -794,7 +903,9 @@ class Ui_Main_GUI(object):
         self.defaultAngleLabel = QtWidgets.QLabel(self.tab_config)
         self.defaultAngleLabel.setEnabled(False)
         self.defaultAngleLabel.setObjectName("defaultAngleLabel")
-        self.gridLayout_4.addWidget(self.defaultAngleLabel, 8, 5, 1, 1, QtCore.Qt.AlignRight)
+        self.gridLayout_4.addWidget(
+            self.defaultAngleLabel, 8, 5, 1, 1, QtCore.Qt.AlignRight
+        )
         self.defaultAngleSpin = QtWidgets.QDoubleSpinBox(self.tab_config)
         self.defaultAngleSpin.setEnabled(False)
         self.defaultAngleSpin.setDecimals(1)
@@ -817,17 +928,23 @@ class Ui_Main_GUI(object):
         self.genFlashParams = QtWidgets.QPushButton(self.tab_config)
         self.genFlashParams.setObjectName("genFlashParams")
         self.gridLayout_4.addWidget(self.genFlashParams, 12, 1, 1, 6)
-        spacerItem24 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem24 = QtWidgets.QSpacerItem(
+            20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout_4.addItem(spacerItem24, 13, 4, 1, 1)
         self.disableSpimagineCheckBox = QtWidgets.QCheckBox(self.tab_config)
         self.disableSpimagineCheckBox.setChecked(False)
         self.disableSpimagineCheckBox.setObjectName("disableSpimagineCheckBox")
         self.gridLayout_4.addWidget(self.disableSpimagineCheckBox, 14, 1, 1, 6)
         self.previewBackendLabel = QtWidgets.QLabel(self.tab_config)
-        self.previewBackendLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.previewBackendLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.previewBackendLabel.setObjectName("previewBackendLabel")
         self.gridLayout_4.addWidget(self.previewBackendLabel, 15, 0, 1, 1)
-        spacerItem25 = QtWidgets.QSpacerItem(20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem25 = QtWidgets.QSpacerItem(
+            20, 600, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.gridLayout_4.addItem(spacerItem25, 16, 4, 1, 1)
         self.watchDirCheckBox = QtWidgets.QCheckBox(self.tab_config)
         self.watchDirCheckBox.setObjectName("watchDirCheckBox")
@@ -844,7 +961,9 @@ class Ui_Main_GUI(object):
         self.gridLayout_4.addWidget(self.watchDirToolButton, 17, 7, 1, 1)
         self.watchModeLabel = QtWidgets.QLabel(self.tab_config)
         self.watchModeLabel.setEnabled(False)
-        self.watchModeLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.watchModeLabel.setAlignment(
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter
+        )
         self.watchModeLabel.setObjectName("watchModeLabel")
         self.gridLayout_4.addWidget(self.watchModeLabel, 18, 0, 1, 1)
         self.errorOptOutCheckBox = QtWidgets.QCheckBox(self.tab_config)
@@ -866,14 +985,20 @@ class Ui_Main_GUI(object):
         self.horizontalLayout_10.setContentsMargins(8, 8, 8, 8)
         self.horizontalLayout_10.setSpacing(6)
         self.horizontalLayout_10.setObjectName("horizontalLayout_10")
-        self.prevBackendSpimagineRadio = QtWidgets.QRadioButton(self.previewBackendGroupBox)
+        self.prevBackendSpimagineRadio = QtWidgets.QRadioButton(
+            self.previewBackendGroupBox
+        )
         self.prevBackendSpimagineRadio.setChecked(True)
         self.prevBackendSpimagineRadio.setObjectName("prevBackendSpimagineRadio")
         self.horizontalLayout_10.addWidget(self.prevBackendSpimagineRadio)
-        self.prevBackendNapariRadio = QtWidgets.QRadioButton(self.previewBackendGroupBox)
+        self.prevBackendNapariRadio = QtWidgets.QRadioButton(
+            self.previewBackendGroupBox
+        )
         self.prevBackendNapariRadio.setObjectName("prevBackendNapariRadio")
         self.horizontalLayout_10.addWidget(self.prevBackendNapariRadio)
-        self.prevBackendMatplotlibRadio = QtWidgets.QRadioButton(self.previewBackendGroupBox)
+        self.prevBackendMatplotlibRadio = QtWidgets.QRadioButton(
+            self.previewBackendGroupBox
+        )
         self.prevBackendMatplotlibRadio.setObjectName("prevBackendMatplotlibRadio")
         self.horizontalLayout_10.addWidget(self.prevBackendMatplotlibRadio)
         self.gridLayout_4.addWidget(self.previewBackendGroupBox, 15, 1, 1, 6)
@@ -897,7 +1022,9 @@ class Ui_Main_GUI(object):
         self.gridLayout_4.addWidget(self.watchModeGroupBox, 18, 1, 1, 6)
         self.filenamePatternLineEdit = QtWidgets.QLineEdit(self.tab_config)
         self.filenamePatternLineEdit.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.filenamePatternLineEdit.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.filenamePatternLineEdit.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter
+        )
         self.filenamePatternLineEdit.setReadOnly(False)
         self.filenamePatternLineEdit.setObjectName("filenamePatternLineEdit")
         self.gridLayout_4.addWidget(self.filenamePatternLineEdit, 3, 1, 1, 6)
@@ -981,16 +1108,18 @@ class Ui_Main_GUI(object):
         self.progressLayout.setObjectName("progressLayout")
         self.progressBar = QtWidgets.QProgressBar(self.centralWidget)
         self.progressBar.setMinimumSize(QtCore.QSize(0, 0))
-        self.progressBar.setStyleSheet("QProgressBar {\n"
-"  border: 1px solid grey;\n"
-"  border-radius: 3px;\n"
-"  height: 20px;\n"
-"  margin: 0px 0px 0px 5px;\n"
-"}\n"
-"\n"
-"QProgressBar::chunk:horizontal {\n"
-"  background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484DE7, stop: 1 #787DFF);\n"
-"}")
+        self.progressBar.setStyleSheet(
+            "QProgressBar {\n"
+            "  border: 1px solid grey;\n"
+            "  border-radius: 3px;\n"
+            "  height: 20px;\n"
+            "  margin: 0px 0px 0px 5px;\n"
+            "}\n"
+            "\n"
+            "QProgressBar::chunk:horizontal {\n"
+            "  background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 #484DE7, stop: 1 #787DFF);\n"
+            "}"
+        )
         self.progressBar.setProperty("value", 0)
         self.progressBar.setTextVisible(False)
         self.progressBar.setObjectName("progressBar")
@@ -1049,7 +1178,9 @@ class Ui_Main_GUI(object):
         self.actionOpen_LLSdir = QtWidgets.QAction(Main_GUI)
         self.actionOpen_LLSdir.setObjectName("actionOpen_LLSdir")
         self.actionSave_Settings_as_Default = QtWidgets.QAction(Main_GUI)
-        self.actionSave_Settings_as_Default.setObjectName("actionSave_Settings_as_Default")
+        self.actionSave_Settings_as_Default.setObjectName(
+            "actionSave_Settings_as_Default"
+        )
         self.actionLoad_Default_Settings = QtWidgets.QAction(Main_GUI)
         self.actionLoad_Default_Settings.setObjectName("actionLoad_Default_Settings")
         self.actionReduce_to_Raw = QtWidgets.QAction(Main_GUI)
@@ -1129,50 +1260,101 @@ class Ui_Main_GUI(object):
         self.processingToolBox.setCurrentIndex(2)
         self.compressTypeCombo.setCurrentIndex(-1)
         self.RegCalib_channelRefModeCombo.setCurrentIndex(-1)
-        self.actionQuit.triggered['bool'].connect(Main_GUI.close)
-        self.backgroundRollingRadio.toggled['bool'].connect(self.backgroundRollingSpinBox.setEnabled)
-        self.backgroundFixedRadio.toggled['bool'].connect(self.backgroundFixedSpinBox.setEnabled)
-        self.cropManualRadio.toggled['bool'].connect(self.cropWidthSpinBox.setEnabled)
-        self.cropManualRadio.toggled['bool'].connect(self.cropShiftSpinBox.setEnabled)
-        self.cropManualRadio.toggled['bool'].connect(self.cropWidthLabel.setEnabled)
-        self.cropManualRadio.toggled['bool'].connect(self.cropShiftLabel.setEnabled)
-        self.rotateOverrideCheckBox.toggled['bool'].connect(self.rotateOverrideSpinBox.setEnabled)
-        self.camcorCheckBox.toggled['bool'].connect(self.camcorTargetCombo.setEnabled)
-        self.watchDirCheckBox.toggled['bool'].connect(self.watchDirToolButton.setEnabled)
-        self.watchDirCheckBox.toggled['bool'].connect(self.watchDirLineEdit.setEnabled)
-        self.useBundledBinariesCheckBox.toggled['bool'].connect(self.cudaDeconvPathLineEdit.setHidden)
-        self.useBundledBinariesCheckBox.toggled['bool'].connect(self.cudaDeconvPathLabel.setHidden)
-        self.cropAutoRadio.toggled['bool'].connect(self.autocropPadLabel.setEnabled)
-        self.cropAutoRadio.toggled['bool'].connect(self.autocropPadSpinBox.setEnabled)
-        self.saveDeskewedCheckBox.toggled['bool'].connect(self.deconSaveMIPSLabel_2.setEnabled)
-        self.saveDeskewedCheckBox.toggled['bool'].connect(self.deskewedXMIPCheckBox.setEnabled)
-        self.saveDeskewedCheckBox.toggled['bool'].connect(self.deskewedYMIPCheckBox.setEnabled)
-        self.saveDeskewedCheckBox.toggled['bool'].connect(self.deskewedZMIPCheckBox.setEnabled)
-        self.watchDirCheckBox.toggled['bool'].connect(self.watchModeLabel.setEnabled)
-        self.watchDirCheckBox.toggled['bool'].connect(self.watchModeGroupBox.setEnabled)
-        self.watchDirCheckBox.toggled['bool'].connect(self.watchModeAcquisitionRadio.setEnabled)
-        self.watchDirCheckBox.toggled['bool'].connect(self.watchModeServerRadio.setEnabled)
-        self.useBundledBinariesCheckBox.toggled['bool'].connect(self.cudaDeconvPathToolButton.setHidden)
-        self.RegAutoThreshCheckbox.toggled['bool'].connect(self.RegBeadThreshSpin.setDisabled)
-        self.RegAutoThreshCheckbox.toggled['bool'].connect(self.RegMinBeadsLabel.setEnabled)
-        self.RegAutoThreshCheckbox.toggled['bool'].connect(self.RegMinBeadsSpin.setEnabled)
-        self.allowNoSettingsCheckBox.toggled['bool'].connect(self.defaultValuesLabel.setEnabled)
-        self.allowNoSettingsCheckBox.toggled['bool'].connect(self.defaultDxSpin.setEnabled)
-        self.allowNoSettingsCheckBox.toggled['bool'].connect(self.defaultDxLabel.setEnabled)
-        self.allowNoSettingsCheckBox.toggled['bool'].connect(self.defaultDzLabel.setEnabled)
-        self.allowNoSettingsCheckBox.toggled['bool'].connect(self.defaultDzSpin.setEnabled)
-        self.allowNoSettingsCheckBox.toggled['bool'].connect(self.defaultAngleLabel.setEnabled)
-        self.allowNoSettingsCheckBox.toggled['bool'].connect(self.defaultAngleSpin.setEnabled)
+        self.actionQuit.triggered["bool"].connect(Main_GUI.close)
+        self.backgroundRollingRadio.toggled["bool"].connect(
+            self.backgroundRollingSpinBox.setEnabled
+        )
+        self.backgroundFixedRadio.toggled["bool"].connect(
+            self.backgroundFixedSpinBox.setEnabled
+        )
+        self.cropManualRadio.toggled["bool"].connect(self.cropWidthSpinBox.setEnabled)
+        self.cropManualRadio.toggled["bool"].connect(self.cropShiftSpinBox.setEnabled)
+        self.cropManualRadio.toggled["bool"].connect(self.cropWidthLabel.setEnabled)
+        self.cropManualRadio.toggled["bool"].connect(self.cropShiftLabel.setEnabled)
+        self.rotateOverrideCheckBox.toggled["bool"].connect(
+            self.rotateOverrideSpinBox.setEnabled
+        )
+        self.camcorCheckBox.toggled["bool"].connect(self.camcorTargetCombo.setEnabled)
+        self.watchDirCheckBox.toggled["bool"].connect(
+            self.watchDirToolButton.setEnabled
+        )
+        self.watchDirCheckBox.toggled["bool"].connect(self.watchDirLineEdit.setEnabled)
+        self.useBundledBinariesCheckBox.toggled["bool"].connect(
+            self.cudaDeconvPathLineEdit.setHidden
+        )
+        self.useBundledBinariesCheckBox.toggled["bool"].connect(
+            self.cudaDeconvPathLabel.setHidden
+        )
+        self.cropAutoRadio.toggled["bool"].connect(self.autocropPadLabel.setEnabled)
+        self.cropAutoRadio.toggled["bool"].connect(self.autocropPadSpinBox.setEnabled)
+        self.saveDeskewedCheckBox.toggled["bool"].connect(
+            self.deconSaveMIPSLabel_2.setEnabled
+        )
+        self.saveDeskewedCheckBox.toggled["bool"].connect(
+            self.deskewedXMIPCheckBox.setEnabled
+        )
+        self.saveDeskewedCheckBox.toggled["bool"].connect(
+            self.deskewedYMIPCheckBox.setEnabled
+        )
+        self.saveDeskewedCheckBox.toggled["bool"].connect(
+            self.deskewedZMIPCheckBox.setEnabled
+        )
+        self.watchDirCheckBox.toggled["bool"].connect(self.watchModeLabel.setEnabled)
+        self.watchDirCheckBox.toggled["bool"].connect(self.watchModeGroupBox.setEnabled)
+        self.watchDirCheckBox.toggled["bool"].connect(
+            self.watchModeAcquisitionRadio.setEnabled
+        )
+        self.watchDirCheckBox.toggled["bool"].connect(
+            self.watchModeServerRadio.setEnabled
+        )
+        self.useBundledBinariesCheckBox.toggled["bool"].connect(
+            self.cudaDeconvPathToolButton.setHidden
+        )
+        self.RegAutoThreshCheckbox.toggled["bool"].connect(
+            self.RegBeadThreshSpin.setDisabled
+        )
+        self.RegAutoThreshCheckbox.toggled["bool"].connect(
+            self.RegMinBeadsLabel.setEnabled
+        )
+        self.RegAutoThreshCheckbox.toggled["bool"].connect(
+            self.RegMinBeadsSpin.setEnabled
+        )
+        self.allowNoSettingsCheckBox.toggled["bool"].connect(
+            self.defaultValuesLabel.setEnabled
+        )
+        self.allowNoSettingsCheckBox.toggled["bool"].connect(
+            self.defaultDxSpin.setEnabled
+        )
+        self.allowNoSettingsCheckBox.toggled["bool"].connect(
+            self.defaultDxLabel.setEnabled
+        )
+        self.allowNoSettingsCheckBox.toggled["bool"].connect(
+            self.defaultDzLabel.setEnabled
+        )
+        self.allowNoSettingsCheckBox.toggled["bool"].connect(
+            self.defaultDzSpin.setEnabled
+        )
+        self.allowNoSettingsCheckBox.toggled["bool"].connect(
+            self.defaultAngleLabel.setEnabled
+        )
+        self.allowNoSettingsCheckBox.toggled["bool"].connect(
+            self.defaultAngleSpin.setEnabled
+        )
         QtCore.QMetaObject.connectSlotsByName(Main_GUI)
 
     def retranslateUi(self, Main_GUI):
         _translate = QtCore.QCoreApplication.translate
         Main_GUI.setWindowTitle(_translate("Main_GUI", "Main_GUI"))
-        self.listbox.setToolTip(_translate("Main_GUI", "Drag and drop LLS experiment folders\n"
-"(containing a Settings.txt file) here, to\n"
-"add to the processing queue. Select\n"
-"and press delete to remove.\n"
-"Press process button below when ready."))
+        self.listbox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Drag and drop LLS experiment folders\n"
+                "(containing a Settings.txt file) here, to\n"
+                "add to the processing queue. Select\n"
+                "and press delete to remove.\n"
+                "Press process button below when ready.",
+            )
+        )
         item = self.listbox.horizontalHeaderItem(0)
         item.setText(_translate("Main_GUI", "basename"))
         item = self.listbox.horizontalHeaderItem(1)
@@ -1188,27 +1370,54 @@ class Ui_Main_GUI(object):
         item = self.listbox.horizontalHeaderItem(6)
         item.setText(_translate("Main_GUI", "desQ"))
         self.camcorGroupBox.setTitle(_translate("Main_GUI", "Camera Correction"))
-        self.camcorCheckBox.setToolTip(_translate("Main_GUI", "Perform per-pixel residual electron correction for\n"
-"Flash4.0 using CamaraParam Tiff file selected on\n"
-"config tab.  See help for details"))
+        self.camcorCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Perform per-pixel residual electron correction for\n"
+                "Flash4.0 using CamaraParam Tiff file selected on\n"
+                "config tab.  See help for details",
+            )
+        )
         self.camcorCheckBox.setText(_translate("Main_GUI", "Do Flash Correction"))
-        self.camcorTargetCombo.setToolTip(_translate("Main_GUI", "Target for camera correction (performace may vary from system to system)"))
+        self.camcorTargetCombo.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Target for camera correction (performace may vary from system to system)",
+            )
+        )
         self.camcorTargetCombo.setItemText(0, _translate("Main_GUI", "CPU"))
         self.camcorTargetCombo.setItemText(1, _translate("Main_GUI", "Parallel"))
         self.camcorTargetCombo.setItemText(2, _translate("Main_GUI", "CUDA"))
-        self.medianFilterCheckBox.setToolTip(_translate("Main_GUI", "Perform selective median filter correction\n"
-"on particularly noisy pixels.\n"
-"As done in Amat et al 2015"))
+        self.medianFilterCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Perform selective median filter correction\n"
+                "on particularly noisy pixels.\n"
+                "As done in Amat et al 2015",
+            )
+        )
         self.medianFilterCheckBox.setText(_translate("Main_GUI", "Do Median Filter"))
-        self.saveCamCorrectedCheckBox.setToolTip(_translate("Main_GUI", "Save the Raw-Corrected files after processing\n"
-"(otherwise corrected files will be deleted)"))
+        self.saveCamCorrectedCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Save the Raw-Corrected files after processing\n"
+                "(otherwise corrected files will be deleted)",
+            )
+        )
         self.saveCamCorrectedCheckBox.setText(_translate("Main_GUI", "Save Corrected"))
         self.camParamTiffToolButton.setText(_translate("Main_GUI", "..."))
         self.camParamTiffLabel.setText(_translate("Main_GUI", "CameraParam Tiff"))
-        self.camParamTiffLineEdit.setPlaceholderText(_translate("Main_GUI", "path to TIFF file with measured camera parameters"))
-        self.trimEdgesGroupBox.setToolTip(_translate("Main_GUI", "Trims N pixels from the corresponding volume edge.\n"
-"This is BEFORE processing, mostly to eliminate\n"
-"bright-edge camera artifacts prior to deskewing"))
+        self.camParamTiffLineEdit.setPlaceholderText(
+            _translate("Main_GUI", "path to TIFF file with measured camera parameters")
+        )
+        self.trimEdgesGroupBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Trims N pixels from the corresponding volume edge.\n"
+                "This is BEFORE processing, mostly to eliminate\n"
+                "bright-edge camera artifacts prior to deskewing",
+            )
+        )
         self.trimEdgesGroupBox.setTitle(_translate("Main_GUI", "Trim Edges"))
         self.trimZ0Label.setText(_translate("Main_GUI", "Trim Z first"))
         self.trimY0Label.setText(_translate("Main_GUI", "Trim Y Top"))
@@ -1216,281 +1425,646 @@ class Ui_Main_GUI(object):
         self.trimX0Label.setText(_translate("Main_GUI", "Trim X Left"))
         self.trimY1Label.setText(_translate("Main_GUI", "Trim Y Bottom"))
         self.trimX1Label.setText(_translate("Main_GUI", "Trim X Right"))
-        self.backgroundGroupBox.setTitle(_translate("Main_GUI", "Background Subtraction"))
-        self.backgroundAutoRadio.setToolTip(_translate("Main_GUI", "Use the mode intensity value from the second plane in\n"
-"the Z stack for each channel for background subtraction."))
+        self.backgroundGroupBox.setTitle(
+            _translate("Main_GUI", "Background Subtraction")
+        )
+        self.backgroundAutoRadio.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Use the mode intensity value from the second plane in\n"
+                "the Z stack for each channel for background subtraction.",
+            )
+        )
         self.backgroundAutoRadio.setText(_translate("Main_GUI", "Autodetect"))
-        self.backgroundFixedRadio.setToolTip(_translate("Main_GUI", "Use specified intensity value for background subtraction."))
+        self.backgroundFixedRadio.setToolTip(
+            _translate(
+                "Main_GUI", "Use specified intensity value for background subtraction."
+            )
+        )
         self.backgroundFixedRadio.setText(_translate("Main_GUI", "Fixed value"))
-        self.backgroundRollingRadio.setToolTip(_translate("Main_GUI", "Not implemented"))
-        self.backgroundRollingRadio.setText(_translate("Main_GUI", "Rolling Ball Radius:"))
-        self.processingToolBox.setItemText(self.processingToolBox.indexOf(self.tool_preprocess), _translate("Main_GUI", "Pre-Processing"))
+        self.backgroundRollingRadio.setToolTip(
+            _translate("Main_GUI", "Not implemented")
+        )
+        self.backgroundRollingRadio.setText(
+            _translate("Main_GUI", "Rolling Ball Radius:")
+        )
+        self.processingToolBox.setItemText(
+            self.processingToolBox.indexOf(self.tool_preprocess),
+            _translate("Main_GUI", "Pre-Processing"),
+        )
         self.doDeconGroupBox.setTitle(_translate("Main_GUI", "Do Deconvolution"))
-        self.iterationsLabel.setToolTip(_translate("Main_GUI", "Number of deconvolution iterations"))
+        self.iterationsLabel.setToolTip(
+            _translate("Main_GUI", "Number of deconvolution iterations")
+        )
         self.iterationsLabel.setText(_translate("Main_GUI", "Iterations:"))
-        self.iterationsSpinBox.setToolTip(_translate("Main_GUI", "Number of deconvolution iterations"))
-        self.apodizeLabel.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
+        self.iterationsSpinBox.setToolTip(
+            _translate("Main_GUI", "Number of deconvolution iterations")
+        )
+        self.apodizeLabel.setToolTip(
+            _translate(
+                "Main_GUI", "# of pixels to soften edge with prior to deconvolution"
+            )
+        )
         self.apodizeLabel.setText(_translate("Main_GUI", "nApodize:"))
-        self.apodizeSpinBox.setToolTip(_translate("Main_GUI", "# of pixels to soften edge with prior to deconvolution"))
-        self.zblendLabel.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
-"to reduce axial ringing"))
+        self.apodizeSpinBox.setToolTip(
+            _translate(
+                "Main_GUI", "# of pixels to soften edge with prior to deconvolution"
+            )
+        )
+        self.zblendLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "# of top and bottom sections to blend in\n" "to reduce axial ringing",
+            )
+        )
         self.zblendLabel.setText(_translate("Main_GUI", "nZblend"))
-        self.zblendSpinBox.setToolTip(_translate("Main_GUI", "# of top and bottom sections to blend in\n"
-"to reduce axial ringing"))
+        self.zblendSpinBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "# of top and bottom sections to blend in\n" "to reduce axial ringing",
+            )
+        )
         self.saveDeconvolvedCheckBox.setText(_translate("Main_GUI", "Save Stacks"))
-        self.deconvolvedMIPFrame.setToolTip(_translate("Main_GUI", "Save maximum-intensity-projection\n"
-"images along the specified axis"))
+        self.deconvolvedMIPFrame.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Save maximum-intensity-projection\n" "images along the specified axis",
+            )
+        )
         self.deconSaveMIPSLabel.setText(_translate("Main_GUI", "Save MIPs:"))
         self.deconXMIPCheckBox.setText(_translate("Main_GUI", "X"))
         self.deconYMIPCheckBox.setText(_translate("Main_GUI", "Y"))
         self.deconZMIPCheckBox.setText(_translate("Main_GUI", "Z"))
-        self.deconvolvedBitDepthCombo.setToolTip(_translate("Main_GUI", "Bit depth of resulting deconvolved images."))
+        self.deconvolvedBitDepthCombo.setToolTip(
+            _translate("Main_GUI", "Bit depth of resulting deconvolved images.")
+        )
         self.deconvolvedBitDepthCombo.setCurrentText(_translate("Main_GUI", "16-bit"))
         self.deconvolvedBitDepthCombo.setItemText(0, _translate("Main_GUI", "16-bit"))
         self.deconvolvedBitDepthCombo.setItemText(1, _translate("Main_GUI", "32-bit"))
         self.deskewedGroupBox.setTitle(_translate("Main_GUI", "Raw Deskewed"))
-        self.deskewedMIPFrame.setToolTip(_translate("Main_GUI", "Save maximum-intensity-projection\n"
-"images along the specified axis"))
+        self.deskewedMIPFrame.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Save maximum-intensity-projection\n" "images along the specified axis",
+            )
+        )
         self.deconSaveMIPSLabel_2.setText(_translate("Main_GUI", "Save MIPs:"))
         self.deskewedXMIPCheckBox.setText(_translate("Main_GUI", "X"))
         self.deskewedYMIPCheckBox.setText(_translate("Main_GUI", "Y"))
         self.deskewedZMIPCheckBox.setText(_translate("Main_GUI", "Z"))
-        self.saveDeskewedCheckBox.setToolTip(_translate("Main_GUI", "Save raw deskewed data."))
+        self.saveDeskewedCheckBox.setToolTip(
+            _translate("Main_GUI", "Save raw deskewed data.")
+        )
         self.saveDeskewedCheckBox.setText(_translate("Main_GUI", "Save Deskwed"))
         self.deskewedBitDepthCombo.setCurrentText(_translate("Main_GUI", "16-bit"))
         self.deskewedBitDepthCombo.setItemText(0, _translate("Main_GUI", "16-bit"))
         self.deskewedBitDepthCombo.setItemText(1, _translate("Main_GUI", "32-bit"))
-        self.deconJoinMIPCheckBox.setToolTip(_translate("Main_GUI", "Join maximum intensity projection images\n"
-"into a single multi-dimensional (XYZCT)\n"
-"file that can be viewed easily in Fiji/ImageJ"))
-        self.deconJoinMIPCheckBox.setText(_translate("Main_GUI", "Join MIP files into single hyperstack"))
-        self.useLZWCheckBox.setToolTip(_translate("Main_GUI", "Enabling this will reduce file sizes, but increase the time it takes to open images"))
+        self.deconJoinMIPCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Join maximum intensity projection images\n"
+                "into a single multi-dimensional (XYZCT)\n"
+                "file that can be viewed easily in Fiji/ImageJ",
+            )
+        )
+        self.deconJoinMIPCheckBox.setText(
+            _translate("Main_GUI", "Join MIP files into single hyperstack")
+        )
+        self.useLZWCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Enabling this will reduce file sizes, but increase the time it takes to open images",
+            )
+        )
         self.useLZWCheckBox.setText(_translate("Main_GUI", "Use LZW compression"))
-        self.dupRevStackCheckBox.setToolTip(_translate("Main_GUI", "Duplicate reversed stack prior to decon to reduce Z ringing"))
-        self.dupRevStackCheckBox.setText(_translate("Main_GUI", "Duplicate reversed stack (reduce axial ringing)"))
-        self.padValLabel.setToolTip(_translate("Main_GUI", "Value to pad image with when deskewing"))
+        self.dupRevStackCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Duplicate reversed stack prior to decon to reduce Z ringing",
+            )
+        )
+        self.dupRevStackCheckBox.setText(
+            _translate("Main_GUI", "Duplicate reversed stack (reduce axial ringing)")
+        )
+        self.padValLabel.setToolTip(
+            _translate("Main_GUI", "Value to pad image with when deskewing")
+        )
         self.padValLabel.setText(_translate("Main_GUI", "Pad Value"))
-        self.padValSpinBox.setToolTip(_translate("Main_GUI", "Value to pad image with when deskewing"))
-        self.processingToolBox.setItemText(self.processingToolBox.indexOf(self.tool_deconvolution), _translate("Main_GUI", "Deskew/Deconvolution/Saving"))
+        self.padValSpinBox.setToolTip(
+            _translate("Main_GUI", "Value to pad image with when deskewing")
+        )
+        self.processingToolBox.setItemText(
+            self.processingToolBox.indexOf(self.tool_deconvolution),
+            _translate("Main_GUI", "Deskew/Deconvolution/Saving"),
+        )
         self.croppingGroupBox.setTitle(_translate("Main_GUI", "Crop Result"))
-        self.cropAutoRadio.setToolTip(_translate("Main_GUI", "Auto-detect features in the image and\n"
-"crop to center around features.  Pad\n"
-"value adds extra space around features."))
+        self.cropAutoRadio.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Auto-detect features in the image and\n"
+                "crop to center around features.  Pad\n"
+                "value adds extra space around features.",
+            )
+        )
         self.cropAutoRadio.setText(_translate("Main_GUI", "AutoCrop"))
         self.autocropPadLabel.setText(_translate("Main_GUI", "Pad"))
-        self.autocropPadSpinBox.setToolTip(_translate("Main_GUI", "Auto-detect features in the image and\n"
-"crop to center around features.  Pad\n"
-"value adds extra space around features."))
-        self.cropManualRadio.setToolTip(_translate("Main_GUI", "Manually specify the width of the resulting\n"
-"image after deskewing.  Use shift to change\n"
-"the middle position.  Use preview button\n"
-"below to check result."))
+        self.autocropPadSpinBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Auto-detect features in the image and\n"
+                "crop to center around features.  Pad\n"
+                "value adds extra space around features.",
+            )
+        )
+        self.cropManualRadio.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Manually specify the width of the resulting\n"
+                "image after deskewing.  Use shift to change\n"
+                "the middle position.  Use preview button\n"
+                "below to check result.",
+            )
+        )
         self.cropManualRadio.setText(_translate("Main_GUI", "Manual"))
-        self.cropManualGroupBox.setToolTip(_translate("Main_GUI", "Manually specify the width of the resulting\n"
-"image after deskewing.  Use shift to change\n"
-"the middle position.  Use preview button\n"
-"below to check result."))
+        self.cropManualGroupBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Manually specify the width of the resulting\n"
+                "image after deskewing.  Use shift to change\n"
+                "the middle position.  Use preview button\n"
+                "below to check result.",
+            )
+        )
         self.cropWidthLabel.setText(_translate("Main_GUI", "Width:"))
         self.cropShiftLabel.setText(_translate("Main_GUI", "Shift:"))
-        self.rotateGroupBox.setToolTip(_translate("Main_GUI", "Transform final image around the\n"
-"Y-axis so that the Z-axis in the\n"
-"image is orthogonal to the coverslip.\n"
-"This entails interpolation."))
-        self.rotateGroupBox.setTitle(_translate("Main_GUI", "Rotate to coverslip coordinates"))
-        self.rotateReverseCheckBox.setToolTip(_translate("Main_GUI", "Specify that direction of stage travel\n"
-"during stage-scanning is reversed\n"
-"from conventional."))
+        self.rotateGroupBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Transform final image around the\n"
+                "Y-axis so that the Z-axis in the\n"
+                "image is orthogonal to the coverslip.\n"
+                "This entails interpolation.",
+            )
+        )
+        self.rotateGroupBox.setTitle(
+            _translate("Main_GUI", "Rotate to coverslip coordinates")
+        )
+        self.rotateReverseCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify that direction of stage travel\n"
+                "during stage-scanning is reversed\n"
+                "from conventional.",
+            )
+        )
         self.rotateReverseCheckBox.setText(_translate("Main_GUI", "Reverse"))
-        self.rotateOverrideCheckBox.setToolTip(_translate("Main_GUI", "Override the angle of rotation.  Otherwise,\n"
-"use the angle value detected in the settings\n"
-"file (the same value used for deskewing)."))
+        self.rotateOverrideCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Override the angle of rotation.  Otherwise,\n"
+                "use the angle value detected in the settings\n"
+                "file (the same value used for deskewing).",
+            )
+        )
         self.rotateOverrideCheckBox.setText(_translate("Main_GUI", "Override angle:"))
-        self.rotateOverrideSpinBox.setToolTip(_translate("Main_GUI", "Override the angle of rotation.  Otherwise,\n"
-"use the angle value detected in the settings\n"
-"file (the same value used for deskewing)."))
-        self.doRegistrationGroupBox.setToolTip(_translate("Main_GUI", "Use provided fiducial-based calibration\n"
-"dataset (e.g. tetraspeck bead images)\n"
-"to register different channels of a\n"
-"multi-channel dataset."))
-        self.doRegistrationGroupBox.setTitle(_translate("Main_GUI", "Do Channel Registration"))
-        self.channelRefLabel.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
-"(this channel will not change)"))
+        self.rotateOverrideSpinBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Override the angle of rotation.  Otherwise,\n"
+                "use the angle value detected in the settings\n"
+                "file (the same value used for deskewing).",
+            )
+        )
+        self.doRegistrationGroupBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Use provided fiducial-based calibration\n"
+                "dataset (e.g. tetraspeck bead images)\n"
+                "to register different channels of a\n"
+                "multi-channel dataset.",
+            )
+        )
+        self.doRegistrationGroupBox.setTitle(
+            _translate("Main_GUI", "Do Channel Registration")
+        )
+        self.channelRefLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Reference channel to which to register\n"
+                "(this channel will not change)",
+            )
+        )
         self.channelRefLabel.setText(_translate("Main_GUI", "Ref Wave:"))
-        self.RegProcessChannelRefCombo.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
-"(this channel will not change)"))
-        self.channelRefModeLabel.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
-"Translation=shift only\n"
-"Rigid=Shift and rotation\n"
-"Similarity=Rigid plus scaling\n"
-"Affine=Translation, Rotation, Scaling, Shear\n"
-"2-step=Affine in XY, Rigid in Z\n"
-"CPD=Coherent Point Drift algorithm\n"
-"(Myronenko, 2010)"))
+        self.RegProcessChannelRefCombo.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Reference channel to which to register\n"
+                "(this channel will not change)",
+            )
+        )
+        self.channelRefModeLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Type of registration to perform:\n"
+                "Translation=shift only\n"
+                "Rigid=Shift and rotation\n"
+                "Similarity=Rigid plus scaling\n"
+                "Affine=Translation, Rotation, Scaling, Shear\n"
+                "2-step=Affine in XY, Rigid in Z\n"
+                "CPD=Coherent Point Drift algorithm\n"
+                "(Myronenko, 2010)",
+            )
+        )
         self.channelRefModeLabel.setText(_translate("Main_GUI", "Mode:"))
-        self.RegProcessChannelRefModeCombo.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
-"Translation=shift only\n"
-"Rigid=Shift and rotation\n"
-"Similarity=Rigid plus scaling\n"
-"Affine=Translation, Rotation, Scaling, Shear\n"
-"2-step=Affine in XY, Rigid in Z\n"
-"CPD=Coherent Point Drift algorithm\n"
-"(Myronenko, 2010)"))
+        self.RegProcessChannelRefModeCombo.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Type of registration to perform:\n"
+                "Translation=shift only\n"
+                "Rigid=Shift and rotation\n"
+                "Similarity=Rigid plus scaling\n"
+                "Affine=Translation, Rotation, Scaling, Shear\n"
+                "2-step=Affine in XY, Rigid in Z\n"
+                "CPD=Coherent Point Drift algorithm\n"
+                "(Myronenko, 2010)",
+            )
+        )
         self.RegProcessLoadRegFile.setText(_translate("Main_GUI", "Use RegFile"))
-        self.RegProcessPathLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
-"bead) images acquired in each channel."))
+        self.RegProcessPathLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify folder with calibration (e.g. tetraspeck\n"
+                "bead) images acquired in each channel.",
+            )
+        )
         self.RegProcessPathLabel.setText(_translate("Main_GUI", "Calibration:"))
-        self.RegProcessPathLineEdit.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
-"bead) images acquired in each channel."))
-        self.RegProcessPathLineEdit.setPlaceholderText(_translate("Main_GUI", " registration file or fiducial dataset..."))
+        self.RegProcessPathLineEdit.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify folder with calibration (e.g. tetraspeck\n"
+                "bead) images acquired in each channel.",
+            )
+        )
+        self.RegProcessPathLineEdit.setPlaceholderText(
+            _translate("Main_GUI", " registration file or fiducial dataset...")
+        )
         self.RegProcessPathPushButton.setText(_translate("Main_GUI", "Use Dataset"))
-        self.discardUnregisteredCheckBox.setToolTip(_translate("Main_GUI", "Specify that direction of stage travel\n"
-"during stage-scanning is reversed\n"
-"from conventional."))
-        self.discardUnregisteredCheckBox.setText(_translate("Main_GUI", "Discard un-registered files"))
-        self.bleachCorrectionCheckBox.setToolTip(_translate("Main_GUI", "Modify intensity values of timelapse data to\n"
-"minimize the appearance of photobleaching."))
-        self.bleachCorrectionCheckBox.setText(_translate("Main_GUI", "Do Bleach Correction"))
-        self.compressRawCheckBox.setToolTip(_translate("Main_GUI", "Compress the raw data files\n"
-"after processing to save space."))
+        self.discardUnregisteredCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify that direction of stage travel\n"
+                "during stage-scanning is reversed\n"
+                "from conventional.",
+            )
+        )
+        self.discardUnregisteredCheckBox.setText(
+            _translate("Main_GUI", "Discard un-registered files")
+        )
+        self.bleachCorrectionCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Modify intensity values of timelapse data to\n"
+                "minimize the appearance of photobleaching.",
+            )
+        )
+        self.bleachCorrectionCheckBox.setText(
+            _translate("Main_GUI", "Do Bleach Correction")
+        )
+        self.compressRawCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Compress the raw data files\n" "after processing to save space.",
+            )
+        )
         self.compressRawCheckBox.setText(_translate("Main_GUI", "Compress Raw Data"))
         self.label.setText(_translate("Main_GUI", "Type:"))
-        self.processingToolBox.setItemText(self.processingToolBox.indexOf(self.tool_postprocess), _translate("Main_GUI", "Post-Processing"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_process), _translate("Main_GUI", "Process"))
-        self.RegCalib_channelRefModeCombo.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
-"Translation=shift only\n"
-"Rigid=Shift and rotation\n"
-"Similarity=Rigid plus scaling\n"
-"Affine=Translation, Rotation, Scaling, Shear\n"
-"2-step=Affine in XY, Rigid in Z\n"
-"CPD=Coherent Point Drift algorithm\n"
-"(Myronenko, 2010)"))
-        self.RegCalibPathLineEdit.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
-"bead) images acquired in each channel."))
-        self.RegCalibPathLineEdit.setPlaceholderText(_translate("Main_GUI", " Folder with mult-channel fiducial stacks..."))
-        self.RegCalib_channelRefCombo.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
-"(this channel will not change)"))
-        self.RegCalibRefChannelsLabel.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
-"(this channel will not change)"))
+        self.processingToolBox.setItemText(
+            self.processingToolBox.indexOf(self.tool_postprocess),
+            _translate("Main_GUI", "Post-Processing"),
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_process), _translate("Main_GUI", "Process")
+        )
+        self.RegCalib_channelRefModeCombo.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Type of registration to perform:\n"
+                "Translation=shift only\n"
+                "Rigid=Shift and rotation\n"
+                "Similarity=Rigid plus scaling\n"
+                "Affine=Translation, Rotation, Scaling, Shear\n"
+                "2-step=Affine in XY, Rigid in Z\n"
+                "CPD=Coherent Point Drift algorithm\n"
+                "(Myronenko, 2010)",
+            )
+        )
+        self.RegCalibPathLineEdit.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify folder with calibration (e.g. tetraspeck\n"
+                "bead) images acquired in each channel.",
+            )
+        )
+        self.RegCalibPathLineEdit.setPlaceholderText(
+            _translate("Main_GUI", " Folder with mult-channel fiducial stacks...")
+        )
+        self.RegCalib_channelRefCombo.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Reference channel to which to register\n"
+                "(this channel will not change)",
+            )
+        )
+        self.RegCalibRefChannelsLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Reference channel to which to register\n"
+                "(this channel will not change)",
+            )
+        )
         self.RegCalibRefChannelsLabel.setText(_translate("Main_GUI", "Ref Channels:"))
-        self.GenerateRegFileButton.setText(_translate("Main_GUI", "Generate Registration File"))
-        self.RegCalibPathLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
-"bead) images acquired in each channel."))
+        self.GenerateRegFileButton.setText(
+            _translate("Main_GUI", "Generate Registration File")
+        )
+        self.RegCalibPathLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify folder with calibration (e.g. tetraspeck\n"
+                "bead) images acquired in each channel.",
+            )
+        )
         self.RegCalibPathLabel.setText(_translate("Main_GUI", "Fiducial Data:"))
-        self.RegCalib_channelRefModeLabel.setToolTip(_translate("Main_GUI", "Type of registration to perform:\n"
-"Translation=shift only\n"
-"Rigid=Shift and rotation\n"
-"Similarity=Rigid plus scaling\n"
-"Affine=Translation, Rotation, Scaling, Shear\n"
-"2-step=Affine in XY, Rigid in Z\n"
-"CPD=Coherent Point Drift algorithm\n"
-"(Myronenko, 2010)"))
+        self.RegCalib_channelRefModeLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Type of registration to perform:\n"
+                "Translation=shift only\n"
+                "Rigid=Shift and rotation\n"
+                "Similarity=Rigid plus scaling\n"
+                "Affine=Translation, Rotation, Scaling, Shear\n"
+                "2-step=Affine in XY, Rigid in Z\n"
+                "CPD=Coherent Point Drift algorithm\n"
+                "(Myronenko, 2010)",
+            )
+        )
         self.RegCalib_channelRefModeLabel.setText(_translate("Main_GUI", "Mode:"))
         self.RegCalibPathLoadButton.setText(_translate("Main_GUI", "load"))
         self.RegFilePathLoadButton.setText(_translate("Main_GUI", "load"))
-        self.RegFilePathLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
-"bead) images acquired in each channel."))
+        self.RegFilePathLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify folder with calibration (e.g. tetraspeck\n"
+                "bead) images acquired in each channel.",
+            )
+        )
         self.RegFilePathLabel.setText(_translate("Main_GUI", "Registration File:"))
-        self.RegFilePath.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
-"bead) images acquired in each channel."))
-        self.RegFilePath.setPlaceholderText(_translate("Main_GUI", " Registration Tform file..."))
-        self.RegCalibPreviewButton.setText(_translate("Main_GUI", "Register Fiducial Data"))
-        self.RegCalib_channelRefLabel.setToolTip(_translate("Main_GUI", "Reference channel to which to register\n"
-"(this channel will not change)"))
+        self.RegFilePath.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify folder with calibration (e.g. tetraspeck\n"
+                "bead) images acquired in each channel.",
+            )
+        )
+        self.RegFilePath.setPlaceholderText(
+            _translate("Main_GUI", " Registration Tform file...")
+        )
+        self.RegCalibPreviewButton.setText(
+            _translate("Main_GUI", "Register Fiducial Data")
+        )
+        self.RegCalib_channelRefLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Reference channel to which to register\n"
+                "(this channel will not change)",
+            )
+        )
         self.RegCalib_channelRefLabel.setText(_translate("Main_GUI", "Ref Channel:"))
-        self.BeadThresholdLabel.setToolTip(_translate("Main_GUI", "Specify folder with calibration (e.g. tetraspeck\n"
-"bead) images acquired in each channel."))
+        self.BeadThresholdLabel.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Specify folder with calibration (e.g. tetraspeck\n"
+                "bead) images acquired in each channel.",
+            )
+        )
         self.BeadThresholdLabel.setText(_translate("Main_GUI", "Bead Threshold:"))
         self.RegMinBeadsLabel.setText(_translate("Main_GUI", "Min number of beads:"))
         self.RegAutoThreshCheckbox.setText(_translate("Main_GUI", "Autodetect"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_registration), _translate("Main_GUI", "Registration"))
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_registration),
+            _translate("Main_GUI", "Registration"),
+        )
         self.filenamePatternLabel.setText(_translate("Main_GUI", "filename pattern:"))
-        self.cudaDeconvPathLabel_2.setToolTip(_translate("Main_GUI", "Toggle the GPUs that you want to use for processing.\n"
-" Work will be distributed among them"))
+        self.cudaDeconvPathLabel_2.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Toggle the GPUs that you want to use for processing.\n"
+                " Work will be distributed among them",
+            )
+        )
         self.cudaDeconvPathLabel_2.setText(_translate("Main_GUI", "GPUs"))
-        self.useBundledBinariesCheckBox.setText(_translate("Main_GUI", "Use bundled cudaDeconv binary"))
+        self.useBundledBinariesCheckBox.setText(
+            _translate("Main_GUI", "Use bundled cudaDeconv binary")
+        )
         self.cudaDeconvPathLabel.setText(_translate("Main_GUI", "cudaDeconv binary:"))
-        self.cudaDeconvPathLineEdit.setText(_translate("Main_GUI", "/usr/local/cudaDeconv"))
-        self.cudaDeconvPathLineEdit.setPlaceholderText(_translate("Main_GUI", "path to cudaDeconv binary"))
+        self.cudaDeconvPathLineEdit.setText(
+            _translate("Main_GUI", "/usr/local/cudaDeconv")
+        )
+        self.cudaDeconvPathLineEdit.setPlaceholderText(
+            _translate("Main_GUI", "path to cudaDeconv binary")
+        )
         self.cudaDeconvPathToolButton.setText(_translate("Main_GUI", "..."))
         self.otfFolderPathLabel.setText(_translate("Main_GUI", "OTF directory:"))
-        self.otfFolderLineEdit.setPlaceholderText(_translate("Main_GUI", "path to directory with PSFs/OTFs"))
+        self.otfFolderLineEdit.setPlaceholderText(
+            _translate("Main_GUI", "path to directory with PSFs/OTFs")
+        )
         self.otfFolderToolButton.setText(_translate("Main_GUI", "..."))
-        self.allowNoSettingsCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
-"processed data, leaving only the original\n"
-"raw data.  This option retains any MIP\n"
-"folders found, as a smaller-sized\n"
-"preview of the dataset for later review."))
-        self.allowNoSettingsCheckBox.setText(_translate("Main_GUI", "allow folders without Settings.txt files (will require input)"))
+        self.allowNoSettingsCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                'The "reduce to raw" function deletes all\n'
+                "processed data, leaving only the original\n"
+                "raw data.  This option retains any MIP\n"
+                "folders found, as a smaller-sized\n"
+                "preview of the dataset for later review.",
+            )
+        )
+        self.allowNoSettingsCheckBox.setText(
+            _translate(
+                "Main_GUI",
+                "allow folders without Settings.txt files (will require input)",
+            )
+        )
         self.defaultValuesLabel.setText(_translate("Main_GUI", "default values:"))
         self.defaultDxLabel.setText(_translate("Main_GUI", "dx:"))
         self.defaultDzLabel.setText(_translate("Main_GUI", "dz:"))
         self.defaultAngleLabel.setText(_translate("Main_GUI", "angle:"))
-        self.reprocessCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
-"processed data, leaving only the original\n"
-"raw data.  This option retains any MIP\n"
-"folders found, as a smaller-sized\n"
-"preview of the dataset for later review."))
-        self.reprocessCheckBox.setText(_translate("Main_GUI", "Reprocess folders that have already been processed"))
-        self.saveMIPsDuringReduceCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
-"processed data, leaving only the original\n"
-"raw data.  This option retains any MIP\n"
-"folders found, as a smaller-sized\n"
-"preview of the dataset for later review."))
-        self.saveMIPsDuringReduceCheckBox.setText(_translate("Main_GUI", "Save MIP folder during \"Reduce to Raw\""))
-        self.confirmOnQuitCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
-"processed data, leaving only the original\n"
-"raw data.  This option retains any MIP\n"
-"folders found, as a smaller-sized\n"
-"preview of the dataset for later review."))
-        self.confirmOnQuitCheckBox.setText(_translate("Main_GUI", "Warn when quitting with unprocessed items"))
-        self.genFlashParams.setText(_translate("Main_GUI", "Generate Camera Calibration File"))
-        self.disableSpimagineCheckBox.setText(_translate("Main_GUI", "Disable spimagine import (in case of WinError on Preview)"))
+        self.reprocessCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                'The "reduce to raw" function deletes all\n'
+                "processed data, leaving only the original\n"
+                "raw data.  This option retains any MIP\n"
+                "folders found, as a smaller-sized\n"
+                "preview of the dataset for later review.",
+            )
+        )
+        self.reprocessCheckBox.setText(
+            _translate("Main_GUI", "Reprocess folders that have already been processed")
+        )
+        self.saveMIPsDuringReduceCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                'The "reduce to raw" function deletes all\n'
+                "processed data, leaving only the original\n"
+                "raw data.  This option retains any MIP\n"
+                "folders found, as a smaller-sized\n"
+                "preview of the dataset for later review.",
+            )
+        )
+        self.saveMIPsDuringReduceCheckBox.setText(
+            _translate("Main_GUI", 'Save MIP folder during "Reduce to Raw"')
+        )
+        self.confirmOnQuitCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                'The "reduce to raw" function deletes all\n'
+                "processed data, leaving only the original\n"
+                "raw data.  This option retains any MIP\n"
+                "folders found, as a smaller-sized\n"
+                "preview of the dataset for later review.",
+            )
+        )
+        self.confirmOnQuitCheckBox.setText(
+            _translate("Main_GUI", "Warn when quitting with unprocessed items")
+        )
+        self.genFlashParams.setText(
+            _translate("Main_GUI", "Generate Camera Calibration File")
+        )
+        self.disableSpimagineCheckBox.setText(
+            _translate(
+                "Main_GUI", "Disable spimagine import (in case of WinError on Preview)"
+            )
+        )
         self.previewBackendLabel.setText(_translate("Main_GUI", "Preview Type"))
         self.watchDirCheckBox.setText(_translate("Main_GUI", "Watch Directory:"))
-        self.watchDirLineEdit.setPlaceholderText(_translate("Main_GUI", "New items in watched folder will be automatically processed."))
+        self.watchDirLineEdit.setPlaceholderText(
+            _translate(
+                "Main_GUI",
+                "New items in watched folder will be automatically processed.",
+            )
+        )
         self.watchDirToolButton.setText(_translate("Main_GUI", "..."))
         self.watchModeLabel.setText(_translate("Main_GUI", "Watch Mode:"))
-        self.errorOptOutCheckBox.setToolTip(_translate("Main_GUI", "The \"reduce to raw\" function deletes all\n"
-"processed data, leaving only the original\n"
-"raw data.  This option retains any MIP\n"
-"folders found, as a smaller-sized\n"
-"preview of the dataset for later review."))
-        self.errorOptOutCheckBox.setText(_translate("Main_GUI", " Opt out of automatic error reporting.\n"
-" (Leaving this disabled helps us fix bugs in the program!)"))
-        self.gpusGroupBox.setToolTip(_translate("Main_GUI", "Toggle the GPUs that you want to use for processing.\n"
-" Work will be distributed among them"))
+        self.errorOptOutCheckBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                'The "reduce to raw" function deletes all\n'
+                "processed data, leaving only the original\n"
+                "raw data.  This option retains any MIP\n"
+                "folders found, as a smaller-sized\n"
+                "preview of the dataset for later review.",
+            )
+        )
+        self.errorOptOutCheckBox.setText(
+            _translate(
+                "Main_GUI",
+                " Opt out of automatic error reporting.\n"
+                " (Leaving this disabled helps us fix bugs in the program!)",
+            )
+        )
+        self.gpusGroupBox.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Toggle the GPUs that you want to use for processing.\n"
+                " Work will be distributed among them",
+            )
+        )
         self.prevBackendSpimagineRadio.setText(_translate("Main_GUI", "spimagine"))
         self.prevBackendNapariRadio.setText(_translate("Main_GUI", "napari"))
         self.prevBackendMatplotlibRadio.setText(_translate("Main_GUI", "matplotlib"))
-        self.watchModeAcquisitionRadio.setToolTip(_translate("Main_GUI", "Use this mode on the acquisition computer\n"
-"to watch a given folder for new LLS folders,\n"
-"and process new images as they arrive."))
+        self.watchModeAcquisitionRadio.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Use this mode on the acquisition computer\n"
+                "to watch a given folder for new LLS folders,\n"
+                "and process new images as they arrive.",
+            )
+        )
         self.watchModeAcquisitionRadio.setText(_translate("Main_GUI", "Acquisition"))
-        self.watchModeServerRadio.setToolTip(_translate("Main_GUI", "This mode assumes that LLS folders are\n"
-"\"finished\" when they are dropped into the\n"
-"watched folder.  Newly detected folders\n"
-"are added to the regular processing queue\n"
-"in the main window, and processed in turn."))
+        self.watchModeServerRadio.setToolTip(
+            _translate(
+                "Main_GUI",
+                "This mode assumes that LLS folders are\n"
+                '"finished" when they are dropped into the\n'
+                "watched folder.  Newly detected folders\n"
+                "are added to the regular processing queue\n"
+                "in the main window, and processed in turn.",
+            )
+        )
         self.watchModeServerRadio.setText(_translate("Main_GUI", "Server"))
-        self.filenamePatternLineEdit.setText(_translate("Main_GUI", "{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}"))
-        self.filenamePatternLineEdit.setPlaceholderText(_translate("Main_GUI", "filename pattern"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_config), _translate("Main_GUI", "Config"))
-        self.log.setHtml(_translate("Main_GUI", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'.SF NS Text\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; background-color:#ffffff;\"><br /></p></body></html>"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_log), _translate("Main_GUI", "Log"))
-        self.previewButton.setToolTip(_translate("Main_GUI", "Preview the highlighted dataset with the current settings"))
+        self.filenamePatternLineEdit.setText(
+            _translate(
+                "Main_GUI",
+                "{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}",
+            )
+        )
+        self.filenamePatternLineEdit.setPlaceholderText(
+            _translate("Main_GUI", "filename pattern")
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_config), _translate("Main_GUI", "Config")
+        )
+        self.log.setHtml(
+            _translate(
+                "Main_GUI",
+                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
+                "p, li { white-space: pre-wrap; }\n"
+                "</style></head><body style=\" font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
+                '<p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; background-color:#ffffff;"><br /></p></body></html>',
+            )
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_log), _translate("Main_GUI", "Log")
+        )
+        self.previewButton.setToolTip(
+            _translate(
+                "Main_GUI", "Preview the highlighted dataset with the current settings"
+            )
+        )
         self.previewButton.setText(_translate("Main_GUI", "Preview"))
-        self.previewCRangeLineEdit.setToolTip(_translate("Main_GUI", "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes. <br>For instance: \'0,2-3\'<br>NOTE: channels are zero-indexed</span></p></body></html>"))
-        self.previewCRangeLineEdit.setPlaceholderText(_translate("Main_GUI", "channels"))
-        self.previewTRangeLineEdit.setToolTip(_translate("Main_GUI", "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of timepoints to preview. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes.<br>For instance: \'0,3,5-10,15-30-3,40\'<br>NOTE: time is zero-indexed</span></p></body></html>"))
+        self.previewCRangeLineEdit.setToolTip(
+            _translate(
+                "Main_GUI",
+                "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes. <br>For instance: '0,2-3'<br>NOTE: channels are zero-indexed</span></p></body></html>",
+            )
+        )
+        self.previewCRangeLineEdit.setPlaceholderText(
+            _translate("Main_GUI", "channels")
+        )
+        self.previewTRangeLineEdit.setToolTip(
+            _translate(
+                "Main_GUI",
+                "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of timepoints to preview. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes.<br>For instance: '0,3,5-10,15-30-3,40'<br>NOTE: time is zero-indexed</span></p></body></html>",
+            )
+        )
         self.previewTRangeLineEdit.setPlaceholderText(_translate("Main_GUI", "time"))
         self.processButton.setText(_translate("Main_GUI", "Process"))
-        self.processCRangeLineEdit.setToolTip(_translate("Main_GUI", "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes. <br>For instance: \'0,2-3\'<br>NOTE: channels are zero-indexed</span></p></body></html>"))
-        self.processCRangeLineEdit.setPlaceholderText(_translate("Main_GUI", "channels"))
-        self.processTRangeLineEdit.setToolTip(_translate("Main_GUI", "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of timepoints to process. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes.<br>For instance: \'0,3,5-10,15-30-3,40\'<br>NOTE: time is zero-indexed</span></p></body></html>"))
+        self.processCRangeLineEdit.setToolTip(
+            _translate(
+                "Main_GUI",
+                "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of channels to preview. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes. <br>For instance: '0,2-3'<br>NOTE: channels are zero-indexed</span></p></body></html>",
+            )
+        )
+        self.processCRangeLineEdit.setPlaceholderText(
+            _translate("Main_GUI", "channels")
+        )
+        self.processTRangeLineEdit.setToolTip(
+            _translate(
+                "Main_GUI",
+                "<html><head/><body><p><span style=\" font-size:12pt;\">a string can be used to dictate a subset of timepoints to process. Separate list items with commas, and &quot;start-stop-step&quot; items with dashes.<br>For instance: '0,3,5-10,15-30-3,40'<br>NOTE: time is zero-indexed</span></p></body></html>",
+            )
+        )
         self.processTRangeLineEdit.setPlaceholderText(_translate("Main_GUI", "time"))
         self.menuFile.setTitle(_translate("Main_GUI", "File"))
         self.menuView.setTitle(_translate("Main_GUI", "View"))
@@ -1507,33 +2081,72 @@ class Ui_Main_GUI(object):
         self.actionAbort.setShortcut(_translate("Main_GUI", "Ctrl+X"))
         self.actionOpen_LLSdir.setText(_translate("Main_GUI", "Open LLSdir"))
         self.actionOpen_LLSdir.setShortcut(_translate("Main_GUI", "Ctrl+O"))
-        self.actionSave_Settings_as_Default.setText(_translate("Main_GUI", "Save Settings as Default"))
-        self.actionSave_Settings_as_Default.setShortcut(_translate("Main_GUI", "Ctrl+S"))
-        self.actionLoad_Default_Settings.setText(_translate("Main_GUI", "Load Default Settings"))
+        self.actionSave_Settings_as_Default.setText(
+            _translate("Main_GUI", "Save Settings as Default")
+        )
+        self.actionSave_Settings_as_Default.setShortcut(
+            _translate("Main_GUI", "Ctrl+S")
+        )
+        self.actionLoad_Default_Settings.setText(
+            _translate("Main_GUI", "Load Default Settings")
+        )
         self.actionLoad_Default_Settings.setShortcut(_translate("Main_GUI", "Ctrl+D"))
         self.actionReduce_to_Raw.setText(_translate("Main_GUI", "Reduce to Raw"))
-        self.actionReduce_to_Raw.setToolTip(_translate("Main_GUI", "Remove all processed data from selected folder\n"
-"and restore folder to it\'s original state\n"
-"(immediately after acquisition)"))
+        self.actionReduce_to_Raw.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Remove all processed data from selected folder\n"
+                "and restore folder to it's original state\n"
+                "(immediately after acquisition)",
+            )
+        )
         self.actionCompress_Folder.setText(_translate("Main_GUI", "Compress Raw"))
-        self.actionCompress_Folder.setToolTip(_translate("Main_GUI", "Compress raw data in selected folder"))
+        self.actionCompress_Folder.setToolTip(
+            _translate("Main_GUI", "Compress raw data in selected folder")
+        )
         self.actionDecompress_Folder.setText(_translate("Main_GUI", "Decompress Raw"))
         self.actionConcatenate.setText(_translate("Main_GUI", "Concatenate"))
-        self.actionConcatenate.setToolTip(_translate("Main_GUI", "Merge selected folders into single LLSdir"))
+        self.actionConcatenate.setToolTip(
+            _translate("Main_GUI", "Merge selected folders into single LLSdir")
+        )
         self.actionRename_Scripted.setText(_translate("Main_GUI", "Rename Scripted"))
-        self.actionRename_Scripted.setToolTip(_translate("Main_GUI", "Rename \"Iter_\" files in an LLSdir acquired with Script Editor"))
-        self.actionClose_All_Previews.setText(_translate("Main_GUI", "Close All Previews"))
-        self.actionClose_All_Previews.setShortcut(_translate("Main_GUI", "Ctrl+Shift+W"))
+        self.actionRename_Scripted.setToolTip(
+            _translate(
+                "Main_GUI",
+                'Rename "Iter_" files in an LLSdir acquired with Script Editor',
+            )
+        )
+        self.actionClose_All_Previews.setText(
+            _translate("Main_GUI", "Close All Previews")
+        )
+        self.actionClose_All_Previews.setShortcut(
+            _translate("Main_GUI", "Ctrl+Shift+W")
+        )
         self.actionAbout_LLSpy.setText(_translate("Main_GUI", "About LLSpy"))
         self.actionFreeze.setText(_translate("Main_GUI", "Freeze"))
-        self.actionFreeze.setToolTip(_translate("Main_GUI", "Delete all processed data, and compress raw data for storage"))
+        self.actionFreeze.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Delete all processed data, and compress raw data for storage",
+            )
+        )
         self.actionHelp.setText(_translate("Main_GUI", "Help"))
-        self.actionCamera_Calibration.setText(_translate("Main_GUI", "Camera Calibration"))
-        self.actionRename_Iters.setText(_translate("Main_GUI", "Rename \'Iters_\'"))
-        self.actionRename_Iters.setToolTip(_translate("Main_GUI", "Rename files acquired with Script Editor mode, containing \'Iters_\'"))
-        self.actionUndo_Rename_Iters.setText(_translate("Main_GUI", "Undo Rename \'Iters_\'"))
+        self.actionCamera_Calibration.setText(
+            _translate("Main_GUI", "Camera Calibration")
+        )
+        self.actionRename_Iters.setText(_translate("Main_GUI", "Rename 'Iters_'"))
+        self.actionRename_Iters.setToolTip(
+            _translate(
+                "Main_GUI",
+                "Rename files acquired with Script Editor mode, containing 'Iters_'",
+            )
+        )
+        self.actionUndo_Rename_Iters.setText(
+            _translate("Main_GUI", "Undo Rename 'Iters_'")
+        )
         self.actionReveal.setText(_translate("Main_GUI", "Reveal"))
-        self.actionReveal.setToolTip(_translate("Main_GUI", "Reveal Item in Explorer/Finder"))
+        self.actionReveal.setToolTip(
+            _translate("Main_GUI", "Reveal Item in Explorer/Finder")
+        )
         self.actionReveal.setShortcut(_translate("Main_GUI", "Ctrl+Shift+O"))
         self.actionMerge_MIPs_from_folder.setText(_translate("Main_GUI", "Merge MIPs"))
-

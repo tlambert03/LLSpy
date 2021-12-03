@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy as np
 
 
@@ -13,7 +12,7 @@ class dotdict(dict):
         return self.keys()
 
 
-class DimensionManager(object):
+class DimensionManager:
     # ('X',imageSize(2),pixelExtentInWorldX,pixelExtentInWorldX/2);
 
     def __init__(
@@ -72,7 +71,7 @@ class DimensionManager(object):
             except Exception:
                 # inelegent way to avoid error on __init__
                 pass
-        super(DimensionManager, self).__setattr__(name, value)
+        super().__setattr__(name, value)
 
         # METHODS
 
@@ -111,7 +110,7 @@ class DimensionManager(object):
         return subscript
 
 
-class imref2d(object):
+class imref2d:
     """Spatial referenceing object for 2d"""
 
     def __init__(self, *args):
@@ -243,14 +242,14 @@ class imref2d(object):
             if isinstance(self.__getattribute__(n), np.ndarray):
                 val = self.__getattribute__(n)
                 if len(val) == 1:
-                    repdict[n] = "{:.4f}".format(val[0])
+                    repdict[n] = f"{val[0]:.4f}"
                 else:
                     if np.issubdtype(val.dtype, np.int):
                         repdict[n] = list(val)
                     else:
-                        repdict[n] = list(["{:.4f}".format(i) for i in val])
+                        repdict[n] = list(f"{i:.4f}" for i in val)
             elif isinstance(self.__getattribute__(n), (np.float, float)):
-                repdict[n] = "{:.4f}".format(self.__getattribute__(n))
+                repdict[n] = f"{self.__getattribute__(n):.4f}"
             elif isinstance(self.__getattribute__(n), (np.int, np.int64, int)):
                 repdict[n] = int(self.__getattribute__(n))
         return pformat(repdict)
@@ -259,24 +258,24 @@ class imref2d(object):
 class imref3d(imref2d):
     """Spatial referenceing object for 3d
 
-	R = imref3d() creates an imref3d object with default property settings.
+    R = imref3d() creates an imref3d object with default property settings.
 
-	R = imref3d(imageSize)
-		creates an imref3d object given an image size: (nZ, nY, nX)
-		This syntax constructs a spatial referencing object for the default
-		case in which the world coordinate system is co-aligned with the
-		intrinsic coordinate system.
+    R = imref3d(imageSize)
+            creates an imref3d object given an image size: (nZ, nY, nX)
+            This syntax constructs a spatial referencing object for the default
+            case in which the world coordinate system is co-aligned with the
+            intrinsic coordinate system.
 
-	R = imref3d(imageSize, pixelExtentInWorldX, pixelExtentInWorldY, pixelExtentInWorldZ)
-		creates an imref3d object given an image size (nZ, nY, nX) and the
-		resolution in each dimension, specified by
-		pixelExtentInWorldX, pixelExtentInWorldY, and pixelExtentInWorldZ.
+    R = imref3d(imageSize, pixelExtentInWorldX, pixelExtentInWorldY, pixelExtentInWorldZ)
+            creates an imref3d object given an image size (nZ, nY, nX) and the
+            resolution in each dimension, specified by
+            pixelExtentInWorldX, pixelExtentInWorldY, and pixelExtentInWorldZ.
 
-	R = imref3d(imageSize,xWorldLimits,yWorldLimits,zWorldLimits)
-		creates an imref3d object given an image size and the world limits
-		in each dimension, specified by xWorldLimits, yWorldLimits and zWorldLimits.
+    R = imref3d(imageSize,xWorldLimits,yWorldLimits,zWorldLimits)
+            creates an imref3d object given an image size and the world limits
+            in each dimension, specified by xWorldLimits, yWorldLimits and zWorldLimits.
 
-	"""
+    """
 
     def __init__(self, *args):
         self.Dimension = dotdict()

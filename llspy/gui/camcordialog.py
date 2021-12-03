@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Form implementation generated from reading ui file 'llspy/gui/camcordialog.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
@@ -9,7 +7,7 @@
 from qtpy import QtCore, QtGui, QtWidgets
 
 
-class Ui_Dialog(object):
+class Ui_Dialog:
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(1000, 760)

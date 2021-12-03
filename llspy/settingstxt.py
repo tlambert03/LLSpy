@@ -1,14 +1,12 @@
-from . import util
-from . import camera
-from .exceptions import SettingsError
-from datetime import datetime
-
+import configparser
+import logging
 import os
 import re
-import io
-import configparser
 import warnings
-import logging
+from datetime import datetime
+
+from . import camera, util
+from .exceptions import SettingsError
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +48,7 @@ excitation_pattern = re.compile(
 PIXEL_SIZE = {"C11440-22C": 6.5, "C11440": 6.5, "C13440": 6.5}
 
 
-class LLSsettings(object):
+class LLSsettings:
     """Class for parsing and storing info from LLS Settings.txt.
 
     Args:
@@ -86,11 +84,11 @@ class LLSsettings(object):
     def read(self):
         # io.open grants py2/3 compatibility
         try:
-            with io.open(self.path, "r", encoding="utf-8") as f:
+            with open(self.path, encoding="utf-8") as f:
                 self.raw_text = f.read()
             return 1
-        except IOError:
-            warnings.warn("Settings file not found at {}".format(self.path))
+        except OSError:
+            warnings.warn(f"Settings file not found at {self.path}")
             return 0
         except Exception:
             return 0
@@ -106,7 +104,7 @@ class LLSsettings(object):
         return pformat(sb)
 
     def getSection(self, heading):
-        secHeading = "\*\*\*\*\*\s+{}.*?\n\*\*\*\*"
+        secHeading = "\\*\\*\\*\\*\\*\\s+{}.*?\n\\*\\*\\*\\*"
         match = re.search(secHeading.format(heading), self.raw_text, re.DOTALL)
         if match is not None:
             # return match.group()
@@ -136,7 +134,7 @@ class LLSsettings(object):
         ini_settings = self.raw_text.split("***** ***** *****")[-1]
 
         # parse the top part (general settings)
-        datestring = re.search("Date\s*:\s*(.*)\n", general_settings).group(1)
+        datestring = re.search("Date\\s*:\\s*(.*)\n", general_settings).group(1)
         dateformats = ("%m/%d/%Y %I:%M:%S %p", "%m/%d/%Y %I:%M:%S", "%m/%d/%Y %H:%M:%S")
         self.date = None
         for fmt in dateformats:
@@ -153,15 +151,15 @@ class LLSsettings(object):
 
         # print that with dateobject.strftime('%x %X %p')
 
-        self.acq_mode = re.search("Acq Mode\s*:\s*(.*)\n", general_settings).group(1)
+        self.acq_mode = re.search("Acq Mode\\s*:\\s*(.*)\n", general_settings).group(1)
         self.software_version = re.search(
-            "Version\s*:\s*v ([\d*.?]+)", general_settings
+            r"Version\s*:\s*v ([\d*.?]+)", general_settings
         ).group(1)
         self.cycle_lasers = re.search(
-            "Cycle lasers\s*:\s*(.*)(?:$|\n)", waveform_settings
+            "Cycle lasers\\s*:\\s*(.*)(?:$|\n)", waveform_settings
         ).group(1)
         self.z_motion = re.search(
-            "Z motion\s*:\s*(.*)(?:$|\n)", waveform_settings
+            "Z motion\\s*:\\s*(.*)(?:$|\n)", waveform_settings
         ).group(1)
 
         # find repating patterns in settings file

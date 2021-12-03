@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # fiducialreg.py
 
 """Generate transformation matrices from arrays of fiducial markers for
@@ -34,21 +33,20 @@ Examples
 # to a stack from the 488 channel...
 >>> out = affine(im560, 560_to_488_rigid)
 """
-from __future__ import print_function, division
 
-from scipy import ndimage, optimize, stats
-from os import path as osp
 import itertools
-import numpy as np
-import logging
 import json
+import logging
+from os import path as osp
 
 # using Qt5Agg causes "window focus loss" in interpreter for some reason
 import matplotlib
+import numpy as np
+from scipy import ndimage, optimize, stats
 
 matplotlib.use("Qt5Agg")
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa
 
 logger = logging.getLogger(__name__)
 np.seterr(divide="ignore", invalid="ignore")
@@ -56,8 +54,6 @@ np.seterr(divide="ignore", invalid="ignore")
 
 class RegistrationError(Exception):
     """Base class for fiducialreg errors"""
-
-    pass
 
 
 # TODO: try seperable gaussian filter instead for speed
@@ -112,7 +108,7 @@ def get_thresh(im, mincount=None, steps=100):
 
 
 def mad(arr, axis=None, method="median"):
-    """ Median/Mean Absolute Deviation: a "Robust" version of standard deviation.
+    """Median/Mean Absolute Deviation: a "Robust" version of standard deviation.
     Indices variabililty of the sample.
     https://en.wikipedia.org/wiki/Median_absolute_deviation
     """
@@ -121,7 +117,7 @@ def mad(arr, axis=None, method="median"):
     elif method == "mean":
         return np.mean(np.abs(arr - np.mean(arr, axis)), axis)
     else:
-        raise ValueError("Unrecognized option for method: {}".format(method))
+        raise ValueError(f"Unrecognized option for method: {method}")
 
 
 def get_closest_points(pc1, pc2):
@@ -135,12 +131,11 @@ def get_closest_points(pc1, pc2):
     pc1 = pc1.T
     pc2 = pc2.T
     d = [((pc2 - point) ** 2).sum(axis=1) for point in pc1]
-    nn = [(np.min(p), np.argmin(p)) for p in d]
-    return nn
+    return [(np.min(p), np.argmin(p)) for p in d]
 
 
 def get_matching_points(pc1, pc2, method=None):
-    """ return modified point clouds such that every point in pc1 has a
+    """return modified point clouds such that every point in pc1 has a
     neighbor in pc2 that is within distance maxd
     """
     pc2neighbor_for_pc1 = np.array(get_closest_points(pc1, pc2))
@@ -158,11 +153,11 @@ def get_matching_points(pc1, pc2, method=None):
 
 
 def mat2to3(mat2):
-    """ 2D to 3D matrix:
-        | a b c |       | a b 0 c |
-        | d e f |  =>   | d e 0 f |
-        | g h i |       | 0 0 1 0 |
-                        | g h 0 i |
+    """2D to 3D matrix:
+    | a b c |       | a b 0 c |
+    | d e f |  =>   | d e 0 f |
+    | g h i |       | 0 0 1 0 |
+                    | g h 0 i |
     """
     mat3 = np.eye(4)
     mat3[0:2, 0:2] = mat2[0:2, 0:2]
@@ -176,7 +171,7 @@ def mat2to3(mat2):
 
 
 def infer_affine(X, Y, homo=1):
-    """ calculate affine transform which maps a set of points X onto Y
+    """calculate affine transform which maps a set of points X onto Y
 
     X - 3xM XYZ points in starting coordinate system.
     Y - 3xM XYZ points in destination coordinate system.
@@ -258,14 +253,14 @@ def cart2hom(X):
 
 
 def intrinsicToWorld(intrinsicXYZ, dxy, dz, worldStart=0.5):
-    """ where intrinsicXYZ is a 1x3 vector np.array([X, Y, Z]) """
+    """where intrinsicXYZ is a 1x3 vector np.array([X, Y, Z])"""
     if dxy == dz == 1:
         logger.warning("voxel size set at [1,1,1]... possibly unset")
     return worldStart + (intrinsicXYZ - 0.5) * np.array([dxy, dxy, dz])
 
 
 def worldToInstrinsic(worldXYZ, dxy, dz, worldStart=0.5):
-    """ where XYZ coord is a 1x3 vector np.array([X, Y, Z]) """
+    """where XYZ coord is a 1x3 vector np.array([X, Y, Z])"""
     if dxy == dz == 1:
         logger.warning("voxel size set at [1,1,1]... possibly unset")
     return 0.5 + (worldXYZ - worldStart) / np.array([dxy, dxy, dz])
@@ -307,7 +302,7 @@ def translateXF(X, T, invert=False):
         return X - T.T
 
 
-class lazyattr(object):
+class lazyattr:
     """Lazy object attribute whose value is computed on first access."""
 
     __slots__ = ("func",)
@@ -401,7 +396,7 @@ class GaussFitResult:
         return self.fitResults[6]
 
 
-class GaussFitter3D(object):
+class GaussFitter3D:
     def __init__(self, data, dz=1, dx=1, wx=0.17, wz=0.37):
         self.data = data
         self.dz = dz
@@ -410,7 +405,7 @@ class GaussFitter3D(object):
         self.wz = wz
 
     def __getitem__(self, key):
-        """ return gaussian fit of a 3D roi defined by a 3-tuple of slices """
+        """return gaussian fit of a 3D roi defined by a 3-tuple of slices"""
         zslice, yslice, xslice = key
         # cut region out of data stack
         dataROI = self.data[zslice, yslice, xslice].astype("f")
@@ -471,7 +466,7 @@ class GaussFitter3D(object):
         return GaussFitResult(res1, self.dx, self.dz, key, resCode, fitErrors)
 
 
-class FiducialCloud(object):
+class FiducialCloud:
     """Generate a 3D point cloud of XYZ locations of fiducial markers
 
     Points are extracted from an image of (e.g.) beads by 3D gaussian fitting.
@@ -541,7 +536,7 @@ class FiducialCloud(object):
         self.coords = None
         self.filtertype = filtertype
 
-        logger.debug("New fiducial cloud created with dx: {},  dz: {}".format(dx, dz))
+        logger.debug(f"New fiducial cloud created with dx: {dx},  dz: {dz}")
         if self.data is not None:
             self.update_coords()
 
@@ -556,7 +551,7 @@ class FiducialCloud(object):
     def mincount(self, value):
         self._mincount = value
         self.update_coords()
-        logger.info("found {} spots".format(self.count))
+        logger.info(f"found {self.count} spots")
 
     @property
     def count(self):
@@ -567,20 +562,19 @@ class FiducialCloud(object):
 
     @lazyattr
     def filtered(self):
-        if self.data is not None:
-            if self.filtertype == "log":
-                return log_filter(self.data, self.blurxysig, self.blurzsig)
-            else:
-                from gputools import blur
-                import warnings
-
-                sigs = np.array([self.blurzsig, self.blurxysig, self.blurxysig]) * 2
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    out = blur(self.data, sigs)
-                return out
-        else:
+        if self.data is None:
             return None
+        if self.filtertype == "log":
+            return log_filter(self.data, self.blurxysig, self.blurzsig)
+        import warnings
+
+        from gputools import blur
+
+        sigs = np.array([self.blurzsig, self.blurxysig, self.blurxysig]) * 2
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            out = blur(self.data, sigs)
+        return out
 
     def autothresh(self, mincount=None):
         if mincount is None:
@@ -599,9 +593,9 @@ class FiducialCloud(object):
             assert thresh > 0
         except Exception:
             raise RegistrationError(
-                "Threshold must be number greater than 0.  got: {}".format(thresh)
+                f"Threshold must be number greater than 0.  got: {thresh}"
             )
-        logger.debug("Update_coords using threshold: {}".format(thresh))
+        logger.debug(f"Update_coords using threshold: {thresh}")
         labeled = ndimage.label(self.filtered > thresh)[0]
         objects = ndimage.find_objects(labeled)
         # FIXME: pass sigmas to wx and wz parameters of GaussFitter
@@ -632,7 +626,7 @@ class FiducialCloud(object):
                 )
             )
         else:
-            logger.info("Registration found {} objects".format(self.count))
+            logger.info(f"Registration found {self.count} objects")
 
     @property
     def coords_inworld(self):
@@ -641,10 +635,7 @@ class FiducialCloud(object):
 
     def show(self, withimage=True, filtered=True):
         if withimage and self.filtered is not None:
-            if filtered:
-                im = self.filtered.max(0)
-            else:
-                im = self.data.max(0)
+            im = self.filtered.max(0) if filtered else self.data.max(0)
             plt.imshow(im, cmap="gray", vmax=im.max() * 0.7)
         if self.count:
             plt.scatter(self.coords[0], self.coords[1], c="red", s=5)
@@ -660,8 +651,8 @@ class FiducialCloud(object):
         logger.debug("Recovering Fidicuals from JSON string")
         J = json.loads(Jstring)
         for k, v in J.items():
-            if not k == "coords":
-                logger.debug("Setting attribute {} to {}".format(k, v))
+            if k != "coords":
+                logger.debug(f"Setting attribute {k} to {v}")
             else:
                 logger.debug("Populating coordinates from JSON string")
             setattr(self, k, v)
@@ -669,7 +660,7 @@ class FiducialCloud(object):
         return self
 
 
-class CloudSet(object):
+class CloudSet:
     """Creates a set of fiducial clouds for the purpose of estimating transform
 
     The main method is the tform() method to generate a transformation matrix
@@ -696,7 +687,7 @@ class CloudSet(object):
         dz=1,
         mincount=None,
         threshold=None,
-        **kwargs
+        **kwargs,
     ):
         self.dx = dx
         self.dz = dz
@@ -717,9 +708,7 @@ class CloudSet(object):
             self.N = len(data)
             self.clouds = []
             for i, d in enumerate(data):
-                logger.info(
-                    "Creating FiducalCloud for label: {}".format(self.labels[i])
-                )
+                logger.info(f"Creating FiducalCloud for label: {self.labels[i]}")
                 self.clouds.append(
                     FiducialCloud(
                         d,
@@ -727,7 +716,7 @@ class CloudSet(object):
                         dz=self.dz,
                         threshold=threshold,
                         mincount=mincount,
-                        **kwargs
+                        **kwargs,
                     )
                 )
         else:
@@ -751,7 +740,7 @@ class CloudSet(object):
         return self
 
     def has_data(self):
-        return all([fc.has_data() for fc in self.clouds])
+        return all(fc.has_data() for fc in self.clouds)
 
     def data(self, idx=None, label=None):
         if not self.has_data():
@@ -765,10 +754,8 @@ class CloudSet(object):
                 idx = self.labels.index(label)
             except ValueError:
                 raise ValueError(
-                    "Could not find label {} in reg list: {}".format(label, self.labels)
+                    f"Could not find label {label} in reg list: {self.labels}"
                 )
-        elif label and not idx:
-            print("Both label and index provided, using idx")
         return self.clouds[idx].data
 
     @property
@@ -790,7 +777,7 @@ class CloudSet(object):
         self._matching = self._get_matching()
 
     def _get_matching(self, inworld=False):
-        """ enforce matching points in cloudset """
+        """enforce matching points in cloudset"""
         if inworld:
             coords = [C.coords_inworld for C in self.clouds]
         else:
@@ -803,28 +790,25 @@ class CloudSet(object):
                 coords[m], coords[n] = get_matching_points(coords[m], coords[n])
             if len({c.shape for c in coords}) == 1:
                 break
-        if not all([len(c) for c in coords]):
+        if not all(len(c) for c in coords):
             raise IndexError("At least one point cloud has no points")
         return coords
 
     def matching(self):
-        if "_matching" in dir(self):
-            return self._matching
-        else:
+        if "_matching" not in dir(self):
             self._matching = self._get_matching()
-            return self._matching
+        return self._matching
 
     def __getitem__(self, key):
         if isinstance(key, str) or (isinstance(key, int) and key > self.N):
-            if self.labels is not None:
-                if key in self.labels:
-                    return self.clouds[self.labels.index(key)]
-                else:
-                    raise ValueError("Unrecognized label for CloudSet")
-            else:
+            if self.labels is None:
                 raise ValueError(
                     "Cannot index CloudSet by string without " "provided labels"
                 )
+            if key in self.labels:
+                return self.clouds[self.labels.index(key)]
+            else:
+                raise ValueError("Unrecognized label for CloudSet")
         elif isinstance(key, int) and key < self.N:
             return self.clouds[key]
         else:
@@ -914,12 +898,10 @@ class CloudSet(object):
 
             def default(self, obj):
                 if isinstance(obj, np.ndarray):
-                    if all(isinstance(i, np.ndarray) for i in obj):
-                        nestedList = obj.tolist()
-                        result = [self.fixedString(l) for l in nestedList]
-                        return result
-                    else:
+                    if not all(isinstance(i, np.ndarray) for i in obj):
                         return obj.tolist()
+                    nestedList = obj.tolist()
+                    return [self.fixedString(l) for l in nestedList]
                 return json.JSONEncoder.default(self, obj)
 
         tforms = self.get_all_tforms(**kwargs)
@@ -933,7 +915,7 @@ class CloudSet(object):
     def tform(
         self, movingLabel=None, fixedLabel=None, mode="2step", inworld=True, **kwargs
     ):
-        """ get tform matrix that maps moving point cloud to fixed point cloud
+        """get tform matrix that maps moving point cloud to fixed point cloud
 
         Args:
             movingLabel (:obj:`str`): label/wave to register.  if none, will use the
@@ -978,42 +960,41 @@ class CloudSet(object):
             )
 
         mode = mode.lower()
-        if mode in funcDict:
-            if mode.startswith("cpd"):
-                if inworld:
-                    moving = self.clouds[movIdx].coords_inworld.T
-                    fixed = self.clouds[fixIdx].coords_inworld.T
-                else:
-                    moving = self.clouds[movIdx].coords.T
-                    fixed = self.clouds[fixIdx].coords.T
-                if "2step" in mode:
-                    tform = funcDict[mode](moving, fixed)
-                else:
-                    reg = funcDict[mode](moving, fixed)
-                    tform = reg.register(None)[4]
+        if mode not in funcDict:
+            raise ValueError(f"Unrecognized transformation mode: {mode}")
+        if mode.startswith("cpd"):
+            if inworld:
+                moving = self.clouds[movIdx].coords_inworld.T
+                fixed = self.clouds[fixIdx].coords_inworld.T
             else:
-                matching = self._get_matching(inworld=inworld)
-                moving = matching[movIdx]
-                fixed = matching[fixIdx]
+                moving = self.clouds[movIdx].coords.T
+                fixed = self.clouds[fixIdx].coords.T
+            if "2step" in mode:
                 tform = funcDict[mode](moving, fixed)
-
-                if inworld:
-                    # FIXME: Why the hell is this necessary??
-                    # pointed out by Rainer... but after looking through the code for a while,
-                    # and carefully checking all the intrinsic-world conversions,
-                    # I still can't figure out why the tforms are all off by half of a pixel
-                    tform[0][3] -= self.dx / 2
-                    tform[1][3] -= self.dx / 2
-                    tform[2][3] -= self.dz / 2
-            logger.info(
-                "Measured {} Tform Matrix {}inWorld:\n".format(
-                    mode, "" if inworld else "not "
-                )
-                + str(tform)
-            )
-            return tform
+            else:
+                reg = funcDict[mode](moving, fixed)
+                tform = reg.register(None)[4]
         else:
-            raise ValueError("Unrecognized transformation mode: {}".format(mode))
+            matching = self._get_matching(inworld=inworld)
+            moving = matching[movIdx]
+            fixed = matching[fixIdx]
+            tform = funcDict[mode](moving, fixed)
+
+            if inworld:
+                # FIXME: Why the hell is this necessary??
+                # pointed out by Rainer... but after looking through the code for a while,
+                # and carefully checking all the intrinsic-world conversions,
+                # I still can't figure out why the tforms are all off by half of a pixel
+                tform[0][3] -= self.dx / 2
+                tform[1][3] -= self.dx / 2
+                tform[2][3] -= self.dz / 2
+        logger.info(
+            "Measured {} Tform Matrix {}inWorld:\n".format(
+                mode, "" if inworld else "not "
+            )
+            + str(tform)
+        )
+        return tform
 
     def show(self, matching=False, withimage=True, filtered=True):
         """show points in clouds overlaying image, if matching is true, only
@@ -1089,18 +1070,17 @@ def imoverlay(im1, im2, method=None, mip=False):
     im2 /= im2.max()
 
     ndim = im1.ndim
-    if method == "diff":
-        im3 = im1 - im2
-        im3 -= im3.min()
-        im3 /= im3.max()
-        return im3
-    else:
+    if method != "diff":
         return np.stack((im1, im2, im1), ndim)
+    im3 = im1 - im2
+    im3 -= im3.min()
+    im3 /= im3.max()
+    return im3
 
 
 def imshowpair(im1, im2, method=None, mip=False, **kwargs):
     # normalize
-    if not im1.shape == im2.shape:
+    if im1.shape != im2.shape:
         raise ValueError("images must be same shape")
 
     if not mip:
@@ -1126,11 +1106,11 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
     plt.show()
 
 
-class RegFile(object):
+class RegFile:
     def __init__(self, path):
         self.path = path
         if not osp.isfile(path):
-            raise FileNotFoundError("Could not find registration file: {}".format(path))
+            raise FileNotFoundError(f"Could not find registration file: {path}")
         self.parsefile()
 
     def parsefile(self):
@@ -1156,7 +1136,7 @@ class RegFile(object):
             if self.date:
                 self.date = datetime.strptime(self.date, "%Y/%m/%d-%H:%M")
         except Exception as e:
-            logger.error("Could not parse registration file date: {}".format(e))
+            logger.error(f"Could not parse registration file date: {e}")
 
         self.dx = regdict.get("dx", None)
         self.dz = regdict.get("dz", None)
@@ -1197,9 +1177,7 @@ class RegFile(object):
         moving = str(moving)
         mode = str(mode).lower()
         if ref not in self.tform_dict:
-            raise RegistrationError(
-                "Reference wave {} not in registration file".format(ref)
-            )
+            raise RegistrationError(f"Reference wave {ref} not in registration file")
         if moving not in self.tform_dict[ref]:
             raise RegistrationError(
                 "No transform to map moving wave {} onto refrence wave {}".format(
@@ -1258,7 +1236,7 @@ def cpd_2step(moving, fixed):
     return M
 
 
-class CPDregistration(object):
+class CPDregistration:
     def __init__(
         self,
         X,
@@ -1318,15 +1296,14 @@ class CPDregistration(object):
         self.updateVariance()
 
     def transformPointCloud(self, Y=None):
-        if not Y:
-            self.TY = self.s * np.dot(self.Y, np.transpose(self.R)) + np.tile(
-                np.transpose(self.t), (self.M, 1)
-            )
-            return
-        else:
+        if Y:
             return self.s * np.dot(Y, np.transpose(self.R)) + np.tile(
                 np.transpose(self.t), (self.M, 1)
             )
+        self.TY = self.s * np.dot(self.Y, np.transpose(self.R)) + np.tile(
+            np.transpose(self.t), (self.M, 1)
+        )
+        return
 
     def initialize(self):
         self.Y = self.s * np.dot(self.Y, np.transpose(self.R)) + np.repeat(
@@ -1378,7 +1355,7 @@ class CPDregistration(object):
 
 class CPDsimilarity(CPDregistration):
     def __init__(self, *args, **kwargs):
-        super(CPDsimilarity, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def updateTransform(self):
         muX = np.divide(np.sum(np.dot(self.P, self.X), axis=0), self.Np)
@@ -1412,7 +1389,7 @@ class CPDsimilarity(CPDregistration):
 
 class CPDrigid(CPDsimilarity):
     def __init__(self, *args, **kwargs):
-        super(CPDrigid, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.s = 1
 
     @property
@@ -1438,20 +1415,19 @@ class CPDrigid(CPDsimilarity):
         self.t = np.transpose(muX) - np.dot(self.R, np.transpose(muY))
 
     def transformPointCloud(self, Y=None):
-        if not Y:
-            self.TY = np.dot(self.Y, np.transpose(self.R)) + np.tile(
-                np.transpose(self.t), (self.M, 1)
-            )
-            return
-        else:
+        if Y:
             return np.dot(Y, np.transpose(self.R)) + np.tile(
                 np.transpose(self.t), (self.M, 1)
             )
+        self.TY = np.dot(self.Y, np.transpose(self.R)) + np.tile(
+            np.transpose(self.t), (self.M, 1)
+        )
+        return
 
 
 class CPDaffine(CPDregistration):
     def __init__(self, *args, **kwargs):
-        super(CPDaffine, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def updateTransform(self):
         muX = np.divide(np.sum(np.dot(self.P, self.X), axis=0), self.Np)

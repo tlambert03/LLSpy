@@ -1,11 +1,18 @@
 import numpy as np
 from scipy.ndimage.interpolation import map_coordinates
+
 from .imref import imref3d
-from numba import njit
+
+try:
+    from numba import njit
+except ImportError:
+
+    def njit(f):
+        return f
 
 
 def imwarp(inputImage, tform, R_A=None, outputRef=None):
-    """ transform input image with provided tform matrix"""
+    """transform input image with provided tform matrix"""
 
     # checkImageAgreementWithTform(inputImage,tform)
 

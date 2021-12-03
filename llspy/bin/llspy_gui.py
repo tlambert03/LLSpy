@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function
-
 try:
     import llspy
 except ImportError:
@@ -10,24 +8,23 @@ except ImportError:
     sys.path.append(os.path.join(thisDirectory, os.pardir, os.pardir))
     import llspy
 
-import llspy.gui.exceptions as err
-from llspy.gui.qtlogger import LogFileHandler
-from llspy.gui.mainwindow import main_GUI, sessionSettings
-
-from qtpy import QtWidgets, QtGui
-
+import json
+import multiprocessing
 import os
 import sys
-import multiprocessing
 import time
-import json
 from distutils.version import StrictVersion
+
+from qtpy import QtGui, QtWidgets
+
+import llspy.gui.exceptions as err
+from llspy.gui.mainwindow import main_GUI, sessionSettings
+from llspy.gui.qtlogger import LogFileHandler
 
 try:
     from urllib.request import urlopen
 except ImportError:
     from urllib import urlopen
-
 
 import logging
 
@@ -42,7 +39,7 @@ logger.removeHandler(lhStdout)  # and delete the original streamhandler
 
 
 def test():
-    APP = QtWidgets.QApplication(sys.argv)
+    _ = QtWidgets.QApplication(sys.argv)
     mainGUI = main_GUI()
     # instantiate the execption handler
     time.sleep(0.1)
@@ -87,7 +84,7 @@ def main():
         mainGUI.actionSLMwindow.setText("SLM Pattern Generator")
         # mainGUI.slmPatternGeneratorButton.clicked.connect(mainGUI.slmDialog.show)
         mainGUI.actionSLMwindow.triggered.connect(mainGUI.slmDialog.show)
-    except ImportError as e:
+    except ImportError:
         logger.error("Could not import slmgen. Cannot add SLM Generator to Tools menu.")
 
     if firstRun:
@@ -126,7 +123,7 @@ def main():
         if not err._OPTOUT:
             _LOGPATH = os.path.join(get_app_dir("LLSpy"), "llspygui.log")
             try:
-                with open(_LOGPATH, "r") as f:
+                with open(_LOGPATH) as f:
                     crashlog = f.read()
                     err.client.captureMessage("LLSpyGUI Bad Exit\n\n" + crashlog)
             except Exception:
