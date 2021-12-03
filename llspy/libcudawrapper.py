@@ -1,11 +1,12 @@
-from .util import load_lib
-from .exceptions import LibCUDAException
-
 import ctypes
-import numpy as np
+import logging
 import os
 import sys
-import logging
+
+import numpy as np
+
+from .exceptions import LibCUDAException
+from .util import load_lib
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,7 @@ def quickCamcor(imstack, camparams):
 
 
 def camcor_init(rawdata_shape, camparams):
-    """ initialize camera correction on GPU.
+    """initialize camera correction on GPU.
     shape is nz/ny/nx of the concatenated stacks from a single timepoint
     """
     requireCUDAlib()
@@ -365,8 +366,8 @@ def RL_decon(
 
 
 if __name__ == "__main__":
-    import tifffile as tf
     import matplotlib.pyplot as plt
+    import tifffile as tf
 
     if len(sys.argv) >= 2:
         if sys.argv[1] == "affine":
@@ -417,9 +418,9 @@ if __name__ == "__main__":
             RL_cleanup()
         elif sys.argv[1] == "camcor":
 
-            from llspy import llsdir
-            from llspy import samples
             import time
+
+            from llspy import llsdir, samples
 
             E = llsdir.LLSdir(samples.stickypix)
 

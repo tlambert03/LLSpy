@@ -1,14 +1,14 @@
-from . import config
-from . import libcudawrapper as libcu
-from .util import imread
-from . import arrayfun
-
+import math
 import os
 import re
 import warnings
+
 import numpy as np
 from numba import jit
-import math
+
+from . import arrayfun, config
+from . import libcudawrapper as libcu
+from .util import imread
 
 
 # #THIS ONE WORKS BEST SO FAR
@@ -141,7 +141,7 @@ def determineThreshold(array, maxSamples=50000):
 #             return True
 
 
-class CameraROI(object):
+class CameraROI:
     def __init__(self, input_array):
         self._data = np.array(input_array)
         # assert len(self._data) == 4, 'CameraROI array must be 4 numbers'
@@ -172,7 +172,7 @@ class CameraROI(object):
             return True
 
     def __repr__(self):
-        return "<CameraROI: {}>".format(self._data)
+        return f"<CameraROI: {self._data}>"
 
 
 def seemsValidCamParams(path):
@@ -190,7 +190,7 @@ def seemsValidCamParams(path):
     return True
 
 
-class CameraParameters(object):
+class CameraParameters:
     """Class to store parameters for camera correction
 
     Filename: path to tif file that stores the camera correction parameters,
@@ -209,7 +209,7 @@ class CameraParameters(object):
             self.basename = None
         else:
             if not os.path.isfile(fname):
-                raise IOError("No such file: {}".format(fname))
+                raise OSError(f"No such file: {fname}")
             self.path = fname
             roi = re.search(r"roi(\d+)-(\d+)-(\d+)-(\d+)", fname)
             if roi:
@@ -291,7 +291,7 @@ class CameraParameters(object):
         """
 
         if not len(stacks):
-            raise ValueError("Empty list of stacks received: {}".format(stacks))
+            raise ValueError(f"Empty list of stacks received: {stacks}")
         if len({S.shape for S in stacks}) > 1:
             raise ValueError("All stacks in list must have the same shape")
         if not all([isinstance(S, np.ndarray) for S in stacks]):
@@ -356,8 +356,7 @@ class CameraParameters(object):
 
 if __name__ == "__main__":
 
-    from llspy import llsdir
-    from llspy import samples
+    from llspy import llsdir, samples
 
     paramfile = samples.camparams  # path to the calibration file
 

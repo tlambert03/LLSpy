@@ -1,5 +1,4 @@
-from qtpy import QtWidgets, QtGui, QtCore
-
+from qtpy import QtCore, QtGui
 
 # first use APP.setStyle(QtW.QStyleFactory.create("fusion"))
 DarkPalette = QtGui.QPalette()

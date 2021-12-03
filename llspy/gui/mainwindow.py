@@ -1,6 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-from __future__ import division, print_function
 
 import json
 import logging
@@ -8,12 +6,12 @@ import os
 import os.path as osp
 
 import numpy as np
+from fiducialreg.fiducialreg import RegFile, RegistrationError
 from qtpy import QtCore, QtGui
 from qtpy import QtWidgets as QtW
 
 import llspy
 import llspy.gui.exceptions as err
-from fiducialreg.fiducialreg import RegFile, RegistrationError
 from llspy.gui import workers
 from llspy.gui.camcalibgui import CamCalibDialog
 from llspy.gui.helpers import (
@@ -90,7 +88,7 @@ class LLSDragDropTable(QtW.QTableWidget):
     # and triggers handler defined in parent widget.
 
     def __init__(self, parent=None):
-        super(LLSDragDropTable, self).__init__(0, self.nCOLS, parent)
+        super().__init__(0, self.nCOLS, parent)
         self.setAcceptDrops(True)
         self.setSelectionMode(QtW.QAbstractItemView.ExtendedSelection)
         self.setSelectionBehavior(QtW.QAbstractItemView.SelectRows)
@@ -174,7 +172,7 @@ class LLSDragDropTable(QtW.QTableWidget):
         # If this folder is not on the list yet, add it to the list:
         if not llspy.util.pathHasPattern(path, "*Settings.txt"):
             if not mainGUI.allowNoSettingsCheckBox.isChecked():
-                logger.warning("No Settings.txt! Ignoring: {}".format(path))
+                logger.warning(f"No Settings.txt! Ignoring: {path}")
                 return
 
         # if it's already on the list, don't add it
@@ -266,20 +264,16 @@ class LLSDragDropTable(QtW.QTableWidget):
         if E.has_settings:
             item.extend(
                 [
-                    "{:2.1f}".format(E.parameters.angle)
-                    if E.parameters.samplescan
-                    else "0",
-                    "{:0.3f}".format(E.parameters.dz),
-                    "{:0.3f}".format(E.parameters.dx),
+                    f"{E.parameters.angle:2.1f}" if E.parameters.samplescan else "0",
+                    f"{E.parameters.dz:0.3f}",
+                    f"{E.parameters.dx:0.3f}",
                 ]
             )
         else:
             dx = E.parameters.dx or mainGUI.defaultDxSpin.value()
             dz = E.parameters.dz or mainGUI.defaultDzSpin.value()
             angle = E.parameters.angle or mainGUI.defaultAngleSpin.value()
-            item.extend(
-                ["{:2.1f}".format(angle), "{:0.3f}".format(dz), "{:0.3f}".format(dx)]
-            )
+            item.extend([f"{angle:2.1f}", f"{dz:0.3f}", f"{dx:0.3f}"])
             E.parameters.angle = angle
             E.parameters.samplescan = True if angle > 0 else False
             E.parameters.dx = dx
@@ -318,7 +312,7 @@ class LLSDragDropTable(QtW.QTableWidget):
         try:
             self.llsObjects.pop(path)
         except KeyError:
-            logger.warning("Could not remove path {} ... not in queue".format(path))
+            logger.warning(f"Could not remove path {path} ... not in queue")
             return
         items = self.findItems(path, QtCore.Qt.MatchExactly)
         for item in items:
@@ -380,7 +374,7 @@ class LLSDragDropTable(QtW.QTableWidget):
             event.ignore()
 
     def keyPressEvent(self, event):
-        super(LLSDragDropTable, self).keyPressEvent(event)
+        super().keyPressEvent(event)
         if (
             event.key() == QtCore.Qt.Key_Delete
             or event.key() == QtCore.Qt.Key_Backspace
@@ -395,7 +389,7 @@ class LLSDragDropTable(QtW.QTableWidget):
                 i += 1
 
 
-class RegistrationTab(object):
+class RegistrationTab:
     def __init__(self):
         self.RegCalibPathLoadButton.clicked.connect(self.setRegCalibPath)
         self.GenerateRegFileButton.clicked.connect(self.generateCalibrationFile)
@@ -416,7 +410,7 @@ class RegistrationTab(object):
         RD = llspy.RegDir(path)
         if not RD.isValid:
             raise err.RegistrationError(
-                "Registration Calibration dir not valid: {}".format(RD.path)
+                f"Registration Calibration dir not valid: {RD.path}"
             )
 
         self.RegCalibPathLineEdit.setText(path)
@@ -451,7 +445,7 @@ class RegistrationTab(object):
 
         if not RD.isValid:
             raise err.RegistrationError(
-                "Registration Calibration dir not valid: {}".format(RD.path)
+                f"Registration Calibration dir not valid: {RD.path}"
             )
 
         outdir = QtW.QFileDialog.getExistingDirectory(
@@ -479,10 +473,8 @@ class RegistrationTab(object):
                     counts = self.RD.cloudset().count
                     if np.std(counts) > 15:
                         outstr = "\n".join(
-                            [
-                                "wave: {}, beads: {}".format(channel, counts[i])
-                                for i, channel in enumerate(self.RD.waves)
-                            ]
+                            f"wave: {channel}, beads: {counts[i]}"
+                            for i, channel in enumerate(self.RD.waves)
                         )
                         self.warning.emit(
                             "Suspicious Registration Result",
@@ -508,14 +500,12 @@ class RegistrationTab(object):
                 with open(outfile2, "w") as file:
                     file.write(outstring)
 
-                logger.debug("registration file output: {}".format(outfile))
-                logger.debug("registration file output: {}".format(outfile2))
+                logger.debug(f"registration file output: {outfile}")
+                logger.debug(f"registration file output: {outfile2}")
                 self.finished.emit(outfile)
 
         def finishup(outfile):
-            self.statusBar.showMessage(
-                "Registration file written: {}".format(outfile), 5000
-            )
+            self.statusBar.showMessage(f"Registration file written: {outfile}", 5000)
             self.loadRegistrationFile(outfile)
 
         def notifyuser(title, msg):
@@ -527,7 +517,7 @@ class RegistrationTab(object):
         regthread.warning.connect(notifyuser)
         self.regthreads.append(regthread)
         self.statusBar.showMessage(
-            "Calculating registrations for ref channels: {}...".format(refs)
+            f"Calculating registrations for ref channels: {refs}..."
         )
         regthread.start()
 
@@ -546,18 +536,16 @@ class RegistrationTab(object):
         try:
             with open(file) as json_data:
                 regdict = json.load(json_data)
-            refs = sorted(list(set([t["reference"] for t in regdict["tforms"]])))
+            refs = sorted(list({t["reference"] for t in regdict["tforms"]}))
             # mov = set([t['moving'] for t in regdict['tforms']])
             modes = ["None"]
             modes.extend(
                 sorted(
                     list(
-                        set(
-                            [
-                                t["mode"].title().replace("Cpd", "CPD")
-                                for t in regdict["tforms"]
-                            ]
-                        )
+                        {
+                            t["mode"].title().replace("Cpd", "CPD")
+                            for t in regdict["tforms"]
+                        }
                     )
                 )
             )
@@ -650,7 +638,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     sig_processing_done = QtCore.Signal()
 
     def __init__(self, parent=None):
-        super(main_GUI, self).__init__(parent)
+        super().__init__(parent)
         self.setupUi(self)  # method inherited from form_class to init UI
         self.setWindowTitle("LLSpy :: Lattice Light Sheet Processing")
         self.setObjectName("main_GUI")
@@ -691,12 +679,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 app.gpuset = set()
             if val:
                 app.gpuset.add(gpunum)
-                logger.debug("GPU {} added to gpuset.".format(gpunum))
+                logger.debug(f"GPU {gpunum} added to gpuset.")
             else:
                 if gpunum in app.gpuset:
                     app.gpuset.remove(gpunum)
-                    logger.debug("GPU {} removed from gpuset.".format(gpunum))
-            logger.debug("GPUset now: {}".format(app.gpuset))
+                    logger.debug(f"GPU {gpunum} removed from gpuset.")
+            logger.debug(f"GPUset now: {app.gpuset}")
 
         # add GPU checkboxes and add
         try:
@@ -708,7 +696,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 for i, gpu in enumerate(gpulist):
                     box = QtW.QCheckBox(self.tab_config)
                     box.setChecked(True)
-                    box.setObjectName("useGPU_{}".format(i))
+                    box.setObjectName(f"useGPU_{i}")
                     box.setText(gpu.strip("GeForce"))
                     box.stateChanged.connect(toggleActiveGPU)
                     app.gpuset.add(i)
@@ -720,7 +708,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         except llspy.cudabinwrapper.CUDAbinException as e:
             logger.warning(e)
-            pass
 
         self.watchDirToolButton.clicked.connect(self.changeWatchDir)
         self.watchDirCheckBox.stateChanged.connect(
@@ -748,7 +735,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.actionHelp.triggered.connect(self.showHelpWindow)
 
         # set validators for cRange and tRange fields
-        ctrangeRX = QtCore.QRegExp("(\d[\d-]*,?)*")  # could be better
+        ctrangeRX = QtCore.QRegExp(r"(\d[\d-]*,?)*")  # could be better
         ctrangeValidator = QtGui.QRegExpValidator(ctrangeRX)
         self.processCRangeLineEdit.setValidator(ctrangeValidator)
         self.processTRangeLineEdit.setValidator(ctrangeValidator)
@@ -843,9 +830,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     def startWatcher(self):
         self.watchdir = self.watchDirLineEdit.text()
         if osp.isdir(self.watchdir):
-            logger.info("Starting watcher on {}".format(self.watchdir))
+            logger.info(f"Starting watcher on {self.watchdir}")
             # TODO: check to see if we need to save watchHandler
-            self.watcherStatus.setText("👁 {}".format(osp.basename(self.watchdir)))
+            self.watcherStatus.setText(f"👁 {osp.basename(self.watchdir)}")
             watchHandler = MainHandler()
             watchHandler.foundLLSdir.connect(self.on_watcher_found_item)
             watchHandler.lostListItem.connect(self.listbox.removePath)
@@ -859,7 +846,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.observer.stop()
             self.observer.join()
             self.observer = None
-            logging.info("Stopped watcher on {}".format(self.watchdir))
+            logging.info(f"Stopped watcher on {self.watchdir}")
             self.watchdir = None
         if not self.observer:
             self.watcherStatus.setText("")
@@ -1092,7 +1079,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         if not os.path.exists(self.previewPath):
             self.statusBar.showMessage(
-                "Skipping! path no longer exists: {}".format(self.previewPath), 5000
+                f"Skipping! path no longer exists: {self.previewPath}", 5000
             )
             self.listbox.removePath(self.previewPath)
             self.previewButton.setEnabled(True)
@@ -1275,7 +1262,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             return
 
         if not os.path.exists(self.currentPath):
-            msg = "Skipping! path no longer exists: {}".format(self.currentPath)
+            msg = f"Skipping! path no longer exists: {self.currentPath}"
             logger.info(msg)
             self.statusBar.showMessage(msg, 5000)
             skip()
@@ -1289,7 +1276,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.currentPath, "*" + llspy.config.__OUTPUTLOG__
         ):
             if not opts["reprocess"]:
-                msg = "Skipping! Path already processed: {}".format(self.currentPath)
+                msg = f"Skipping! Path already processed: {self.currentPath}"
                 logger.info(msg)
                 self.statusBar.showMessage(msg, 5000)
                 skip()
@@ -1300,7 +1287,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
 
         self.statusBar.showMessage(
-            "Starting processing on {} ...".format(shortname(self.currentPath))
+            f"Starting processing on {shortname(self.currentPath)} ..."
         )
         LLSworker, thread = newWorkerThread(
             workers.LLSitemWorker,
@@ -1379,7 +1366,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 itemTime = QtCore.QTime(0, 0).addMSecs(self.timer.elapsed()).toString()
                 logger.info(
                     ">" * 4
-                    + " Item {} finished in {} ".format(self.currentItem, itemTime)
+                    + f" Item {self.currentItem} finished in {itemTime} "
                     + "<" * 4
                 )
             except AttributeError:
@@ -1447,24 +1434,20 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             "saveDeskewedRaw": self.saveDeskewedCheckBox.isChecked(),
             # 'bsaveDecon': self.saveDeconvolvedCheckBox.isChecked(),
             "MIP": tuple(
-                [
-                    int(i)
-                    for i in (
-                        self.deconXMIPCheckBox.isChecked(),
-                        self.deconYMIPCheckBox.isChecked(),
-                        self.deconZMIPCheckBox.isChecked(),
-                    )
-                ]
+                int(i)
+                for i in (
+                    self.deconXMIPCheckBox.isChecked(),
+                    self.deconYMIPCheckBox.isChecked(),
+                    self.deconZMIPCheckBox.isChecked(),
+                )
             ),
             "rMIP": tuple(
-                [
-                    int(i)
-                    for i in (
-                        self.deskewedXMIPCheckBox.isChecked(),
-                        self.deskewedYMIPCheckBox.isChecked(),
-                        self.deskewedZMIPCheckBox.isChecked(),
-                    )
-                ]
+                int(i)
+                for i in (
+                    self.deskewedXMIPCheckBox.isChecked(),
+                    self.deskewedYMIPCheckBox.isChecked(),
+                    self.deskewedZMIPCheckBox.isChecked(),
+                )
             ),
             "mergeMIPs": self.deconJoinMIPCheckBox.isChecked(),
             # 'mergeMIPsraw': self.deskewedJoinMIPCheckBox.isChecked(),
@@ -1759,11 +1742,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         version = llspy.cudabinwrapper.get_version() or ""
         if "error" in version.lower():
             version = "NOT FOUND!  is this an LLSpy cudaDeconv?\n"
-        logger.info("cudaDeconv version: {}".format(version))
+        logger.info(f"cudaDeconv version: {version}")
 
     def setBinaryPath(self, path):
         workers._CUDABIN = path
-        logger.info("Using cudaDeconv binary: {}".format(workers._CUDABIN))
+        logger.info(f"Using cudaDeconv binary: {workers._CUDABIN}")
 
     @QtCore.Slot()
     def setCudaDeconvPath(self, path=None):

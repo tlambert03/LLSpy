@@ -1,10 +1,8 @@
-from __future__ import division, print_function
-
 import os
 import re
 import warnings
-import parse
 
+import parse
 
 # ############### Patterns and regex constants ####################
 
@@ -59,6 +57,7 @@ def contains_LLSfiles(path):
             return True
     return False
 
+
 def contains_filepattern(path, pattern):
     for item in os.listdir(path):
         if parse.parse(pattern, item):
@@ -79,9 +78,7 @@ def parse_filename(fname, matchword=None, pattern=None):
         pattern = "{basename}_ch{channel:d}_stack{stack:d}_{wave:d}nm_{reltime:d}msec_{abstime:d}msecAbs{}"
     R = parse.parse(pattern, fname)
     if not (R and hasattr(R, "named")):
-        raise ValueError(
-            "Could not parse filename:\n{} with pattern:\n{}".format(fname, pattern)
-        )
+        raise ValueError(f"Could not parse filename:\n{fname} with pattern:\n{pattern}")
     named = R.named
     if matchword in named:
         return named[matchword]
@@ -90,7 +87,7 @@ def parse_filename(fname, matchword=None, pattern=None):
 
 
 def gen_filename(d, template=FNAME_TEMPLATE):
-    """ generate filename from dict with file attributes.
+    """generate filename from dict with file attributes.
 
     using dicts like this
     o = {
@@ -106,15 +103,15 @@ def gen_filename(d, template=FNAME_TEMPLATE):
 
 
 def clean_string(varStr):
-    """ sanitize string for use as a variable name"""
-    return re.sub("_+", "_", re.sub("\W|^(?=\d)", "_", varStr))
+    """sanitize string for use as a variable name"""
+    return re.sub("_+", "_", re.sub(r"\W|^(?=\d)", "_", varStr))
 
 
 # ################### File list filtering functions ###################
 
 
 def filter_t(filelist, trange, exclusive=False):
-    """ return a list of filenames whose stack numbers are within trange
+    """return a list of filenames whose stack numbers are within trange
     trange is either a single int, or an iterator with a range of stack
     numbers desired
     """
@@ -127,15 +124,15 @@ def filter_t(filelist, trange, exclusive=False):
     q = []
     if exclusive:
         for t in iterator:
-            q.extend([f for f in filelist if "_stack{:04d}_".format(t) not in f])
+            q.extend([f for f in filelist if f"_stack{t:04d}_" not in f])
     else:
         for t in iterator:
-            q.extend([f for f in filelist if "_stack{:04d}_".format(t) in f])
+            q.extend([f for f in filelist if f"_stack{t:04d}_" in f])
     return q
 
 
 def filter_c(filelist, channels, exclusive=False):
-    """ return a list of filenames whose channel numbers are within trange
+    """return a list of filenames whose channel numbers are within trange
     channels is either a single int, or an iterator with a range of channel
     numbers desired
     """
@@ -148,10 +145,10 @@ def filter_c(filelist, channels, exclusive=False):
     q = []
     if exclusive:
         for c in iterator:
-            q.extend([f for f in filelist if "_ch{}_".format(c) not in f])
+            q.extend([f for f in filelist if f"_ch{c}_" not in f])
     else:
         for c in iterator:
-            q.extend([f for f in filelist if "_ch{}_".format(c) in f])
+            q.extend([f for f in filelist if f"_ch{c}_" in f])
 
     return q
 
@@ -164,14 +161,14 @@ def filter_w(filelist, w, exclusive=False):
     if str(w).endswith("nm"):
         w = str(w).strip("nm")
     if exclusive:
-        f = [f for f in filelist if "_{}nm_".format(w) not in f]
+        f = [f for f in filelist if f"_{w}nm_" not in f]
     else:
-        f = [f for f in filelist if "_{}nm_".format(w) in f]
+        f = [f for f in filelist if f"_{w}nm_" in f]
     return f
 
 
 def filter_reltime(filelist, trange, exclusive=False):
-    """ return a list of filenames whose relative timepoints are within trange
+    """return a list of filenames whose relative timepoints are within trange
     trange is a tuple of (min, max) relative time in the experiment
     """
     # f = [f for f in filelist if parse_filename(f, 'wave') == w]
@@ -197,7 +194,7 @@ def filter_reltime(filelist, trange, exclusive=False):
 
 
 def filter_files(filelist, exclusive=False, **kwargs):
-    """ Convenience function to filter a list of filenames according to
+    """Convenience function to filter a list of filenames according to
     stack number, channel number, wavelength name, relative time
 
     accepted arguments:
@@ -236,6 +233,6 @@ def filter_files(filelist, exclusive=False, **kwargs):
 
     for k in kwargs:
         if k not in funcdict:
-            raise AttributeError("Did not recognize filter argument: {}".format(k))
+            raise AttributeError(f"Did not recognize filter argument: {k}")
         filelist = funcdict[k](filelist, kwargs[k], exclusive=exclusive)
     return filelist

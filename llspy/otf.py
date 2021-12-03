@@ -1,12 +1,13 @@
-from .exceptions import OTFError
-from .util import load_lib
+import ctypes
+import logging
+import os
+import re
 from datetime import datetime, timedelta
 
 import numpy as np
-import re
-import ctypes
-import os
-import logging
+
+from .exceptions import OTFError
+from .util import load_lib
 
 logger = logging.getLogger(__name__)
 
@@ -135,8 +136,7 @@ def dir_has_otfs(dirname):
 
 
 def get_otf_dict(otfdir):
-    """ The otf_dict is a dict with
-    """
+    """The otf_dict is a dict with"""
     otf_dict = {}
     otfdir = plib.Path(otfdir)
 
@@ -187,7 +187,7 @@ def get_otf_dict(otfdir):
                         makeotf(str(t), newname, lambdanm=int(wave), bDoCleanup=False)
                 otf_dict[wave]["default"] = str(otfdir.joinpath(pathname))
     for wave in otf_dict.keys():
-        logger.debug("OTFdict wave: {}, masks: {}".format(wave, otf_dict[wave].keys()))
+        logger.debug(f"OTFdict wave: {wave}, masks: {otf_dict[wave].keys()}")
     return otf_dict
 
 
@@ -203,7 +203,7 @@ def get_default_otf(wave, otfpath, approximate=True):
     if wave in otf_dict:
         return otf_dict[wave]["default"]
     else:
-        raise OTFError("No default OTF found for wavelength {}".format(origwave))
+        raise OTFError(f"No default OTF found for wavelength {origwave}")
 
 
 def choose_otf(
@@ -216,7 +216,7 @@ def choose_otf(
     collected after 'date.'
     """
     if not dir_has_otfs(otfpath):
-        raise OTFError("Not a valid OTF path: {}".format(otfpath))
+        raise OTFError(f"Not a valid OTF path: {otfpath}")
     if not date:
         date = datetime.now()
 
@@ -254,7 +254,7 @@ def choose_otf(
         test = [d > timedelta(minutes=0) for d in deltas]
         minIdx = next((obj for obj in test if obj), None)
     else:
-        raise ValueError("Unkown direction argument: {}".format(direction))
+        raise ValueError(f"Unkown direction argument: {direction}")
 
     if minIdx is None:
         return get_default_otf(wave, otfpath, approximate)

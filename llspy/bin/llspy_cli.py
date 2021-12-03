@@ -8,13 +8,15 @@ except ImportError:
     sys.path.append(os.path.join(thisDirectory, os.pardir, os.pardir))
     import llspy
 
-from llspy import llsdir, util, schema, otf, libinstall, exceptions
-import os
-import sys
-import click
-import shutil
-import voluptuous
 import logging
+import os
+import shutil
+import sys
+
+import click
+import voluptuous
+
+from llspy import exceptions, libinstall, llsdir, otf, schema, util
 
 if "--debug" in sys.argv:
     logging.basicConfig(level=logging.DEBUG)
@@ -36,7 +38,7 @@ class Config(dict):
         self.default_path = os.path.join(click.get_app_dir("LLSpy"), "config.ini")
         self.comment = "# "
 
-        super(Config, self).__init__()
+        super().__init__()
         # intialize dict with defaults from schema.py
         for k, v in schema.__defaults__.items():
             self[k] = v[0]
@@ -80,7 +82,7 @@ class Config(dict):
                 "\nConfig PATH: %s" % click.format_filename(self.default_path),
                 fg="cyan",
             )
-            with open(self.default_path, "r") as f:
+            with open(self.default_path) as f:
                 for line in f:
                     if line.startswith("["):
                         click.secho(line, nl=False, underline=True)
@@ -119,7 +121,7 @@ class Config(dict):
             self.create_new_cfgfile()
 
         # preserve comments
-        with open(self.default_path, "r") as f:
+        with open(self.default_path) as f:
             comments = [
                 l for l in list(f) if l.startswith(self.comment) and key not in l
             ]
@@ -187,7 +189,7 @@ def read_config(ctx, param, value):
 
 
 def exclusive(ctx_params, exclusive_params, error_message):
-    if sum([1 if ctx_params[p] else 0 for p in exclusive_params]) > 1:
+    if sum(1 if ctx_params[p] else 0 for p in exclusive_params) > 1:
         raise click.UsageError(error_message)
 
 
@@ -247,13 +249,13 @@ def info(paths, verbose, recurse, depth, showsize):
     if verbose == 0 and len(paths):
         click.echo()
         headers = ["Path", "nC", "nT", "nZ", "nY", "nX", "Angle", "dZ", "dXY", "compr"]
-        maxPathLen = max([len(util.shortname(str(p), 3)) for p in paths]) + 2
+        maxPathLen = max(len(util.shortname(str(p), 3)) for p in paths) + 2
         row_format = "{:<%d}{:<4}{:<5}{:<5}{:<6}{:<6}{:<7}{:<7}{:<7}{:<5}" % maxPathLen
         if showsize:
             headers.append("size")
             row_format = row_format + "{:>7}"
         click.secho(
-            row_format.format(*[str(i) for i in headers]),
+            row_format.format(*(str(i) for i in headers)),
             underline=True,
             fg="cyan",
             bold=True,
@@ -270,11 +272,9 @@ def info(paths, verbose, recurse, depth, showsize):
                     E.parameters.nz,
                     E.parameters.ny,
                     E.parameters.nx,
-                    "{:2.1f}".format(E.parameters.angle)
-                    if E.parameters.samplescan
-                    else "0",
-                    "{:0.3f}".format(E.parameters.dz),
-                    "{:0.3f}".format(E.parameters.dx),
+                    f"{E.parameters.angle:2.1f}" if E.parameters.samplescan else "0",
+                    f"{E.parameters.dz:0.3f}",
+                    f"{E.parameters.dx:0.3f}",
                     "Yes" if E.is_compressed() else "No",
                 ]
                 if showsize:
@@ -289,7 +289,7 @@ def info(paths, verbose, recurse, depth, showsize):
                     bold=False,
                 )
                 click.secho(os.path.split(short)[1], nl=False, fg="yellow", bold=True)
-                click.echo(row_format.format(*[i for i in infolist]))
+                click.echo(row_format.format(*(i for i in infolist)))
             except exceptions.LLSpyError:
                 pass
     click.echo()
@@ -597,7 +597,7 @@ def decon(config, path, **kwargs):
         # check whether folder has already been processed by the presence of a
         # ProcessingLog.txt file
         if E.has_been_processed() and not options["reprocess"]:
-            print("Folder already appears to be processed: {}".format(E.path))
+            print(f"Folder already appears to be processed: {E.path}")
             print("Skipping ... use the '--reprocess' flag to force reprocessing")
             return 0
 
@@ -740,9 +740,11 @@ def camera(calibrate):
     """Camera correction calibration"""
 
     if calibrate is not None:
-        from llspy import camcalib
         import glob
+
         import tifffile as tf
+
+        from llspy import camcalib
 
         darklist = glob.glob(os.path.join(calibrate, "*dark*.tif"))
         numdark = len(darklist)
@@ -755,7 +757,7 @@ def camera(calibrate):
         with click.progressbar(length=ny * nx, label="Processing bright images") as bar:
             camcalib.process_bright_images(calibrate, darkavg, darkstd, bar.update)
         click.secho(
-            "Done! Calibration file has been written to: {}".format(calibrate),
+            f"Done! Calibration file has been written to: {calibrate}",
             bold=True,
             fg="yellow",
         )
@@ -857,29 +859,29 @@ def compress(
             E = llsdir.LLSdir(path)
             if E.age < minage:
                 click.secho("      skip:", nl=False, underline=False, fg="blue")
-                click.secho("{} ({} days old)".format(path, E.age), fg="blue")
+                click.secho(f"{path} ({E.age} days old)", fg="blue")
                 continue
             if decompress:
                 click.secho("decompress:", nl=False, underline=False, fg="yellow")
-                click.echo("{}".format(path))
+                click.echo(f"{path}")
                 if not dryrun:
                     E.decompress()
                 continue
             elif _reduce:
                 click.secho("    reduce:", nl=False, underline=False, fg="yellow")
-                click.echo("{}".format(path))
+                click.echo(f"{path}")
                 if not dryrun:
                     E.reduce_to_raw(keepmip=keepmips)
                 continue
             else:
                 if freeze:
                     click.secho("    freeze:", nl=False, underline=False, fg="yellow")
-                    click.echo("{}".format(path))
+                    click.echo(f"{path}")
                     if not dryrun:
                         E.freeze(keepmip=keepmips)
                 else:
                     click.secho("  compress:", nl=False, underline=False, fg="yellow")
-                    click.echo("{}".format(path))
+                    click.echo(f"{path}")
                     if not dryrun:
                         E.compress()
         except exceptions.CompressionError as e:
@@ -960,9 +962,10 @@ def clean(config, all, configfile, logs):
 @pass_config
 def show(config, path, stack, timepoint):
     """Preview MIPS or single Z stack from LLSdir"""
-    from llspy.gui.img_dialog import ImgDialog
-    from qtpy import QtWidgets
     import numpy as np
+    from qtpy import QtWidgets
+
+    from llspy.gui.img_dialog import ImgDialog
 
     logging.getLogger("llspy.llsdir").setLevel("CRITICAL")
     APP = QtWidgets.QApplication(sys.argv)

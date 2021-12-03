@@ -1,10 +1,9 @@
-import os
-import sys
-import stat
 import fnmatch
+import os
+import stat
+import sys
 import zipfile
 from shutil import copyfile
-
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 CONDA_PREFIX = os.environ.get("CONDA_PREFIX", False)
@@ -88,7 +87,7 @@ def find_binpath(path):
 def install(dirpath, dryrun=False):
     dirpath = os.path.normpath(os.path.expanduser(dirpath))
     if not os.path.exists(dirpath):
-        raise IOError("Could not find path: {}".format(dirpath))
+        raise OSError(f"Could not find path: {dirpath}")
 
     if zipfile.is_zipfile(dirpath):
         import tempfile
@@ -136,7 +135,7 @@ def install(dirpath, dryrun=False):
                 continue
             src = os.path.join(libpath, file)
             D = os.path.join(destlib, file)
-            print("{:>22} --> {}".format(os.path.basename(src), D))
+            print(f"{os.path.basename(src):>22} --> {D}")
             if not dryrun:
                 if os.path.exists(D):
                     os.remove(D)
@@ -150,7 +149,7 @@ def install(dirpath, dryrun=False):
                 continue
             src = os.path.join(binpath, file)
             D = os.path.join(destbin, file)
-            print("{:>22} --> {}".format(os.path.basename(src), D))
+            print(f"{os.path.basename(src):>22} --> {D}")
             if not dryrun:
                 if os.path.exists(D):
                     try:

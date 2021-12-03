@@ -1,21 +1,21 @@
-from .util import dotdict
-from .exceptions import ParametersError
+import os
+
 from voluptuous import (
+    PREVENT_EXTRA,
     All,
     Any,
     Coerce,
-    Lower,
-    Strip,
     Length,
+    Lower,
     Range,
-    Schema,
     Required,
-    PREVENT_EXTRA,
-    MultipleInvalid,
+    Schema,
+    Strip,
 )
 from voluptuous.humanize import validate_with_humanized_errors
 
-import os
+from .exceptions import ParametersError
+from .util import dotdict
 
 intbool = Schema(lambda x: int(bool(x)))
 twotupIntRange = Schema(All((All(int, Range(0, 999)),), Length(min=2, max=2)))
@@ -44,11 +44,11 @@ def smartbool(v):
         elif v.isdigit():
             return float(v) != 0
         else:
-            raise ValueError("Could not coerce string to bool: {}".format(v))
+            raise ValueError(f"Could not coerce string to bool: {v}")
     if isinstance(v, (int, float, complex)):
         return v != 0
     else:
-        raise TypeError("Could not coerce value of type {} to bool".format(type(v)))
+        raise TypeError(f"Could not coerce value of type {type(v)} to bool")
 
 
 def dirpath(v):
@@ -301,7 +301,7 @@ __localSchema__.extra = PREVENT_EXTRA
 
 
 def localParams(*args, **kwargs):
-    """ returns a validated dict of processing parameters
+    """returns a validated dict of processing parameters
     with defaults filled in when not supplied, that ALSO
     contains parameters to a specific LLSdir instance.
 
@@ -315,7 +315,7 @@ def localParams(*args, **kwargs):
 
 
 def procParams(*args, **kwargs):
-    """ returns a validated dict of processing parameters
+    """returns a validated dict of processing parameters
     with defaults filled in when not supplied.
 
     >>> P = procParams() # get default parameters
@@ -337,7 +337,7 @@ def procParams(*args, **kwargs):
 def validateItems(**kwargs):
     for k in kwargs.keys():
         if k not in __validator__:
-            print("ERROR! got unrecognized key: {}".format(k))
+            print(f"ERROR! got unrecognized key: {k}")
             return 0
     S = Schema({k: v for k, v in __validator__.items()}, extra=PREVENT_EXTRA)
     return validate_with_humanized_errors(kwargs, S)

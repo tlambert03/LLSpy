@@ -1,21 +1,25 @@
-import sys
-import os
-import numpy as np
 import logging
-from qtpy import QtWidgets, QtCore, QtGui
+import os
+import sys
+
+import matplotlib
+import numpy as np
+from qtpy import QtCore, QtGui, QtWidgets
 
 # from llspy.gui.img_window import Ui_Dialog
 from .img_window import Ui_Dialog
 
-logger = logging.getLogger(__name__)
-
-import matplotlib
-
 matplotlib.use("Qt5Agg")
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import (  # noqa: E402
+    FigureCanvasQTAgg as FigureCanvas,
+)
+from matplotlib.backends.backend_qt5agg import (  # noqa: E402
+    NavigationToolbar2QT as NavigationToolbar,
+)
+from matplotlib.figure import Figure  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 # here = os.path.dirname(os.path.abspath(__file__))
 # form_class = uic.loadUiType(os.path.join(here, 'img_window.ui'))[0]  # for debugging
@@ -35,7 +39,7 @@ preferredLUTs = ["Green", "Magenta", "Cyan", "Blue"]
 
 class channelSelector(QtWidgets.QWidget):
     def __init__(self, name, wave=None, parent=None):
-        super(channelSelector, self).__init__(parent)
+        super().__init__(parent)
         if wave is None:
             wave = name
         self.layout = QtWidgets.QHBoxLayout(self)
@@ -74,7 +78,7 @@ class DataModel(QtCore.QObject):
     _dataChanged = QtCore.Signal()
 
     def __init__(self, data=None, projection=None):
-        super(DataModel, self).__init__()
+        super().__init__()
         self.isComplex = False
         self.setData(data)
         self.projection = projection
@@ -106,7 +110,7 @@ class DataModel(QtCore.QObject):
     @QtCore.Slot(str)
     def changeLUT(self, val):
         chan = int(self.sender().objectName().strip("LUTcombo").strip("ch"))
-        logger.debug("Channel {} LUT changed to {}".format(chan, val))
+        logger.debug(f"Channel {chan} LUT changed to {val}")
         self.chanSettings[chan]["lut"] = LUTS[val]
         self._dataChanged.emit()
 
@@ -118,7 +122,7 @@ class DataModel(QtCore.QObject):
 
     @QtCore.Slot(str)
     def setCplxAttrib(self, val):
-        ## Select which attribute of complex values to display:
+        # Select which attribute of complex values to display:
         if val in ("Amp", "Real", "Imag", "Phase"):
             self.cplxAttrib = val
         else:
@@ -276,7 +280,7 @@ class DataModel(QtCore.QObject):
         self._dataChanged.emit()
 
     def _getFFTshiftedKz(self):
-        ## Z indexing needs shifted after FFTshift() calls
+        # Z indexing needs shifted after FFTshift() calls
         curZ = self.getIdx(2)
         nz = self.data.shape[-3]
         # middle of stack becomes kz=0
@@ -297,7 +301,7 @@ class MplCanvas(FigureCanvas):
         self.figure = Figure(figsize=(15, 15), tight_layout=True, facecolor="#ECECEC")
         # self.figure.patch.set_alpha(1)  # transparent background
         self.ax = self.figure.add_subplot(111)
-        super(MplCanvas, self).__init__(self.figure)
+        super().__init__(self.figure)
 
     def setData(self, data):
         self.data = data
@@ -307,7 +311,7 @@ class MplCanvas(FigureCanvas):
         self.data._dataChanged.connect(self.updateImage)
 
         def f_c(x, y):
-            return "x=%.2f  y=%.2f " % (x, y)
+            return f"x={x:.2f}  y={y:.2f} "
 
         self.ax.format_coord = f_c
 
@@ -390,7 +394,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         parent=None,
         shifted=False,
     ):
-        super(ImgDialog, self).__init__(parent)
+        super().__init__(parent)
         self.setupUi(self)  # defined in class Ui_Dialog
         self.title = title
         self.setWindowTitle(title)
@@ -413,7 +417,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.waves = []
         if info is not None:
             if isinstance(info, dict):
-                txt = "\n".join(["{} = {}".format(k, v) for k, v in info.items()])
+                txt = "\n".join(f"{k} = {v}" for k, v in info.items())
                 self.infoText.setText(txt)
                 if "wavelength" in info:
                     self.waves = info["wavelength"]
@@ -555,8 +559,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         if not self.data:
             self.data = DataModel(data)
         else:
-            old_nd = self.data.ndim
-            new_nd = data.ndim
+            # old_nd = self.data.ndim
+            # new_nd = data.ndim
             self.data.setData(data)
             self.update_sliders()
 
@@ -636,7 +640,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         }
         self.data.setIdx(dim, idx)
         F[dim][0](idx)
-        F[dim][1]("{} [{}]".format(idx, self.data.shape[dim]))
+        F[dim][1](f"{idx} [{self.data.shape[dim]}]")
 
     def incDimIndex(self, dim=0):
         newIdx = self.data.getIdx(dim) + 1
@@ -646,16 +650,6 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
     def decDimIndex(self, dim):
         self.setDimIdx(dim, self.data.getIdx(dim) - 1)
-
-    def setComplexAttrib(self, attrib):
-        self.data.setCplxAttrib(attrib)
-        self.data.recalcMinMax()
-        self.canvas.setContrast(self.minSlider.value(), self.maxSlider.value())
-        self.gamSlider.setValue(100)  # reset to default gamma; necessary?
-        if attrib == "Phase":
-            self.gamSlider.setEnabled(False)
-        else:
-            self.gamSlider.setEnabled(True)
 
     def setComplexAttrib(self, attrib):
         self.data.setCplxAttrib(attrib)
@@ -726,7 +720,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         del self.data
         self.close_requested.emit()
         self.deleteLater()
-        super(ImgDialog, self).closeEvent(evnt)
+        super().closeEvent(evnt)
 
     def minSliderMoved(self, pos):
         # Also moves max slider up if min slider is overtaking max slider

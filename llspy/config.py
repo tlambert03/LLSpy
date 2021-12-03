@@ -1,5 +1,5 @@
-import os
 import configparser
+import os
 
 try:
     import pathlib as plib

@@ -1,16 +1,18 @@
-from llspy import schema
-from llspy.cudabinwrapper import gpulist, CUDAbinException
-from qtpy import QtCore, QT_VERSION
-import sentry_sdk
-from sentry_sdk.integrations.logging import ignore_logger
-import traceback
-import llspy
-import sys
+import logging
+import os
 import platform
 import re
-import os
+import sys
+import traceback
 import uuid
-import logging
+
+import sentry_sdk
+from qtpy import QT_VERSION, QtCore
+from sentry_sdk.integrations.logging import ignore_logger
+
+import llspy
+from llspy import schema
+from llspy.cudabinwrapper import CUDAbinException, gpulist
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +55,9 @@ def fetch_git_sha(path, head=None):
     if not head:
         head_path = os.path.join(path, ".git", "HEAD")
         if not os.path.exists(head_path):
-            raise Exception("Cannot identify HEAD for git repository at %s" % (path,))
+            raise Exception(f"Cannot identify HEAD for git repository at {path}")
 
-        with open(head_path, "r") as fp:
+        with open(head_path) as fp:
             head = str(fp.read()).strip()
 
         if head.startswith("ref: "):
@@ -68,9 +70,7 @@ def fetch_git_sha(path, head=None):
 
     if not os.path.exists(revision_file):
         if not os.path.exists(os.path.join(path, ".git")):
-            raise Exception(
-                "%s does not seem to be the root of a git repository" % (path,)
-            )
+            raise Exception(f"{path} does not seem to be the root of a git repository")
 
         packed_file = os.path.join(path, ".git", "packed-refs")
         if os.path.exists(packed_file):
@@ -85,7 +85,7 @@ def fetch_git_sha(path, head=None):
                         if ref == head:
                             return str(revision)
 
-        raise Exception('Unable to find ref to head "%s" in repository' % (head,))
+        raise Exception(f'Unable to find ref to head "{head}" in repository')
 
     with open(revision_file) as fh:
         return str(fh.read()).strip()
@@ -99,11 +99,11 @@ except Exception:
     pass
 
 if sys.platform.startswith("darwin"):
-    tags["os"] = "OSX_{}".format(platform.mac_ver()[0])
+    tags["os"] = f"OSX_{platform.mac_ver()[0]}"
 elif sys.platform.startswith("win32"):
-    tags["os"] = "Windows_{}".format(platform.win32_ver()[1])
+    tags["os"] = f"Windows_{platform.win32_ver()[1]}"
 else:
-    tags["os"] = "{}".format(platform.linux_distribution()[0])
+    tags["os"] = f"{platform.linux_distribution()[0]}"
 
 try:
     tags["gpu"] = ", ".join(gpulist())
@@ -151,7 +151,7 @@ class LLSpyError(Exception):
     def __init__(self, msg=None, detail=""):
         if msg is None:
             msg = "An unexpected error occured in LLSpy"
-        super(LLSpyError, self).__init__(msg)
+        super().__init__(msg)
         self.msg = msg
         self.detail = detail
 
@@ -159,19 +159,13 @@ class LLSpyError(Exception):
 class InvalidSettingsError(LLSpyError):
     """Exception raised when something is not set correctly in the GUI."""
 
-    pass
-
 
 class MissingBinaryError(LLSpyError):
     """Unable to find executable or shared library dependency."""
 
-    pass
-
 
 class RegistrationError(LLSpyError):
     """Unable to find executable or shared library dependency."""
-
-    pass
 
 
 class ExceptionHandler(QtCore.QObject):
@@ -181,7 +175,7 @@ class ExceptionHandler(QtCore.QObject):
     errorMessage = QtCore.Signal(str, str, str, str)
 
     def __init__(self):
-        super(ExceptionHandler, self).__init__()
+        super().__init__()
 
     def handler(self, etype, value, tb):
         err_info = (etype, value, tb)
@@ -194,7 +188,7 @@ class ExceptionHandler(QtCore.QObject):
         else:  # uncaught exceptions go to sentry
             if not _OPTOUT:
                 logger.debug("Sending bug report")
-                client.captureException(err_info)
+                # client.captureException(err_info)
             self.errorMessage.emit(str(value), "", "", "")
             print("!" * 50)
             traceback.print_exception(*err_info)
@@ -217,16 +211,14 @@ class ExceptionHandler(QtCore.QObject):
                 gotValue = msgSplit[1].split("'")[3]
                 schemaDefaults = schema.__defaults__
                 itemDescription = schemaDefaults[errorKey][1]
-                report = "Not a valid value for: {}\n\n".format(errorKey)
-                report += "({})".format(itemDescription)
-                self.errorMessage.emit(
-                    report, "Got value: {}".format(gotValue), "", "", ""
-                )
+                report = f"Not a valid value for: {errorKey}\n\n"
+                report += f"({itemDescription})"
+                self.errorMessage.emit(report, f"Got value: {gotValue}", "", "", "")
 
     def handleCUDA_CL_Error(self, etype, value, tb):
         if not _OPTOUT:
             logger.debug("Sending bug report")
-            client.captureException((etype, value, tb))
+            # client.captureException((etype, value, tb))
         tbstring = "".join(traceback.format_exception(etype, value, tb))
         self.errorMessage.emit(
             "Sorry, it looks like CUDA and OpenCL are not "

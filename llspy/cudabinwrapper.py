@@ -1,26 +1,26 @@
-from . import util
-from .exceptions import CUDAbinException, CUDAProcessError
-
+import logging
 import os
-import sys
 import re
 import subprocess
-import logging
-
-logger = logging.getLogger(__name__)
+import sys
 
 from voluptuous import (
+    REMOVE_EXTRA,
     All,
     Any,
     Coerce,
+    Exclusive,
     Length,
     Range,
-    Exclusive,
-    Schema,
     Required,
-    REMOVE_EXTRA,
+    Schema,
 )
 from voluptuous.humanize import validate_with_humanized_errors
+
+from . import util
+from .exceptions import CUDAbinException, CUDAProcessError
+
+logger = logging.getLogger(__name__)
 
 PLAT = sys.platform
 if PLAT == "linux2":
@@ -48,13 +48,13 @@ def nGPU(binary=None):
         binary = get_bundled_binary()
     try:
         output = subprocess.check_output([binary, "-Q"])
-        return int(re.match(b"Detected\s(?P<numGPU>\d+)\sCUDA", output).groups()[0])
+        return int(re.match(br"Detected\s(?P<numGPU>\d+)\sCUDA", output).groups()[0])
     except Exception:
         return 0
 
 
 def gpulist():
-    return re.findall('(?<=Device \d: ").*(?=")', CUDAbin().list_gpus())
+    return re.findall(r'(?<=Device \d: ").*(?=")', CUDAbin().list_gpus())
 
 
 def get_version():
@@ -99,10 +99,10 @@ def get_bundled_binary(name="cudadecon"):
 
     if not util.which(binary):
         raise CUDAbinException(
-            "{} could not be located or is not executable: {}".format(name, binary)
+            f"{name} could not be located or is not executable: {binary}"
         )
 
-    logger.debug("Found {} Binary: {}".format(name, os.path.abspath(binary)))
+    logger.debug(f"Found {name} Binary: {os.path.abspath(binary)}")
     return binary
 
 
@@ -190,7 +190,7 @@ cudaDeconSchema = Schema(
 )
 
 
-class CUDAbin(object):
+class CUDAbin:
     """
     Wrapper class for Lin Shao's cudaDeconv binary
     """
@@ -222,7 +222,7 @@ class CUDAbin(object):
                     tmpPath = fullbinPath
                     break
             else:
-                raise CUDAbinException("{} not found in PATH".format(binPath))
+                raise CUDAbinException(f"{binPath} not found in PATH")
 
         if self._self_test(tmpPath):
             self.path = tmpPath
@@ -300,7 +300,7 @@ class CUDAbin(object):
                 cmdlist = [self.path, cmd]
         else:
             raise ValueError(
-                "cmd argument must be either list or string.  got {}".format(type(cmd))
+                f"cmd argument must be either list or string.  got {type(cmd)}"
             )
         o = str(
             subprocess.check_output(cmdlist, stderr=subprocess.STDOUT).decode("utf-8")
@@ -364,7 +364,7 @@ class CUDAbin(object):
             badflags = [i for i, x in enumerate(q) if not x]
             msg = ""
             for f in badflags:
-                msg += "Unrecognized option: '{}'\n".format(flaglist[f])
+                msg += f"Unrecognized option: '{flaglist[f]}'\n"
             raise CUDAbinException(msg)
 
     def describe_option(self, flag):
@@ -374,9 +374,7 @@ class CUDAbin(object):
         if self.has_option(flag):
             return self.options[[key for key in self.options.keys() if flag in key][0]]
         else:
-            logger.warning(
-                'The flag "{}" is not listed in the help string.'.format(flag)
-            )
+            logger.warning(f'The flag "{flag}" is not listed in the help string.')
 
     def assemble_args(self, **options):
         options = validate_with_humanized_errors(options, cudaDeconSchema)
@@ -403,7 +401,7 @@ class CUDAbin(object):
                 else:
                     arglist.extend(["--" + optname, str(options[o])])
             else:
-                logger.warning("Warning: option not recognized, ignoring: {}".format(o))
+                logger.warning(f"Warning: option not recognized, ignoring: {o}")
 
         return arglist
 

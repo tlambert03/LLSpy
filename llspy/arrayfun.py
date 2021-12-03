@@ -1,10 +1,9 @@
-from __future__ import print_function, division
-from .libcudawrapper import deskewGPU as deskew
-from .util import imread
-
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 from scipy.stats import mode
+
+from .libcudawrapper import deskewGPU as deskew
+from .util import imread
 
 
 def threshold_li(image):
@@ -39,7 +38,7 @@ def threshold_li(image):
         raise ValueError(
             "threshold_li is expected to work with images "
             "having more than one value. The input image seems "
-            "to have just one value {0}.".format(image.flat[0])
+            "to have just one value {}.".format(image.flat[0])
         )
 
     # Copy to ensure input image is not modified
@@ -148,7 +147,7 @@ def feature_width(E, background=None, pad=50, t=0):
 
 
 def detect_background(im):
-    """ get mode of the first plane """
+    """get mode of the first plane"""
     if im.ndim == 4:
         im = im[0][2]
     if im.ndim == 3:
@@ -157,7 +156,7 @@ def detect_background(im):
 
 
 def sub_background(im, background=None):
-    """ subtract provided background or autodetct as mode of the first plane"""
+    """subtract provided background or autodetct as mode of the first plane"""
     if background is None:
         background = detect_background(im)
     out = im.astype(np.float) - background

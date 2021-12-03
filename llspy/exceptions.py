@@ -5,8 +5,6 @@ class LLSpyError(Exception):
     when raising this exception.
     """
 
-    pass
-
 
 class ParametersError(LLSpyError):
     """
@@ -15,16 +13,12 @@ class ParametersError(LLSpyError):
     when raising this exception.
     """
 
-    pass
-
 
 class CompressionError(LLSpyError):
     """
     Exception indicating something went wrong with compression or decompression
     of an LLSdir.
     """
-
-    pass
 
 
 class CUDAbinException(LLSpyError):
@@ -33,8 +27,6 @@ class CUDAbinException(LLSpyError):
     of cudaDeconDeskew. A string containing an error message should be supplied
     when raising this exception.
     """
-
-    pass
 
 
 class CUDAProcessError(CUDAbinException):
@@ -58,8 +50,6 @@ class LibCUDAException(LLSpyError):
     """
     Error indicating something wrong with libcudaDeconv.
     """
-
-    pass
 
 
 class SettingsError(LLSpyError):

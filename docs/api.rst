@@ -76,4 +76,3 @@ arguments that determine processing options.  These are all validated using the 
 in :obj:`llspy.schema`.  Options include:
 
 .. include:: schema.rst
-

@@ -1,14 +1,16 @@
-from qtpy import QtCore, QtGui
-from qtpy import QtWidgets as QtW
-from llspy import camcalib
-from llspy.util import getAbsoluteResourcePath, pathHasPattern
-import numpy as np
+import glob
 import os
 import sys
-import glob
+
+import numpy as np
 import tifffile as tf
+from qtpy import QtCore, QtGui
+from qtpy import QtWidgets as QtW
+
+from llspy import camcalib
 from llspy.gui.camcordialog import Ui_Dialog as camcorDialog
 from llspy.gui.helpers import newWorkerThread
+from llspy.util import getAbsoluteResourcePath, pathHasPattern
 
 thisDirectory = os.path.dirname(os.path.abspath(__file__))
 
@@ -23,7 +25,7 @@ class CamCalibWorker(QtCore.QObject):
     error = QtCore.Signal()
 
     def __init__(self, folder, darkavg=None, darkstd=None, **kwargs):
-        super(CamCalibWorker, self).__init__()
+        super().__init__()
         self.folder = folder
         self.darkavg = darkavg
         self.darkstd = darkstd
@@ -52,7 +54,7 @@ class CamCalibWorker(QtCore.QObject):
 
             filelist = glob.glob(os.path.join(self.folder, "*.tif"))
             if not filelist:
-                raise IOError("No tiff files found in folder")
+                raise OSError("No tiff files found in folder")
 
             with tf.TiffFile(filelist[0]) as t:
                 nz, ny, nx = t.series[0].shape
@@ -65,9 +67,7 @@ class CamCalibWorker(QtCore.QObject):
                 self.folder, darkavg, darkstd, self.progress.emit
             )
 
-            self.setStatus.emit(
-                "Done! Calibration file has been written to: {}".format(out[0])
-            )
+            self.setStatus.emit(f"Done! Calibration file has been written to: {out[0]}")
 
             self.finished.emit()
 
@@ -79,7 +79,7 @@ class CamCalibWorker(QtCore.QObject):
 
 class CamCalibDialog(QtW.QDialog, camcorDialog):
     def __init__(self, parent=None):
-        super(CamCalibDialog, self).__init__(parent)
+        super().__init__(parent)
         self.setupUi(self)  # method inherited from form_class to init UI
         self.setWindowTitle("Flash4.0 Charge Carryover Correction")
         self.abortButton.hide()
@@ -153,7 +153,7 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
                 )
                 return
 
-        if sum([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]) == 1:
+        if sum(isinstance(a, np.ndarray) for a in (darkavg, darkstd)) == 1:
             if not pathHasPattern(folder, "*dark*.tif*"):
                 QtW.QMessageBox.warning(
                     self,

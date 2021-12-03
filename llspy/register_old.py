@@ -1,10 +1,9 @@
-from __future__ import print_function, division
-from tifffile import imread
-import numpy as np
-from scipy import ndimage
-from scipy import stats
-import scipy
 import os
+
+import numpy as np
+import scipy
+from scipy import ndimage, stats
+from tifffile import imread
 
 try:
     import SimpleITK as sitk
@@ -15,7 +14,7 @@ except Exception:
     __sitkImported = False
 
 
-## THIS FILE NOT REALLY USED AT THE MOMENT...  SEE FIDUCIALREG MODULE ##
+# THIS FILE NOT REALLY USED AT THE MOMENT...  SEE FIDUCIALREG MODULE ##
 def calcTranslationRegistration(moving, fixed):
     """calculate the translation shift between two images"""
 
@@ -55,10 +54,10 @@ def applyTranslationShift(ims, Tparams):
 def find_local_maxima(img, threshold=100, neighborhood=3):
     """finds coordinates of local maxima in an image
 
-	Accepts: 2D numpy array
+    Accepts: 2D numpy array
 
-	Returns: set of tuples {(x,y),(x,y)...} corresponding to local max position
-	"""
+    Returns: set of tuples {(x,y),(x,y)...} corresponding to local max position
+    """
     data_max = ndimage.filters.maximum_filter(img, neighborhood)
     maxima = img == data_max
     data_min = ndimage.filters.minimum_filter(img, neighborhood)
@@ -77,15 +76,15 @@ def find_local_maxima(img, threshold=100, neighborhood=3):
 
 def autodetect_peaks(ims, minparticles=4, threshrange=range(200, 520, 20)):
     """intelligently find coordinates of local maxima in an image
-	by searching a range of threshold parameters to find_local_maxima
+    by searching a range of threshold parameters to find_local_maxima
 
-	Accepts: variable number of input 2D arrays
+    Accepts: variable number of input 2D arrays
 
-	Returns:
-	a tuple of sets of tuples ({(x,y),..},{(x,y),..},..) corresponding to
-	local maxima in each image provided.  If nimages in == 1, returns a set
+    Returns:
+    a tuple of sets of tuples ({(x,y),..},{(x,y),..},..) corresponding to
+    local maxima in each image provided.  If nimages in == 1, returns a set
 
-	"""
+    """
     threshes = []
     for im in ims:
         npeaks = []
@@ -110,21 +109,21 @@ def normxcorr2(b, a):
 
 def get_closest_points(pc1, pc2):
     """returns the distance and index of the closest matching point in pc1
-	for each point in pc2.
+    for each point in pc2.
 
-	len(nn) == len(pc1)
+    len(nn) == len(pc1)
 
-	can be used to eliminate points in pc1 that don't have a partner in pc2
-	"""
+    can be used to eliminate points in pc1 that don't have a partner in pc2
+    """
     d = [((pc2 - point) ** 2).sum(axis=1) for point in pc1]
     nn = [(np.min(p), np.argmin(p)) for p in d]
     return nn
 
 
 def get_matching_points(pc1, pc2, maxd=100):
-    """ return modified point clouds such that every point in pc1 has a
-	neighbor in pc2 that is within distance maxd
-	"""
+    """return modified point clouds such that every point in pc1 has a
+    neighbor in pc2 that is within distance maxd
+    """
     nn12 = np.array(get_closest_points(pc1, pc2))
     pc1 = pc1[np.array([n[0] < 100 for n in nn12])]
 

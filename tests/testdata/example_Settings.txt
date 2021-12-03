@@ -1,9 +1,9 @@
-***** ***** ***** General ***** ***** ***** 
+***** ***** ***** General ***** ***** *****
 Date :	10/7/2016 5:50:37 PM
 Acq Mode :	Z stack
 Version :	v 4.02893.0012 Built on : 3/21/2016 12:20:26 PM, rev 2893
 
-***** ***** ***** Waveform ***** ***** ***** 
+***** ***** ***** Waveform ***** ***** *****
 Waveform type :	Linear
 
 X Galvo Offset, Interval (um), # of Pixels for Excitation (0) :	0	0.1	51
@@ -29,7 +29,7 @@ Cycle lasers :	per Z
 Z motion :	Sample piezo
 
 
-***** ***** *****   Camera  ***** ***** ***** 
+***** ***** *****   Camera  ***** ***** *****
 Model :	C11440-22C
 Serial :	100740
 Frame Transfer :	OFF
@@ -39,9 +39,9 @@ Cycle(s) :	0.00330
 Cycle(Hz) :	302.72 Hz
 Frame Mode :	Run Till Abort
 Readout Mode :	Image
-ROI :	Left=913 Top=901 Right=1232 Bot=1156 
-Binning :	X=1 Y=1 
-# of Pixels :	X=2048 Y=2048 
+ROI :	Left=913 Top=901 Right=1232 Bot=1156
+Binning :	X=1 Y=1
+# of Pixels :	X=2048 Y=2048
 VSSspeed :	-1.0000
 HSSspeed :	0.0000
 VSSAmplitude :	Normal
@@ -53,22 +53,22 @@ HS Speed index :	0
 Preamp Gain :	0
 Bit depth :	0
 Baseline Clamp :	Yes
-Spool :	Enabled?=No File stem=Unknown type # buffs=10 Method=16-buit TIFF 
+Spool :	Enabled?=No File stem=Unknown type # buffs=10 Method=16-buit TIFF
 # of Exps :	528000 exp(s)
-Cropped :	On?=No # of pix=X=2048 Y=2048  Bin=X=1 Y=1  
-L ROI :	Left=913 Top=901 Right=0 Bot=1156 
-R ROI :	Left=0 Top=901 Right=1232 Bot=1156 
-FOV ROI :	Left=913 Top=901 Right=1232 Bot=1156 
+Cropped :	On?=No # of pix=X=2048 Y=2048  Bin=X=1 Y=1
+L ROI :	Left=913 Top=901 Right=0 Bot=1156
+R ROI :	Left=0 Top=901 Right=1232 Bot=1156
+FOV ROI :	Left=913 Top=901 Right=1232 Bot=1156
 # of Imgs :	528000 img(s)
 subROIs :	Unknown type
 
-***** ***** *****   Advanced Timing  ***** ***** ***** 
+***** ***** *****   Advanced Timing  ***** ***** *****
 Trigger Mode :	SLM -> Cam
 # exp per SLM enable :	0
 Delay SLM Enable during SLM to Cam synch? :	FALSE
 SLM enable (ms) :	2.26845	2.26845	2.26845	2.26845
 
-***** ***** *****   .ini File  ***** ***** ***** 
+***** ***** *****   .ini File  ***** ***** *****
 [Microns to Volt calibrations]
 Galvo cmd X um/X Volt = 117
 Galvo cmd Y um/Y Volt = NaN
@@ -107,7 +107,7 @@ Number of channels = 6
 Number of simulateous stacks (max number of excitations) = 6
 
 [AOM Settings]
-AOM Channel(s) = 
+AOM Channel(s) =
 
 [Pulse Blast Settings]
 Pulse blast type = None
@@ -131,7 +131,7 @@ Camera type = "Orca4.0"
 Cam Trigger mode = "SLM -> Cam"
 Shack-Hartmann Camera type = "Orca2.8"
 Objective PZT Controller (E-665, E-625) = "E-625"
-Delay SLM Enable during SLM to Cam synch? = FALSE    
+Delay SLM Enable during SLM to Cam synch? = FALSE
 2nd Camera type = "Disabled"
 Twin cam mode? = FALSE
 SPIM type = "AO Lightsheet"
@@ -454,4 +454,3 @@ XY max speed (mm/s) = 8.77193
 [Annular Mask]
 outerNA = 0.5
 innerNA = 0.42
-

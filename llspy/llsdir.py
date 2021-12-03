@@ -9,13 +9,13 @@ import shutil
 import sys
 import time
 import warnings
-from parse import parse as _parse
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import tifffile as tf
 
 from llspy.libcudawrapper import affineGPU, deskewGPU, quickDecon
+from parse import parse as _parse
 
 from . import arrayfun, compress, config
 from . import otf as otfmodule
@@ -67,7 +67,7 @@ if sys.platform.startswith("win"):
                 # to get --onefile mode working.
                 os.putenv("_MEIPASS2", sys._MEIPASS)
             try:
-                super(_Popen, self).__init__(*args, **kw)
+                super().__init__(*args, **kw)
             finally:
                 if hasattr(sys, "frozen"):
                     # On some platforms (e.g. AIX) 'os.unsetenv()' is not
@@ -155,9 +155,7 @@ def get_regObj(regCalibPath):
     ):
         refObj = RegFile(regCalibPath)
         if not refObj.n_tforms > 0:
-            raise RegistrationError(
-                "No transforms found in file: {}".format(regCalibPath)
-            )
+            raise RegistrationError(f"No transforms found in file: {regCalibPath}")
         logger.debug("RegCalib Path detected as registration file")
     elif os.path.isdir(regCalibPath):  # path must be raw fidicial dataset
         refObj = RegDir(regCalibPath)
@@ -191,7 +189,7 @@ def register_folder(
     files = [f for f in files if (f.endswith(".tif") and "_REG" not in f)]
     for F in files:
         fname = os.path.join(folder, F)
-        outname = fname.replace(".tif", "_REG{}.tif".format(regRefWave))
+        outname = fname.replace(".tif", f"_REG{regRefWave}.tif")
         imarray = util.imread(fname)
         imwave = parse.parse_filename(fname, "wave", pattern=__FPATTERN__)
         im_out = register_image_to_wave(
@@ -209,7 +207,7 @@ def register_folder(
     # rename refwave files too
     for F in parse.filter_w(os.listdir(folder), regRefWave, exclusive=False):
         fname = os.path.join(folder, F)
-        outname = fname.replace(".tif", "_REG{}.tif".format(regRefWave))
+        outname = fname.replace(".tif", f"_REG{regRefWave}.tif")
         os.rename(fname, outname)
 
 
@@ -268,8 +266,8 @@ def preview(exp, tR=0, cR=None, **kwargs):
     if not isinstance(exp, LLSdir):
         if isinstance(exp, str):
             exp = LLSdir(exp)
-    logger.debug("Preview called on {}".format(str(exp.path)))
-    logger.debug("Params: {}".format(exp.parameters))
+    logger.debug(f"Preview called on {str(exp.path)}")
+    logger.debug(f"Params: {exp.parameters}")
 
     if exp.is_compressed():
         try:
@@ -281,7 +279,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
 
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
-            logger.warning("No TIFF files to process in {}".format(exp.path))
+            logger.warning(f"No TIFF files to process in {exp.path}")
             return
         # if not exp.has_settings:
         #     logger.warning('Could not find Settings.txt file in {}'.format(exp.path))
@@ -377,7 +375,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
 
     if out:
         combined = np.stack(out, 0) if len(out) > 1 else out[0]
-        logger.debug("Preview finished. Output array shape = {}".format(combined.shape))
+        logger.debug(f"Preview finished. Output array shape = {combined.shape}")
         return combined
     else:
         logger.warning("Preview returned an empty array")
@@ -401,17 +399,17 @@ def process(exp, binary=None, **kwargs):
     if not isinstance(exp, LLSdir):
         if isinstance(exp, str):
             exp = LLSdir(exp)
-    logger.debug("Process called on {}".format(str(exp.path)))
-    logger.debug("Params: {}".format(exp.parameters))
+    logger.debug(f"Process called on {str(exp.path)}")
+    logger.debug(f"Params: {exp.parameters}")
 
     if exp.is_compressed():
         exp.decompress()
 
     if not exp.ready_to_process:
         if not exp.has_lls_tiffs:
-            logger.warning("No TIFF files to process in {}".format(exp.path))
+            logger.warning(f"No TIFF files to process in {exp.path}")
         if not exp.parameters.isReady():
-            logger.warning("Parameters are not valid: {}".format(exp.path))
+            logger.warning(f"Parameters are not valid: {exp.path}")
         return
 
     P = exp.localParams(**kwargs)
@@ -449,7 +447,7 @@ def process(exp, binary=None, **kwargs):
             if (
                 len(list(P.tRange)) == exp.parameters.nt
             ):  # processing all the timepoints
-                filepattern = "ch{}_".format(chan)
+                filepattern = f"ch{chan}_"
             else:
                 filepattern = "ch{}_stack{}".format(
                     chan, util.pyrange_to_perlregex(P.tRange)
@@ -484,9 +482,7 @@ def process(exp, binary=None, **kwargs):
         exp.compress()
 
     if P.writeLog:
-        outname = str(
-            exp.path.joinpath("{}_{}".format(exp.basename, config.__OUTPUTLOG__))
-        )
+        outname = str(exp.path.joinpath(f"{exp.basename}_{config.__OUTPUTLOG__}"))
         with open(outname, "w") as outfile:
             json.dump(P, outfile, cls=util.paramEncoder)
 
@@ -503,7 +499,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         fpattern = __FPATTERN__
     folder = plib.Path(folder)
     if not folder.is_dir():
-        raise IOError("MIP folder does not exist: {}".format(str(folder)))
+        raise OSError(f"MIP folder does not exist: {str(folder)}")
 
     try:
         filelist = []
@@ -511,7 +507,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         channelCounts = []
         c = 0
         while True:
-            channelFiles = sorted(folder.glob("*ch{}_*MIP_{}.tif".format(c, axis)))
+            channelFiles = sorted(folder.glob(f"*ch{c}_*MIP_{axis}.tif"))
             if not len(channelFiles):
                 break  # no MIPs in this channel
                 # this assumes that there are no gaps in the channels (i.e. ch1, ch3 but not 2)
@@ -560,8 +556,8 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         return stack
 
     except ValueError as e:
-        logger.error("ERROR: failed to merge MIPs from {}: ".format(str(folder)))
-        logger.error("{}".format(e))
+        logger.error(f"ERROR: failed to merge MIPs from {str(folder)}: ")
+        logger.error(f"{e}")
 
 
 class CoreParams(dict):
@@ -573,7 +569,7 @@ class CoreParams(dict):
         self["dz"] = 0
         self["angle"] = None
 
-        super(CoreParams, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __getattr__(self, name):
         return self.get(name)
@@ -582,15 +578,15 @@ class CoreParams(dict):
         return self.__setitem__(name, value)
 
     def __setitem__(self, name, value):
-        super(CoreParams, self).__setitem__(name, value)
+        super().__setitem__(name, value)
         if name == "angle" and value is not None:
             if value == 0:
-                super(CoreParams, self).__setitem__("samplescan", False)
+                super().__setitem__("samplescan", False)
             else:
-                super(CoreParams, self).__setitem__("samplescan", True)
+                super().__setitem__("samplescan", True)
         if name == "samplescan":
             if not value:
-                super(CoreParams, self).__setitem__("angle", 0)
+                super().__setitem__("angle", 0)
         if name in ("dz", "angle"):
             self._updatedZfinal()
 
@@ -620,7 +616,7 @@ class CoreParams(dict):
         return self.keys()
 
 
-class LLSdir(object):
+class LLSdir:
     """Main class to encapsulate an LLS experiment.
 
     Detects parameters of an LLS experiment from a folder of files.  Parses
@@ -696,7 +692,7 @@ class LLSdir(object):
             proclog = util.find_filepattern(str(self.path), "*" + config.__OUTPUTLOG__)
             try:
                 if proclog and os.path.isfile(proclog):
-                    with open(proclog, "r") as f:
+                    with open(proclog) as f:
                         procdict = json.load(f)
                     if procdict:
                         if "dzdata" in procdict:
@@ -706,7 +702,7 @@ class LLSdir(object):
                         if "deskew" in procdict:
                             self.parameters.angle = procdict["deskew"]
             except Exception as e:
-                logger.warning("Exception reading {}: {}".format(proclog, e))
+                logger.warning(f"Exception reading {proclog}: {e}")
 
         if self.has_lls_tiffs:
             self._register_tiffs()
@@ -756,7 +752,7 @@ class LLSdir(object):
     def _get_all_tiffs(self):
         """a list of every tiff file in the top level folder (all raw tiffs)"""
         all_tiffs = sorted(
-            [x for x in self.path.glob("*.tif") if _parse(self.fname_pattern, str(x))]
+            x for x in self.path.glob("*.tif") if _parse(self.fname_pattern, str(x))
         )
         if not all_tiffs:
             logger.warning("No raw/uncompressed Tiff files detected in folder")
@@ -783,7 +779,7 @@ class LLSdir(object):
             if abs(self.tiff.bytes[idx] - self.tiff.size_raw) < thresh:
                 self.tiff.raw.append(str(f))
             else:
-                logger.warning("discarding small file:  {}".format(f))
+                logger.warning(f"discarding small file:  {f}")
         self.tiff.rejected = list(set(self.tiff.raw).difference(set(self.tiff.all)))
         if len(self.tiff.all) and not len(self.tiff.raw):
             raise LLSpyError(
@@ -796,7 +792,7 @@ class LLSdir(object):
         self.tiff.count = []  # per channel list of number of tiffs
         self.parameters.interval = []
         self.parameters.channels = {}
-        stacknum = re.compile("stack(\d{4})")
+        stacknum = re.compile(r"stack(\d{4})")
         self.parameters.tset = list(
             {int(t.group(1)) for t in [stacknum.search(s) for s in self.tiff.raw] if t}
         )
@@ -833,7 +829,7 @@ class LLSdir(object):
 
         try:
             self.parameters.duration = max(
-                [(a - 1) * b for a, b in zip(self.tiff.count, self.parameters.interval)]
+                (a - 1) * b for a, b in zip(self.tiff.count, self.parameters.interval)
             )
         except Exception:
             self.parameters.duration = []
@@ -864,7 +860,7 @@ class LLSdir(object):
         elif self.path.joinpath(subdir).is_dir():
             path = str(self.path.joinpath(subdir))
         else:
-            raise ValueError("Subdirectory does not exists: {}".format(subdir))
+            raise ValueError(f"Subdirectory does not exists: {subdir}")
 
         exts = tuple(compress.EXTENTIONS.keys())
         zips = [f for f in os.listdir(path) if f.endswith(exts)]
@@ -897,8 +893,7 @@ class LLSdir(object):
         return o
 
     def decompress_partial(self, subfolder=".", tRange=None):
-        """attempt to extract a subset of the tarball,  tRange=None will yield t=0
-        """
+        """attempt to extract a subset of the tarball,  tRange=None will yield t=0"""
         compress.decompress_partial(str(self.path.joinpath(subfolder)), tRange)
         self._register_tiffs()
 
@@ -951,7 +946,7 @@ class LLSdir(object):
         then compresses raw files into compressed tarball
         """
         if verbose:
-            logger.info("freezing {} ...".format(self.path.name))
+            logger.info(f"freezing {self.path.name} ...")
         if self.reduce_to_raw(verbose=verbose, keepmip=keepmip, **kwargs):
             if self.compress(**kwargs):
                 return 1
@@ -1004,9 +999,7 @@ class LLSdir(object):
                 if chan in self.parameters.channels.keys():
                     outrange.append(chan)
                 else:
-                    logger.warning(
-                        "Channel {} not present in datset! Excluding.".format(chan)
-                    )
+                    logger.warning(f"Channel {chan} not present in datset! Excluding.")
             if np.max(list(_schema.cRange)) > (self.parameters.nc - 1):
                 logger.warning(
                     "cRange was larger than number of Channels! Excluding C > {}".format(
@@ -1018,12 +1011,12 @@ class LLSdir(object):
         if _schema.tRange is None:
             _schema.tRange = self.parameters.tset
         else:
-            logger.debug("preview tRange = {}".format(_schema.tRange))
+            logger.debug(f"preview tRange = {_schema.tRange}")
             maxT = max(self.parameters.tset)
             minT = min(self.parameters.tset)
             logger.debug("preview maxT = %d" % maxT)
             logger.debug("preview minT = %d" % minT)
-            _schema.tRange = sorted([n for n in _schema.tRange if minT <= n <= maxT])
+            _schema.tRange = sorted(n for n in _schema.tRange if minT <= n <= maxT)
             if not _schema.tRange or len(_schema.tRange) == 0:
                 _schema.tRange = [minT]
             if max(list(_schema.tRange)) > maxT:
@@ -1116,13 +1109,13 @@ class LLSdir(object):
         return preview(self, tR=tR, cR=cR, **kwargs)
 
     def mergemips(self, subdir=None, delete=True):
-        """ look for MIP files in subdirectory, compress into single hyperstack
+        """look for MIP files in subdirectory, compress into single hyperstack
         and write file to disk"""
         if subdir is not None:
             if self.path.joinpath(subdir).is_dir():
                 subdir = self.path.joinpath(subdir)
             else:
-                logger.error("Could not find subdir: ".format("subdir"))
+                logger.error("Could not find subdir: %s" % subdir)
                 return
         else:
             subdir = self.path
@@ -1168,13 +1161,13 @@ class LLSdir(object):
         return parse.filter_files(self.tiff.raw, **kwargs)
 
     def get_otf(self, wave, otfpath=config.__OTFPATH__):
-        """ intelligently pick OTF from archive directory based on date and mask
+        """intelligently pick OTF from archive directory based on date and mask
         settings."""
         if otfpath is None or not os.path.isdir(otfpath):
             return None
 
         if not otfmodule.dir_has_otfs(otfpath):
-            raise OTFError("OTF directory has no OTFs! -> {}".format(otfpath))
+            raise OTFError(f"OTF directory has no OTFs! -> {otfpath}")
 
         mask = None
         if hasattr(self, "settings") and hasattr(self.settings, "mask"):
@@ -1231,7 +1224,7 @@ class LLSdir(object):
         trimZ=(0, 0),
         trimY=(0, 0),
         trimX=(0, 0),
-        **kwargs
+        **kwargs,
     ):
 
         trim = (trimZ, trimY, trimX)
@@ -1280,11 +1273,9 @@ class LLSdir(object):
         trimZ=(0, 0),
         trimY=(0, 0),
         trimX=(0, 0),
-        **kwargs
+        **kwargs,
     ):
-        """Correct flash artifact, writing files to Corrected dir.
-
-        """
+        """Correct flash artifact, writing files to Corrected dir."""
         if not self.has_settings:
             raise LLSpyError("Cannot correct Flash pixels without settings.txt file")
         if not isinstance(camparamsPath, CameraParameters):
@@ -1293,13 +1284,11 @@ class LLSdir(object):
             else:
                 # FIXME: Janky py2/3 hack
                 try:
-                    if isinstance(camparamsPath, unicode):
+                    if isinstance(camparamsPath, str):
                         camparams = CameraParameters(camparamsPath)
                 except Exception:
                     camparams = CameraParameters()
-        logger.debug(
-            "Correcting Flash artifact with camparam {}".format(camparams.basename)
-        )
+        logger.debug(f"Correcting Flash artifact with camparam {camparams.basename}")
 
         if not np.all(camparams.roi == self.settings.camera.roi):
             try:
@@ -1419,7 +1408,7 @@ class RegDir(LLSdir):
     def __init__(
         self, path, t=None, mincount=None, threshold=None, usejson=True, **kwargs
     ):
-        super(RegDir, self).__init__(path, **kwargs)
+        super().__init__(path, **kwargs)
         if self.path is not None:
             if self.path.joinpath("cloud.json").is_file() and usejson:
                 with open(str(self.path.joinpath("cloud.json"))) as json_data:
@@ -1470,7 +1459,7 @@ class RegDir(LLSdir):
         D = json.loads(Jstring)
         for k, v in D.items():
             setattr(self, k, v)
-        super(RegDir, self).__init__(D["path"])
+        super().__init__(D["path"])
         self._cloudset = CloudSet().fromJSON(D["_cloudset"])
         return self
 
@@ -1488,7 +1477,7 @@ class RegDir(LLSdir):
             return self.deskewed
 
     def cloudset(self, redo=False, tojson=False):
-        """ actually generates the fiducial cloud """
+        """actually generates the fiducial cloud"""
         if "_cloudset" in dir(self) and not redo:
             return self._cloudset
         self._cloudset = CloudSet(
@@ -1514,7 +1503,7 @@ class RegDir(LLSdir):
         """write all of the tforms for this cloudset to file"""
 
         if not os.path.isdir(outdir):
-            raise FileNotFoundError("Directory does not exist: {}".format(outdir))
+            raise FileNotFoundError(f"Directory does not exist: {outdir}")
 
         class npEncoder(json.JSONEncoder):
             def fixedString(self, obj):
@@ -1552,7 +1541,7 @@ class RegDir(LLSdir):
 
         if filename is None or not isinstance(filename, str):
             filename = "LLSreg_{}_{}.reg".format(
-                self.date.strftime("%y%m%d"), "".join(["r" + str(w) for w in refs])
+                self.date.strftime("%y%m%d"), "".join("r" + str(w) for w in refs)
             )
         outfile = os.path.join(outdir, filename)
         with open(outfile, "w") as file:
@@ -1585,10 +1574,10 @@ def rename_iters(folder, splitpositions=True):
 
     filelist = glob.glob(os.path.join(folder, "*Iter*stack*"))
     if not filelist:
-        raise LLSpyError("No *Iter*stack* files found in {}".format(folder))
+        raise LLSpyError(f"No *Iter*stack* files found in {folder}")
     try:
-        iterset = set([int(f.split("Iter_")[1].split("_")[0]) for f in filelist])
-        chanset = set([int(f.split("_ch")[1].split("_")[0]) for f in filelist])
+        iterset = {int(f.split("Iter_")[1].split("_")[0]) for f in filelist}
+        chanset = {int(f.split("_ch")[1].split("_")[0]) for f in filelist}
     except ValueError:
         raise LLSpyError(
             "Failed to parse filenames to detect number of Iter_ files."
@@ -1610,7 +1599,7 @@ def rename_iters(folder, splitpositions=True):
         g = [f for f in filelist if "Iter_%s_" % it in f]
         # tuple of nFiles in each channel in this group
         nFilesPerChannel.append(
-            tuple([len([f for f in g if "ch%d" % d in f]) for d in chanset])
+            tuple(len([f for f in g if "ch%d" % d in f]) for d in chanset)
         )
     nFPCset = set(
         nFilesPerChannel
@@ -1647,7 +1636,7 @@ def rename_iters(folder, splitpositions=True):
         t0 = [0] * nPositions
         for i in iterset:
             flist = sorted(
-                [f for f in filelist if "ch%s" % chan in f and "Iter_%s_" % i in f]
+                f for f in filelist if "ch%s" % chan in f and "Iter_%s_" % i in f
             )
             for pos in range(nPositions):
                 base = os.path.basename(flist[pos])
@@ -1660,7 +1649,7 @@ def rename_iters(folder, splitpositions=True):
                     newname = re.sub(r"Iter_\d+", "pos%02d" % pos, newname)
                 else:
                     newname = re.sub(r"_Iter_\d+", "", newname)
-                logger.info("renaming {} --> {}".format(base, newname))
+                logger.info(f"renaming {base} --> {newname}")
                 os.rename(flist[pos], os.path.join(folder, newname))
                 changelist.append((flist[pos], os.path.join(folder, newname)))
     if splitpositions and nPositions > 1:
@@ -1705,7 +1694,7 @@ def undo_rename_iters(path, deletelog=True):
         if not dest:
             deletionlist.append(src)
             continue
-        logger.info("renaming {} --> {}".format(src, dest))
+        logger.info(f"renaming {src} --> {dest}")
         try:
             os.rename(src, dest)
         except FileNotFoundError as e:
@@ -1742,7 +1731,7 @@ def concatenate_folders(folderlist, raw=True, decon=True, deskew=True):
             pass
     # sort by absolute timestamp
     tzeros = sorted(
-        [[int(t[1].split("msecAbs")[0].split("_")[-1]), t[0], t[2]] for t in stackzeros]
+        [int(t[1].split("msecAbs")[0].split("_")[-1]), t[0], t[2]] for t in stackzeros
     )
 
     # get relative time offset

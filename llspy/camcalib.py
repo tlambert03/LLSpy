@@ -1,14 +1,15 @@
-from . import util
-from . import llsdir
-import numpy as np
-import os
 import glob
-import tifffile as tf
-import multiprocessing
-from scipy.optimize import least_squares
-from numba import jit
-import warnings
 import logging
+import multiprocessing
+import os
+import warnings
+
+import numpy as np
+import tifffile as tf
+from numba import jit
+from scipy.optimize import least_squares
+
+from . import llsdir, util
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +55,12 @@ def combine_stacks(ch0, ch1, darkavg):
 
 @jit(nopython=True, nogil=True)
 def fun(p, x, y):
-    """ single phase exponential association curve """
+    """single phase exponential association curve"""
     return p[0] * (1 - np.exp(-p[1] * x)) - y
 
 
 def fitstickypixel(xdata, ydata, i, j):
-    """ fit data to curve, return optimal parameters from function """
+    """fit data to curve, return optimal parameters from function"""
     p0 = np.array([100, 0.0019])  # starting guess
     bounds = ([0, 0], [800, 0.01])  # min and max bounds
     res = least_squares(fun, p0, args=(xdata, ydata), bounds=bounds)
@@ -72,7 +73,7 @@ def splat_fit(args):
 
 
 def parallel_fit(xdata, ydata, callback=None):
-    """ parallelize fitting and return 3D numpy array where...
+    """parallelize fitting and return 3D numpy array where...
 
     first plane = paramater a = plateau of exponential association
     second plane = parameter b = rate of exponential association
@@ -170,7 +171,7 @@ def process_bright_images(folder, darkavg, darkstd, callback=None, save=True):
             E = llsdir.LLSdir(folder, ditch_partial=False)
             outname = "FlashParam_sn{}_roi{}_date{}.tif".format(
                 E.settings.camera.serial,
-                "-".join([str(i) for i in E.settings.camera.roi]),
+                "-".join(str(i) for i in E.settings.camera.roi),
                 E.date.strftime("%Y%m%d"),
             )
         except Exception:
