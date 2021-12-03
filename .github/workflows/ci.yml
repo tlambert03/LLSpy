@@ -41,7 +41,7 @@ jobs:
       - name: pocl
         if: runner.os == 'Linux'
         run: |
-          mamba install pocl
+          mamba install pyopencl numba
 
       - name: Install dependencies
         run: |
@@ -49,6 +49,7 @@ jobs:
           pip install -e .[tests]
 
       - name: Test
+        shell: bash -l {0}
         uses: GabrielBB/xvfb-action@v1
         with:
           run: pytest --cov llspy
