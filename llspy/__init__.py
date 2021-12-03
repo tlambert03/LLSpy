@@ -5,6 +5,11 @@ except ImportError:
 import logging
 import sys
 
+from .llsdir import LLSdir
+
+__all__ = ["LLSdir"]
+
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(format="%(levelname)s:%(name)s | %(message)s")
 
@@ -15,10 +20,3 @@ if "--debug" in sys.argv:
     )
 if "install" in sys.argv:
     logging.getLogger("llspy.libcudawrapper").setLevel(logging.CRITICAL)
-
-
-# libcuda functions
-try:
-    pass
-except Exception:
-    pass

@@ -12,6 +12,7 @@ from qtpy import QtWidgets as QtW
 
 import llspy
 import llspy.gui.exceptions as err
+import llspy.llsdir
 from llspy.gui import workers
 from llspy.gui.camcalibgui import CamCalibDialog
 from llspy.gui.helpers import (
@@ -219,7 +220,7 @@ class LLSDragDropTable(QtW.QTableWidget):
                 elif reply == 0:  # process anyway hit
                     pass
 
-        E = llspy.LLSdir(path)
+        E = llspy.llsdir.LLSdir(path)
         if E.has_settings and not E.has_lls_tiffs:
             if not E.is_compressed() and llspy.util.pathHasPattern(path, "*.tif"):
                 if sessionSettings.value("warnOnNoLLStiffs", True, type=bool):
