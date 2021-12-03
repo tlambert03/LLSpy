@@ -961,7 +961,7 @@ def clean(config, all, configfile, logs):
 def show(config, path, stack, timepoint):
     """Preview MIPS or single Z stack from LLSdir"""
     from llspy.gui.img_dialog import ImgDialog
-    from PyQt5 import QtWidgets
+    from qtpy import QtWidgets
     import numpy as np
 
     logging.getLogger("llspy.llsdir").setLevel("CRITICAL")

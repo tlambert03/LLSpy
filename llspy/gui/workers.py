@@ -8,7 +8,7 @@ import shutil
 import json
 
 
-from PyQt5 import QtCore
+from qtpy import QtCore
 from llspy.gui.helpers import newWorkerThread, byteArrayToString, shortname
 import logging
 
@@ -30,8 +30,8 @@ class SubprocessWorker(QtCore.QObject):
     outputs.
     """
 
-    processStarted = QtCore.pyqtSignal()
-    finished = QtCore.pyqtSignal()
+    processStarted = QtCore.Signal()
+    finished = QtCore.Signal()
 
     def __init__(self, binary, args, env=None, wid=1, **kwargs):
         super(SubprocessWorker, self).__init__()
@@ -52,7 +52,7 @@ class SubprocessWorker(QtCore.QObject):
         self.process.readyReadStandardOutput.connect(self.procReadyRead)
         self.process.readyReadStandardError.connect(self.procErrorRead)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def work(self):
         """
         this worker method does work that takes a long time. During this time,
@@ -93,20 +93,20 @@ class SubprocessWorker(QtCore.QObject):
 
             self.process.waitForFinished()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def procReadyRead(self):
         line = byteArrayToString(self.process.readAllStandardOutput())
         if line != "":
             self._logger.update(line.rstrip())
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def procErrorRead(self):
         self._logger.error("Error in subprocess: {}".format(self.name))
         line = byteArrayToString(self.process.readAllStandardError())
         if line != "":
             self._logger.error(line.rstrip())
 
-    @QtCore.pyqtSlot(int, QtCore.QProcess.ExitStatus)
+    @QtCore.Slot(int, QtCore.QProcess.ExitStatus)
     def onFinished(self, exitCode, exitStatus):
         statusmsg = {0: "exited normally", 1: "crashed"}
         self._logger.info(
@@ -116,15 +116,15 @@ class SubprocessWorker(QtCore.QObject):
         )
         self.finished.emit()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def abort(self):
         self._logger.info("{} #{} notified to abort".format(self.name, self.id))
         self.__abort = True
 
 
 class CudaDeconvWorker(SubprocessWorker):
-    file_finished = QtCore.pyqtSignal()
-    finished = QtCore.pyqtSignal(int)  # worker id
+    file_finished = QtCore.Signal()
+    finished = QtCore.Signal(int)  # worker id
 
     def __init__(self, args, env=None, **kwargs):
         binaryPath = _CUDABIN
@@ -142,7 +142,7 @@ class CudaDeconvWorker(SubprocessWorker):
             else:
                 self._logger.info(line.rstrip())
 
-    @QtCore.pyqtSlot(int, QtCore.QProcess.ExitStatus)
+    @QtCore.Slot(int, QtCore.QProcess.ExitStatus)
     def onFinished(self, exitCode, exitStatus):
         statusmsg = {0: "exited normally", 1: "crashed"}
         self._logger.info(
@@ -155,7 +155,7 @@ class CudaDeconvWorker(SubprocessWorker):
 
 class CompressionWorker(SubprocessWorker):
 
-    status_update = QtCore.pyqtSignal(str, int)
+    status_update = QtCore.Signal(str, int)
 
     def __init__(self, path, mode="compress", binary=None, wid=1, **kwargs):
         if binary is None:
@@ -173,7 +173,7 @@ class CompressionWorker(SubprocessWorker):
         self.mode = mode
         self.name = "CompressionWorker"
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def work(self):
         if self.mode == "decompress":
             self.status_update.emit(
@@ -242,7 +242,7 @@ class CompressionWorker(SubprocessWorker):
             os.remove(tarball)
         self.finished.emit()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def procErrorRead(self):
         # for some reason, lbzip2 puts its verbose output in stderr
         line = byteArrayToString(self.process.readAllStandardError())
@@ -255,8 +255,8 @@ class CompressionWorker(SubprocessWorker):
 # class CorrectionWorker(QtCore.QObject):
 #     """docstring for ImCorrector"""
 
-#     finished = QtCore.pyqtSignal()
-#     error = QtCore.pyqtSignal()
+#     finished = QtCore.Signal()
+#     error = QtCore.Signal()
 
 #     def __init__(self, path, tRange, camparams, median, target):
 #         super(CorrectionWorker, self).__init__()
@@ -267,7 +267,7 @@ class CompressionWorker(SubprocessWorker):
 #         self.target = target
 #         self.E = llspy.LLSdir(self.path)
 
-#     @QtCore.pyqtSlot()
+#     @QtCore.Slot()
 #     def work(self):
 #         try:
 #             self.E.correct_flash(trange=self.tRange, camparamsPath=self.camparams,
@@ -329,19 +329,19 @@ def divide_arg_queue(E, n_gpus, binary):
 
 class LLSitemWorker(QtCore.QObject):
 
-    sig_starting_item = QtCore.pyqtSignal(str, int)  # item path, numfiles
+    sig_starting_item = QtCore.Signal(str, int)  # item path, numfiles
 
-    status_update = QtCore.pyqtSignal(str)  # update mainGUI status
-    progressUp = QtCore.pyqtSignal()  # set progressbar value
-    progressValue = QtCore.pyqtSignal(int)  # set progressbar value
-    progressMaxVal = QtCore.pyqtSignal(int)  # set progressbar maximum
-    clockUpdate = QtCore.pyqtSignal(str)  # set progressbar value
-    file_finished = QtCore.pyqtSignal()  # worker id, filename
+    status_update = QtCore.Signal(str)  # update mainGUI status
+    progressUp = QtCore.Signal()  # set progressbar value
+    progressValue = QtCore.Signal(int)  # set progressbar value
+    progressMaxVal = QtCore.Signal(int)  # set progressbar maximum
+    clockUpdate = QtCore.Signal(str)  # set progressbar value
+    file_finished = QtCore.Signal()  # worker id, filename
 
-    finished = QtCore.pyqtSignal()
-    sig_abort = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal()
-    skipped = QtCore.pyqtSignal(str)
+    finished = QtCore.Signal()
+    sig_abort = QtCore.Signal()
+    error = QtCore.Signal()
+    skipped = QtCore.Signal(str)
 
     def __init__(self, lls_dir, wid, opts, **kwargs):
         super(LLSitemWorker, self).__init__()
@@ -366,7 +366,7 @@ class LLSitemWorker(QtCore.QObject):
 
         self._logger = logging.getLogger("llspy.worker." + type(self).__name__)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def work(self):
         if self.E.is_compressed():
             self.status_update.emit("Decompressing {}".format(self.E.basename))
@@ -489,7 +489,7 @@ class LLSitemWorker(QtCore.QObject):
             # start the thread
             thread.start()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_file_finished(self):
         # update status bar
         self.nFiles_done = self.nFiles_done + 1
@@ -507,7 +507,7 @@ class LLSitemWorker(QtCore.QObject):
         timeAsString = QtCore.QTime(0, 0).addMSecs(remainingTime).toString()
         self.clockUpdate.emit(timeAsString)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def on_CUDAworker_done(self, worker_id):
         # a CUDAworker has finished... update the log and check if any are still going
         logger.debug("CudaDeconv Worker on GPU {} finished".format(worker_id))
@@ -588,7 +588,7 @@ class LLSitemWorker(QtCore.QObject):
 
         self.finished.emit()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def abort(self):
         self._logger.info("LLSworker #{} notified to abort".format(self.__id))
         if any([v for v in self.__CUDAthreads.values()]):
@@ -603,9 +603,9 @@ class LLSitemWorker(QtCore.QObject):
 class TimePointWorker(QtCore.QObject):
     """docstring for TimePointWorker"""
 
-    finished = QtCore.pyqtSignal()
-    previewReady = QtCore.pyqtSignal(np.ndarray, float, float, dict)
-    updateCrop = QtCore.pyqtSignal(int, int)
+    finished = QtCore.Signal()
+    previewReady = QtCore.Signal(np.ndarray, float, float, dict)
+    updateCrop = QtCore.Signal(int, int)
 
     def __init__(self, lls_dir, tRange, cRange, opts, ditch_partial=True, **kwargs):
         super(TimePointWorker, self).__init__()
@@ -623,7 +623,7 @@ class TimePointWorker(QtCore.QObject):
         self.opts = opts
         self._logger = logging.getLogger("llspy.worker." + type(self).__name__)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def work(self):
         if not self.E.parameters.isReady():
             self.finished.emit()

@@ -5,7 +5,7 @@ import os.path as osp
 import time
 
 import numpy as np
-from PyQt5 import QtCore
+from qtpy import QtCore
 
 import llspy
 from llspy.gui import workers
@@ -43,9 +43,9 @@ if _watchdog:
     class ActiveWatcher(QtCore.QObject):
         """docstring for ActiveWatcher"""
 
-        finished = QtCore.pyqtSignal()
-        stalled = QtCore.pyqtSignal()
-        status_update = QtCore.pyqtSignal(str, int)
+        finished = QtCore.Signal()
+        stalled = QtCore.Signal()
+        status_update = QtCore.Signal(str, int)
 
         def __init__(self, path, timeout=30):
             super(ActiveWatcher, self).__init__()
@@ -96,7 +96,7 @@ if _watchdog:
 
             logger.info("New LLS directory now being watched: " + self.path)
 
-        @QtCore.pyqtSlot(str)
+        @QtCore.Slot(str)
         def newfile(self, path):
             self.restart_clock()
             self.status_update.emit(shortname(path), 2000)
@@ -142,7 +142,7 @@ if _watchdog:
             elif not any((self.inProcess, len(self.tQueue), not self.allReceived)):
                 self.terminate()
 
-        @QtCore.pyqtSlot(np.ndarray, float, float)
+        @QtCore.Slot(np.ndarray, float, float)
         def writeFile(self, stack, dx, dz):
             timepoints, worker, thread = self.worker
 
@@ -193,7 +193,7 @@ if _watchdog:
             logger.debug("WATCHER TIMEOUT REACHED!")
             self.terminate()
 
-        @QtCore.pyqtSlot()
+        @QtCore.Slot()
         def terminate(self):
             logger.debug("TERMINATING WATCHER")
             self.observer.stop()
@@ -201,8 +201,8 @@ if _watchdog:
             self.finished.emit()
 
     class MainHandler(events.FileSystemEventHandler, QtCore.QObject):
-        foundLLSdir = QtCore.pyqtSignal(str)
-        lostListItem = QtCore.pyqtSignal(str)
+        foundLLSdir = QtCore.Signal(str)
+        lostListItem = QtCore.Signal(str)
 
         def __init__(self):
             super(MainHandler, self).__init__()
@@ -229,9 +229,9 @@ if _watchdog:
                     self.lostListItem.emit(event.src_path)
 
     class ActiveHandler(events.RegexMatchingEventHandler, QtCore.QObject):
-        tReady = QtCore.pyqtSignal(int)
-        allReceived = QtCore.pyqtSignal()  # don't expect to receive anymore
-        newfile = QtCore.pyqtSignal(str)
+        tReady = QtCore.Signal(int)
+        allReceived = QtCore.Signal()  # don't expect to receive anymore
+        newfile = QtCore.Signal(str)
 
         def __init__(self, path, nC, nT, **kwargs):
             super(ActiveHandler, self).__init__(**kwargs)

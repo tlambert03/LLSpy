@@ -1,5 +1,5 @@
-from PyQt5 import QtCore, QtGui
-from PyQt5 import QtWidgets as QtW
+from qtpy import QtCore, QtGui
+from qtpy import QtWidgets as QtW
 from llspy import camcalib
 from llspy.util import getAbsoluteResourcePath, pathHasPattern
 import numpy as np
@@ -16,11 +16,11 @@ thisDirectory = os.path.dirname(os.path.abspath(__file__))
 class CamCalibWorker(QtCore.QObject):
     """docstring for CamCalibWorker"""
 
-    finished = QtCore.pyqtSignal()
-    progress = QtCore.pyqtSignal(int)
-    setProgMax = QtCore.pyqtSignal(int)
-    setStatus = QtCore.pyqtSignal(str)
-    error = QtCore.pyqtSignal()
+    finished = QtCore.Signal()
+    progress = QtCore.Signal(int)
+    setProgMax = QtCore.Signal(int)
+    setStatus = QtCore.Signal(str)
+    error = QtCore.Signal()
 
     def __init__(self, folder, darkavg=None, darkstd=None, **kwargs):
         super(CamCalibWorker, self).__init__()
@@ -28,7 +28,7 @@ class CamCalibWorker(QtCore.QObject):
         self.darkavg = darkavg
         self.darkstd = darkstd
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def work(self):
         def updatedarkstatus(prog):
             if prog == 0:
@@ -198,16 +198,16 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
         # self.abortButton.clicked.connect(self._abort)
         # self.abortButton.show()
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def incrementProgress(self, val=None):
         self.progressBar.setValue(self.progressBar.value() + 1)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def resetWithMax(self, maxm):
         self.progressBar.setMaximum(maxm)
         self.progressBar.setValue(0)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _abort(self):
         self.thread.terminate()
         self.thread.wait()

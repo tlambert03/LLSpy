@@ -8,8 +8,8 @@ import os
 import os.path as osp
 
 import numpy as np
-from PyQt5 import QtCore, QtGui
-from PyQt5 import QtWidgets as QtW
+from qtpy import QtCore, QtGui
+from qtpy import QtWidgets as QtW
 
 import llspy
 import llspy.gui.exceptions as err
@@ -84,7 +84,7 @@ class LLSDragDropTable(QtW.QTableWidget):
     nCOLS = len(colHeaders)
 
     # A signal needs to be defined on class level:
-    dropSignal = QtCore.pyqtSignal(list, name="dropped")
+    dropSignal = QtCore.Signal(list, name="dropped")
 
     # This signal emits when a URL is dropped onto this list,
     # and triggers handler defined in parent widget.
@@ -112,7 +112,7 @@ class LLSDragDropTable(QtW.QTableWidget):
         header.resizeSection(9, 48)
         self.cellChanged.connect(self.onCellChanged)
 
-    @QtCore.pyqtSlot(int, int)
+    @QtCore.Slot(int, int)
     def onCellChanged(self, row, col):
         # if it's not one of the last few columns that changed, ignore
         if col < 7:
@@ -161,7 +161,7 @@ class LLSDragDropTable(QtW.QTableWidget):
                     self.currentItem().setBackground(QtCore.Qt.white)
                 self.cellChanged.connect(self.onCellChanged)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def addPath(self, path):
         try:
             self.cellChanged.disconnect(self.onCellChanged)
@@ -313,7 +313,7 @@ class LLSDragDropTable(QtW.QTableWidget):
     def selectedObjects(self):
         return [self.getLLSObjectByPath(p) for p in self.selectedPaths()]
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def removePath(self, path):
         try:
             self.llsObjects.pop(path)
@@ -464,8 +464,8 @@ class RegistrationTab(object):
             return
 
         class RegThread(QtCore.QThread):
-            finished = QtCore.pyqtSignal(str)
-            warning = QtCore.pyqtSignal(str, str)
+            finished = QtCore.Signal(str)
+            warning = QtCore.Signal(str, str)
 
             def __init__(self, RD, outdir, refs):
                 QtCore.QThread.__init__(self)
@@ -590,7 +590,7 @@ class RegistrationTab(object):
             )
             return
 
-        @QtCore.pyqtSlot(np.ndarray, float, float, dict)
+        @QtCore.Slot(np.ndarray, float, float, dict)
         def displayRegPreview(array, dx=None, dz=None, params=None):
             win = ImgDialog(
                 array,
@@ -645,9 +645,9 @@ class RegistrationTab(object):
 class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     """docstring for main_GUI"""
 
-    sig_abort_LLSworkers = QtCore.pyqtSignal()
-    sig_item_finished = QtCore.pyqtSignal()
-    sig_processing_done = QtCore.pyqtSignal()
+    sig_abort_LLSworkers = QtCore.Signal()
+    sig_item_finished = QtCore.Signal()
+    sig_processing_done = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(main_GUI, self).__init__(parent)
@@ -835,11 +835,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         if self.watchDirCheckBox.isChecked():
             self.startWatcher()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def set_fname_pattern(self):
         llspy.llsdir.__FPATTERN__ = self.filenamePatternLineEdit.text() + "{}"
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def startWatcher(self):
         self.watchdir = self.watchDirLineEdit.text()
         if osp.isdir(self.watchdir):
@@ -853,7 +853,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.observer.schedule(watchHandler, self.watchdir, recursive=True)
             self.observer.start()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def stopWatcher(self):
         if self.observer is not None and self.observer.is_alive():
             self.observer.stop()
@@ -866,7 +866,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         for watcher in self.activeWatchers.values():
             watcher.terminate()
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def on_watcher_found_item(self, path):
         if self.watchModeAcquisitionRadio.isChecked():
             # assume more files are coming (like during live acquisition)
@@ -879,7 +879,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.listbox.addPath(path)
             self.onProcess()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def changeWatchDir(self):
         self.watchDirLineEdit.setText(
             QtW.QFileDialog.getExistingDirectory(
@@ -893,7 +893,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.stopWatcher()
             self.startWatcher()
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def loadRegObject(self, path):
         if path in (None, ""):
             return
@@ -1116,12 +1116,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         w.finished.connect(lambda: self.previewButton.setText("Preview"))
         self.previewthreads = (w, thread)
 
-    @QtCore.pyqtSlot(int, int)
+    @QtCore.Slot(int, int)
     def updateCrop(self, width, offset):
         self.cropWidthSpinBox.setValue(width)
         self.cropShiftSpinBox.setValue(offset)
 
-    @QtCore.pyqtSlot(np.ndarray, float, float, dict)
+    @QtCore.Slot(np.ndarray, float, float, dict)
     def displayPreview(self, array, dx, dz, params=None):
         if self.prevBackendNapariRadio.isChecked() and _napari:
             viewer = _napari.Viewer()
@@ -1202,7 +1202,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             win = ImgDialog(array, info=params, title=shortname(self.previewPath))
             self.spimwins.append(win)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def close_all_previews(self):
         if hasattr(self, "spimwins"):
             for win in self.spimwins:
@@ -1351,7 +1351,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.actionAbort.setDisabled(True)
         self.inProcess = False
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_proc_finished(self):
         # reinit statusbar and clock
         self.statusBar.showMessage("Ready")
@@ -1361,7 +1361,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         logger.info("Processing Finished")
         self.enableProcessButton()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def on_item_finished(self):
         if len(self.LLSItemThreads):
             thread, worker = self.LLSItemThreads.pop(0)
@@ -1386,7 +1386,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             self.currentItem = None
             self.look_for_next_item()
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def skip_item(self, path):
         if len(self.LLSItemThreads):
             thread, worker = self.LLSItemThreads.pop(0)
@@ -1396,7 +1396,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         self.listbox.skipped_items.add(path)
         self.look_for_next_item()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def abort_workers(self):
         self.statusBar.showMessage("Aborting ...")
         logger.info("Message sent to abort ...")
@@ -1760,7 +1760,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         workers._CUDABIN = path
         logger.info("Using cudaDeconv binary: {}".format(workers._CUDABIN))
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def setCudaDeconvPath(self, path=None):
         if not path:
             path = QtW.QFileDialog.getOpenFileName(
@@ -1779,7 +1779,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     QtW.QMessageBox.Ok,
                 )
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def setOTFdirPath(self, path=None):
         if not path:
             path = QtW.QFileDialog.getExistingDirectory(
@@ -1799,7 +1799,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     QtW.QMessageBox.Ok,
                 )
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def setCamParamPath(self, path=None):
         if not path:
             path = QtW.QFileDialog.getOpenFileName(
@@ -1820,7 +1820,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                     QtW.QMessageBox.Ok,
                 )
 
-    @QtCore.pyqtSlot(str, str, str, str)
+    @QtCore.Slot(str, str, str, str)
     def show_error_window(self, errMsg, title=None, info=None, detail=None):
         self.msgBox = QtW.QMessageBox()
         if title is None or title == "":

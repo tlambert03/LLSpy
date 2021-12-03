@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 import logging
-from PyQt5 import QtWidgets, QtCore, QtGui
+from qtpy import QtWidgets, QtCore, QtGui
 
 # from llspy.gui.img_window import Ui_Dialog
 from .img_window import Ui_Dialog
@@ -70,8 +70,8 @@ class channelSelector(QtWidgets.QWidget):
 
 class DataModel(QtCore.QObject):
 
-    _idxChanged = QtCore.pyqtSignal()
-    _dataChanged = QtCore.pyqtSignal()
+    _idxChanged = QtCore.Signal()
+    _dataChanged = QtCore.Signal()
 
     def __init__(self, data=None, projection=None):
         super(DataModel, self).__init__()
@@ -83,7 +83,7 @@ class DataModel(QtCore.QObject):
         self.cplxAttrib = "Amp"  # other choices: 'Real', 'Imag', 'Phase'
         self.isFFTshifted = False
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def setProjType(self, projtype):
         if projtype in ("min", "max", "std", "mean"):
             self.projection = projtype
@@ -91,32 +91,32 @@ class DataModel(QtCore.QObject):
             self.projection = None
         self._dataChanged.emit()
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def setOverlay(self, val):
         self._overlay = bool(val)
         self._dataChanged.emit()
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def toggleChannel(self, val):
         chan = int(self.sender().objectName().strip("checkBox").strip("ch"))
         logger.debug("Channel {} {}activated".format(chan, "" if val else "de"))
         self.chanSettings[chan]["active"] = val
         self._dataChanged.emit()
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def changeLUT(self, val):
         chan = int(self.sender().objectName().strip("LUTcombo").strip("ch"))
         logger.debug("Channel {} LUT changed to {}".format(chan, val))
         self.chanSettings[chan]["lut"] = LUTS[val]
         self._dataChanged.emit()
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def setChannelScale(self, val):
         chan = int(self.sender().objectName().strip("slider").strip("ch"))
         self.chanSettings[chan]["scale"] = val / 100.00
         self._dataChanged.emit()
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def setCplxAttrib(self, val):
         ## Select which attribute of complex values to display:
         if val in ("Amp", "Real", "Imag", "Phase"):
@@ -171,12 +171,12 @@ class DataModel(QtCore.QObject):
             self.minVal = (np.abs(self.data)).min()
         self._dataChanged.emit()
 
-    @QtCore.pyqtSlot(int, int)
+    @QtCore.Slot(int, int)
     def setIdx(self, dim, idx):
         self.curImgIdx[dim] = idx
         self._idxChanged.emit()
 
-    @QtCore.pyqtSlot(int, int)
+    @QtCore.Slot(int, int)
     def getIdx(self, dim):
         return self.curImgIdx[dim]
 
@@ -291,7 +291,7 @@ class DataModel(QtCore.QObject):
 
 class MplCanvas(FigureCanvas):
 
-    _contrastChanged = QtCore.pyqtSignal()
+    _contrastChanged = QtCore.Signal()
 
     def __init__(self):
         self.figure = Figure(figsize=(15, 15), tight_layout=True, facecolor="#ECECEC")
@@ -320,7 +320,7 @@ class MplCanvas(FigureCanvas):
         )
         self.currentCmap = 1
 
-    @QtCore.pyqtSlot(int, int)
+    @QtCore.Slot(int, int)
     def setContrast(self, valmin=None, valmax=None):
         if valmin is not None:
             self.displayOptions["vmin"] = (
@@ -363,7 +363,7 @@ class MplCanvas(FigureCanvas):
 
         self.draw()
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def setGamma(self, val):
         if val == 100:
             self.displayOptions["norm"] = matplotlib.colors.Normalize(
@@ -379,7 +379,7 @@ class MplCanvas(FigureCanvas):
 
 
 class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
-    close_requested = QtCore.pyqtSignal()
+    close_requested = QtCore.Signal()
 
     def __init__(
         self,
@@ -493,7 +493,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
         self.show()
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def setProjection(self, val):
         if self.sender() == self.maxProjButton:
             if val:
@@ -523,7 +523,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
         self.data.setProjType(projtype)
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def setOverlay(self, val):
         group = (
             self.Cwidget,
@@ -759,7 +759,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             QtCore.QPoint(sliderXorigin + 13, int(handleVPos) + sliderYorigin - 30)
         )
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def popupFFT(self):
         curT, curC, curZ = tuple(self.data.curImgIdx)
         nT, nC, nZ, nY, nX = self.data.shape
@@ -770,7 +770,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fftWin.setDimIdx(2, 0)  # default to kz=0 in the FFT ImgDialog
         fftWin.show()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def popupIFFT(self):
         curT, curC, curZ = tuple(self.data.curImgIdx)
         nT, nC, nZ, nY, nX = self.data.shape
@@ -780,7 +780,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fftWin = ImgDialog(fft, title=self.title + " IFFT")
         fftWin.show()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def popupFFT2(self):
         curT, curC, curZ = tuple(self.data.curImgIdx)
         nT, nC, nZ, nY, nX = self.data.shape
@@ -790,7 +790,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fftWin = ImgDialog(fft, title=self.title + " 2DFFT", shifted=True)
         fftWin.show()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def popupIFFT2(self):
         curT, curC, curZ = tuple(self.data.curImgIdx)
         nT, nC, nZ, nY, nX = self.data.shape
@@ -800,7 +800,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         fftWin = ImgDialog(fft, title=self.title + " FFT", shifted=True)
         fftWin.show()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def fftShiftChecked(self, checked):
         self.data.setFFTshifted(checked)
 

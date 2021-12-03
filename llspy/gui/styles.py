@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtGui, QtCore
+from qtpy import QtWidgets, QtGui, QtCore
 
 
 # first use APP.setStyle(QtW.QStyleFactory.create("fusion"))

@@ -1,7 +1,6 @@
 import os
 from llspy.gui.mainwindow import main_GUI
-from PyQt5 import QtWidgets, QtCore
-from pytestqt import qtbot
+from qtpy import QtCore
 from llspy.llsdir import LLSdir
 
 
@@ -10,8 +9,8 @@ def test_basic_processing(qtbot):
     LLSdir(testdata).reduce_to_raw(keepmip=False)
     n_testfiles = len(os.listdir(testdata))
     otfdir = os.path.join(os.path.dirname(__file__), 'testdata', 'otfs')
-    APP = QtWidgets.QApplication([])
     mainGUI = main_GUI()
+    qtbot.addWidget(mainGUI)
     mainGUI.loadProgramDefaults()
     mainGUI.setOTFdirPath(otfdir)
     assert mainGUI.listbox.rowCount() == 0
@@ -57,8 +56,8 @@ def test_basic_processing(qtbot):
 def test_matplotlib_preview(qtbot):
     testdata = os.path.join(os.path.dirname(__file__), 'testdata', 'sample')
     otfdir = os.path.join(os.path.dirname(__file__), 'testdata', 'otfs')
-    APP = QtWidgets.QApplication([])
     mainGUI = main_GUI()
+    qtbot.addWidget(mainGUI)
     mainGUI.loadProgramDefaults()
     mainGUI.setOTFdirPath(otfdir)
     assert mainGUI.listbox.rowCount() == 0
