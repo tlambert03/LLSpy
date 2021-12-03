@@ -6,10 +6,20 @@ import warnings
 
 import numpy as np
 import tifffile as tf
-from numba import jit
 from scipy.optimize import least_squares
 
 from . import llsdir, util
+
+try:
+    from numba import jit
+except ImportError:
+
+    def jit(**_):
+        def deco(f):
+            return f
+
+        return deco
+
 
 logger = logging.getLogger(__name__)
 

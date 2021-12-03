@@ -1,8 +1,14 @@
 import numpy as np
-from numba import njit
 from scipy.ndimage.interpolation import map_coordinates
 
 from .imref import imref3d
+
+try:
+    from numba import njit
+except ImportError:
+
+    def njit(f):
+        return f
 
 
 def imwarp(inputImage, tform, R_A=None, outputRef=None):

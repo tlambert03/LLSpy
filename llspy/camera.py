@@ -4,11 +4,20 @@ import re
 import warnings
 
 import numpy as np
-from numba import jit
 
 from . import arrayfun, config
 from . import libcudawrapper as libcu
 from .util import imread
+
+try:
+    from numba import jit
+except ImportError:
+
+    def jit(**_):
+        def deco(f):
+            return f
+
+        return deco
 
 
 # #THIS ONE WORKS BEST SO FAR
