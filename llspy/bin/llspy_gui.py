@@ -14,7 +14,7 @@ import llspy.gui.exceptions as err
 from llspy.gui.qtlogger import LogFileHandler
 from llspy.gui.mainwindow import main_GUI, sessionSettings
 
-from PyQt5 import QtWidgets, QtGui
+from qtpy import QtWidgets, QtGui
 
 import os
 import sys
@@ -78,7 +78,7 @@ def main():
 
     # try to import slmgen and add to tools menu
     try:
-        from slmgen import SLMdialog
+        from slmgen.slmwindow import SLMdialog
 
         mainGUI.slmDialog = SLMdialog(mainGUI)
         mainGUI.actionSLMwindow = QtWidgets.QAction(mainGUI)

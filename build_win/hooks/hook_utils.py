@@ -1,5 +1,5 @@
 import os
-import sys
+from qtpy import API_NAME
 import re
 from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, exec_statement
 
@@ -47,13 +47,13 @@ if __name__ == '__main__':
 
     print(_module_path("pyopencl"))
     print(_module_path("gputools"))
-    print(_module_path("PyQt5"))
+    print(_module_path(API_NAME))
 
 
     # print _get_toc_objects(os.path.join(_module_path("pyopencl"), "cl"),
     #                    dir_prefix = "pyopencl/cl")
 
-    print(collect_dynamic_libs("PyQt5"))
+    print(collect_dynamic_libs(API_NAME))
     print(collect_dynamic_libs("pyopencl"))
 
     # print _my_collect_data_files("pyopencl", include_py_files = True)
