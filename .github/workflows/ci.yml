@@ -31,11 +31,12 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip
+        pip install -e .[tests]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1
         with:
-          run: pytest
+          run: pytest --cov llspy
 
       - name: Coverage
         uses: codecov/codecov-action@v2
