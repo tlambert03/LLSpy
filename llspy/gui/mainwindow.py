@@ -807,6 +807,9 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
 
         if _napari:
             self.prevBackendNapariRadio.setChecked(True)
+            if not _SPIMAGINE_IMPORTED:
+                self.prevBackendSpimagineRadio.setDisabled(True)
+                self.prevBackendSpimagineRadio.setText("spimagine [unavailable]")
         else:
             self.prevBackendNapariRadio.setDisabled(True)
             self.prevBackendNapariRadio.setText("napari [unavailable]")
