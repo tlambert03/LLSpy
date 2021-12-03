@@ -6,7 +6,7 @@ on:
       - main
     tags:
       - "v*"
-  pull_request: {}
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip
-        pip install -e .[tests]
+          pip install -e .[tests]
 
       - name: Test
         uses: GabrielBB/xvfb-action@v1
