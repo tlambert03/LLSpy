@@ -48,7 +48,7 @@ def nGPU(binary=None):
         binary = get_bundled_binary()
     try:
         output = subprocess.check_output([binary, "-Q"])
-        return int(re.match(br"Detected\s(?P<numGPU>\d+)\sCUDA", output).groups()[0])
+        return int(re.match(rb"Detected\s(?P<numGPU>\d+)\sCUDA", output).groups()[0])
     except Exception:
         return 0
 

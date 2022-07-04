@@ -102,7 +102,7 @@ def autodetect_peaks(ims, minparticles=4, threshrange=range(200, 520, 20)):
 
 def normxcorr2(b, a):
     c = scipy.signal.convolve2d(a, np.flipud(np.fliplr(b)))
-    a = scipy.signal.convolve2d(a ** 2, np.ones_like(b))
+    a = scipy.signal.convolve2d(a**2, np.ones_like(b))
     b = np.sum(b.flatten() ** 2)
     return c / np.sqrt(a * b)
 

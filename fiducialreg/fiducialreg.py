@@ -204,7 +204,7 @@ def infer_rigid(X, Y, scale=False):
     rMat = np.dot(np.dot(U, F), V)
 
     if scale:
-        sigmaXsq = np.sum(Mx ** 2) / n
+        sigmaXsq = np.sum(Mx**2) / n
         scaling = np.trace(np.dot(rMat.T, CC)) / sigmaXsq
     else:
         scaling = 1
@@ -330,8 +330,8 @@ def f_Gauss3d(p, X, Y, Z):
     return (
         A
         * np.exp(
-            -((X - x0) ** 2 + (Y - y0) ** 2) / (2 * wxy ** 2)
-            - ((Z - z0) ** 2) / (2 * wz ** 2)
+            -((X - x0) ** 2 + (Y - y0) ** 2) / (2 * wxy**2)
+            - ((Z - z0) ** 2) / (2 * wz**2)
         )
         + b
     )
@@ -439,8 +439,8 @@ class GaussFitter3D:
         # estimate noise as read noise plus poisson noise
         sigma = (
             np.sqrt(
-                ReadNoise ** 2
-                + NoiseFactor ** 2
+                ReadNoise**2
+                + NoiseFactor**2
                 * electrons_per_ADU
                 * TrueEMGain
                 * np.maximum(dataROI, 1)
