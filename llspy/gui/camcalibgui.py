@@ -126,7 +126,6 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
             self.darkSTDineEdit.setText(os.path.join(folder, "dark_STD.tif"))
 
     def processFolder(self):
-
         folder = self.camCalibFolderLineEdit.text()
 
         darkavg = None
@@ -214,7 +213,6 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
 
 
 if __name__ == "__main__":
-
     app = QtW.QApplication(sys.argv)
     # dlg = LogWindow()
     # dlg.show()

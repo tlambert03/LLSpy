@@ -1138,14 +1138,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             viewer.dims.ndisplay = 3
             self.spimwins.append(viewer)
         elif self.prevBackendSpimagineRadio.isChecked() and _SPIMAGINE_IMPORTED:
-
             if np.squeeze(array).ndim > 4:
                 arrays = [array[:, i] for i in range(array.shape[1])]
             else:
                 arrays = [np.squeeze(array)]
 
             for arr in arrays:
-
                 datamax = arr.max()
                 datamin = arr.min()
                 dataRange = datamax - datamin
@@ -1660,7 +1658,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             [self.listbox.addPath(p) for p in selectedPaths]
 
     def undoRenameSelected(self):
-
         box = QtW.QMessageBox()
         box.setWindowTitle("Undo Renaming")
         box.setText(
@@ -1712,7 +1709,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             [self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
 
     def mergeMIPtool(self):
-
         if len(self.listbox.selectedPaths()):
             for obj in self.listbox.selectedObjects():
                 obj.mergemips()

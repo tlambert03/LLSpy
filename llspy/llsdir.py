@@ -1226,7 +1226,6 @@ class LLSdir:
         trimX=(0, 0),
         **kwargs,
     ):
-
         trim = (trimZ, trimY, trimX)
 
         outpath = self.path.joinpath("Corrected")

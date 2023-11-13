@@ -18,7 +18,6 @@ class DimensionManager:
     def __init__(
         self, DimensionName="", NumberOfSamples=2, Delta=1, StartCoordinateInWorld=0.5
     ):
-
         if DimensionName not in ["X", "Y", "Z"]:
             raise ValueError("DimensionName must be X, Y, or Z")
         self.DimensionName = DimensionName

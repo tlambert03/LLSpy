@@ -364,7 +364,6 @@ class CameraParameters:
 
 
 if __name__ == "__main__":
-
     from llspy import llsdir, samples
 
     paramfile = samples.camparams  # path to the calibration file

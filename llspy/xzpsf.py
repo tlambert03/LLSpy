@@ -80,7 +80,6 @@ def find_settext(path, filepattern="*Settings.txt"):
 
 
 if __name__ == "__main__":
-
     import argparse
 
     parser = argparse.ArgumentParser()
