@@ -97,4 +97,4 @@ ignore = [
 exclude = ["docs/*"]
 
 [tool.check-manifest]
-ignore = ["llspy/_version.py", ".pre-commit-config.yaml"]
+ignore = ["llspy/_version.py", ".pre-commit-config.yaml", "tests/*"]
