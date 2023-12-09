@@ -71,7 +71,7 @@ def log_filter(img, blurxysigma=1, blurzsigma=2.5, mask=None):
 
 def bead_centroids(img, labeled, nlabels):
     # get center of mass of each object
-    return [ndimage.center_of_mass(img, labeled, l) for l in range(1, nlabels + 1)]
+    return [ndimage.center_of_mass(img, labeled, x) for x in range(1, nlabels + 1)]
 
 
 def get_thresh(im, mincount=None, steps=100):
@@ -100,9 +100,7 @@ def get_thresh(im, mincount=None, steps=100):
         )
     modecount = stats.mode(object_count[(object_count >= mincount)], axis=None).mode[0]
     logging.debug(
-        "Threshold detected: {}".format(
-            threshrange[np.argmax(object_count == modecount)]
-        )
+        f"Threshold detected: {threshrange[np.argmax(object_count == modecount)]}"
     )
     return threshrange[np.argmax(object_count == modecount)], modecount
 
@@ -355,7 +353,7 @@ def FitModelWeighted(modelFcn, startParameters, data, sigmas, *args):
     return optimize.leastsq(
         weightedMissfitF,
         startParameters,
-        (modelFcn, data.ravel(), (1.0 / sigmas).astype("f").ravel()) + args,
+        (modelFcn, data.ravel(), (1.0 / sigmas).astype("f").ravel(), *args),
         full_output=1,
     )
 
@@ -845,9 +843,7 @@ class CloudSet:
                     regto.append(ref)
                 else:
                     logger.warning(
-                        "Reference {} not in lablels: {} ... skipping".format(
-                            ref, self.labels
-                        )
+                        f"Reference {ref} not in lablels: {self.labels} ... skipping"
                     )
         if not len(regto):
             logger.error("No recognized values in refs list.  No tforms calculated")
@@ -881,9 +877,7 @@ class CloudSet:
                 except Exception:
                     print("SKIPPING MODE: ", mode)
                     logger.error(
-                        'Failed to calculate mode "{}" in get_all_tforms.  Skipping.'.format(
-                            mode
-                        )
+                        f'Failed to calculate mode "{mode}" in get_all_tforms.  Skipping.'
                     )
         return D
 
@@ -901,7 +895,7 @@ class CloudSet:
                     if not all(isinstance(i, np.ndarray) for i in obj):
                         return obj.tolist()
                     nestedList = obj.tolist()
-                    return [self.fixedString(l) for l in nestedList]
+                    return [self.fixedString(x) for x in nestedList]
                 return json.JSONEncoder.default(self, obj)
 
         tforms = self.get_all_tforms(**kwargs)
@@ -946,17 +940,13 @@ class CloudSet:
             movIdx = self.labels.index(movingLabel)
         except ValueError:
             raise ValueError(
-                "Could not find label {} in reg list: {}".format(
-                    movingLabel, self.labels
-                )
+                f"Could not find label {movingLabel} in reg list: {self.labels}"
             )
         try:
             fixIdx = self.labels.index(fixedLabel)
         except ValueError:
             raise ValueError(
-                "Could not find label {} in reg list: {}".format(
-                    fixedLabel, self.labels
-                )
+                f"Could not find label {fixedLabel} in reg list: {self.labels}"
             )
 
         mode = mode.lower()
@@ -1159,9 +1149,9 @@ class RegFile:
             if mov not in self.tform_dict[ref]:
                 self.tform_dict[ref][mov] = {}
             self.tform_dict[ref][mov][mode] = tform["tform"]
-        self.refwaves = sorted(list(set(self.refwaves)))
-        self.movwaves = sorted(list(set(self.movwaves)))
-        self.modes = sorted(list(set(self.modes)))
+        self.refwaves = sorted(set(self.refwaves))
+        self.movwaves = sorted(set(self.movwaves))
+        self.modes = sorted(set(self.modes))
         self.waves = self.refwaves  # to make it easier to substitute for RegDir
 
     @property
@@ -1180,9 +1170,7 @@ class RegFile:
             raise RegistrationError(f"Reference wave {ref} not in registration file")
         if moving not in self.tform_dict[ref]:
             raise RegistrationError(
-                "No transform to map moving wave {} onto refrence wave {}".format(
-                    moving, ref
-                )
+                f"No transform to map moving wave {moving} onto refrence wave {ref}"
             )
         if mode not in self.tform_dict[ref][moving]:
             raise RegistrationError(

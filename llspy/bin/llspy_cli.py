@@ -29,7 +29,7 @@ except ImportError:
 
 DEFAULTS = schema.__defaults__
 
-CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
 class Config(dict):
@@ -106,13 +106,13 @@ class Config(dict):
     def update_default(self, key, value):
         if key not in DEFAULTS:
             click.secho(
-                "{} is not a recognized parameter! use config --info to "
-                "list all recognized parameters".format(key),
+                f"{key} is not a recognized parameter! use config --info to "
+                "list all recognized parameters",
                 fg="red",
             )
             return 0
         try:
-            key, value = list(schema.validateItems(**{key: value}).items())[0]
+            key, value = next(iter(schema.validateItems(**{key: value}).items()))
         except Exception as e:
             click.secho(str(e), fg="red")
             return 0
@@ -123,7 +123,7 @@ class Config(dict):
         # preserve comments
         with open(self.default_path) as f:
             comments = [
-                l for l in list(f) if l.startswith(self.comment) and key not in l
+                x for x in list(f) if x.startswith(self.comment) and key not in x
             ]
 
         parser = configparser.ConfigParser(allow_no_value=True)
@@ -244,7 +244,7 @@ def info(paths, verbose, recurse, depth, showsize):
             [paths.insert(i, s) for s in reversed(subf)]
 
     # remove duplicates
-    paths = sorted(list(set(paths)))
+    paths = sorted(set(paths))
 
     if verbose == 0 and len(paths):
         click.echo()
@@ -849,7 +849,7 @@ def compress(
             [paths.insert(i, s) for s in reversed(subf)]
 
     # remove duplicates
-    paths = sorted(list(set(paths)))
+    paths = sorted(set(paths))
 
     if dryrun:
         click.secho("DRY RUN: NOTHING PERFORMED!", fg="red", underline=True)

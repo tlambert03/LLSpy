@@ -126,10 +126,8 @@ default_otf_pattern = re.compile(
 def dir_has_otfs(dirname):
     if os.path.isdir(str(dirname)):
         if any(
-            [
-                (psffile_pattern.search(t) or default_otf_pattern.search(t))
-                for t in os.listdir(dirname)
-            ]
+            (psffile_pattern.search(t) or default_otf_pattern.search(t))
+            for t in os.listdir(dirname)
         ):
             return True
     return False

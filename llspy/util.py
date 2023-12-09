@@ -88,7 +88,7 @@ def imsave(arr, outpath, dx=1, dz=1, dt=1, unit="micron"):
 def getfoldersize(folder, recurse=False):
     if recurse:
         total_size = 0
-        for dirpath, dirnames, filenames in os.walk(folder):
+        for dirpath, _dirnames, filenames in os.walk(folder):
             for f in filenames:
                 total_size += os.path.getsize(os.path.join(dirpath, f))
         return total_size
@@ -168,15 +168,17 @@ def walklevel(some_dir, level=1):
 
 
 def get_subfolders_containing_filepattern(
-    dirname, filepattern="*Settings.txt", exclude=["Corrected"], level=1
+    dirname, filepattern="*Settings.txt", exclude=None, level=1
 ):
     """retrieve a list of subdirectories of the input directory that contain a
     filepattern... useful for getting raw data directories for batch processing
     """
+    if exclude is None:
+        exclude = ["Corrected"]
     matches = []
-    for root, dirnames, filenames in walklevel(dirname, level):
-        for filename in fnmatch.filter(filenames, filepattern):
-            if not any([e in root for e in exclude]):
+    for root, _dirnames, filenames in walklevel(dirname, level):
+        for _filename in fnmatch.filter(filenames, filepattern):
+            if not any(e in root for e in exclude):
                 matches.append(root)
     return matches
 

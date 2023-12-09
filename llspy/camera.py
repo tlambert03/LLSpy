@@ -239,17 +239,17 @@ class CameraParameters:
         if not self.shape[0] >= 3:
             raise ValueError(
                 "Camera parameter file must have at least "
-                "3 planes. {} has only {}".format(fname, self.shape[0])
+                f"3 planes. {fname} has only {self.shape[0]}"
             )
         if not self.roi.width == self.shape[1]:
             raise ValueError(
                 "Tiff file provided does not have the same width "
-                "({}) as the proivded roi ({})".format(self.shape[1], self.roi.width)
+                f"({self.shape[1]}) as the proivded roi ({self.roi.width})"
             )
         if not self.roi.height == self.shape[2]:
             raise ValueError(
                 "Tiff file provided does not have the same height "
-                "({}) as the proivded roi ({})".format(self.shape[2], self.roi.height)
+                f"({self.shape[2]}) as the proivded roi ({self.roi.height})"
             )
         self.width = self.roi.width
         self.height = self.roi.height
@@ -303,7 +303,7 @@ class CameraParameters:
             raise ValueError(f"Empty list of stacks received: {stacks}")
         if len({S.shape for S in stacks}) > 1:
             raise ValueError("All stacks in list must have the same shape")
-        if not all([isinstance(S, np.ndarray) for S in stacks]):
+        if not all(isinstance(S, np.ndarray) for S in stacks):
             raise ValueError("All stacks in list must be of type: np.ndarray")
 
         # interleave stacks into single 3D so that they are in the order:
@@ -332,7 +332,7 @@ class CameraParameters:
             else:
                 raise ValueError(
                     "unrecognized value for flashCorrectTarget "
-                    "parameter: {}".format(flashCorrectTarget)
+                    f"parameter: {flashCorrectTarget}"
                 )
 
             # interleaved = np.subtract(interleaved, self.offset)
@@ -348,14 +348,14 @@ class CameraParameters:
         # (particularly if an object is truncated and there's more content
         # just off to the side of the camera ROI)
         # this will delete the edge columns
-        if any([any(i) for i in trim]):
+        if any(any(i) for i in trim):
             interleaved = arrayfun.trimedges(interleaved, trim, numStacks)
 
         if not np.issubdtype(interleaved.dtype, typ):
             warnings.warn("CONVERTING")
             interleaved = interleaved.astype(typ)
 
-        deinterleaved = [s for s in np.split(interleaved, interleaved.shape[0])]
+        deinterleaved = list(np.split(interleaved, interleaved.shape[0]))
         deinterleaved = [
             np.concatenate(deinterleaved[q::numStacks]) for q in range(numStacks)
         ]

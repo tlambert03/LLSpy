@@ -137,13 +137,13 @@ class DataModel(QtCore.QObject):
         self.isComplex = data.dtype == np.complex64 or data.dtype == np.complex128
 
         if self.ndim == 2:
-            self.shape = (1, 1, 1) + data.shape
+            self.shape = (1, 1, 1, *data.shape)
             self.data = data.copy().reshape(self.shape)
         elif self.ndim == 3:
-            self.shape = (1, 1) + data.shape
+            self.shape = (1, 1, *data.shape)
             self.data = data.copy().reshape(self.shape)
         elif self.ndim == 4:
-            self.shape = (1,) + data.shape
+            self.shape = (1, *data.shape)
             self.data = data.copy().reshape(self.shape)
         elif self.ndim == 5:
             self.shape = data.shape
@@ -315,7 +315,7 @@ class MplCanvas(FigureCanvas):
 
     def setDisplayOptions(self, options):
         self.displayOptions = options
-        if not ("cmap" in self.displayOptions):
+        if "cmap" not in self.displayOptions:
             self.displayOptions["cmap"] = "cubehelix"
         self.cmaps = tuple(
             {self.displayOptions["cmap"], "gray", "afmhot", "cubehelix", "inferno"}
@@ -567,8 +567,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         slid = getattr(self, axis.upper() + "slider")
         if n > 1:
             if not (
-                (axis == "z" and getattr(self.data, "projection"))
-                or (axis == "c" and getattr(self.data, "_overlay"))
+                (axis == "z" and self.data.projection)
+                or (axis == "c" and self.data._overlay)
             ):
                 widg.show()
                 slid.setMaximum(n - 1)

@@ -216,7 +216,7 @@ def affineGPU(im, tmat, dzyx=None):
     result = np.empty((nz, ny, nx), dtype=np.float32)
     if (
         isinstance(dzyx, (tuple, list))
-        and all([isinstance(i, float) for i in dzyx])
+        and all(isinstance(i, float) for i in dzyx)
         and len(dzyx) == 3
     ):
         # note, dzyx coordinate order is flipped when handing to Affine_interface_RA

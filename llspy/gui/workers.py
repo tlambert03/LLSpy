@@ -110,9 +110,7 @@ class SubprocessWorker(QtCore.QObject):
     def onFinished(self, exitCode, exitStatus):
         statusmsg = {0: "exited normally", 1: "crashed"}
         self._logger.info(
-            "{} #{} {} with exit code: {}".format(
-                self.name, self.id, statusmsg[exitStatus], exitCode
-            )
+            f"{self.name} #{self.id} {statusmsg[exitStatus]} with exit code: {exitCode}"
         )
         self.finished.emit()
 
@@ -146,9 +144,7 @@ class CudaDeconvWorker(SubprocessWorker):
     def onFinished(self, exitCode, exitStatus):
         statusmsg = {0: "exited normally", 1: "crashed"}
         self._logger.info(
-            "{} #{} {} with exit code: {}".format(
-                self.name, self.id, statusmsg[exitStatus], exitCode
-            )
+            f"{self.name} #{self.id} {statusmsg[exitStatus]} with exit code: {exitCode}"
         )
         self.finished.emit(self.id)
 
@@ -203,7 +199,7 @@ class CompressionWorker(SubprocessWorker):
             if llspy.util.find_filepattern(self.path, "*.tar*"):
                 raise err.LLSpyError(
                     "There are both raw tiffs and a compressed file in "
-                    "directory: {}".format(self.path),
+                    f"directory: {self.path}",
                     "If you would like to compress this directory, "
                     "please either remove any existing *.tar files, or remove "
                     "the uncompressed tiff files.  Alternatively, you can use "
@@ -422,7 +418,7 @@ class LLSitemWorker(QtCore.QObject):
                 raise
         # if not flash correcting but there is trimming/median filter requested
         elif self.P.medianFilter or any(
-            [any(i) for i in (self.P.trimX, self.P.trimY, self.P.trimZ)]
+            any(i) for i in (self.P.trimX, self.P.trimY, self.P.trimZ)
         ):
             self.E.path = self.E.median_and_trim(**self.P)
 
@@ -504,9 +500,7 @@ class LLSitemWorker(QtCore.QObject):
         # update status bar
         self.nFiles_done = self.nFiles_done + 1
         self.status_update.emit(
-            "Processing {}: ({} of {})".format(
-                self.shortname, self.nFiles_done, self.nFiles
-            )
+            f"Processing {self.shortname}: ({self.nFiles_done} of {self.nFiles})"
         )
         # update progress bar
         self.progressUp.emit()
@@ -530,7 +524,7 @@ class LLSitemWorker(QtCore.QObject):
         # ... only as fast as the slowest GPU
         # could probably fix easily by delivering a value to startCudaWorkers
         # instead of looping through gpu inside of it
-        if not any([v for v in self.__CUDAthreads.values()]):
+        if not any(v for v in self.__CUDAthreads.values()):
             # if there's still stuff left in the argQueue for this item, keep going
             if self.aborted:
                 self.aborted = False
@@ -596,7 +590,7 @@ class LLSitemWorker(QtCore.QObject):
     @QtCore.Slot()
     def abort(self):
         self._logger.info(f"LLSworker #{self.__id} notified to abort")
-        if any([v for v in self.__CUDAthreads.values()]):
+        if any(v for v in self.__CUDAthreads.values()):
             self.aborted = True
             self.__argQueue = []
             self.sig_abort.emit()

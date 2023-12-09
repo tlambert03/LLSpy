@@ -38,7 +38,7 @@ def threshold_li(image):
         raise ValueError(
             "threshold_li is expected to work with images "
             "having more than one value. The input image seems "
-            "to have just one value {}.".format(image.flat[0])
+            f"to have just one value {image.flat[0]}."
         )
 
     # Copy to ensure input image is not modified

@@ -20,9 +20,8 @@ def hash_dir(dir_path):
             files
         ):  # we sort to guarantee that files will always go in the same order
             hashes.append(sha1OfFile(os.path.join(path, file)))
-        for dir in sorted(
-            dirs
-        ):  # we sort to guarantee that dirs will always go in the same order
-            hashes.append(hash_dir(os.path.join(path, dir)))
+        # we sort to guarantee that dirs will always go in the same order
+        for _dir in sorted(dirs):
+            hashes.append(hash_dir(os.path.join(path, _dir)))
         break  # we only need one iteration - to get files and dirs in current directory
     return str(hash("".join(hashes)))

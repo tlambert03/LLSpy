@@ -7,3 +7,29 @@ write_to = "llspy/_version.py"
 
 [tool.check-manifest]
 ignore = ["llspy/_version.py", ".pre-commit-config.yaml"]
+
+# https://docs.astral.sh/ruff
+[tool.ruff]
+line-length = 88
+target-version = "py37"
+src = ["src"]
+# https://docs.astral.sh/ruff/rules
+select = [
+    "E",    # style errors
+    "W",    # style warnings
+    "F",    # flakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "C4",   # flake8-comprehensions
+    # "B",    # flake8-bugbear
+    "A001", # flake8-builtins
+    "RUF",  # ruff-specific rules
+    "TCH",  # flake8-type-checking
+    "TID",  # flake8-tidy-imports
+]
+ignore = [
+    "E501", # line length
+]
+
+
+exclude = ["docs/*"]
