@@ -6,13 +6,13 @@ import os
 import os.path as osp
 
 import numpy as np
-from fiducialreg.fiducialreg import RegFile, RegistrationError
 from qtpy import QtCore, QtGui
 from qtpy import QtWidgets as QtW
 
 import llspy
 import llspy.gui.exceptions as err
 import llspy.llsdir
+from fiducialreg.fiducialreg import RegFile, RegistrationError
 from llspy.gui import workers
 from llspy.gui.camcalibgui import CamCalibDialog
 from llspy.gui.helpers import (

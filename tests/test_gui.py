@@ -2,6 +2,7 @@ import contextlib
 from pathlib import Path
 
 import pytest
+
 from llspy.exceptions import CUDAbinException
 from llspy.gui.exceptions import MissingBinaryError
 from llspy.gui.mainwindow import main_GUI
