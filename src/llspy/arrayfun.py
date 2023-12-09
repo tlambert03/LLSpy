@@ -173,7 +173,7 @@ def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
     (nz, ny, nx) = rawdata.shape
     # Francois' method:
     # nxOut = math.ceil((nz - 1) * deskewFactor) + nx
-    nxOut = np.int(np.floor((nz - 1) * dz * abs(np.cos(angle * np.pi / 180)) / dx) + nx)
+    nxOut = int(np.floor((nz - 1) * dz * abs(np.cos(angle * np.pi / 180)) / dx) + nx)
     # +1 to pad left side with 1 column of filler pixels
     # otherwise, edge pixel values are smeared across the image
     paddedData = np.ones((nz, ny, nxOut), rawdata.dtype) * filler

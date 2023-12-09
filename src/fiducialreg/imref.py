@@ -243,13 +243,13 @@ class imref2d:
                 if len(val) == 1:
                     repdict[n] = f"{val[0]:.4f}"
                 else:
-                    if np.issubdtype(val.dtype, np.int):
+                    if np.issubdtype(val.dtype, np.integer):
                         repdict[n] = list(val)
                     else:
                         repdict[n] = [f"{i:.4f}" for i in val]
             elif isinstance(self.__getattribute__(n), float):
                 repdict[n] = f"{self.__getattribute__(n):.4f}"
-            elif isinstance(self.__getattribute__(n), (np.int, np.int64, int)):
+            elif isinstance(self.__getattribute__(n), (np.int64, int)):
                 repdict[n] = int(self.__getattribute__(n))
         return pformat(repdict)
 
