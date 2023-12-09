@@ -48,8 +48,8 @@ dependencies = [
 # https://peps.python.org/pep-0621/#dependencies-optional-dependencies
 [project.optional-dependencies]
 napari = ["napari"]
-pyqt = ["PyQt5"]
-pyside = ["PySide2"]
+pyqt5 = ["PyQt5"]
+pyside2 = ["PySide2"]
 spimagine = ["spimagine"]
 test = ["pytest", "pytest-cov", "pytest-qt"]
 dev = [
