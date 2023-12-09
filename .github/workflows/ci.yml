@@ -31,10 +31,13 @@ jobs:
           mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: true
+      
+      - name: Install OpenCL
+        if: matrix.platform == 'ubuntu-latest'
+        run: mamba install pyopencl pocl
 
       - name: Install dependencies
         run: |
-          mamba install pyopencl pocl
           pip install -U pip
           pip install -e .[test]
 
@@ -42,6 +45,7 @@ jobs:
         uses: aganders3/headless-gui@v2
         with:
           run: pytest --cov llspy
+          shell: bash -l {0}
 
       - name: Coverage
         uses: codecov/codecov-action@v3
