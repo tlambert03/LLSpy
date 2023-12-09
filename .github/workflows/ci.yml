@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip
-          pip install -e .[test]
+          pip install -e .[test,pyqt5]
 
       - name: Test
         uses: aganders3/headless-gui@v2
