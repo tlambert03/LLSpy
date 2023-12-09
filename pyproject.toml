@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "llspy/_version.py"
+write_to = "src/llspy/_version.py"
 
 # https://peps.python.org/pep-0621/
 [project]
@@ -71,7 +71,7 @@ lls = "llspy.bin.llspy_cli:cli"
 lls-gui = "llspy.bin.llspy_gui:main"
 
 [tool.setuptools.packages.find]
-exclude = ["tests", "docs", "pyinstaller"]
+where = ["src"]
 
 # https://docs.astral.sh/ruff
 [tool.ruff]

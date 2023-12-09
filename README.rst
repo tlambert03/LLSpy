@@ -175,18 +175,12 @@ Installation
 
 #. Install `conda <https://github.com/conda-forge/miniforge>`_
 #. Launch a ``terminal`` window (Linux), or ``Anaconda Prompt`` (Windows)
-#. Add the "conda-forge" and "talley" channels to your conda config
-
-    .. code:: bash
-
-        $ conda config --add channels conda-forge
-        $ conda config --add channels talley
-
 #. Install LLSpy into a new conda environment
 
     .. code:: bash
 
-        $ conda create -n llsenv python=3.11 llspy
+        # `-c talley` is required to install the llspylibs package
+        $ conda create -n llsenv -c talley python=3.11 llspylibs
         $ conda activate llsenv
 
     The ``create -n llsenv`` line creates a virtual environment.  This is optional, but recommended as it easier to uninstall cleanly and prevents conflicts with any other python environments.  If installing into a virtual environment, you must source the environment before proceeding, and each time before using llspy.
