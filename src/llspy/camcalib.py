@@ -55,11 +55,11 @@ def combine_stacks(ch0, ch1, darkavg):
     shp = list(tf.TiffFile(ch0[0]).series[0].shape)
     nZ = shp[0]
     shp[0] *= len(ch0)
-    pre = np.zeros(shp, dtype=np.float)
-    post = np.zeros(shp, dtype=np.float)
+    pre = np.zeros(shp, dtype=float)
+    post = np.zeros(shp, dtype=float)
     for n in range(len(ch0)):
-        pre[n * nZ : n * nZ + nZ, :, :] = tf.imread(ch0[n]).astype(np.float) - darkavg
-        post[n * nZ : n * nZ + nZ, :, :] = tf.imread(ch1[n]).astype(np.float) - darkavg
+        pre[n * nZ : n * nZ + nZ, :, :] = tf.imread(ch0[n]).astype(float) - darkavg
+        post[n * nZ : n * nZ + nZ, :, :] = tf.imread(ch1[n]).astype(float) - darkavg
     return pre, post
 
 

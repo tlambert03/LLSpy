@@ -247,7 +247,7 @@ class imref2d:
                         repdict[n] = list(val)
                     else:
                         repdict[n] = [f"{i:.4f}" for i in val]
-            elif isinstance(self.__getattribute__(n), (np.float, float)):
+            elif isinstance(self.__getattribute__(n), float):
                 repdict[n] = f"{self.__getattribute__(n):.4f}"
             elif isinstance(self.__getattribute__(n), (np.int, np.int64, int)):
                 repdict[n] = int(self.__getattribute__(n))

@@ -33,7 +33,7 @@ def imwarp(inputImage, tform, R_A=None, outputRef=None):
         # checkOutputViewAgreementWithTform(outputRef,tform)
 
         # Resampling the input image must be done in a floating point type.
-    if not np.issubdtype(inputImage.dtype, np.float):
+    if not np.issubdtype(inputImage.dtype, float):
         inputImage = inputImage.astype(np.float64)
 
         # Form grid of intrinsic points in output image.

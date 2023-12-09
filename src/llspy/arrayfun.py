@@ -97,7 +97,7 @@ def imcontentbounds(im, sigma=2):
     # get rid of the first two planes in case of high dark noise
     if im.ndim == 3:
         im = np.squeeze(np.max(im[2:], 0))
-    im = im.astype(np.float)
+    im = im.astype(float)
     fullwidth = im.shape[-1]
     # from scipy.ndimage.filters import median_filter
     # mm = median_filter(b.astype(float),3)
@@ -148,14 +148,14 @@ def detect_background(im):
         im = im[0][2]
     if im.ndim == 3:
         im = im[1]  # pick the third plane... avoid noise in first plane on lattice
-    return mode(im.flatten())[0][0]
+    return mode(im.flatten()).mode
 
 
 def sub_background(im, background=None):
     """subtract provided background or autodetct as mode of the first plane"""
     if background is None:
         background = detect_background(im)
-    out = im.astype(np.float) - background
+    out = im.astype(float) - background
     out[out < 0] = 0
     return out
 

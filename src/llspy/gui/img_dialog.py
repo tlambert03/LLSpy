@@ -232,7 +232,7 @@ class DataModel(QtCore.QObject):
                 if not self.chanSettings[chan]["active"]:
                     continue
                 lut = self.chanSettings[chan]["lut"]
-                D = np.maximum(data[chan].astype(np.float) - self.cmin[chan], 0)
+                D = np.maximum(data[chan].astype(float) - self.cmin[chan], 0)
                 D /= self.cmax[chan] if self.projection is None else D.max()
                 D *= self.chanSettings[chan]["scale"]
                 D = np.tile(D, (3, 1, 1)).transpose(1, 2, 0)

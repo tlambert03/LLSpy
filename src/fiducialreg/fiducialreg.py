@@ -1052,8 +1052,8 @@ class CloudSet:
 
 
 def imoverlay(im1, im2, method=None, mip=False):
-    im1 = im1.astype(np.float) if not mip else im1.astype(np.float).max(0)
-    im2 = im2.astype(np.float) if not mip else im2.astype(np.float).max(0)
+    im1 = im1.astype(float) if not mip else im1.astype(float).max(0)
+    im2 = im2.astype(float) if not mip else im2.astype(float).max(0)
     im1 -= im1.min()
     im1 /= im1.max()
     im2 -= im2.min()
