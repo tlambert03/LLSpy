@@ -9,7 +9,6 @@ except ImportError:
     from llspy.bin.llspy_gui import main
 
 if __name__ == "__main__":
-
     import logging
 
     logger = logging.getLogger(__name__)

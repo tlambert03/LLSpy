@@ -173,8 +173,8 @@ Installation
 **Note**: *As of version 0.4.2 cudaDecon is now included in the LLSpy conda package and requires no additional steps for installation.  Horray for open source!*
 
 
-#. Install `Anaconda <https://www.anaconda.com/download/>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
-#. Launch a ``terminal`` window (OS X, Linux), or ``Anaconda Prompt`` (Windows)
+#. Install `conda <https://github.com/conda-forge/miniforge>`_
+#. Launch a ``terminal`` window (Linux), or ``Anaconda Prompt`` (Windows)
 #. Add the "conda-forge" and "talley" channels to your conda config
 
     .. code:: bash
@@ -186,7 +186,7 @@ Installation
 
     .. code:: bash
 
-        $ conda create -n llsenv python=3.6 llspy
+        $ conda create -n llsenv python=3.11 llspy
         $ conda activate llsenv
 
     The ``create -n llsenv`` line creates a virtual environment.  This is optional, but recommended as it easier to uninstall cleanly and prevents conflicts with any other python environments.  If installing into a virtual environment, you must source the environment before proceeding, and each time before using llspy.

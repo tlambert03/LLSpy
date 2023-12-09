@@ -154,7 +154,6 @@ class CudaDeconvWorker(SubprocessWorker):
 
 
 class CompressionWorker(SubprocessWorker):
-
     status_update = QtCore.Signal(str, int)
 
     def __init__(self, path, mode="compress", binary=None, wid=1, **kwargs):
@@ -235,7 +234,6 @@ class CompressionWorker(SubprocessWorker):
             with tarfile.open(tarball) as tar:
 
                 def is_within_directory(directory, target):
-
                     abs_directory = os.path.abspath(directory)
                     abs_target = os.path.abspath(target)
 
@@ -244,7 +242,6 @@ class CompressionWorker(SubprocessWorker):
                     return prefix == abs_directory
 
                 def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-
                     for member in tar.getmembers():
                         member_path = os.path.join(path, member.name)
                         if not is_within_directory(path, member_path):
@@ -345,7 +342,6 @@ def divide_arg_queue(E, n_gpus, binary):
 
 
 class LLSitemWorker(QtCore.QObject):
-
     sig_starting_item = QtCore.Signal(str, int)  # item path, numfiles
 
     status_update = QtCore.Signal(str)  # update mainGUI status
@@ -438,7 +434,6 @@ class LLSitemWorker(QtCore.QObject):
 
         # only call cudaDeconv if we need to deskew or deconvolve
         if self.P.nIters > 0 or (self.P.deskew != 0 and self.P.saveDeskewedRaw):
-
             try:
                 # check the binary path and create object
                 binary = llspy.cudabinwrapper.CUDAbin(_CUDABIN)
@@ -547,7 +542,6 @@ class LLSitemWorker(QtCore.QObject):
                 self.post_process()
 
     def post_process(self):
-
         if self.P.doReg:
             self.status_update.emit(f"Doing Channel Registration: {self.E.basename}")
             try:

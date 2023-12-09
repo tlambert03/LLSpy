@@ -168,7 +168,6 @@ def process_dark_images(folder, callback=None, callback2=None):
 
 
 def process_bright_images(folder, darkavg, darkstd, callback=None, save=True):
-
     ch0list, ch1list = get_channel_list(folder)
     pre, post = combine_stacks(ch0list, ch1list, darkavg)
 
@@ -203,7 +202,6 @@ def process_bright_images(folder, darkavg, darkstd, callback=None, save=True):
 
 
 if __name__ == "__main__":
-
     # this script assumes you have aquired a series of 2-channel zstacks
     # (not actually a stack,  turn off Z galvo,  and Z and Sample Piezos
     # the first channel is "bright" and "even" (such as 488 laser sheet exciting FITC)

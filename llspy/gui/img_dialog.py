@@ -73,7 +73,6 @@ class channelSelector(QtWidgets.QWidget):
 
 
 class DataModel(QtCore.QObject):
-
     _idxChanged = QtCore.Signal()
     _dataChanged = QtCore.Signal()
 
@@ -294,7 +293,6 @@ class DataModel(QtCore.QObject):
 
 
 class MplCanvas(FigureCanvas):
-
     _contrastChanged = QtCore.Signal()
 
     def __init__(self):
@@ -582,7 +580,6 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             self.update_axis_slider(axis, n)
 
     def initialize(self):
-
         datamax = self.data.max()
         datamin = self.data.min()
         # dataRange = datamax - datamin

@@ -27,7 +27,6 @@ class NoExceptionTracebackFormatter(logging.Formatter):
 
 
 class NotificationHandler(QObject, logging.Handler):
-
     emitSignal = Signal(str)
 
     def __init__(self):
