@@ -36,16 +36,14 @@ def fetch_package_version(dist_name):
     >>> fetch_package_version('sentry')
     """
     try:
-        # Importing pkg_resources can be slow, so only import it
-        # if we need it.
-        import pkg_resources
+        from importlib.metadata import version
     except ImportError:
-        # pkg_resource is not available on Google App Engine
-        raise NotImplementedError(
-            "pkg_resources is not available " "on this Python install"
-        )
-    dist = pkg_resources.get_distribution(dist_name)
-    return dist.version
+        from importlib_metadata import version
+
+    try:
+        return version(dist_name)
+    except Exception as e:
+        raise NotImplementedError(f"Could not fetch the version for {dist_name}: {e}")
 
 
 def fetch_git_sha(path, head=None):
