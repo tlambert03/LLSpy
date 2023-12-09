@@ -301,7 +301,7 @@ def RL_init(
     deskew=31.5,
     rotate=0,
     width=0,
-    **kwargs
+    **kwargs,
 ):
     requireCUDAlib()
     nz, ny, nx = rawdata_shape
