@@ -5,8 +5,73 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 write_to = "llspy/_version.py"
 
-[tool.check-manifest]
-ignore = ["llspy/_version.py", ".pre-commit-config.yaml"]
+# https://peps.python.org/pep-0621/
+[project]
+name = "llspy"
+dynamic = ["version"]
+description = "Lattice Light Sheet Processing Tools."
+readme = "README.rst"
+requires-python = ">=3.7"
+license = { text = "BSD-3-Clause" }
+authors = [{ name = "Talley Lambert", email = "talley.lambert@example.com" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "click",
+    "llspy-slm>=0.2.1",
+    "matplotlib",
+    "numpy",
+    "parse",
+    "qtpy",
+    "scipy",
+    "sentry-sdk",
+    "tifffile",
+    "voluptuous",
+    "watchdog",
+    "numba;python_version < '3.12'",
+]
+
+# https://peps.python.org/pep-0621/#dependencies-optional-dependencies
+[project.optional-dependencies]
+napari = ["napari"]
+pyqt = ["PyQt5"]
+pyside = ["PySide2"]
+spimagine = ["spimagine"]
+test = ["pytest", "pytest-cov", "pytest-qt"]
+dev = [
+    "black",
+    "ipython",
+    "mypy",
+    "pdbpp",      # https://github.com/pdbpp/pdbpp
+    "pre-commit",
+    "rich",       # https://github.com/Textualize/rich
+    "ruff",
+]
+
+[project.urls]
+homepage = "https://github.com/tlambert03/LLSpy"
+repository = "https://github.com/tlambert03/LLSpy"
+
+[project.scripts]
+lls = "llspy.bin.llspy_cli:cli"
+lls-gui = "llspy.bin.llspy_gui:main"
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "docs", "pyinstaller"]
 
 # https://docs.astral.sh/ruff
 [tool.ruff]
@@ -21,7 +86,6 @@ select = [
     "I",    # isort
     "UP",   # pyupgrade
     "C4",   # flake8-comprehensions
-    # "B",    # flake8-bugbear
     "A001", # flake8-builtins
     "RUF",  # ruff-specific rules
     "TCH",  # flake8-type-checking
@@ -30,6 +94,7 @@ select = [
 ignore = [
     "E501", # line length
 ]
-
-
 exclude = ["docs/*"]
+
+[tool.check-manifest]
+ignore = ["llspy/_version.py", ".pre-commit-config.yaml"]
