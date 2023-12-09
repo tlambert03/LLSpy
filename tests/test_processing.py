@@ -1,8 +1,9 @@
 import os
 
+from qtpy import QtCore
+
 from llspy.gui.mainwindow import main_GUI
 from llspy.llsdir import LLSdir
-from qtpy import QtCore
 
 from .conftest import requires_cuda
 
