@@ -27,7 +27,7 @@ jobs:
         platform: [ubuntu-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: tlambert03/setup-qt-libs@v1
 
       - uses: conda-incubator/setup-miniconda@v3
@@ -44,14 +44,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -U pip
-          pip install -e .[test,pyqt5]
+          python -m pip install -U pip
+          python -m pip install -e .[test,pyqt5]
 
       - name: Test
         uses: aganders3/headless-gui@v2
         with:
-          run: pytest --cov llspy
-          shell: bash -l {0}
+          shell: bash -el {0}
+          run: python -m pytest --cov llspy
 
       - name: Coverage
         uses: codecov/codecov-action@v3
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -78,9 +78,7 @@ jobs:
           python -m build .
 
       - name: twine check
-        run: |
-          twine check dist/*
-          ls -lh dist
+        run: twine check dist/*
 
       - name: Build and publish
         run: twine upload dist/*
