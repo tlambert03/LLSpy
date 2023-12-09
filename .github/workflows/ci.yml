@@ -2,10 +2,8 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - "v*"
+    branches: [main]
+    tags: [v*]
   pull_request:
   workflow_dispatch:
 
@@ -19,14 +17,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, '3.10']
-        platform: [ubuntu-latest]
+        python-version: [3.7, 3.8, 3.9, "3.10", "3.11"]
+        platform: [ubuntu-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: tlambert03/setup-qt-libs@v1
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
@@ -37,16 +35,16 @@ jobs:
       - name: Install dependencies
         run: |
           mamba install pyopencl pocl
-          sudo apt-get install -y xvfb
-          pip install -U pip wheel
-          pip install -e .[tests]
+          pip install -U pip
+          pip install -e .[test]
 
-      - name: Test with xvfb
-        if: runner.os == 'Linux'
-        run: xvfb-run --auto-servernum pytest --cov llspy
+      - name: Test
+        uses: aganders3/headless-gui@v2
+        with:
+          run: pytest --cov llspy
 
       - name: Coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
 
   deploy:
     name: Deploy
