@@ -1421,9 +1421,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             "trimZ": (self.trimZ0SpinBox.value(), self.trimZ1SpinBox.value()),
             "trimY": (self.trimY0SpinBox.value(), self.trimY1SpinBox.value()),
             "trimX": (self.trimX0SpinBox.value(), self.trimX1SpinBox.value()),
-            "nIters": self.iterationsSpinBox.value()
-            if self.doDeconGroupBox.isChecked()
-            else 0,
+            "nIters": (
+                self.iterationsSpinBox.value()
+                if self.doDeconGroupBox.isChecked()
+                else 0
+            ),
             "napodize": self.apodizeSpinBox.value(),
             "nzblend": self.zblendSpinBox.value(),
             # if bRotate == True and rotateAngle is not none: rotate based on sheet angle
@@ -1465,9 +1467,11 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
                 if self.RegProcessChannelRefModeCombo.currentText()
                 else "none"
             ),
-            "otfDir": self.otfFolderLineEdit.text()
-            if self.otfFolderLineEdit.text() != ""
-            else None,
+            "otfDir": (
+                self.otfFolderLineEdit.text()
+                if self.otfFolderLineEdit.text() != ""
+                else None
+            ),
             "compressRaw": self.compressRawCheckBox.isChecked(),
             "compressionType": self.compressTypeCombo.currentText(),
             "reprocess": self.reprocessCheckBox.isChecked(),
@@ -1862,9 +1866,11 @@ The cudaDeconv deconvolution program was written by Lin Shao and by Dan Milkie a
             box.setCheckBox(pref)
 
             pref.stateChanged.connect(
-                lambda value: self.confirmOnQuitCheckBox.setChecked(False)
-                if value
-                else self.confirmOnQuitCheckBox.setChecked(True)
+                lambda value: (
+                    self.confirmOnQuitCheckBox.setChecked(False)
+                    if value
+                    else self.confirmOnQuitCheckBox.setChecked(True)
+                )
             )
 
             reply = box.exec_()
