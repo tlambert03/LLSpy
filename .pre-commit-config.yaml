@@ -12,27 +12,19 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.15
+    rev: v0.16
     hooks:
       - id: validate-pyproject
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.5.0
-    hooks:
-      - id: setup-cfg-fmt
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.7
+    rev: v0.3.4
     hooks:
       - id: ruff
         args: [--fix, --unsafe-fixes]
-
-  - repo: https://github.com/psf/black
-    rev: 23.11.0
-    hooks:
-      - id: black
+      - id: ruff-format
 
   # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.6.1
+  #   rev: v1.9.0
   #   hooks:
   #     - id: mypy
   #       files: "^src/"

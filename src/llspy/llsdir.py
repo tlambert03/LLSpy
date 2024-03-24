@@ -994,9 +994,7 @@ class LLSdir:
                     logger.warning(f"Channel {chan} not present in datset! Excluding.")
             if np.max(list(_schema.cRange)) > (self.parameters.nc - 1):
                 logger.warning(
-                    "cRange was larger than number of Channels! Excluding C > {}".format(
-                        self.parameters.nc - 1
-                    )
+                    f"cRange was larger than number of Channels! Excluding C > {self.parameters.nc - 1}"
                 )
             _schema.cRange = outrange
 

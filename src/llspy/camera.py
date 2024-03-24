@@ -85,9 +85,7 @@ def selectiveMedianFilter(
                 100 * np.sum(pixelMatrix.flatten()) / float(len(pixelMatrix.flatten()))
             )
             print(
-                "Bad pixels detected: {} {:0.2f}".format(
-                    np.sum(pixelMatrix.flatten()), pixpercent
-                )
+                f"Bad pixels detected: {np.sum(pixelMatrix.flatten())} {pixpercent:0.2f}"
             )
 
         dt = stack.dtype

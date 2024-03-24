@@ -144,9 +144,7 @@ class LLSsettings:
                 continue
         if self.date is None:
             logger.error(
-                "Error, could not parse datestring {} with any of formats {}".format(
-                    datestring, dateformats
-                )
+                f"Error, could not parse datestring {datestring} with any of formats {dateformats}"
             )
 
         # print that with dateobject.strftime('%x %X %p')

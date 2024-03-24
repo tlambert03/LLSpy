@@ -11,13 +11,13 @@ from .img_window import Ui_Dialog
 
 matplotlib.use("Qt5Agg")
 
-from matplotlib.backends.backend_qt5agg import (  # noqa: E402
+from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
 )
-from matplotlib.backends.backend_qt5agg import (  # noqa: E402
+from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar,
 )
-from matplotlib.figure import Figure  # noqa: E402
+from matplotlib.figure import Figure
 
 logger = logging.getLogger(__name__)
 

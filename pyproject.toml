@@ -53,15 +53,7 @@ pyqt5 = ["PyQt5"]
 pyside2 = ["PySide2"]
 spimagine = ["spimagine"]
 test = ["pytest", "pytest-cov", "pytest-qt"]
-dev = [
-    "black",
-    "ipython",
-    "mypy",
-    "pdbpp",      # https://github.com/pdbpp/pdbpp
-    "pre-commit",
-    "rich",       # https://github.com/Textualize/rich
-    "ruff",
-]
+dev = ["ipython", "mypy", "pdbpp", "pre-commit", "rich", "ruff"]
 
 [project.urls]
 homepage = "https://github.com/tlambert03/LLSpy"
@@ -79,6 +71,8 @@ where = ["src"]
 line-length = 88
 target-version = "py37"
 src = ["src"]
+
+[tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules
 select = [
     "E",    # style errors

@@ -46,7 +46,7 @@ from scipy import ndimage, optimize, stats
 
 matplotlib.use("Qt5Agg")
 
-import matplotlib.pyplot as plt  # noqa
+import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
 np.seterr(divide="ignore", invalid="ignore")
@@ -94,9 +94,7 @@ def get_thresh(im, mincount=None, steps=100):
     object_count = np.array(object_count)
     if mincount > object_count.max():
         raise RegistrationError(
-            "Could not detect minimum number of beads specified ({}), found: {}".format(
-                mincount, object_count.max()
-            )
+            f"Could not detect minimum number of beads specified ({mincount}), found: {object_count.max()}"
         )
     modecount = stats.mode(object_count[(object_count >= mincount)], axis=None).mode[0]
     logging.debug(
@@ -1174,9 +1172,7 @@ class RegFile:
             )
         if mode not in self.tform_dict[ref][moving]:
             raise RegistrationError(
-                "Transform mode {} not found for refwave: {}, movingwave: {}".format(
-                    mode, ref, moving
-                )
+                f"Transform mode {mode} not found for refwave: {ref}, movingwave: {moving}"
             )
 
         return self.tform_dict[ref][moving][mode]

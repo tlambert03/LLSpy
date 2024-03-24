@@ -159,9 +159,9 @@ def main():
             QtWidgets.QMessageBox.information(
                 mainGUI,
                 "Newer Version Available!",
-                "Update available: v{}\n\nYou are using v{}\n\nIf you are using "
+                f"Update available: v{newestVersion}\n\nYou are using v{llspy.__version__}\n\nIf you are using "
                 'anaconda, you may update by typing "conda update -c talley llspy" '
-                "at the anaconda prompt".format(newestVersion, llspy.__version__),
+                "at the anaconda prompt",
                 QtWidgets.QMessageBox.Ok,
                 QtWidgets.QMessageBox.NoButton,
             )

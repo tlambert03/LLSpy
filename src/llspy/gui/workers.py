@@ -63,8 +63,11 @@ class SubprocessWorker(QtCore.QObject):
         """
         logger.debug(f"Subprocess {self.name} START")
         self._logger.info(
-            "~" * 20 + "\nRunning {} thread_{} with args: "
-            "\n{}\n".format(self.binary, self.id, " ".join(self.args)) + "\n"
+            "~" * 20
+            + "\nRunning {} thread_{} with args: " "\n{}\n".format(
+                self.binary, self.id, " ".join(self.args)
+            )
+            + "\n"
         )
         self.process.finished.connect(self.onFinished)
         self.process.finished.connect(
@@ -186,9 +189,7 @@ class CompressionWorker(SubprocessWorker):
                         break
             if not self.binary:
                 raise err.MissingBinaryError(
-                    "No binary found for compression program: {}".format(
-                        llspy.compress.EXTENTIONS[tar_extension]
-                    )
+                    f"No binary found for compression program: {llspy.compress.EXTENTIONS[tar_extension]}"
                 )
             self.args = ["-dv", tar_compressed]
             self.process.finished.connect(
@@ -320,8 +321,8 @@ def divide_arg_queue(E, n_gpus, binary):
                 if len(tRange) == E.parameters.nt:
                     cudaOpts["filename-pattern"] = f"_ch{chan}_"
                 else:
-                    cudaOpts["filename-pattern"] = "_ch{}.*_stack{}".format(
-                        chan, llspy.util.pyrange_to_perlregex(tRange)
+                    cudaOpts["filename-pattern"] = (
+                        f"_ch{chan}.*_stack{llspy.util.pyrange_to_perlregex(tRange)}"
                     )
 
                 argQueue.append(binary.assemble_args(**cudaOpts))

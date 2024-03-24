@@ -3,7 +3,7 @@ import unittest
 
 sys.path.append("..")
 
-from llspy import parse  # noqa
+from llspy import parse
 
 
 class FilenameTests(unittest.TestCase):
