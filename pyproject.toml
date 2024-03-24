@@ -42,7 +42,7 @@ dependencies = [
     "tifffile >=2023.9",
     "voluptuous ~=0.14",
     "watchdog ~=3.0",
-    "numba;python_version < '3.12'",
+    "numba;python_version < '3.13'",
     "importlib_metadata; python_version < '3.8'",
 ]
 
