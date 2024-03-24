@@ -181,9 +181,7 @@ def deskewGPU(im, dz=0.5, dr=0.102, angle=31.5, width=0, shift=0, padVal=0.0):
         im = im.astype(np.float32)
     # have to calculate this here to know the size of the return array
     if width == 0:
-        deskewedNx = np.int(
-            nx + np.floor(nz * dz * abs(np.cos(angle * np.pi / 180)) / dr)
-        )
+        deskewedNx = int(nx + np.floor(nz * dz * abs(np.cos(angle * np.pi / 180)) / dr))
     else:
         deskewedNx = width
 
@@ -216,7 +214,7 @@ def affineGPU(im, tmat, dzyx=None):
     result = np.empty((nz, ny, nx), dtype=np.float32)
     if (
         isinstance(dzyx, (tuple, list))
-        and all([isinstance(i, float) for i in dzyx])
+        and all(isinstance(i, float) for i in dzyx)
         and len(dzyx) == 3
     ):
         # note, dzyx coordinate order is flipped when handing to Affine_interface_RA
@@ -301,7 +299,7 @@ def RL_init(
     deskew=31.5,
     rotate=0,
     width=0,
-    **kwargs
+    **kwargs,
 ):
     requireCUDAlib()
     nz, ny, nx = rawdata_shape
@@ -417,7 +415,6 @@ if __name__ == "__main__":
             plt.show()
             RL_cleanup()
         elif sys.argv[1] == "camcor":
-
             import time
 
             from llspy import llsdir, samples

@@ -13,13 +13,12 @@ from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import tifffile as tf
-
-from llspy.libcudawrapper import affineGPU, deskewGPU, quickDecon
 from parse import parse as _parse
 
-from . import arrayfun, compress, config
+from llspy.libcudawrapper import affineGPU, deskewGPU, quickDecon
+
+from . import arrayfun, compress, config, parse, schema, util
 from . import otf as otfmodule
-from . import parse, schema, util
 from .camera import CameraParameters, selectiveMedianFilter
 from .cudabinwrapper import CUDAbin
 from .exceptions import LLSpyError, OTFError
@@ -119,7 +118,7 @@ def filter_stack(filename, outname, dx, background, trim, medianFilter):
     stack = util.imread(filename)
     if medianFilter:
         stack, _ = selectiveMedianFilter(stack, background)
-    if any([any(i) for i in trim]):
+    if any(any(i) for i in trim):
         stack = arrayfun.trimedges(stack, trim)
     util.imsave(util.reorderstack(np.squeeze(stack), "zyx"), outname, dx=dx, dz=1)
 
@@ -170,14 +169,14 @@ def get_regObj(regCalibPath):
     return refObj
 
 
-def register_folder(
-    folder, regRefWave, regMode, regObj, voxsize=[1, 1, 1], discard=False
-):
+def register_folder(folder, regRefWave, regMode, regObj, voxsize=None, discard=False):
     """Register all (non-reference) wavelengths in a folder to the specified
     reference wavelength, using the provided regObj.
 
     voxsize must be an array of pixel sizes [dz, dy, dx]
     """
+    if voxsize is None:
+        voxsize = [1, 1, 1]
     if isinstance(regObj, str):
         regObj = get_regObj(regObj)
     folder = str(folder)
@@ -266,7 +265,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
     if not isinstance(exp, LLSdir):
         if isinstance(exp, str):
             exp = LLSdir(exp)
-    logger.debug(f"Preview called on {str(exp.path)}")
+    logger.debug(f"Preview called on {exp.path!s}")
     logger.debug(f"Params: {exp.parameters}")
 
     if exp.is_compressed():
@@ -308,7 +307,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
         else:
             # camera correction trims edges, so if we aren't doing the camera correction
             # we need to call the edge trim on our own
-            if any([any(i) for i in (P.trimZ, P.trimY, P.trimX)]):
+            if any(any(i) for i in (P.trimZ, P.trimY, P.trimX)):
                 stacks = [
                     arrayfun.trimedges(s, (P.trimZ, P.trimY, P.trimX)) for s in stacks
                 ]
@@ -367,8 +366,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
                             )
                 else:
                     logger.error(
-                        "Registration Calibration dir not valid"
-                        "{}".format(P.regCalibPath)
+                        "Registration Calibration dir not valid" f"{P.regCalibPath}"
                     )
 
         out.append(np.stack(stacks, 0))
@@ -399,7 +397,7 @@ def process(exp, binary=None, **kwargs):
     if not isinstance(exp, LLSdir):
         if isinstance(exp, str):
             exp = LLSdir(exp)
-    logger.debug(f"Process called on {str(exp.path)}")
+    logger.debug(f"Process called on {exp.path!s}")
     logger.debug(f"Params: {exp.parameters}")
 
     if exp.is_compressed():
@@ -419,7 +417,7 @@ def process(exp, binary=None, **kwargs):
 
     if P.correctFlash:
         exp.path = exp.correct_flash(**P)
-    elif P.medianFilter or any([any(i) for i in (P.trimX, P.trimY, P.trimZ)]):
+    elif P.medianFilter or any(any(i) for i in (P.trimX, P.trimY, P.trimZ)):
         exp.path = exp.median_and_trim(**P)
 
     if P.nIters > 0 or P.saveDeskewedRaw or P.rotate:
@@ -449,9 +447,7 @@ def process(exp, binary=None, **kwargs):
             ):  # processing all the timepoints
                 filepattern = f"ch{chan}_"
             else:
-                filepattern = "ch{}_stack{}".format(
-                    chan, util.pyrange_to_perlregex(P.tRange)
-                )
+                filepattern = f"ch{chan}_stack{util.pyrange_to_perlregex(P.tRange)}"
 
             binary.process(str(exp.path), filepattern, P.otfs[chan], **opts)
 
@@ -499,7 +495,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         fpattern = __FPATTERN__
     folder = plib.Path(folder)
     if not folder.is_dir():
-        raise OSError(f"MIP folder does not exist: {str(folder)}")
+        raise OSError(f"MIP folder does not exist: {folder!s}")
 
     try:
         filelist = []
@@ -556,7 +552,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
         return stack
 
     except ValueError as e:
-        logger.error(f"ERROR: failed to merge MIPs from {str(folder)}: ")
+        logger.error(f"ERROR: failed to merge MIPs from {folder!s}: ")
         logger.error(f"{e}")
 
 
@@ -840,12 +836,10 @@ class LLSdir:
             with tf.TiffFile(self.tiff.raw[0]) as firstTiff:
                 self.parameters.shape = firstTiff.series[0].shape
                 try:
-                    self.tiff.bit_depth = getattr(firstTiff.pages[0], "bitspersample")
+                    self.tiff.bit_depth = firstTiff.pages[0].bitspersample
                 except AttributeError:
                     try:
-                        self.tiff.bit_depth = getattr(
-                            firstTiff.pages[0], "bits_per_sample"
-                        )
+                        self.tiff.bit_depth = firstTiff.pages[0].bits_per_sample
                     except AttributeError:
                         self.tiff.bit_depth = 16
         (
@@ -924,9 +918,7 @@ class LLSdir:
                     shutil.rmtree(str(self.path.joinpath(folder)))
                 except Exception as e:
                     logger.error(
-                        "unable to remove directory: {}".format(
-                            self.path.joinpath(folder)
-                        )
+                        f"unable to remove directory: {self.path.joinpath(folder)}"
                     )
                     logger.error(e)
                     return 0
@@ -977,7 +969,7 @@ class LLSdir:
         """
         # allow for 'lazy' storage of previously calculated value
         if "_localParams" in dir(self) and not recalc:
-            if all([self._localParams[k] == v for k, v in kwargs.items()]):
+            if all(self._localParams[k] == v for k, v in kwargs.items()):
                 return self._localParams
         _schema = schema.procParams(kwargs)
         assert (
@@ -1002,9 +994,7 @@ class LLSdir:
                     logger.warning(f"Channel {chan} not present in datset! Excluding.")
             if np.max(list(_schema.cRange)) > (self.parameters.nc - 1):
                 logger.warning(
-                    "cRange was larger than number of Channels! Excluding C > {}".format(
-                        self.parameters.nc - 1
-                    )
+                    f"cRange was larger than number of Channels! Excluding C > {self.parameters.nc - 1}"
                 )
             _schema.cRange = outrange
 
@@ -1021,15 +1011,11 @@ class LLSdir:
                 _schema.tRange = [minT]
             if max(list(_schema.tRange)) > maxT:
                 logger.warning(
-                    "max tRange was greater than the last timepoint. Excluding T > {}".format(
-                        maxT
-                    )
+                    f"max tRange was greater than the last timepoint. Excluding T > {maxT}"
                 )
             if min(list(_schema.tRange)) < minT:
                 logger.warning(
-                    "min tRange was less than the first timepoint. Excluding < {}".format(
-                        minT
-                    )
+                    f"min tRange was less than the first timepoint. Excluding < {minT}"
                 )
 
         assert len(_schema.tRange), "No valid timepoints!"
@@ -1180,14 +1166,11 @@ class LLSdir:
             if mask:
                 raise OTFError(
                     "Could not find OTF for "
-                    "wave {}, mask {}-{} in path: {}".format(
-                        wave, outerNA, innerNA, otfpath
-                    )
+                    f"wave {wave}, mask {outerNA}-{innerNA} in path: {otfpath}"
                 )
             else:
                 raise OTFError(
-                    "Could not find OTF for "
-                    "wave {} in path: {}".format(wave, otfpath)
+                    "Could not find OTF for " f"wave {wave} in path: {otfpath}"
                 )
         return otf
 
@@ -1226,7 +1209,6 @@ class LLSdir:
         trimX=(0, 0),
         **kwargs,
     ):
-
         trim = (trimZ, trimY, trimX)
 
         outpath = self.path.joinpath("Corrected")
@@ -1364,9 +1346,7 @@ class LLSdir:
                     D, regRefWave, regMode, regObj, voxsize, discard=discard
                 )
         else:
-            logger.error(
-                "Registration Calibration path not valid" "{}".format(regCalibPath)
-            )
+            logger.error("Registration Calibration path not valid" f"{regCalibPath}")
 
     def toJSON(self):
         import json
@@ -1428,7 +1408,7 @@ class RegDir(LLSdir):
         return [util.imread(f) for f in self.get_t(self.t)]
 
     def has_data(self):
-        return all([isinstance(a, np.ndarray) for a in self.data])
+        return all(isinstance(a, np.ndarray) for a in self.data)
 
     def toJSON(self):
         D = self.__dict__.copy()
@@ -1503,7 +1483,7 @@ class RegDir(LLSdir):
                 if isinstance(obj, np.ndarray):
                     if all(isinstance(i, np.ndarray) for i in obj):
                         nestedList = obj.tolist()
-                        result = [self.fixedString(l) for l in nestedList]
+                        result = [self.fixedString(x) for x in nestedList]
                         return result
                     else:
                         return obj.tolist()

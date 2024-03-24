@@ -119,4 +119,4 @@ tests/testdata/sample/MIPs/
 tests/testdata/sample/sample_ProcessingLog.txt
 tests/testdata/sample/GPUdecon/
 
-llspy/_version.py
+src/llspy/_version.py

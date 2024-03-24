@@ -27,7 +27,6 @@ class NoExceptionTracebackFormatter(logging.Formatter):
 
 
 class NotificationHandler(QObject, logging.Handler):
-
     emitSignal = Signal(str)
 
     def __init__(self):
@@ -58,6 +57,6 @@ class LogFileHandler(RotatingFileHandler):
 
     def filter(self, record):
         permitted = ["root", "llspy", "spimagine", "fiducialreg", "gputools"]
-        if any(record.name.startswith(l) for l in permitted):
+        if any(record.name.startswith(x) for x in permitted):
             return True
         return False

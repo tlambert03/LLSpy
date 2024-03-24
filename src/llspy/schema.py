@@ -28,7 +28,7 @@ def CTiterable(v):
         iter(v)
     except TypeError:
         raise TypeError("Not an iterable object")
-    if not all([(isinstance(i, int) and i >= 0) for i in v]):
+    if not all((isinstance(i, int) and i >= 0) for i in v):
         raise ValueError("All values in Channel/Time range must be integers >= 0")
     return v
 
@@ -339,7 +339,7 @@ def validateItems(**kwargs):
         if k not in __validator__:
             print(f"ERROR! got unrecognized key: {k}")
             return 0
-    S = Schema({k: v for k, v in __validator__.items()}, extra=PREVENT_EXTRA)
+    S = Schema(dict(__validator__.items()), extra=PREVENT_EXTRA)
     return validate_with_humanized_errors(kwargs, S)
 
 

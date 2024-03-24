@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import gaussian_filter
 from scipy.stats import mode
 
 from .libcudawrapper import deskewGPU as deskew
@@ -38,7 +38,7 @@ def threshold_li(image):
         raise ValueError(
             "threshold_li is expected to work with images "
             "having more than one value. The input image seems "
-            "to have just one value {}.".format(image.flat[0])
+            f"to have just one value {image.flat[0]}."
         )
 
     # Copy to ensure input image is not modified
@@ -97,7 +97,7 @@ def imcontentbounds(im, sigma=2):
     # get rid of the first two planes in case of high dark noise
     if im.ndim == 3:
         im = np.squeeze(np.max(im[2:], 0))
-    im = im.astype(np.float)
+    im = im.astype(float)
     fullwidth = im.shape[-1]
     # from scipy.ndimage.filters import median_filter
     # mm = median_filter(b.astype(float),3)
@@ -148,14 +148,14 @@ def detect_background(im):
         im = im[0][2]
     if im.ndim == 3:
         im = im[1]  # pick the third plane... avoid noise in first plane on lattice
-    return mode(im.flatten())[0][0]
+    return mode(im.flatten()).mode
 
 
 def sub_background(im, background=None):
     """subtract provided background or autodetct as mode of the first plane"""
     if background is None:
         background = detect_background(im)
-    out = im.astype(np.float) - background
+    out = im.astype(float) - background
     out[out < 0] = 0
     return out
 
@@ -173,7 +173,7 @@ def deskew_gputools(rawdata, dz=0.5, dx=0.102, angle=31.5, filler=0):
     (nz, ny, nx) = rawdata.shape
     # Francois' method:
     # nxOut = math.ceil((nz - 1) * deskewFactor) + nx
-    nxOut = np.int(np.floor((nz - 1) * dz * abs(np.cos(angle * np.pi / 180)) / dx) + nx)
+    nxOut = int(np.floor((nz - 1) * dz * abs(np.cos(angle * np.pi / 180)) / dx) + nx)
     # +1 to pad left side with 1 column of filler pixels
     # otherwise, edge pixel values are smeared across the image
     paddedData = np.ones((nz, ny, nxOut), rawdata.dtype) * filler

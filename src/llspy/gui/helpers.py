@@ -95,7 +95,7 @@ def string_to_iterable(string):
             it.extend(list(range(int(item[0]), int(item[1]) + 1, int(item[2]))))
         else:
             raise ValueError("Iterable string items must be of length <= 3")
-    return sorted(list(set(it)))
+    return sorted(set(it))
 
 
 def guisave(widget, settings):

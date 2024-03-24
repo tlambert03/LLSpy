@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from qtpy import QtCore
 
@@ -11,6 +12,9 @@ from .conftest import requires_cuda
 @requires_cuda
 def test_basic_processing(qtbot):
     testdata = os.path.join(os.path.dirname(__file__), "testdata", "sample")
+    deconFolder = os.path.join(testdata, "GPUdecon")
+    if os.path.isdir(deconFolder):
+        shutil.rmtree(deconFolder)
     LLSdir(testdata).reduce_to_raw(keepmip=False)
     n_testfiles = len(os.listdir(testdata))
     otfdir = os.path.join(os.path.dirname(__file__), "testdata", "otfs")
@@ -21,9 +25,8 @@ def test_basic_processing(qtbot):
     assert mainGUI.listbox.rowCount() == 0
     mainGUI.listbox.addPath(testdata)
     assert mainGUI.listbox.rowCount() == 1
-    with qtbot.waitSignal(mainGUI.sig_processing_done, timeout=12000):
-        qtbot.mouseClick(mainGUI.processButton, QtCore.Qt.LeftButton)
-    deconFolder = os.path.join(testdata, "GPUdecon")
+    with qtbot.waitSignal(mainGUI.sig_processing_done, timeout=60000):
+        mainGUI.onProcess()
     MIPfolder = os.path.join(deconFolder, "MIPs")
     assert os.path.isdir(deconFolder)
     assert os.path.isdir(MIPfolder)

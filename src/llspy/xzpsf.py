@@ -24,9 +24,7 @@ def main(infile, nx, nz, sig=1, pad=12):
     maxy, maxx = np.argwhere(mipblur == mipblur.max())[0]
     print(f"bead detected at ({maxx},{maxy})")
 
-    beadslice = indat[:, maxy - pad : maxy + pad, maxx - pad : maxx + pad].astype(
-        np.float
-    )
+    beadslice = indat[:, maxy - pad : maxy + pad, maxx - pad : maxx + pad].astype(float)
     background = indat[:, :, 2].mean(1)
     beadsums = beadslice.sum((1, 2)) - (
         4 * pad * pad * background
@@ -80,7 +78,6 @@ def find_settext(path, filepattern="*Settings.txt"):
 
 
 if __name__ == "__main__":
-
     import argparse
 
     parser = argparse.ArgumentParser()

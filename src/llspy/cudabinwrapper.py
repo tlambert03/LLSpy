@@ -349,7 +349,7 @@ class CUDAbin:
 
     def has_option(self, flag):
         """check the existence of a given flag in the binary help string."""
-        return any([flag in key for key in self.options.keys()])
+        return any(flag in key for key in self.options.keys())
 
     def has_option_longname(self, name):
         """check the existence of a given flag in the binary help string."""
@@ -372,7 +372,7 @@ class CUDAbin:
         print the description provided in the binary help string for a given flag
         """
         if self.has_option(flag):
-            return self.options[[key for key in self.options.keys() if flag in key][0]]
+            return self.options[next(key for key in self.options.keys() if flag in key)]
         else:
             logger.warning(f'The flag "{flag}" is not listed in the help string.')
 

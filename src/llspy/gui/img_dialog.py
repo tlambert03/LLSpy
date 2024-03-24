@@ -11,13 +11,13 @@ from .img_window import Ui_Dialog
 
 matplotlib.use("Qt5Agg")
 
-from matplotlib.backends.backend_qt5agg import (  # noqa: E402
+from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
 )
-from matplotlib.backends.backend_qt5agg import (  # noqa: E402
+from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar,
 )
-from matplotlib.figure import Figure  # noqa: E402
+from matplotlib.figure import Figure
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,6 @@ class channelSelector(QtWidgets.QWidget):
 
 
 class DataModel(QtCore.QObject):
-
     _idxChanged = QtCore.Signal()
     _dataChanged = QtCore.Signal()
 
@@ -138,13 +137,13 @@ class DataModel(QtCore.QObject):
         self.isComplex = data.dtype == np.complex64 or data.dtype == np.complex128
 
         if self.ndim == 2:
-            self.shape = (1, 1, 1) + data.shape
+            self.shape = (1, 1, 1, *data.shape)
             self.data = data.copy().reshape(self.shape)
         elif self.ndim == 3:
-            self.shape = (1, 1) + data.shape
+            self.shape = (1, 1, *data.shape)
             self.data = data.copy().reshape(self.shape)
         elif self.ndim == 4:
-            self.shape = (1,) + data.shape
+            self.shape = (1, *data.shape)
             self.data = data.copy().reshape(self.shape)
         elif self.ndim == 5:
             self.shape = data.shape
@@ -233,7 +232,7 @@ class DataModel(QtCore.QObject):
                 if not self.chanSettings[chan]["active"]:
                     continue
                 lut = self.chanSettings[chan]["lut"]
-                D = np.maximum(data[chan].astype(np.float) - self.cmin[chan], 0)
+                D = np.maximum(data[chan].astype(float) - self.cmin[chan], 0)
                 D /= self.cmax[chan] if self.projection is None else D.max()
                 D *= self.chanSettings[chan]["scale"]
                 D = np.tile(D, (3, 1, 1)).transpose(1, 2, 0)
@@ -294,7 +293,6 @@ class DataModel(QtCore.QObject):
 
 
 class MplCanvas(FigureCanvas):
-
     _contrastChanged = QtCore.Signal()
 
     def __init__(self):
@@ -317,7 +315,7 @@ class MplCanvas(FigureCanvas):
 
     def setDisplayOptions(self, options):
         self.displayOptions = options
-        if not ("cmap" in self.displayOptions):
+        if "cmap" not in self.displayOptions:
             self.displayOptions["cmap"] = "cubehelix"
         self.cmaps = tuple(
             {self.displayOptions["cmap"], "gray", "afmhot", "cubehelix", "inferno"}
@@ -569,8 +567,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         slid = getattr(self, axis.upper() + "slider")
         if n > 1:
             if not (
-                (axis == "z" and getattr(self.data, "projection"))
-                or (axis == "c" and getattr(self.data, "_overlay"))
+                (axis == "z" and self.data.projection)
+                or (axis == "c" and self.data._overlay)
             ):
                 widg.show()
                 slid.setMaximum(n - 1)
@@ -582,7 +580,6 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
             self.update_axis_slider(axis, n)
 
     def initialize(self):
-
         datamax = self.data.max()
         datamin = self.data.min()
         # dataRange = datamax - datamin

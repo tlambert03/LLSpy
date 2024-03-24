@@ -57,7 +57,7 @@ def find_libpath(path):
         if is_libpath(os.path.join(path, "lib")):
             return os.path.join(path, "lib")
     else:
-        for dirpath, dirnames, filenames in os.walk(path):
+        for _dirpath, dirnames, _filenames in os.walk(path):
             for P in dirnames:
                 if is_libpath(P):
                     return P
@@ -77,7 +77,7 @@ def find_binpath(path):
         if is_binpath(os.path.join(path, "bin")):
             return os.path.join(path, "bin")
     else:
-        for dirpath, dirnames, filenames in os.walk(path):
+        for _dirpath, dirnames, _filenames in os.walk(path):
             for P in dirnames:
                 if is_binpath(P):
                     return P
@@ -156,9 +156,7 @@ def install(dirpath, dryrun=False):
                         os.remove(D)
                     except PermissionError:
                         print(
-                            "Permission Error: you must manually remove or replace this file: {}".format(
-                                D
-                            )
+                            f"Permission Error: you must manually remove or replace this file: {D}"
                         )
                         continue
                 copyfile(src, D)

@@ -43,7 +43,7 @@ class CamCalibWorker(QtCore.QObject):
             # first handle dark images
             darkavg = self.darkavg
             darkstd = self.darkstd
-            if not all([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]):
+            if not all(isinstance(a, np.ndarray) for a in (darkavg, darkstd)):
                 self.setStatus.emit("Loading dark images... [Step 1 of 4]")
                 darklist = glob.glob(os.path.join(self.folder, "*dark*.tif"))
                 numdark = len(darklist)
@@ -126,7 +126,6 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
             self.darkSTDineEdit.setText(os.path.join(folder, "dark_STD.tif"))
 
     def processFolder(self):
-
         folder = self.camCalibFolderLineEdit.text()
 
         darkavg = None
@@ -140,7 +139,7 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
         elif os.path.isfile(os.path.join(folder, "dark_STD.tif")):
             darkstd = tf.imread(os.path.join(folder, "dark_STD.tif"))
 
-        if not all([isinstance(a, np.ndarray) for a in (darkavg, darkstd)]):
+        if not all(isinstance(a, np.ndarray) for a in (darkavg, darkstd)):
             if not pathHasPattern(folder, "*dark*.tif*"):
                 QtW.QMessageBox.warning(
                     self,
@@ -214,7 +213,6 @@ class CamCalibDialog(QtW.QDialog, camcorDialog):
 
 
 if __name__ == "__main__":
-
     app = QtW.QApplication(sys.argv)
     # dlg = LogWindow()
     # dlg.show()

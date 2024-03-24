@@ -18,7 +18,6 @@ class DimensionManager:
     def __init__(
         self, DimensionName="", NumberOfSamples=2, Delta=1, StartCoordinateInWorld=0.5
     ):
-
         if DimensionName not in ["X", "Y", "Z"]:
             raise ValueError("DimensionName must be X, Y, or Z")
         self.DimensionName = DimensionName
@@ -122,13 +121,13 @@ class imref2d:
             self.Dimension.X = DimensionManager("X", args[0][1])
             self.Dimension.Y = DimensionManager("Y", args[0][0])
         elif len(args) == 3:
-            if all([isinstance(x, (list, np.ndarray)) for x in args[1:3]]):
+            if all(isinstance(x, (list, np.ndarray)) for x in args[1:3]):
                 # world limits provided
                 self.Dimension.X = DimensionManager("X", args[0][1])
                 self.Dimension.Y = DimensionManager("Y", args[0][0])
                 self.XWorldLimits = args[1]
                 self.YWorldLimits = args[2]
-            elif all([np.isscalar(x) for x in args[1:3]]):
+            elif all(np.isscalar(x) for x in args[1:3]):
                 # imref2d(imageSize,pixelExtentInWorldX,pixelExtentInWorldY)
                 self.Dimension.X = DimensionManager(
                     "X", args[0][1], args[1], args[1] / 2
@@ -219,7 +218,7 @@ class imref2d:
     def worldToSubscript(self, xWorld, yWorld):
         if len({type(n) for n in (xWorld, yWorld)}) > 1:
             raise ValueError("All inputs to worldToSubscript must have same type")
-        if not any([np.isscalar(n) for n in (xWorld, yWorld)]):
+        if not any(np.isscalar(n) for n in (xWorld, yWorld)):
             if len({len(n) for n in (xWorld, yWorld)}) > 1:
                 raise ValueError("All inputs to worldToSubscript must have same size")
                 # TODO: check order of CRP output index
@@ -244,13 +243,13 @@ class imref2d:
                 if len(val) == 1:
                     repdict[n] = f"{val[0]:.4f}"
                 else:
-                    if np.issubdtype(val.dtype, np.int):
+                    if np.issubdtype(val.dtype, np.integer):
                         repdict[n] = list(val)
                     else:
-                        repdict[n] = list(f"{i:.4f}" for i in val)
-            elif isinstance(self.__getattribute__(n), (np.float, float)):
+                        repdict[n] = [f"{i:.4f}" for i in val]
+            elif isinstance(self.__getattribute__(n), float):
                 repdict[n] = f"{self.__getattribute__(n):.4f}"
-            elif isinstance(self.__getattribute__(n), (np.int, np.int64, int)):
+            elif isinstance(self.__getattribute__(n), (np.int64, int)):
                 repdict[n] = int(self.__getattribute__(n))
         return pformat(repdict)
 
@@ -288,7 +287,7 @@ class imref3d(imref2d):
             self.Dimension.Y = DimensionManager("Y", args[0][1])
             self.Dimension.Z = DimensionManager("Z", args[0][0])
         elif len(args) == 4:
-            if all([isinstance(x, (list, np.ndarray)) for x in args[1:4]]):
+            if all(isinstance(x, (list, np.ndarray)) for x in args[1:4]):
                 # imref3d(imageSize,pixelExtentInWorldX,pixelExtentInWorldY,pixelExtentInWorldZ)
                 self.Dimension.X = DimensionManager("X", args[0][2])
                 self.Dimension.Y = DimensionManager("Y", args[0][1])
@@ -296,7 +295,7 @@ class imref3d(imref2d):
                 self.XWorldLimits = args[1]
                 self.YWorldLimits = args[2]
                 self.ZWorldLimits = args[3]
-            elif all([np.isscalar(x) for x in args[1:4]]):
+            elif all(np.isscalar(x) for x in args[1:4]):
                 # imref3d(imageSize,xWorldLimits,yWorldLimits,zWorldLimits)
                 self.Dimension.X = DimensionManager(
                     "X", args[0][2], args[1], args[1] / 2
@@ -377,7 +376,7 @@ class imref3d(imref2d):
     def worldToSubscript(self, xWorld, yWorld, zWorld):
         if len({type(n) for n in (xWorld, yWorld, zWorld)}) > 1:
             raise ValueError("All inputs to worldToSubscript must have same type")
-        if not any([np.isscalar(n) for n in (xWorld, yWorld, zWorld)]):
+        if not any(np.isscalar(n) for n in (xWorld, yWorld, zWorld)):
             if len({len(n) for n in (xWorld, yWorld, zWorld)}) > 1:
                 raise ValueError("All inputs to worldToSubscript must have same size")
                 # TODO: check order of CRP output index
@@ -395,7 +394,7 @@ class imref3d(imref2d):
 
         return c, r, p
 
-    def sizesMatch(self, I):
+    def sizesMatch(self, x):
         raise NotImplementedError()
         # imageSize = I.shape
         # if ~isequal(size(self.ImageSize), size(imageSize))

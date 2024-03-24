@@ -6,13 +6,13 @@ import os
 import os.path as osp
 
 import numpy as np
-from fiducialreg.fiducialreg import RegFile, RegistrationError
 from qtpy import QtCore, QtGui
 from qtpy import QtWidgets as QtW
 
 import llspy
 import llspy.gui.exceptions as err
 import llspy.llsdir
+from fiducialreg.fiducialreg import RegFile, RegistrationError
 from llspy.gui import workers
 from llspy.gui.camcalibgui import CamCalibDialog
 from llspy.gui.helpers import (
@@ -79,7 +79,18 @@ if not sessionSettings.value("disableSpimagineCheckBox", False, type=bool):
 
 
 class LLSDragDropTable(QtW.QTableWidget):
-    colHeaders = ["path", "name", "nC", "nT", "nZ", "nY", "nX", "angle", "dz", "dx"]
+    colHeaders = [  # noqa
+        "path",
+        "name",
+        "nC",
+        "nT",
+        "nZ",
+        "nY",
+        "nX",
+        "angle",
+        "dz",
+        "dx",
+    ]
     nCOLS = len(colHeaders)
 
     # A signal needs to be defined on class level:
@@ -537,17 +548,12 @@ class RegistrationTab:
         try:
             with open(file) as json_data:
                 regdict = json.load(json_data)
-            refs = sorted(list({t["reference"] for t in regdict["tforms"]}))
+            refs = sorted({t["reference"] for t in regdict["tforms"]})
             # mov = set([t['moving'] for t in regdict['tforms']])
             modes = ["None"]
             modes.extend(
                 sorted(
-                    list(
-                        {
-                            t["mode"].title().replace("Cpd", "CPD")
-                            for t in regdict["tforms"]
-                        }
-                    )
+                    {t["mode"].title().replace("Cpd", "CPD") for t in regdict["tforms"]}
                 )
             )
             self.RegCalib_channelRefCombo.clear()
@@ -1138,14 +1144,12 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             viewer.dims.ndisplay = 3
             self.spimwins.append(viewer)
         elif self.prevBackendSpimagineRadio.isChecked() and _SPIMAGINE_IMPORTED:
-
             if np.squeeze(array).ndim > 4:
                 arrays = [array[:, i] for i in range(array.shape[1])]
             else:
                 arrays = [np.squeeze(array)]
 
             for arr in arrays:
-
                 datamax = arr.max()
                 datamin = arr.min()
                 dataRange = datamax - datamin
@@ -1660,7 +1664,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             [self.listbox.addPath(p) for p in selectedPaths]
 
     def undoRenameSelected(self):
-
         box = QtW.QMessageBox()
         box.setWindowTitle("Undo Renaming")
         box.setText(
@@ -1695,7 +1698,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             paths = self.listbox.renamedPaths
 
         for P in paths:
-            for root, subd, file in os.walk(P):
+            for root, subd, _file in os.walk(P):
                 self.listbox.removePath(root)
                 for d in subd:
                     self.listbox.removePath(os.path.join(root, d))
@@ -1712,7 +1715,6 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
             [self.listbox.addPath(osp.join(item, p)) for p in os.listdir(item)]
 
     def mergeMIPtool(self):
-
         if len(self.listbox.selectedPaths()):
             for obj in self.listbox.selectedObjects():
                 obj.mergemips()
@@ -1733,13 +1735,14 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     def checkBundled(self, value):
         if value:
             try:
-                bin = llspy.cudabinwrapper.get_bundled_binary()
+                bin_ = llspy.cudabinwrapper.get_bundled_binary()
             except llspy.cudabinwrapper.CUDAbinException:
                 logger.warning(
-                    "Could not load bundled cudaDeconv.  Check that it is installed.  read docs"
+                    "Could not load bundled cudaDeconv.  "
+                    "Check that it is installed read docs"
                 )
                 return
-            self.setBinaryPath(bin)
+            self.setBinaryPath(bin_)
         else:
             self.setBinaryPath(self.cudaDeconvPathLineEdit.text())
 
@@ -1835,12 +1838,10 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
         QtW.QMessageBox.about(
             self,
             "LLSpy",
-            """LLSpy v.{}\n
-Copyright ©  {}, President and Fellows of Harvard College.  All rights reserved.\n\n
+            f"""LLSpy v.{llspy.__version__}\n
+Copyright ©  {now.year}, President and Fellows of Harvard College.  All rights reserved.\n\n
 Developed by Talley Lambert\n\n
-The cudaDeconv deconvolution program was written by Lin Shao and by Dan Milkie at Janelia Research Campus, and modified by Talley Lambert for LLSpy.  """.format(
-                llspy.__version__, now.year
-            ),
+The cudaDeconv deconvolution program was written by Lin Shao and by Dan Milkie at Janelia Research Campus, and modified by Talley Lambert for LLSpy.  """,
         )
 
     def showHelpWindow(self):
