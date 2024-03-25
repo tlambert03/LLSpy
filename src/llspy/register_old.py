@@ -90,7 +90,7 @@ def autodetect_peaks(ims, minparticles=4, threshrange=range(200, 520, 20)):
         npeaks = []
         for t in threshrange:
             npeaks.append(len(find_local_maxima(im, t)))
-        mod = stats.mode([p for p in npeaks if p > minparticles])[0]
+        mod = stats.mode([p for p in npeaks if p > minparticles]).mode
         thrsindx = np.argmax(npeaks[::-1] == mod)
         threshes.append(threshrange[thrsindx - 1])
     peaks = [find_local_maxima(ims[i], threshes[i]) for i in range(len(threshes))]

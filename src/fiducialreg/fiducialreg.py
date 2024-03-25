@@ -96,7 +96,7 @@ def get_thresh(im, mincount=None, steps=100):
         raise RegistrationError(
             f"Could not detect minimum number of beads specified ({mincount}), found: {object_count.max()}"
         )
-    modecount = stats.mode(object_count[(object_count >= mincount)], axis=None).mode[0]
+    modecount = stats.mode(object_count[(object_count >= mincount)], axis=None).mode
     logging.debug(
         f"Threshold detected: {threshrange[np.argmax(object_count == modecount)]}"
     )
