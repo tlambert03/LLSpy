@@ -2,7 +2,6 @@
 
 [![license_shield](https://img.shields.io/badge/License-BSD%203--Clause-brightgreen.svg)](https://opensource.org/licenses/BSD-3-Clause)
 ![python_shield](https://img.shields.io/badge/Python-2.7%2C%203.5%2C%203.6-brightgreen.svg)
-[![conda_shield](https://anaconda.org/talley/llspy/badges/installer/conda.svg)](https://conda.anaconda.org/talley)
 [![travis_shield](https://img.shields.io/travis/tlambert03/LLSpy/master.svg)](https://travis-ci.org/tlambert03/LLSpy)
 [![Documentation Status](https://readthedocs.org/projects/llspy/badge/?version=latest)](http://llspy.readthedocs.io/en/latest/?badge=latest)
 [![doi_shield](https://zenodo.org/badge/96235902.svg)](https://zenodo.org/badge/latestdoi/96235902)
