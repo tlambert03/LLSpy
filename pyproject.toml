@@ -10,7 +10,7 @@ write_to = "src/llspy/_version.py"
 name = "llspy"
 dynamic = ["version"]
 description = "Lattice Light Sheet Processing Tools."
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.7"
 license = { text = "BSD-3-Clause" }
 authors = [{ name = "Talley Lambert", email = "talley.lambert@example.com" }]
