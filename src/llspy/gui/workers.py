@@ -443,7 +443,7 @@ class LLSitemWorker(QtCore.QObject):
             # with the argQueue populated, we can now start the workers
             if not len(self.__argQueue):
                 self._logger.error(
-                    "No channel arguments to process in LLSitem: %s" % self.shortname
+                    f"No channel arguments to process in LLSitem: {self.shortname}"
                 )
                 self._logger.debug(f"LLSitemWorker FINISH: {self.E.basename}")
                 self.finished.emit()

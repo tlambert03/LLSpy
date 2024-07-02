@@ -260,7 +260,7 @@ class LLSDragDropTable(QtW.QTableWidget):
                     box.exec_()
 
                 return
-        logger.info("Adding to queue: %s" % shortname(path))
+        logger.info(f"Adding to queue: {shortname(path)}")
 
         rowPosition = self.rowCount()
         self.insertRow(rowPosition)
@@ -396,7 +396,7 @@ class LLSDragDropTable(QtW.QTableWidget):
             for index in sorted(indices):
                 removerow = index.row() - i
                 path = self.getPathByIndex(removerow)
-                logger.info("Removing from queue: %s" % shortname(path))
+                logger.info(f"Removing from queue: {shortname(path)}")
                 self.removePath(path)
                 i += 1
 
