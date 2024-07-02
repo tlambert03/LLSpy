@@ -220,7 +220,7 @@ def register_image_to_wave(
     if not isinstance(regCalibObj, (RegDir, RegFile)):
         raise RegistrationError(
             "Calibration object for register_image_to_wave "
-            "must be either RegDir or RegFile.  Received: %s" % str(type(regCalibObj))
+            f"must be either RegDir or RegFile.  Received: {type(regCalibObj)!s}"
         )
 
     if isinstance(img, np.ndarray):
@@ -876,7 +876,7 @@ class LLSdir:
             return False
 
     def compress(self, subfolder=".", compression=None):
-        logger.info("compressing %s..." % str(self.path.joinpath(subfolder)))
+        logger.info(f"compressing {self.path.joinpath(subfolder)!s}...")
         return compress.compress(
             str(self.path.joinpath(subfolder)), compression=compression
         )
@@ -896,7 +896,7 @@ class LLSdir:
         need to consider the case of sepmips
         """
         if verbose:
-            logger.info("reducing %s..." % str(self.path.name))
+            logger.info(f"reducing {self.path.name!s}...")
 
         subfolders = ["GPUdecon", "CPPdecon", "Deskewed", "Corrected"]
 
@@ -914,7 +914,7 @@ class LLSdir:
             if self.path.joinpath(folder).exists():
                 try:
                     if verbose:
-                        logger.info("\tdeleting %s..." % folder)
+                        logger.info(f"\tdeleting {folder}...")
                     shutil.rmtree(str(self.path.joinpath(folder)))
                 except Exception as e:
                     logger.error(
@@ -1101,7 +1101,7 @@ class LLSdir:
             if self.path.joinpath(subdir).is_dir():
                 subdir = self.path.joinpath(subdir)
             else:
-                logger.error("Could not find subdir: %s" % subdir)
+                logger.error(f"Could not find subdir: {subdir}")
                 return
         else:
             subdir = self.path
@@ -1561,10 +1561,10 @@ def rename_iters(folder, splitpositions=True):
     for it in iterset:
         iterdict[it] = {}
         iterdict[it]["setfile"] = util.find_filepattern(
-            folder, "*Iter_%s_*Settings.txt" % it
+            folder, f"*Iter_{it}_*Settings.txt"
         )
         # all the files from this Iter group
-        g = [f for f in filelist if "Iter_%s_" % it in f]
+        g = [f for f in filelist if f"Iter_{it}_" in f]
         # tuple of nFiles in each channel in this group
         nFilesPerChannel.append(
             tuple(len([f for f in g if "ch%d" % d in f]) for d in chanset)
@@ -1604,7 +1604,7 @@ def rename_iters(folder, splitpositions=True):
         t0 = [0] * nPositions
         for i in iterset:
             flist = sorted(
-                f for f in filelist if "ch%s" % chan in f and "Iter_%s_" % i in f
+                f for f in filelist if f"ch{chan}" in f and f"Iter_{i}_" in f
             )
             for pos in range(nPositions):
                 base = os.path.basename(flist[pos])

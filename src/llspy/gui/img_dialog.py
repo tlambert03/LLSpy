@@ -149,9 +149,7 @@ class DataModel(QtCore.QObject):
             self.shape = data.shape
             self.data = data.copy()
         else:
-            raise TypeError(
-                "data should be 3-5 dimensional! shape = %s" % str(data.shape)
-            )
+            raise TypeError(f"data should be 3-5 dimensional! shape = {data.shape!s}")
 
         self.nT, self.nC, self.nZ, self.nY, self.nX = self.data.shape
         if not self.isComplex:

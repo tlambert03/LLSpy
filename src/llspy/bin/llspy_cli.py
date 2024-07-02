@@ -79,7 +79,7 @@ class Config(dict):
     def print_cfgfile(self):
         if os.path.isfile(self.default_path):
             click.secho(
-                "\nConfig PATH: %s" % click.format_filename(self.default_path),
+                f"\nConfig PATH: {click.format_filename(self.default_path)}",
                 fg="cyan",
             )
             with open(self.default_path) as f:
@@ -100,7 +100,7 @@ class Config(dict):
                 click.echo()
         else:
             click.echo(
-                "No config file found at: %s" % click.format_filename(self.default_path)
+                f"No config file found at: {click.format_filename(self.default_path)}"
             )
 
     def update_default(self, key, value):
@@ -321,7 +321,7 @@ def check_iters(ctx, param, value):
 
         if otfdir is not None and not otf.dir_has_otfs(otfdir):
             click.secho(
-                "\nOTF directory has no OTFs! -> %s" % otfdir, bold=True, fg="red"
+                f"\nOTF directory has no OTFs! -> {otfdir}", bold=True, fg="red"
             )
             fail = True
 
@@ -611,7 +611,7 @@ def decon(config, path, **kwargs):
         click.secho(
             "\n" + "#" * (int(len(str(E.path))) + 24) + "\n##    ", fg="cyan", nl=False
         )
-        click.secho("processing: %s    " % str(E.path), fg="yellow", nl=False)
+        click.secho(f"processing: {E.path!s}    ", fg="yellow", nl=False)
         click.secho("##\n" + "#" * (int(len(str(E.path))) + 24) + "\n", fg="cyan")
 
         if options["correctFlash"]:
@@ -664,9 +664,9 @@ def decon(config, path, **kwargs):
                 except voluptuous.error.MultipleInvalid as e:
                     e = str(e).replace("@ data['", "for ")
                     e = e.strip("'][0]")
-                    click.secho("VALIDATION ERROR: %s" % e, fg="red")
+                    click.secho(f"VALIDATION ERROR: {e}", fg="red")
                 except exceptions.LLSpyError as e:
-                    click.secho("ERROR: %s" % e, fg="red")
+                    click.secho(f"ERROR: {e}", fg="red")
             click.echo("\n\nDone batch processing!")
             sys.exit(0)
         except Exception:
@@ -679,9 +679,9 @@ def decon(config, path, **kwargs):
         except voluptuous.error.MultipleInvalid as e:
             e = str(e).replace("@ data['", "for ")
             e = e.strip("'][0]")
-            click.secho("VALIDATION ERROR: %s" % e, fg="red")
+            click.secho(f"VALIDATION ERROR: {e}", fg="red")
         except exceptions.LLSpyError as e:
-            click.secho("ERROR: %s" % e, fg="red")
+            click.secho(f"ERROR: {e}", fg="red")
 
     sys.exit(0)
 
