@@ -306,7 +306,7 @@ class CameraParameters:
 
         # interleave stacks into single 3D so that they are in the order:
         #  ch0_XYt0, ch1_XYt0, chN_XYt0, ch0_XYt1, ch1_XYt1, ...
-        nz, ny, nx = stacks[0].shape
+        _nz, ny, nx = stacks[0].shape
         numStacks = len(stacks)
         typ = stacks[0].dtype
 
@@ -340,7 +340,7 @@ class CameraParameters:
 
         # do Philpp Keller medianFilter Filter
         if medianFilter:
-            interleaved, pixCorrection = selectiveMedianFilter(interleaved, 0)
+            interleaved, _pixCorrection = selectiveMedianFilter(interleaved, 0)
 
         # sometimes the columns on the very edge are brighter than the rest
         # (particularly if an object is truncated and there's more content

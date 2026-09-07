@@ -144,7 +144,7 @@ if _watchdog:
 
         @QtCore.Slot(np.ndarray, float, float)
         def writeFile(self, stack, dx, dz):
-            timepoints, worker, thread = self.worker
+            timepoints, _worker, thread = self.worker
 
             def write_stack(s, c=0, t=0):
                 if self.opts["nIters"] > 0:
