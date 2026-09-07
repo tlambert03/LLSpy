@@ -35,14 +35,14 @@ def get_channel_list(folder):
     ch0list = [f for f in ch0list if "dark" not in f]  # remove dark images
     ch1list = sorted(glob.glob(os.path.join(folder, "*_ch1_*tif")))
     ch1list = [f for f in ch1list if "dark" not in f]  # remove dark images
-    assert len(ch0list) == len(
-        ch1list
-    ), "The number of stacks in ch0 and ch1 must be the same"
+    assert len(ch0list) == len(ch1list), (
+        "The number of stacks in ch0 and ch1 must be the same"
+    )
 
     shapes = [tf.TiffFile(f).series[0].shape for f in (ch0list + ch1list)]
-    assert (
-        len(set(shapes)) == 1
-    ), "All stacks must have the same number of pixels and planes"
+    assert len(set(shapes)) == 1, (
+        "All stacks must have the same number of pixels and planes"
+    )
 
     return ch0list, ch1list
 

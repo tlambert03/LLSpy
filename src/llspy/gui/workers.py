@@ -64,7 +64,7 @@ class SubprocessWorker(QtCore.QObject):
         logger.debug(f"Subprocess {self.name} START")
         self._logger.info(
             "~" * 20
-            + "\nRunning {} thread_{} with args: " "\n{}\n".format(
+            + "\nRunning {} thread_{} with args: \n{}\n".format(
                 self.binary, self.id, " ".join(self.args)
             )
             + "\n"
@@ -369,7 +369,7 @@ class LLSitemWorker(QtCore.QObject):
         self.aborted = False
         self.__argQueue = []  # holds all argument lists that will be sent to threads
         self.GPU_SET = QtCore.QCoreApplication.instance().gpuset
-        self.__CUDAthreads = {gpu: None for gpu in self.GPU_SET}
+        self.__CUDAthreads = dict.fromkeys(self.GPU_SET)
         if not len(self.GPU_SET):
             self.error.emit()
             raise err.InvalidSettingsError("No GPUs selected. Check Config Tab")
@@ -443,7 +443,7 @@ class LLSitemWorker(QtCore.QObject):
             # with the argQueue populated, we can now start the workers
             if not len(self.__argQueue):
                 self._logger.error(
-                    "No channel arguments to process in LLSitem: %s" % self.shortname
+                    f"No channel arguments to process in LLSitem: {self.shortname}"
                 )
                 self._logger.debug(f"LLSitemWorker FINISH: {self.E.basename}")
                 self.finished.emit()

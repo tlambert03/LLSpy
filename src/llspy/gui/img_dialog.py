@@ -149,9 +149,7 @@ class DataModel(QtCore.QObject):
             self.shape = data.shape
             self.data = data.copy()
         else:
-            raise TypeError(
-                "data should be 3-5 dimensional! shape = %s" % str(data.shape)
-            )
+            raise TypeError(f"data should be 3-5 dimensional! shape = {data.shape!s}")
 
         self.nT, self.nC, self.nZ, self.nY, self.nX = self.data.shape
         if not self.isComplex:
@@ -217,7 +215,7 @@ class DataModel(QtCore.QObject):
     def getCurrent(self):
         dataToReturn = None
         if self._overlay:
-            curT, curC, curZ = tuple(self.curImgIdx)
+            curT, _curC, curZ = tuple(self.curImgIdx)
 
             if self.projection is not None:
                 # get 2D projection
@@ -602,7 +600,7 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
         self.maxSlider.setRange(-50, 1050)
         self.maxSlider.setValue(1000)
 
-        nT, nC, nZ, nY, nX = self.data.shape
+        _nT, nC, nZ, _nY, _nX = self.data.shape
         self.data.setIdx(2, int(nZ // 2))
         self.setDimIdx(0, 0)
         self.setDimIdx(1, 0)
@@ -752,8 +750,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
     @QtCore.Slot()
     def popupFFT(self):
-        curT, curC, curZ = tuple(self.data.curImgIdx)
-        nT, nC, nZ, nY, nX = self.data.shape
+        curT, _curC, _curZ = tuple(self.data.curImgIdx)
+        _nT, nC, nZ, nY, nX = self.data.shape
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.fftn(self.data[curT, c])
@@ -763,8 +761,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
     @QtCore.Slot()
     def popupIFFT(self):
-        curT, curC, curZ = tuple(self.data.curImgIdx)
-        nT, nC, nZ, nY, nX = self.data.shape
+        curT, _curC, _curZ = tuple(self.data.curImgIdx)
+        _nT, nC, nZ, nY, nX = self.data.shape
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.ifftn(self.data[curT, c])
@@ -773,8 +771,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
     @QtCore.Slot()
     def popupFFT2(self):
-        curT, curC, curZ = tuple(self.data.curImgIdx)
-        nT, nC, nZ, nY, nX = self.data.shape
+        curT, _curC, _curZ = tuple(self.data.curImgIdx)
+        _nT, nC, nZ, nY, nX = self.data.shape
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.fft2(self.data[curT, c])
@@ -783,8 +781,8 @@ class ImgDialog(QtWidgets.QDialog, Ui_Dialog):
 
     @QtCore.Slot()
     def popupIFFT2(self):
-        curT, curC, curZ = tuple(self.data.curImgIdx)
-        nT, nC, nZ, nY, nX = self.data.shape
+        curT, _curC, _curZ = tuple(self.data.curImgIdx)
+        _nT, nC, nZ, nY, nX = self.data.shape
         fft = np.empty((nC, nZ, nY, nX), np.complex64)
         for c in range(self.data.shape[1]):
             fft[c] = np.fft.ifft2(self.data[curT, c])

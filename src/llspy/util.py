@@ -113,7 +113,7 @@ def which(program):
     if program is None:
         return None
 
-    fpath, fname = os.path.split(program)
+    fpath, _fname = os.path.split(program)
     if fpath:
         if is_exe(program):
             return program
@@ -193,9 +193,9 @@ def pyrange_to_perlregex(it, digits=4):
 def reorderstack(arr, inorder="zyx", outorder="tzcyx"):
     """rearrange order of array, used when resaving a file."""
     inorder = inorder.lower()
-    assert arr.ndim == len(
-        inorder
-    ), "The array dimensions must match the inorder dimensions"
+    assert arr.ndim == len(inorder), (
+        "The array dimensions must match the inorder dimensions"
+    )
     for _ in range(len(outorder) - arr.ndim):
         arr = np.expand_dims(arr, 0)
     for i in outorder:

@@ -444,7 +444,7 @@ class GaussFitter3D:
             / electrons_per_ADU
         )
 
-        (res1, cov_x, infodict, mesg1, resCode) = FitModelWeighted(
+        (res1, cov_x, infodict, _mesg1, resCode) = FitModelWeighted(
             f_Gauss3d, startParameters, dataROI, sigma, X, Y, Z
         )
         # misfit = (infodict['fvec']**2).sum()  # nfev is the number of function calls
@@ -519,8 +519,7 @@ class FiducialCloud:
                 self.data = data
             else:
                 raise ValueError(
-                    "Input to Registration must either be a "
-                    "filepath or a numpy arrays"
+                    "Input to Registration must either be a filepath or a numpy arrays"
                 )
         self.dx = dx
         self.dz = dz
@@ -690,7 +689,7 @@ class CloudSet:
         if data is not None:
             if not isinstance(data, (list, tuple, set)):
                 raise ValueError(
-                    "CloudSet expects a list of np.ndarrays or " "filename strings"
+                    "CloudSet expects a list of np.ndarrays or filename strings"
                 )
             if labels is not None:
                 if len(labels) != len(data):
@@ -799,7 +798,7 @@ class CloudSet:
         if isinstance(key, str) or (isinstance(key, int) and key > self.N):
             if self.labels is None:
                 raise ValueError(
-                    "Cannot index CloudSet by string without " "provided labels"
+                    "Cannot index CloudSet by string without provided labels"
                 )
             if key in self.labels:
                 return self.clouds[self.labels.index(key)]
@@ -1086,7 +1085,7 @@ def imshowpair(im1, im2, method=None, mip=False, **kwargs):
         imshow(imoverlay(im1, im2, "diff"), cmap="gray", vmin=0.2, vmax=0.8)
     elif method == "3D":
         im3 = imoverlay(im1, im2)
-        fig, subpl, ax = imshow(im3, subplot=221)
+        fig, _subpl, _ax = imshow(im3, subplot=221)
         imshow(np.rot90(im3.max(1)), figure=fig, subplot=222)
         imshow(im3.max(2), figure=fig, subplot=223)
     else:  # falsecolor
