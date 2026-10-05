@@ -219,8 +219,7 @@ class ExceptionHandler(QtCore.QObject):
             # client.captureException((etype, value, tb))
         tbstring = "".join(traceback.format_exception(etype, value, tb))
         self.errorMessage.emit(
-            "Sorry, it looks like CUDA and OpenCL are not "
-            "getting along on your system",
+            "Sorry, it looks like CUDA and OpenCL are not getting along on your system",
             "CUDA/OpenCL clash",
             "If you continue to get this error, please "
             'click the "disable Spimagine" checkbox in the config tab '
