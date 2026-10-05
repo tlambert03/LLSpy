@@ -21,7 +21,7 @@ class NoExceptionTracebackFormatter(logging.Formatter):
             record.exc_text = orig_exc_text
 
     def formatException(self, exc_info):
-        etype, evalue, tb = exc_info
+        etype, evalue, _tb = exc_info
         lines = traceback.format_exception_only(etype, evalue)
         return "".join(lines)
 

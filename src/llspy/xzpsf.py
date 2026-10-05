@@ -16,7 +16,7 @@ def main(infile, nx, nz, sig=1, pad=12):
             warnings.simplefilter("ignore")
             indat = tf.imread(infile)
     except OSError:
-        print("File %s does not exist or is no readable.\n Quit" % infile)
+        print(f"File {infile} does not exist or is no readable.\n Quit")
         return
 
     mip = indat.max(0)
