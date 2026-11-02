@@ -82,7 +82,7 @@ def trimedges(im, trim, ninterleaved=1):
 
 
 def cropX(im, width=0, shift=0):
-    nz, ny, nx = im.shape
+    _nz, _ny, nx = im.shape
     if width == 0:
         width = nx - np.abs(shift)
     middle = np.ceil(nx / 2 + shift)

@@ -9,7 +9,7 @@ from llspy import parse
 class FilenameTests(unittest.TestCase):
     def setUp(self):
         self.example_name = (
-            "cell5_ch0_stack0006_488nm_" "0005280msec_0020936553msecAbs.tif"
+            "cell5_ch0_stack0006_488nm_0005280msec_0020936553msecAbs.tif"
         )
         self.dict = {
             "abstime": 20936553,

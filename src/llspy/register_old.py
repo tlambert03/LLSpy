@@ -63,7 +63,7 @@ def find_local_maxima(img, threshold=100, neighborhood=3):
     data_min = ndimage.filters.minimum_filter(img, neighborhood)
     diff = (data_max - data_min) > threshold
     maxima[diff == 0] = 0
-    labeled, num_objects = ndimage.label(maxima)
+    labeled, _num_objects = ndimage.label(maxima)
     slices = ndimage.find_objects(labeled)
     x, y = [], []
     for dy, dx in slices:

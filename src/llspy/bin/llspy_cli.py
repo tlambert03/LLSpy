@@ -79,7 +79,7 @@ class Config(dict):
     def print_cfgfile(self):
         if os.path.isfile(self.default_path):
             click.secho(
-                "\nConfig PATH: %s" % click.format_filename(self.default_path),
+                f"\nConfig PATH: {click.format_filename(self.default_path)}",
                 fg="cyan",
             )
             with open(self.default_path) as f:
@@ -100,7 +100,7 @@ class Config(dict):
                 click.echo()
         else:
             click.echo(
-                "No config file found at: %s" % click.format_filename(self.default_path)
+                f"No config file found at: {click.format_filename(self.default_path)}"
             )
 
     def update_default(self, key, value):
@@ -321,7 +321,7 @@ def check_iters(ctx, param, value):
 
         if otfdir is not None and not otf.dir_has_otfs(otfdir):
             click.secho(
-                "\nOTF directory has no OTFs! -> %s" % otfdir, bold=True, fg="red"
+                f"\nOTF directory has no OTFs! -> {otfdir}", bold=True, fg="red"
             )
             fail = True
 
@@ -609,10 +609,10 @@ def decon(config, path, **kwargs):
                 shutil.rmtree(E.path.joinpath("MIPs"))
 
         click.secho(
-            "\n" + "#" * (int(len(str(E.path))) + 24) + "\n##    ", fg="cyan", nl=False
+            "\n" + "#" * (len(str(E.path)) + 24) + "\n##    ", fg="cyan", nl=False
         )
-        click.secho("processing: %s    " % str(E.path), fg="yellow", nl=False)
-        click.secho("##\n" + "#" * (int(len(str(E.path))) + 24) + "\n", fg="cyan")
+        click.secho(f"processing: {E.path!s}    ", fg="yellow", nl=False)
+        click.secho("##\n" + "#" * (len(str(E.path)) + 24) + "\n", fg="cyan")
 
         if options["correctFlash"]:
             if E.is_corrected():
@@ -623,7 +623,7 @@ def decon(config, path, **kwargs):
                         "Corrected folder already exists!  Use it? [y/N]", nl=False
                     )
                     click.secho(" (6 seconds to answer)", blink=True)
-                    i, o, e = select.select([sys.stdin], [], [], 6)
+                    i, _o, _e = select.select([sys.stdin], [], [], 6)
                     if i:
                         useCor = sys.stdin.readline().strip()[0].lower() == "y"
                     else:
@@ -664,9 +664,9 @@ def decon(config, path, **kwargs):
                 except voluptuous.error.MultipleInvalid as e:
                     e = str(e).replace("@ data['", "for ")
                     e = e.strip("'][0]")
-                    click.secho("VALIDATION ERROR: %s" % e, fg="red")
+                    click.secho(f"VALIDATION ERROR: {e}", fg="red")
                 except exceptions.LLSpyError as e:
-                    click.secho("ERROR: %s" % e, fg="red")
+                    click.secho(f"ERROR: {e}", fg="red")
             click.echo("\n\nDone batch processing!")
             sys.exit(0)
         except Exception:
@@ -679,9 +679,9 @@ def decon(config, path, **kwargs):
         except voluptuous.error.MultipleInvalid as e:
             e = str(e).replace("@ data['", "for ")
             e = e.strip("'][0]")
-            click.secho("VALIDATION ERROR: %s" % e, fg="red")
+            click.secho(f"VALIDATION ERROR: {e}", fg="red")
         except exceptions.LLSpyError as e:
-            click.secho("ERROR: %s" % e, fg="red")
+            click.secho(f"ERROR: {e}", fg="red")
 
     sys.exit(0)
 
@@ -752,7 +752,7 @@ def camera(calibrate):
             darkavg, darkstd = camcalib.process_dark_images(calibrate, bar.update)
 
         with tf.TiffFile(darklist[0]) as t:
-            nz, ny, nx = t.series[0].shape
+            _nz, ny, nx = t.series[0].shape
 
         with click.progressbar(length=ny * nx, label="Processing bright images") as bar:
             camcalib.process_bright_images(calibrate, darkavg, darkstd, bar.update)

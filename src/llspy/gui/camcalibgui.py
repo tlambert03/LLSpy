@@ -57,7 +57,7 @@ class CamCalibWorker(QtCore.QObject):
                 raise OSError("No tiff files found in folder")
 
             with tf.TiffFile(filelist[0]) as t:
-                nz, ny, nx = t.series[0].shape
+                _nz, ny, nx = t.series[0].shape
 
             self.setProgMax.emit(ny * nx)
             self.setStatus.emit(

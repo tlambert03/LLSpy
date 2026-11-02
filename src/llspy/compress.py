@@ -94,9 +94,9 @@ def unzipit(fname, compression=None):
                 compression = compbin
                 break
     logger.info(f"zipping with compression: {compression}")
-    assert (
-        archive_extension[compression] == extension
-    ), f"Format {extension} cannot be unzipped by program {compression}"
+    assert archive_extension[compression] == extension, (
+        f"Format {extension} cannot be unzipped by program {compression}"
+    )
     # check if it exists and is compressed type
     assert os.path.exists(fname), f"File does not exist: {fname}"
     assert extension in (archive_extension[compression],), (
@@ -115,9 +115,9 @@ def unzip_partial(fname, tRange=None, compression=None):
             if util.which(compbin):
                 compression = compbin
                 break
-    assert (
-        archive_extension[compression] == extension
-    ), f"Format {extension} cannot be unzipped by program {compression}"
+    assert archive_extension[compression] == extension, (
+        f"Format {extension} cannot be unzipped by program {compression}"
+    )
     # check if it exists and is compressed type
     assert os.path.exists(fname), f"File does not exist: {fname}"
     assert extension in (archive_extension[compression],), (

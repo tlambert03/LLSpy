@@ -220,13 +220,13 @@ def register_image_to_wave(
     if not isinstance(regCalibObj, (RegDir, RegFile)):
         raise RegistrationError(
             "Calibration object for register_image_to_wave "
-            "must be either RegDir or RegFile.  Received: %s" % str(type(regCalibObj))
+            f"must be either RegDir or RegFile.  Received: {type(regCalibObj)!s}"
         )
 
     if isinstance(img, np.ndarray):
         if imwave is None:
             raise ValueError(
-                "Must provide wavelength when providing array " "for registration."
+                "Must provide wavelength when providing array for registration."
             )
     elif isinstance(img, str) and os.path.isfile(img):
         if imwave is None:
@@ -239,7 +239,7 @@ def register_image_to_wave(
         img = util.imread(img)
     else:
         raise ValueError(
-            "Input to Registration must either be a np.array " "or a path to a tif file"
+            "Input to Registration must either be a np.array or a path to a tif file"
         )
 
     tform = regCalibObj.get_tform(imwave, refwave, mode)
@@ -366,7 +366,7 @@ def preview(exp, tR=0, cR=None, **kwargs):
                             )
                 else:
                     logger.error(
-                        "Registration Calibration dir not valid" f"{P.regCalibPath}"
+                        f"Registration Calibration dir not valid{P.regCalibPath}"
                     )
 
         out.append(np.stack(stacks, 0))
@@ -519,8 +519,7 @@ def mergemips(folder, axis, write=True, dx=1, dt=1, delete=True, fpattern=None):
 
             if len(set(channelCounts)) > 1:
                 raise ValueError(
-                    "Cannot merge MIPS with different number of "
-                    "timepoints per channel"
+                    "Cannot merge MIPS with different number of timepoints per channel"
                 )
             if len(tiffs) != c * nt:
                 raise ValueError("Number of images does not equal nC * nT")
@@ -876,7 +875,7 @@ class LLSdir:
             return False
 
     def compress(self, subfolder=".", compression=None):
-        logger.info("compressing %s..." % str(self.path.joinpath(subfolder)))
+        logger.info(f"compressing {self.path.joinpath(subfolder)!s}...")
         return compress.compress(
             str(self.path.joinpath(subfolder)), compression=compression
         )
@@ -896,7 +895,7 @@ class LLSdir:
         need to consider the case of sepmips
         """
         if verbose:
-            logger.info("reducing %s..." % str(self.path.name))
+            logger.info(f"reducing {self.path.name!s}...")
 
         subfolders = ["GPUdecon", "CPPdecon", "Deskewed", "Corrected"]
 
@@ -914,7 +913,7 @@ class LLSdir:
             if self.path.joinpath(folder).exists():
                 try:
                     if verbose:
-                        logger.info("\tdeleting %s..." % folder)
+                        logger.info(f"\tdeleting {folder}...")
                     shutil.rmtree(str(self.path.joinpath(folder)))
                 except Exception as e:
                     logger.error(
@@ -972,15 +971,15 @@ class LLSdir:
             if all(self._localParams[k] == v for k, v in kwargs.items()):
                 return self._localParams
         _schema = schema.procParams(kwargs)
-        assert (
-            sum(_schema.trimY) < self.parameters.ny
-        ), "TrimY sum must be less than number of Y pixels"
-        assert (
-            sum(_schema.trimX) < self.parameters.nx
-        ), "TrimX sum must be less than number of X pixels"
-        assert (
-            sum(_schema.trimZ) < self.parameters.nz
-        ), "TrimZ sum must be less than number of Z pixels"
+        assert sum(_schema.trimY) < self.parameters.ny, (
+            "TrimY sum must be less than number of Y pixels"
+        )
+        assert sum(_schema.trimX) < self.parameters.nx, (
+            "TrimX sum must be less than number of X pixels"
+        )
+        assert sum(_schema.trimZ) < self.parameters.nz, (
+            "TrimZ sum must be less than number of Z pixels"
+        )
 
         if _schema.cRange is None:
             # _schema.cRange = range(self.parameters.nc)
@@ -1101,7 +1100,7 @@ class LLSdir:
             if self.path.joinpath(subdir).is_dir():
                 subdir = self.path.joinpath(subdir)
             else:
-                logger.error("Could not find subdir: %s" % subdir)
+                logger.error(f"Could not find subdir: {subdir}")
                 return
         else:
             subdir = self.path
@@ -1169,9 +1168,7 @@ class LLSdir:
                     f"wave {wave}, mask {outerNA}-{innerNA} in path: {otfpath}"
                 )
             else:
-                raise OTFError(
-                    "Could not find OTF for " f"wave {wave} in path: {otfpath}"
-                )
+                raise OTFError(f"Could not find OTF for wave {wave} in path: {otfpath}")
         return otf
 
     def get_feature_width(self, t=0, **kwargs):
@@ -1346,7 +1343,7 @@ class LLSdir:
                     D, regRefWave, regMode, regObj, voxsize, discard=discard
                 )
         else:
-            logger.error("Registration Calibration path not valid" f"{regCalibPath}")
+            logger.error(f"Registration Calibration path not valid{regCalibPath}")
 
     def toJSON(self):
         import json
@@ -1561,10 +1558,10 @@ def rename_iters(folder, splitpositions=True):
     for it in iterset:
         iterdict[it] = {}
         iterdict[it]["setfile"] = util.find_filepattern(
-            folder, "*Iter_%s_*Settings.txt" % it
+            folder, f"*Iter_{it}_*Settings.txt"
         )
         # all the files from this Iter group
-        g = [f for f in filelist if "Iter_%s_" % it in f]
+        g = [f for f in filelist if f"Iter_{it}_" in f]
         # tuple of nFiles in each channel in this group
         nFilesPerChannel.append(
             tuple(len([f for f in g if "ch%d" % d in f]) for d in chanset)
@@ -1604,7 +1601,7 @@ def rename_iters(folder, splitpositions=True):
         t0 = [0] * nPositions
         for i in iterset:
             flist = sorted(
-                f for f in filelist if "ch%s" % chan in f and "Iter_%s_" % i in f
+                f for f in filelist if f"ch{chan}" in f and f"Iter_{i}_" in f
             )
             for pos in range(nPositions):
                 base = os.path.basename(flist[pos])
