@@ -1474,21 +1474,21 @@ class Ui_Main_GUI:
         self.zblendLabel.setToolTip(
             _translate(
                 "Main_GUI",
-                "# of top and bottom sections to blend in\n" "to reduce axial ringing",
+                "# of top and bottom sections to blend in\nto reduce axial ringing",
             )
         )
         self.zblendLabel.setText(_translate("Main_GUI", "nZblend"))
         self.zblendSpinBox.setToolTip(
             _translate(
                 "Main_GUI",
-                "# of top and bottom sections to blend in\n" "to reduce axial ringing",
+                "# of top and bottom sections to blend in\nto reduce axial ringing",
             )
         )
         self.saveDeconvolvedCheckBox.setText(_translate("Main_GUI", "Save Stacks"))
         self.deconvolvedMIPFrame.setToolTip(
             _translate(
                 "Main_GUI",
-                "Save maximum-intensity-projection\n" "images along the specified axis",
+                "Save maximum-intensity-projection\nimages along the specified axis",
             )
         )
         self.deconSaveMIPSLabel.setText(_translate("Main_GUI", "Save MIPs:"))
@@ -1505,7 +1505,7 @@ class Ui_Main_GUI:
         self.deskewedMIPFrame.setToolTip(
             _translate(
                 "Main_GUI",
-                "Save maximum-intensity-projection\n" "images along the specified axis",
+                "Save maximum-intensity-projection\nimages along the specified axis",
             )
         )
         self.deconSaveMIPSLabel_2.setText(_translate("Main_GUI", "Save MIPs:"))
@@ -1733,7 +1733,7 @@ class Ui_Main_GUI:
         self.compressRawCheckBox.setToolTip(
             _translate(
                 "Main_GUI",
-                "Compress the raw data files\n" "after processing to save space.",
+                "Compress the raw data files\nafter processing to save space.",
             )
         )
         self.compressRawCheckBox.setText(_translate("Main_GUI", "Compress Raw Data"))

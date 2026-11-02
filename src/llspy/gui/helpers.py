@@ -65,10 +65,7 @@ def wait_for_folder_finished(path, delay=0.1):
 
 
 def byteArrayToString(bytearr):
-    if sys.version_info.major < 3:
-        return str(bytearr)
-    else:
-        return str(bytearr, encoding="utf-8")
+    return str(bytearr, encoding="utf-8")
 
 
 def shortname(path, parents=2):

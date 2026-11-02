@@ -260,7 +260,7 @@ class LLSDragDropTable(QtW.QTableWidget):
                     box.exec_()
 
                 return
-        logger.info("Adding to queue: %s" % shortname(path))
+        logger.info(f"Adding to queue: {shortname(path)}")
 
         rowPosition = self.rowCount()
         self.insertRow(rowPosition)
@@ -396,7 +396,7 @@ class LLSDragDropTable(QtW.QTableWidget):
             for index in sorted(indices):
                 removerow = index.row() - i
                 path = self.getPathByIndex(removerow)
-                logger.info("Removing from queue: %s" % shortname(path))
+                logger.info(f"Removing from queue: {shortname(path)}")
                 self.removePath(path)
                 i += 1
 
@@ -1362,7 +1362,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     @QtCore.Slot()
     def on_item_finished(self):
         if len(self.LLSItemThreads):
-            thread, worker = self.LLSItemThreads.pop(0)
+            thread, _worker = self.LLSItemThreads.pop(0)
             thread.quit()
             thread.wait()
         self.clock.display("00:00:00")
@@ -1387,7 +1387,7 @@ class main_GUI(QtW.QMainWindow, Ui_Main_GUI, RegistrationTab):
     @QtCore.Slot(str)
     def skip_item(self, path):
         if len(self.LLSItemThreads):
-            thread, worker = self.LLSItemThreads.pop(0)
+            thread, _worker = self.LLSItemThreads.pop(0)
             thread.quit()
             thread.wait()
         self.listbox.setRowBackgroudColor(len(self.listbox.skipped_items), "#FFFFFF")
@@ -1863,9 +1863,11 @@ The cudaDeconv deconvolution program was written by Lin Shao and by Dan Milkie a
             box.setCheckBox(pref)
 
             pref.stateChanged.connect(
-                lambda value: self.confirmOnQuitCheckBox.setChecked(False)
-                if value
-                else self.confirmOnQuitCheckBox.setChecked(True)
+                lambda value: (
+                    self.confirmOnQuitCheckBox.setChecked(False)
+                    if value
+                    else self.confirmOnQuitCheckBox.setChecked(True)
+                )
             )
 
             reply = box.exec_()
